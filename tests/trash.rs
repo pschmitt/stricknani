@@ -2195,4 +2195,271 @@ async fn trashed_only_honours_the_owner_filter_and_trashed_items_leave_status_an
         .await;
         assert!(body["data"].as_array().unwrap().is_empty(), "{kind}");
     }
+async fn get_media(f: &Fx, path: &str, who: &str) -> (StatusCode, Vec<u8>) {
+    let response = f
+        .app
+        .clone()
+        .oneshot(
+            Request::get(path)
+                .header("authorization", format!("Bearer {}", pat(who)))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let status = response.status();
+    let bytes = response.into_body().collect().await.unwrap().to_bytes();
+    (status, bytes.to_vec())
+}
+
+/// Write the stored file and its thumbnail of `trash-media-{id}.png`.
+fn write_media_files(f: &Fx, subdir: &str, parent: i64, id: i64) {
+    let name = format!("trash-media-{id}");
+    let source = f._root.path().join(subdir).join(parent.to_string());
+    let thumbs = f
+        ._root
+        .path()
+        .join("thumbnails")
+        .join(subdir)
+        .join(parent.to_string());
+    std::fs::create_dir_all(&source).unwrap();
+    std::fs::create_dir_all(&thumbs).unwrap();
+    std::fs::write(source.join(format!("{name}.png")), b"source bytes").unwrap();
+    std::fs::write(thumbs.join(format!("thumb_{name}.jpg")), b"thumb bytes").unwrap();
+}
+
+#[tokio::test]
+async fn legacy_url_aliases_survive_trash_and_restore() {
+    let f = fx().await;
+    let p = f.p1;
+    write_media_files(&f, "projects", p, 101);
+    let media_id: i64 = sqlx::query_scalar("SELECT id FROM media_files WHERE public_id = 101")
+        .fetch_one(&f.pool)
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO media_url_aliases (subdir, parent_id, legacy_filename, legacy_thumbnail, media_id) \
+         VALUES ('projects', ?, 'old name.png', 'thumb_old name.jpg', ?)",
+    )
+    .bind(p)
+    .bind(media_id)
+    .execute(&f.pool)
+    .await
+    .unwrap();
+    let source = format!("/media/projects/{p}/old%20name.png");
+    let thumb = format!("/media/thumbnails/projects/{p}/thumb_old%20name.jpg");
+
+    assert_eq!(get_media(&f, &source, "anika").await.0, StatusCode::OK);
+    assert_eq!(get_media(&f, &thumb, "anika").await.0, StatusCode::OK);
+
+    let (status, _) = call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}/images/101"),
+        Some("anika"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    // The aliases moved with the trashed row.
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM trashed_media_url_aliases WHERE media_id = ?",
+            media_id
+        )
+        .await,
+        1
+    );
+    // The old URLs are gone for everybody while the file is in the trash.
+    for who in ["ben", "vera", "anika", "admin"] {
+        for url in [&source, &thumb] {
+            assert_eq!(
+                get_media(&f, url, who).await.0,
+                StatusCode::NOT_FOUND,
+                "{who} {url}"
+            );
+        }
+    }
+
+    let (status, _) = call(
+        &f,
+        "POST",
+        "/api/v2/trash/images/101/restore",
+        Some("anika"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM media_url_aliases WHERE media_id = ?",
+            media_id
+        )
+        .await,
+        1
+    );
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM trashed_media_url_aliases WHERE media_id = ?",
+            media_id
+        )
+        .await,
+        0
+    );
+    assert_eq!(
+        get_media(&f, &source, "anika").await,
+        (StatusCode::OK, b"source bytes".to_vec())
+    );
+    assert_eq!(get_media(&f, &thumb, "anika").await.0, StatusCode::OK);
+}
+
+#[tokio::test]
+async fn purging_trashed_media_drops_its_aliases() {
+    let f = fx().await;
+    let p = f.p1;
+    let media_id: i64 = sqlx::query_scalar("SELECT id FROM media_files WHERE public_id = 101")
+        .fetch_one(&f.pool)
+        .await
+        .unwrap();
+    sqlx::query(
+        "INSERT INTO media_url_aliases (subdir, parent_id, legacy_filename, media_id) \
+         VALUES ('projects', ?, 'old.png', ?)",
+    )
+    .bind(p)
+    .bind(media_id)
+    .execute(&f.pool)
+    .await
+    .unwrap();
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}/images/101"),
+        Some("anika"),
+    )
+    .await;
+    let (status, _) = call(&f, "DELETE", "/api/v2/trash/images/101", Some("anika")).await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM trashed_media_url_aliases WHERE media_id = ?",
+            media_id
+        )
+        .await,
+        0
+    );
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM media_url_aliases WHERE media_id = ?",
+            media_id
+        )
+        .await,
+        0
+    );
+}
+
+#[tokio::test]
+async fn trash_items_carry_a_thumbnail_the_owner_and_admin_can_load() {
+    let f = fx().await;
+    let (p, y) = (f.p1, f.y1);
+    write_media_files(&f, "projects", p, 101);
+    write_media_files(&f, "yarns", y, 102);
+    // A second project image, trashed on its own, and the whole yarn.
+    sqlx::query(
+        "INSERT INTO media_files \
+         (owner_id,project_id,kind,public_id,filename,original_filename,content_type,size_bytes, \
+          position,is_primary,is_project_cover) \
+         VALUES (?,?,'title',103,'trash-media-103.png','trash-media-103.png','image/png',0,1,0,0)",
+    )
+    .bind(f.anika)
+    .bind(p)
+    .execute(&f.pool)
+    .await
+    .unwrap();
+    write_media_files(&f, "projects", p, 103);
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}/images/103"),
+        Some("anika"),
+    )
+    .await;
+    call(&f, "DELETE", &format!("/api/v2/yarns/{y}"), Some("anika")).await;
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}"),
+        Some("anika"),
+    )
+    .await;
+
+    let (_, trash) = call(&f, "GET", "/api/v2/trash", Some("anika")).await;
+    let thumb_of = |kind: &str| {
+        trash["data"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|item| item["kind"] == kind)
+            .and_then(|item| item["thumbnail_url"].as_str())
+            .map(str::to_owned)
+    };
+    assert_eq!(
+        thumb_of("project").as_deref(),
+        Some(format!("/media/thumbnails/projects/{p}/thumb_trash-media-101.jpg").as_str())
+    );
+    assert_eq!(
+        thumb_of("yarn").as_deref(),
+        Some(format!("/media/thumbnails/yarns/{y}/thumb_trash-media-102.jpg").as_str())
+    );
+    // The project is in the trash, so its separately trashed image is not listed.
+    assert!(thumb_of("image").is_none());
+    for kind in ["project", "yarn"] {
+        let url = thumb_of(kind).unwrap();
+        assert_eq!(get_media(&f, &url, "anika").await.0, StatusCode::OK);
+        assert_eq!(get_media(&f, &url, "admin").await.0, StatusCode::OK);
+        assert_ne!(get_media(&f, &url, "ben").await.0, StatusCode::OK);
+    }
+
+    // Restore the project: its trashed image is listed with a trash thumbnail, which only the
+    // owner and administrators can load (the file's normal URLs stay 404).
+    call(
+        &f,
+        "POST",
+        &format!("/api/v2/trash/projects/{p}/restore"),
+        Some("anika"),
+    )
+    .await;
+    let (_, trash) = call(&f, "GET", "/api/v2/trash", Some("anika")).await;
+    let image = trash["data"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|item| item["kind"] == "image")
+        .unwrap();
+    let url = image["thumbnail_url"].as_str().unwrap().to_owned();
+    assert_eq!(url, "/api/v2/trash/images/103/thumbnail");
+    assert_eq!(
+        get_media(&f, &url, "anika").await,
+        (StatusCode::OK, b"thumb bytes".to_vec())
+    );
+    assert_eq!(get_media(&f, &url, "admin").await.0, StatusCode::OK);
+    assert_eq!(get_media(&f, &url, "ben").await.0, StatusCode::NOT_FOUND);
+    assert_eq!(get_media(&f, &url, "vera").await.0, StatusCode::NOT_FOUND);
+    let direct = format!("/media/thumbnails/projects/{p}/thumb_trash-media-103.jpg");
+    assert_eq!(
+        get_media(&f, &direct, "anika").await.0,
+        StatusCode::NOT_FOUND
+    );
+    // Restored: the trash thumbnail is gone, the normal one is back.
+    call(
+        &f,
+        "POST",
+        "/api/v2/trash/images/103/restore",
+        Some("anika"),
+    )
+    .await;
+    assert_eq!(get_media(&f, &url, "anika").await.0, StatusCode::NOT_FOUND);
+    assert_eq!(get_media(&f, &direct, "anika").await.0, StatusCode::OK);
 }

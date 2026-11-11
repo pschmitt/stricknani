@@ -150,7 +150,7 @@
 <ConfirmDialog
   bind:this={purgeDialog}
   titleId={`purge-${kind}-${id}-title`}
-  title={t("Delete forever?", locale)}
+  title={t("Delete permanently?", locale)}
   {busy}
 >
   {#snippet children()}
@@ -179,7 +179,7 @@
       data-testid="trashed-purge-confirm"
       onclick={() => void purge()}
     >
-      {busy ? t("Deleting…", locale) : t("Delete forever", locale)}
+      {busy ? t("Deleting…", locale) : t("Delete permanently", locale)}
     </Button>
   {/snippet}
 </ConfirmDialog>

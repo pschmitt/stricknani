@@ -38,6 +38,7 @@ fun DestructiveDeleteDialog(
     text: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
+    confirmLabel: String = stringResource(R.string.common_delete),
 ) {
     // A tap in the first moments (a double tap on the menu entry) must not confirm the delete.
     var armed by remember { mutableStateOf(false) }
@@ -59,7 +60,7 @@ fun DestructiveDeleteDialog(
                         contentColor = androidx.compose.material3.MaterialTheme.colorScheme.error
                     ),
             ) {
-                Text(stringResource(R.string.common_delete))
+                Text(confirmLabel)
             }
         },
         dismissButton = {

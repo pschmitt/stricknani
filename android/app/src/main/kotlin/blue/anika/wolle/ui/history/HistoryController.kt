@@ -48,6 +48,12 @@ data class HistoryUiState(
 )
 
 /**
+ * The state of a detail page that has no history section (the read-only page of a trashed item).
+ */
+val NoHistory: StateFlow<HistoryUiState> =
+    MutableStateFlow(HistoryUiState(phase = HistoryPhase.Hidden)).asStateFlow()
+
+/**
  * Loads and holds the "Recent changes" of one project or yarn. The section calls [ensureLoaded]
  * when it first composes, which in the lazy detail list means when it scrolls into view. Owned by
  * the detail screen's view model; nothing is persisted.

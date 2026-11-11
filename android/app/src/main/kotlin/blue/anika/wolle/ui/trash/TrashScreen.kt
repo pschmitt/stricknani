@@ -2,6 +2,7 @@ package blue.anika.wolle.ui.trash
 
 import android.text.format.DateUtils
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -38,6 +40,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -53,8 +58,10 @@ import blue.anika.wolle.ui.admin.AdminFailureState
 import blue.anika.wolle.ui.common.AccountAvatar
 import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.EveryoneMenu
+import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.YarnLoader
+import coil3.compose.AsyncImage
 
 /** The trash (de: Papierkorb): deleted items wait here to be restored or deleted forever. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -207,6 +214,7 @@ private fun TrashList(
                 row = trashRow(item, showOwner),
                 busy = state.busy != null,
                 avatarUrl = viewModel.avatarUrl(item.owner?.avatarUrl),
+                thumbnailUrl = viewModel.avatarUrl(item.thumbnailUrl),
                 onRestore = { viewModel.restore(item) },
                 onPurge = { onPurge(item) },
                 // A trashed project or yarn opens read-only; the other kinds have no page.
@@ -224,6 +232,7 @@ private fun TrashRow(
     row: TrashRowModel,
     busy: Boolean,
     avatarUrl: String?,
+    thumbnailUrl: String?,
     onRestore: () -> Unit,
     onPurge: () -> Unit,
     onOpen: (() -> Unit)?,
@@ -243,89 +252,144 @@ private fun TrashRow(
                 )
                 .testTag("trash-row"),
     ) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-                kind,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Text(
-                row.name ?: kind,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            row.parentKind?.let { parentKind ->
-                row.parentName?.let { parentName ->
-                    Text(
-                        stringResource(trashParentRes(parentKind), parentName),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            row.detail?.let {
+        Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            TrashThumbnail(row.ref.kind, thumbnailUrl)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    it,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    kind,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
                 )
-            }
-            row.ownerName?.let { owner ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    AccountAvatar(url = avatarUrl, email = row.ownerEmail ?: owner, size = 24.dp)
+                Text(
+                    row.name ?: kind,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                row.parentKind?.let { parentKind ->
+                    row.parentName?.let { parentName ->
+                        Text(
+                            stringResource(trashParentRes(parentKind), parentName),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                row.detail?.let {
                     Text(
-                        owner,
+                        it,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-            }
-            Text(
-                listOfNotNull(
-                        deletedAgo?.let { stringResource(R.string.trash_deleted_when, it) },
-                        daysLeftText(row.daysLeft),
-                    )
-                    .joinToString(" · "),
-                style = MaterialTheme.typography.bodySmall,
-                color =
-                    if (row.daysLeft is DaysLeft.Due) MaterialTheme.colorScheme.error
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(top = 4.dp),
-            ) {
-                OutlinedButton(
-                    onClick = onRestore,
-                    enabled = !busy,
-                    modifier = Modifier.testTag("trash-restore"),
-                ) {
-                    Icon(
-                        PhosphorIcons.ClockCounterClockwise,
-                        contentDescription = null,
-                        modifier = Modifier.padding(end = 6.dp),
-                    )
-                    Text(stringResource(R.string.trash_restore))
+                row.ownerName?.let { owner ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        AccountAvatar(
+                            url = avatarUrl,
+                            email = row.ownerEmail ?: owner,
+                            size = 24.dp,
+                        )
+                        Text(
+                            owner,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
-                TextButton(
-                    onClick = onPurge,
-                    enabled = !busy,
-                    colors =
-                        ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        ),
-                    modifier = Modifier.testTag("trash-purge"),
+                Text(
+                    listOfNotNull(
+                            deletedAgo?.let { stringResource(R.string.trash_deleted_when, it) },
+                            daysLeftText(row.daysLeft),
+                        )
+                        .joinToString(" · "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color =
+                        if (row.daysLeft is DaysLeft.Due) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(top = 4.dp),
                 ) {
-                    Text(stringResource(R.string.trash_purge))
+                    OutlinedButton(
+                        onClick = onRestore,
+                        enabled = !busy,
+                        modifier = Modifier.testTag("trash-restore"),
+                    ) {
+                        Icon(
+                            PhosphorIcons.ClockCounterClockwise,
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = 6.dp),
+                        )
+                        Text(stringResource(R.string.trash_restore))
+                    }
+                    TextButton(
+                        onClick = onPurge,
+                        enabled = !busy,
+                        colors =
+                            ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            ),
+                        modifier = Modifier.testTag("trash-purge"),
+                    ) {
+                        Text(stringResource(R.string.trash_purge))
+                    }
                 }
             }
         }
     }
 }
+
+/**
+ * The item's cover or picture (the server's owner-scoped media URL, which also serves what is in
+ * the trash); an icon for kinds without one, or while the picture cannot be loaded.
+ */
+@Composable
+private fun TrashThumbnail(kind: String, url: String?) {
+    val icon = trashKindIcon(kind)
+    Box(
+        modifier =
+            Modifier.size(56.dp)
+                .clip(MaterialTheme.shapes.small)
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+                .testTag("trash-thumb"),
+        contentAlignment = Alignment.Center,
+    ) {
+        val fallback = rememberVectorPainter(icon)
+        if (url != null) {
+            AsyncImage(
+                model = url,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                placeholder = fallback,
+                error = fallback,
+                modifier = Modifier.fillMaxSize(),
+            )
+        } else {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp),
+            )
+        }
+    }
+}
+
+private fun trashKindIcon(kind: String): ImageVector =
+    when (kind) {
+        "project" -> PhosphorIcons.Hoodie
+        "yarn" -> MdiIcons.YarnBall
+        "category" -> PhosphorIcons.FolderSimple
+        "step" -> PhosphorIcons.ListNumbers
+        "attachment" -> PhosphorIcons.Paperclip
+        "image",
+        "photo" -> PhosphorIcons.Images
+        else -> PhosphorIcons.Trash
+    }
 
 /** "5 days left" or "Due for deletion". */
 @Composable

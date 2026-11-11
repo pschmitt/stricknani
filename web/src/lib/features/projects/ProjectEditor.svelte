@@ -18,7 +18,10 @@
   import PageHeader from "#lib/components/PageHeader.svelte";
   import StickyActionBar from "#lib/components/StickyActionBar.svelte";
   import { publishFeedback } from "#lib/feedback.ts";
-  import { publishMovedToTrash } from "../trash/trash-undo";
+  import {
+    publishMovedToTrash,
+    publishSavedWithRemovals,
+  } from "../trash/trash-undo";
   import { msg, t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
@@ -860,6 +863,13 @@
       const pendingStepFiles = stepKeys.map(
         (key) => pendingStepPhotos[key] ?? [],
       );
+      // Steps the save left out are in the trash now; the confirmation offers Undo.
+      const removedStepIds =
+        id === null
+          ? []
+          : (project?.steps ?? [])
+              .map((step) => step.id)
+              .filter((stepId) => !result.steps.some((s) => s.id === stepId));
       applyLoadedProject(result);
       if (
         id === null &&
@@ -931,7 +941,27 @@
         id === null
           ? t("Project created.", locale)
           : t("Project changes saved.", locale);
-      publishFeedback({ ownerId, kind: "success", message: statusMessage });
+      if (removedStepIds.length > 0) {
+        const projectPath = resolve("/projects/[id]", {
+          id: String(result.id),
+        });
+        publishSavedWithRemovals({
+          session: currentSession,
+          ownerId,
+          locale,
+          items: removedStepIds.map((stepId) => ({
+            kind: "step" as const,
+            id: stepId,
+          })),
+          // The project page loads itself once: reload it when it is the page on screen.
+          onRestored: () =>
+            window.location.pathname === projectPath
+              ? window.location.reload()
+              : goto(projectPath),
+        });
+      } else {
+        publishFeedback({ ownerId, kind: "success", message: statusMessage });
+      }
       // The import is done with: take it off the "Waiting for review" list.
       if (importedDraftId !== null) {
         try {

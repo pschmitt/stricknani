@@ -467,6 +467,7 @@
     <string name="sync_issue_yarn_create">Garn erstellen</string>
     <string name="sync_issue_yarn_update">Garn aktualisieren</string>
     <string name="sync_issue_yarn_delete">Garn löschen</string>
+    <string name="sync_issue_trash_restore">Aus dem Papierkorb wiederherstellen</string>
     <string name="sync_issue_unknown_change">Eine Änderung</string>
     <string name="sync_issue_conflict_headline">Woanders geändert</string>
     <string name="sync_issue_conflict_detail">Das wurde inzwischen auf einem anderen Gerät bearbeitet, deshalb bleibt die neuere Version.</string>
@@ -1562,6 +1563,8 @@
     <string name="trash_undo">Rückgängig</string>
     <string name="mutation_moved_to_trash">In den Papierkorb verschoben.</string>
     <string name="mutation_trash_restored">Aus dem Papierkorb wiederhergestellt.</string>
+    <string name="mutation_saved_removed_to_trash">Gespeichert. Was du entfernt hast, liegt 90 Tage im Papierkorb.</string>
+    <string name="mutation_trash_restore_queued">Wiederherstellung vorgemerkt. Der Eintrag kommt zurück, sobald die App sie senden kann.</string>
     <string name="mutation_trash_purged">Endgültig gelöscht.</string>
     <string name="error_trash_gone">Dieses Element ist nicht mehr im Papierkorb.</string>
     <string name="error_trash_restore_failed">Das Element konnte nicht wiederhergestellt werden.</string>
@@ -1607,4 +1610,6 @@
         <item quantity="one">%d Filtervorschlag</item>
         <item quantity="other">%d Filtervorschläge</item>
     </plurals>
+
+    <string name="trash_banner_delete_dialog_title">Endgültig löschen?</string>
 </resources>

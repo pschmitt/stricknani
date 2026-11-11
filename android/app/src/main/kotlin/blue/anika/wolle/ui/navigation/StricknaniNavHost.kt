@@ -538,6 +538,8 @@ fun StricknaniNavHost(
                             }
                         },
                         onPurged = { navController.navigateUp() },
+                        onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
+                        onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
                     )
                 }
                 screen<Route.AdminAccounts>(motion) {

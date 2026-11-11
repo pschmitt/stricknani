@@ -3,8 +3,10 @@ package blue.anika.wolle.data.db.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 
 /** A synced yarn. See [ProjectEntity]'s kdoc for the flat-columns-plus-detailJson rationale. */
+@Serializable
 @Entity(tableName = "yarns")
 data class YarnEntity(
     @PrimaryKey val id: Int,

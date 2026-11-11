@@ -37,6 +37,11 @@ data class TrashItemDto(
     val parent: TrashParentDto? = null,
     /** Only for child kinds: a short extra line (a step number, a file name). */
     val detail: String? = null,
+    /**
+     * A project's cover, a yarn's photo or the picture itself for an image or photo; an owner- and
+     * administrator-scoped `/media/...` path that also works while the item is in the trash.
+     */
+    @SerialName("thumbnail_url") val thumbnailUrl: String? = null,
 )
 
 @Serializable

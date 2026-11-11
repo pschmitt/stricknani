@@ -61,3 +61,55 @@ export function publishMovedToTrash(options: TrashedFeedback): number {
     },
   });
 }
+
+export interface SavedRemovalFeedback {
+  session: SessionData;
+  ownerId: number;
+  locale?: Locale;
+  /** What the save moved to the trash, in the order it is restored (steps before their images). */
+  items: { kind: TrashKind; id: number }[];
+  /** Runs after a successful undo, for example to reload the saved item. */
+  onRestored?: () => void | Promise<void>;
+}
+
+/**
+ * Confirms a save that left steps or photos out (the server trashes them) and offers "Undo",
+ * which restores exactly those items.
+ */
+export function publishSavedWithRemovals(
+  options: SavedRemovalFeedback,
+): number {
+  const { session, ownerId, locale, items, onRestored } = options;
+  return publishFeedback({
+    ownerId,
+    kind: "success",
+    message: t("Saved. What you removed is in the trash for 90 days.", locale),
+    action: {
+      label: t("Undo", locale),
+      onAction: async () => {
+        try {
+          for (const item of items) {
+            await restoreTrashItem(item.kind, item.id, session);
+          }
+        } catch (error) {
+          publishFeedback({
+            ownerId,
+            kind: "error",
+            message: restoreErrorMessage(error, locale),
+          });
+          return;
+        }
+        publishFeedback({
+          ownerId,
+          kind: "success",
+          message: t("Restored from the trash.", locale),
+        });
+        try {
+          await onRestored?.();
+        } catch {
+          // The items are back; a failed refresh is not worth a second error.
+        }
+      },
+    },
+  });
+}

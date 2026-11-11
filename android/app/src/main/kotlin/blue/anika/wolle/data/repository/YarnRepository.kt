@@ -34,6 +34,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import retrofit2.HttpException
 import timber.log.Timber
@@ -264,6 +265,8 @@ constructor(
 
     suspend fun deleteYarn(id: Int) {
         database.withTransaction {
+            // Kept with the queued delete so that Undo can put the row back before it is sent.
+            val snapshot = yarnDao.getById(id)?.let { json.encodeToString(it) }
             yarnDao.deleteByIds(listOf(id))
             pendingMutationDao.deleteResolvedConflicts(MutationEntityType.YARN, id)
             pendingMutationDao.insert(
@@ -271,12 +274,29 @@ constructor(
                     entityType = MutationEntityType.YARN,
                     operation = MutationOperation.DELETE,
                     localId = id,
-                    payloadJson = null,
+                    payloadJson = snapshot,
                     createdAt = System.currentTimeMillis(),
                 )
             )
         }
     }
+
+    /**
+     * Undo of [deleteYarn] while the delete is still in the write queue: drops the queued delete
+     * and puts the cached row back. False when nothing could be cancelled (the delete was already
+     * sent, or was queued without a snapshot); the caller then restores from the server's trash.
+     */
+    suspend fun undoQueuedDelete(id: Int): Boolean = database.withTransaction {
+        val snapshot =
+            QueuedDeleteUndo.cancelQueuedDelete(pendingMutationDao, MutationEntityType.YARN, id)
+                ?: return@withTransaction false
+        yarnDao.upsertAll(listOf(json.decodeFromString<YarnEntity>(snapshot)))
+        true
+    }
+
+    /** Whether the delete of this row still waits in the write queue. */
+    suspend fun hasQueuedDelete(id: Int): Boolean =
+        QueuedDeleteUndo.hasQueuedDelete(pendingMutationDao, MutationEntityType.YARN, id)
 
     suspend fun queuePhotoUpload(yarnId: Int, upload: PendingUpload) {
         database.withTransaction {

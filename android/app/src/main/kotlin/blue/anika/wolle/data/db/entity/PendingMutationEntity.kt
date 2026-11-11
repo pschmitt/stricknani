@@ -7,6 +7,9 @@ import androidx.room.PrimaryKey
 object MutationEntityType {
     const val PROJECT = "project"
     const val YARN = "yarn"
+
+    /** A queued "restore from the trash" (undo of a delete that already reached the server). */
+    const val TRASH = "trash"
 }
 
 /** [PendingMutationEntity.operation]. */
@@ -14,6 +17,7 @@ object MutationOperation {
     const val CREATE = "create"
     const val UPDATE = "update"
     const val DELETE = "delete"
+    const val TRASH_RESTORE = "trash_restore"
     const val PROJECT_TITLE_IMAGE_UPLOAD = "project_title_image_upload"
     const val PROJECT_STEP_IMAGE_UPLOAD = "project_step_image_upload"
     const val PROJECT_ATTACHMENT_UPLOAD = "project_attachment_upload"
@@ -32,8 +36,9 @@ object MutationOperation {
  * for a still-unsynced [MutationOperation.CREATE] (see `ProjectRepository.createProject`/
  * `YarnRepository.createYarn`), or the real server id otherwise. [payloadJson] is the write request
  * DTO (`ProjectWriteRequest`/`YarnWriteRequest`), a serialized `PendingUpload` for a media upload,
- * or a serialized deletion payload for an image/attachment delete, verbatim JSON - `null` for a
- * regular entity delete.
+ * or a serialized deletion payload for an image/attachment delete, verbatim JSON. A regular
+ * project/yarn delete keeps a `QueuedDeleteSnapshot` of the removed cache row so that Undo can put
+ * it back while the delete is still queued (`null` for deletes queued by older app versions).
  */
 @Entity(tableName = "pending_mutations")
 data class PendingMutationEntity(

@@ -2984,11 +2984,17 @@ web (`web/src/lib/features/trash`).
 - [x] Audit log (list and detail), Recent changes and Home activity know `trashed`, `restored` and
       `purged`, `resource.state`/`trash`, the system purge and the owner line; an item in the trash
       leads to the Trash screen, never to its page. Restore button in the audit detail when allowed.
-- [ ] Undo and the trash wording for steps, images and photos removed in the editors: the editors save
-      them with the form (queued writes), so there is no single delete to undo. The Trash screen already
-      lists and restores every kind the server sends (step, image, attachment, photo, category).
-- [ ] Undo of a project or yarn deleted while offline: the delete is still in the write queue, so
-      Undo needs a connection and waits for the queue to reach the server (retries for a few seconds).
+- [x] Undo for steps, images and photos removed in the editors: a save that left steps out or
+      removed images (project) or photos (yarn) says "Saved. What you removed is in the trash for 90
+      days." with Undo (`MutationFeedback.showTrashedBySave`, `ui/trash/SaveRemovals.kt`). Undo queues
+      a `trash_restore` write behind the save, so it also works before the save reached the server.
+      The web offers the same for steps removed in the project editor (images and photos there are
+      deleted at once and already had Undo).
+- [x] Undo of a project or yarn deleted while offline: the queued DELETE keeps a snapshot of the
+      cache row. Undo cancels the still-queued delete and puts the row back
+      (`QueuedDeleteUndo`, `ProjectRepository.undoQueuedDelete`); once the delete was sent, Undo calls
+      the restore endpoint, or queues a `trash_restore` when offline (replayed by
+      `WriteReplayWorker`). Unit-tested in `QueuedDeleteUndoTest`.
 - [x] Command palette: a "Trash" page entry.
 - [x] Read-only detail of a trashed project or yarn (`ui/trash/TrashedItem*`, route `TrashedItem`):
       online-only, fetched by id and not stored in Room, with the "in the trash, deleted permanently in
@@ -3000,3 +3006,9 @@ web (`web/src/lib/features/trash`).
       Room, so a client-side filter would always be empty), with the owner chip (`owner=`) and status
       pill sent to the server, the Trash screen's loading / offline / error panels, and a card tap that
       opens the read-only trashed page. Search, category, tag and favourites narrow the fetched list.
+      N days" banner, Restore (then sync and the normal detail) and "Delete permanently" (button and
+      dialog, as on the web). The body is the normal `ProjectDetailContent` / `YarnDetailContent` in
+      read-only mode (markdown, pictures, steps, linked yarns or projects from the cache, metadata).
+      Trash rows of kind project/yarn open it.
+- [x] Trash rows show the item's cover or picture (`thumbnail_url`), an icon for categories, steps
+      and attachments.

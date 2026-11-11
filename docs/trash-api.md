@@ -62,7 +62,7 @@ Owner or administrator only; anyone else gets `404`.
 * `GET /api/v2/trash?scope=mine|all` lists the caller's trash
   (`all`: administrators only, others always get `mine`):
   `{"data": [{kind, id, name, owner, deleted_at, purge_at, days_remaining,
-  parent?, detail?}], "meta": {"scope", "retention_days": 90}}`. `kind` is
+  parent?, detail?, thumbnail_url?}], "meta": {"scope", "retention_days": 90}}`. `kind` is
   `project`, `yarn`, `category`, `step`, `image`, `attachment` or `photo`.
   Children carry `parent` (`{kind: "project"|"yarn", id, name}`).
 * `POST /api/v2/trash/{segment}/{id}/restore` answers `204`.
@@ -71,6 +71,21 @@ Owner or administrator only; anyone else gets `404`.
 `segment` is `projects`, `yarns`, `categories`, `steps`, `images`,
 `attachments` or `photos`; image, attachment and photo ids are the public media
 ids the API already uses.
+
+`thumbnail_url` is a path the owner and administrators can load: a project's
+cover or a yarn's primary photo (`/media/thumbnails/...`, the media routes serve
+the files of a trashed project or yarn to them), and for an `image` or `photo`
+trashed on its own `GET /api/v2/trash/{images|photos}/{id}/thumbnail`. The normal
+media URLs of a file in the trash stay `404`. Absent for categories, steps and
+attachments.
+
+### Legacy URL aliases
+
+Files imported from the old app can have `media_url_aliases` (old file and
+thumbnail names). Trashing a file moves its aliases to
+`trashed_media_url_aliases` (migration `0033`). The old URLs answer `404` while the
+file is in the trash (like its normal URL), a restore puts them back and a purge
+drops them with the trashed row.
 
 ### Parents and children
 

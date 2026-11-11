@@ -24,6 +24,11 @@ import blue.anika.wolle.data.errorreporting.SyncFailureKind
 import blue.anika.wolle.data.errorreporting.SyncFailureReport
 import blue.anika.wolle.data.errorreporting.SyncFailureReportSanitizer
 import blue.anika.wolle.data.repository.ProjectRepository
+import blue.anika.wolle.data.repository.QueuedRestore
+import blue.anika.wolle.data.repository.TrashException
+import blue.anika.wolle.data.repository.TrashFailure
+import blue.anika.wolle.data.repository.TrashRef
+import blue.anika.wolle.data.repository.TrashRepository
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.uploads.PendingAttachmentDelete
@@ -62,6 +67,7 @@ constructor(
     private val pendingMutationDao: PendingMutationDao,
     private val projectRepository: ProjectRepository,
     private val yarnRepository: YarnRepository,
+    private val trashRepository: TrashRepository,
     private val json: Json,
     private val settingsRepository: SettingsRepository,
     private val errorReportingController: ErrorReportingController,
@@ -180,7 +186,31 @@ constructor(
         when (mutation.entityType) {
             MutationEntityType.PROJECT -> replayProject(mutation)
             MutationEntityType.YARN -> replayYarn(mutation)
+            MutationEntityType.TRASH -> replayTrash(mutation)
             else -> error("Unknown mutation entity type: ${mutation.entityType}")
+        }
+    }
+
+    /** An Undo tapped while the delete had already been sent and the device was offline. */
+    private suspend fun replayTrash(mutation: PendingMutationEntity) {
+        when (mutation.operation) {
+            MutationOperation.TRASH_RESTORE -> {
+                val restore = json.decodeFromString<QueuedRestore>(mutation.payloadJson!!)
+                try {
+                    trashRepository.restore(TrashRef(restore.kind, restore.id))
+                } catch (failure: TrashException) {
+                    when (failure.failure) {
+                        // Restored elsewhere, or deleted for good since: nothing left to do.
+                        TrashFailure.NotFound -> Unit
+                        TrashFailure.ParentInTrash ->
+                            throw ConflictException(PARENT_IN_TRASH_MESSAGE, 409)
+                        TrashFailure.NameTaken -> throw ConflictException(NAME_TAKEN_MESSAGE, 409)
+                        TrashFailure.NotAllowed -> throw ConflictException(NOT_ALLOWED_MESSAGE, 403)
+                        else -> throw failure
+                    }
+                }
+            }
+            else -> error("Unknown trash mutation operation: ${mutation.operation}")
         }
     }
 
@@ -304,6 +334,12 @@ constructor(
 
 private const val NOT_ALLOWED_MESSAGE =
     "Your access to this item changed - your change was not saved. Your draft is kept here."
+
+private const val PARENT_IN_TRASH_MESSAGE =
+    "The project or yarn is still in the trash - restore it first, then restore this item from the Trash screen."
+
+private const val NAME_TAKEN_MESSAGE =
+    "A category with this name exists again - rename one of them, then restore it from the Trash screen."
 
 private fun HttpException.errorBodyText(): String = response()?.errorBody()?.string().orEmpty()
 

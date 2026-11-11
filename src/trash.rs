@@ -125,6 +125,11 @@ pub struct TrashItem {
     pub purge_at: String,
     /// Whole days left, rounded up; `0` once the purge is due.
     pub days_remaining: i64,
+    /// Cover or photo to show next to the item: a project's cover image, a
+    /// yarn's primary photo, the picture itself for an image or photo.
+    /// Readable by the owner and administrators while the item is trashed.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub thumbnail_url: Option<String>,
     /// Children only: the project or yarn they belong to.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parent: Option<TrashParent>,
@@ -178,6 +183,7 @@ struct ListRow {
     deleted_at: String,
     parent: Option<TrashParent>,
     detail: Option<String>,
+    thumbnail_url: Option<String>,
 }
 
 /// Items in the trash, newest deletion first. `Mine` lists the caller's own;
@@ -212,6 +218,7 @@ pub(crate) async fn list(
         ),
     ] {
         for row in sqlx::query(sql).bind(owner).fetch_all(&state.pool).await? {
+            let thumbnail_url = cover_thumbnail(&state.pool, kind, row.get(0)).await?;
             rows.push(ListRow {
                 kind,
                 id: row.get(0),
@@ -220,6 +227,7 @@ pub(crate) async fn list(
                 deleted_at: row.get(3),
                 parent: None,
                 detail: None,
+                thumbnail_url,
             });
         }
     }
@@ -245,6 +253,7 @@ pub(crate) async fn list(
                 name: row.get(5),
             }),
             detail: None,
+            thumbnail_url: None,
         });
     }
     // Files trashed on their own whose project or yarn is live and whose step
@@ -277,6 +286,13 @@ pub(crate) async fn list(
             },
             _ => continue,
         };
+        // The file is out of the live media routes; the trash serves its thumbnail.
+        let public_id: i64 = row.get(0);
+        let thumbnail_url = match media_kind.as_str() {
+            "attachment" => None,
+            "photo" => Some(format!("/api/v2/trash/photos/{public_id}/thumbnail")),
+            _ => Some(format!("/api/v2/trash/images/{public_id}/thumbnail")),
+        };
         rows.push(ListRow {
             kind: match media_kind.as_str() {
                 "attachment" => "attachment",
@@ -289,6 +305,7 @@ pub(crate) async fn list(
             deleted_at: row.get(3),
             parent: Some(parent),
             detail: None,
+            thumbnail_url,
         });
     }
     rows.sort_by(|a, b| (&b.deleted_at, a.kind, b.id).cmp(&(&a.deleted_at, b.kind, a.id)));
@@ -321,9 +338,37 @@ pub(crate) async fn list(
             deleted_at: row.deleted_at,
             parent: row.parent,
             detail: row.detail,
+            thumbnail_url: row.thumbnail_url,
         });
     }
     Ok((scope, items))
+}
+
+/// Thumbnail of the picture that stands for a trashed project (its cover) or
+/// yarn (its primary photo); `None` for other kinds or when it has no picture.
+async fn cover_thumbnail(
+    pool: &SqlitePool,
+    kind: &str,
+    id: i64,
+) -> Result<Option<String>, sqlx::Error> {
+    let (sql, subdir) = match kind {
+        "project" => (
+            "SELECT filename FROM media_files WHERE project_id = ?1 AND kind IN ('title', 'step') \
+             ORDER BY is_project_cover DESC, is_primary DESC, position, id LIMIT 1",
+            "projects",
+        ),
+        "yarn" => (
+            "SELECT filename FROM media_files WHERE yarn_id = ?1 AND kind = 'photo' \
+             ORDER BY is_primary DESC, position, id LIMIT 1",
+            "yarns",
+        ),
+        _ => return Ok(None),
+    };
+    let filename: Option<String> = sqlx::query_scalar(sql)
+        .bind(id)
+        .fetch_optional(pool)
+        .await?;
+    Ok(filename.map(|name| crate::media::thumbnail_url(subdir, id, &name)))
 }
 
 /// Whether `actor_id` may restore or purge items of `owner_id`: the owner and
