@@ -225,8 +225,8 @@ fun PhotoEditHostProvider(content: @Composable (Modifier) -> Unit) {
 }
 
 /** Saturated delete red, fixed in both themes; white on it is at least 4.5:1 (5.6 and 4.6). */
-private val DeleteRedLight = Color(0xFFC62828)
-private val DeleteRedDark = Color(0xFFD93A3A)
+internal val DeleteRedLight = Color(0xFFC62828)
+internal val DeleteRedDark = Color(0xFFD93A3A)
 
 /** One thumbnail in an [EditorPhotoStrip]: a server URL or a local file path for [model]. */
 data class EditorPhoto(
@@ -271,7 +271,6 @@ fun EditorPhotoStrip(
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val spacingPx = with(LocalDensity.current) { 10.dp.toPx() }
     val currentReorder by rememberUpdatedState(reorder)
-    var draggedKey by remember { mutableStateOf<String?>(null) }
     // Edit mode (long-press any photo): every tile jiggles and shows its trash; selectedKey is the
     // photo that was pressed. interaction restarts the idle timer that ends the mode.
     var editing by remember { mutableStateOf(false) }
@@ -279,12 +278,12 @@ fun EditorPhotoStrip(
     var interaction by remember { mutableIntStateOf(0) }
     var stripBounds by remember { mutableStateOf<Rect?>(null) }
     val editHost = LocalPhotoEditHost.current
+    // Reorder mode: long-press expands the strip into a larger grid until Done.
+    val gridMode = editing && reorder != null && reorder.count > 1
     val stopEditing = {
         editing = false
         selectedKey = null
     }
-    var dragDelta by remember { mutableFloatStateOf(0f) }
-    var startOffset by remember { mutableIntStateOf(0) }
 
     // The editor fills the strip after it first shows only the add tile; Lazy lists keep the item
     // they were anchored on (the add tile), so jump back to the first photo once photos arrive.
@@ -292,9 +291,9 @@ fun EditorPhotoStrip(
     LaunchedEffect(hasPhotos) { if (hasPhotos) listState.scrollToItem(0) }
 
     // Edit mode ends on Back, a tap outside the strip (see [PhotoEditHost]), or after 5s idle.
-    BackHandler(enabled = editing) { stopEditing() }
-    LaunchedEffect(editing, interaction, draggedKey) {
-        if (editing && draggedKey == null) {
+    BackHandler(enabled = editing && !gridMode) { stopEditing() }
+    LaunchedEffect(editing, interaction, gridMode) {
+        if (editing && !gridMode) {
             delay(EDIT_IDLE_MILLIS)
             stopEditing()
         }
@@ -304,59 +303,21 @@ fun EditorPhotoStrip(
         if (photos.isEmpty()) editing = false
     }
     LaunchedEffect(listState.isScrollInProgress) { if (listState.isScrollInProgress) interaction++ }
-    DisposableEffect(editing) {
-        if (editing) editHost?.activate(stopEditing) { stripBounds }
+    DisposableEffect(editing, gridMode) {
+        if (editing && !gridMode) editHost?.activate(stopEditing) { stripBounds }
         onDispose { editHost?.deactivate(stopEditing) }
     }
 
-    // While a thumbnail is held: keep the strip scrolling near its edges and swap places whenever
-    // the held thumbnail's centre crosses another reorderable one.
-    LaunchedEffect(draggedKey) {
-        val key = draggedKey ?: return@LaunchedEffect
-        // After a swap the layout still shows the old order for a frame; wait until the held
-        // thumbnail reports its new index so the same swap is not undone straight away.
-        var awaitingIndex: Int? = null
-        var settleFrames = 0
-        while (isActive) {
-            withFrameNanos {}
-            val layout = listState.layoutInfo
-            val held = layout.visibleItemsInfo.firstOrNull { it.key == key } ?: continue
-            awaitingIndex?.let { expected ->
-                if (held.index != expected && ++settleFrames < MAX_SETTLE_FRAMES) continue
-                awaitingIndex = null
-            }
-            val left = startOffset + dragDelta
-            val edge = held.size * 0.35f
-            when {
-                left < layout.viewportStartOffset + edge -> listState.scrollBy(-EDGE_SCROLL_STEP)
-                left + held.size > layout.viewportEndOffset - edge ->
-                    listState.scrollBy(EDGE_SCROLL_STEP)
-            }
-            val stride = held.size + spacingPx
-            val count = currentReorder?.count ?: 0
-            // Offset from where the held photo's own slot currently is (the list may re-anchor its
-            // scroll to follow the moved photo, so absolute positions are not stable).
-            val slot =
-                (held.index + Math.round((left - held.offset) / stride)).coerceIn(
-                    0,
-                    (count - 1).coerceAtLeast(0),
-                )
-            if (held.index < count && slot != held.index) {
-                // A moved item makes a lazy list re-anchor its scroll on it; keep the strip where
-                // it
-                // was so the other photos do not appear to jump under the finger.
-                val anchorIndex = listState.firstVisibleItemIndex
-                val anchorOffset = listState.firstVisibleItemScrollOffset
-                currentReorder?.onMove?.invoke(held.index, slot)
-                withFrameNanos {}
-                listState.scrollToItem(anchorIndex, anchorOffset)
-                awaitingIndex = slot
-                settleFrames = 0
-                haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
-            }
-        }
+    if (gridMode && reorder != null) {
+        PhotoReorderGrid(
+            photos = photos,
+            reorder = reorder,
+            removeLabel = removeLabel,
+            onDone = stopEditing,
+            modifier = modifier,
+        )
+        return
     }
-
     LazyRow(
         state = listState,
         modifier =
@@ -366,19 +327,12 @@ fun EditorPhotoStrip(
     ) {
         itemsIndexed(photos, key = { _, photo -> photo.key }) { index, photo ->
             val reorderable = reorder != null && index < reorder.count
-            val held = draggedKey == photo.key
             val selected = selectedKey == photo.key
-            val lift by
-                animateFloatAsState(
-                    if (held) 1.06f else 1f,
-                    animationSpec = if (reduceMotion) snap() else spring(),
-                    label = "photo-lift",
-                )
             // Eased in and out so edit mode settles smoothly; the loop only runs while there is
             // something to show, and is read inside graphicsLayer so the strip does not recompose.
             val jiggleAmount =
                 animateFloatAsState(
-                    if (editing && !held && !reduceMotion) 1f else 0f,
+                    if (editing && !reduceMotion) 1f else 0f,
                     animationSpec = tween(180),
                     label = "jiggle-amount",
                 )
@@ -411,66 +365,31 @@ fun EditorPhotoStrip(
             Box(
                 Modifier.size(thumbnailSize.dp)
                     // Always present (a changing modifier chain would restart the gestures below);
-                    // the held photo and reduced motion just get no placement animation.
+                    // reduced motion just gets no placement animation.
                     .animateItem(
                         fadeInSpec = null,
-                        placementSpec = if (held || reduceMotion) null else spring(),
+                        placementSpec = if (reduceMotion) null else spring(),
                         fadeOutSpec = null,
                     )
-                    .zIndex(if (held) 1f else 0f)
                     // A tap in edit mode just keeps it alive; tapping outside the strip ends it.
                     .pointerInput(photo.key) { detectTapGestures(onTap = { interaction++ }) }
-                    // Long-press: enter edit mode with this photo selected; keep dragging to
-                    // reorder.
+                    // Long-press: enter edit mode with this photo selected. With reordering the
+                    // mode is the expanded grid (see [PhotoReorderGrid]); dragging happens there.
                     .pointerInput(photo.key) {
                         detectDragGesturesAfterLongPress(
                             onDragStart = {
-                                val info =
-                                    listState.layoutInfo.visibleItemsInfo.firstOrNull {
-                                        it.key == photo.key
-                                    }
                                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                 editing = true
                                 selectedKey = photo.key
                                 interaction++
-                                if (info != null && reorderable) {
-                                    startOffset = info.offset
-                                    dragDelta = 0f
-                                    draggedKey = photo.key
-                                }
                             },
-                            onDrag = { change, amount ->
-                                change.consume()
-                                if (draggedKey == photo.key) {
-                                    dragDelta += if (rtl) -amount.x else amount.x
-                                }
-                            },
-                            onDragEnd = {
-                                // Pressed without moving: stay selected. A real drag just reorders.
-                                if (abs(dragDelta) > DRAG_SLOP_PX) selectedKey = null
-                                draggedKey = null
-                            },
-                            onDragCancel = { draggedKey = null },
+                            onDrag = { change, _ -> change.consume() },
                         )
                     }
-                    // Outside the layer below, so the pointer coordinates do not move with the
-                    // lift.
                     .graphicsLayer {
                         val amount = jiggleAmount.value
                         rotationZ = jigglePhase.value * JIGGLE_DEGREES * amount
                         translationY = -abs(jigglePhase.value) * JIGGLE_BOB_DP.dp.toPx() * amount
-                        if (held) {
-                            val info =
-                                listState.layoutInfo.visibleItemsInfo.firstOrNull {
-                                    it.key == photo.key
-                                }
-                            val shift = dragDelta + startOffset - (info?.offset ?: startOffset)
-                            translationX = shift
-                            scaleX = lift
-                            scaleY = lift
-                            shadowElevation = 12.dp.toPx()
-                            shape = RoundedCornerShape(16.dp)
-                        }
                     }
                     .focusable()
                     .semantics(mergeDescendants = true) {
@@ -568,33 +487,6 @@ fun EditorPhotoStrip(
                         }
                     }
                 }
-                if (editing && canMakeCover) {
-                    // Top start, like the grip on the website: a small star badge, 44dp target.
-                    IconButton(
-                        onClick = {
-                            interaction++
-                            currentReorder?.onMove?.invoke(index, 0)
-                            haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
-                            stopEditing()
-                        },
-                        modifier = Modifier.align(Alignment.TopStart).padding(1.dp).size(44.dp),
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = Color.Black.copy(alpha = 0.6f),
-                            contentColor = Color.White,
-                            modifier = Modifier.size(30.dp),
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    Icons.Filled.Star,
-                                    contentDescription = makeCoverLabel,
-                                    modifier = Modifier.size(18.dp),
-                                )
-                            }
-                        }
-                    }
-                }
                 if (editing) {
                     // 48dp touch target, small visible red badge; only in edit mode.
                     IconButton(
@@ -672,16 +564,13 @@ private fun AddPhotoTile(icon: ImageVector, label: String, size: Int, onClick: (
     }
 }
 
-private const val EDGE_SCROLL_STEP = 14f
-private const val DRAG_SLOP_PX = 8f
 private const val EDIT_IDLE_MILLIS = 5_000L
 private const val JIGGLE_DEGREES = 1.8f
 private const val JIGGLE_BOB_DP = 0.8f
-private const val MAX_SETTLE_FRAMES = 6
 
 /** The cover tag on the first photo: a small star chip, named "Cover" for screen readers. */
 @Composable
-private fun CoverTag(modifier: Modifier = Modifier) {
+internal fun CoverTag(modifier: Modifier = Modifier) {
     Surface(
         shape = CircleShape,
         color = MaterialTheme.colorScheme.primaryContainer,
