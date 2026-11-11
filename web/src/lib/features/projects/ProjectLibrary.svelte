@@ -12,7 +12,9 @@
   import LibraryCard from "#lib/components/LibraryCard.svelte";
   import LibraryGrid from "#lib/components/LibraryGrid.svelte";
   import { t } from "#lib/i18n.svelte.ts";
-  import { scopeFor, setScope } from "#lib/library-scope.svelte.ts";
+  import OwnerFilterPills from "#lib/components/OwnerFilterPills.svelte";
+  import { listOwners } from "#lib/owner-filter.ts";
+  import type { ResourceOwner } from "#lib/owner.ts";
   import { foreignOwner } from "#lib/owner.ts";
   import { session } from "#lib/session.svelte.ts";
   import ImportDraftCards from "#lib/features/imports/ImportDraftCards.svelte";
@@ -42,24 +44,23 @@
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
-  const scope = $derived(scopeFor(session.data?.user));
-  const scopeUser = $derived(session.data?.user ?? null);
-  const scopeIsMine = $derived(
-    Boolean(scopeUser?.is_admin) && scope === "mine",
-  );
-
-  function resetScope() {
-    if (scopeUser) setScope(scopeUser, "all");
-  }
+  // Administrators always list everybody's projects; the owner filter narrows them.
+  const scope = $derived(session.data?.user?.is_admin ? "all" : "mine");
+  let owners = $state<ResourceOwner[]>([]);
   const hasFilters = $derived(
     Boolean(
       filters.query ||
       filters.category ||
       filters.tag ||
       filters.favorite ||
-      scopeIsMine,
+      filters.status ||
+      filters.owner,
     ),
   );
+  const statusFilters = $derived([
+    { value: "in_progress" as const, label: t("Project in progress", locale) },
+    { value: "done" as const, label: t("Done", locale) },
+  ]);
   const categories = $derived(
     [
       ...new Set([
@@ -69,7 +70,11 @@
     ].sort((left, right) => left.localeCompare(right, locale)),
   );
   const allFilterSelected = $derived(
-    !filters.category && !filters.tag && !filters.favorite && !scopeIsMine,
+    !filters.category &&
+      !filters.tag &&
+      !filters.favorite &&
+      !filters.status &&
+      !filters.owner,
   );
   const availableCategories = $derived(
     filters.category && !categories.includes(filters.category)
@@ -105,6 +110,7 @@
     items = [];
     categoryNames = [];
     tagNames = [];
+    owners = [];
     if (currentUserId === null) {
       loadState = "error";
       errorMessage = t("Sign in to view your projects.", locale);
@@ -137,6 +143,14 @@
       .catch(() => {
         if (!controller.signal.aborted) categoryNames = [];
       });
+    void listOwners("projects", controller.signal, currentScope)
+      .then((result) => {
+        if (controller.signal.aborted) return;
+        owners = result;
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) owners = [];
+      });
     void listProjectTags(controller.signal, currentScope)
       .then((result) => {
         if (controller.signal.aborted) return;
@@ -167,19 +181,26 @@
 
   function clearFilters() {
     searchText = "";
-    resetScope();
     applyFilters({
       query: "",
       category: "",
       tag: "",
       favorite: false,
+      status: "",
+      owner: "",
       page: 1,
     });
   }
 
   function clearBrowseFilters() {
-    resetScope();
-    applyFilters({ ...filters, category: "", tag: "", favorite: false });
+    applyFilters({
+      ...filters,
+      category: "",
+      tag: "",
+      favorite: false,
+      status: "",
+      owner: "",
+    });
   }
 
   function changePage(nextPage: number) {
@@ -285,19 +306,29 @@
     >
       {t("Favorites only", locale)}
     </button>
-    {#if scopeUser?.is_admin}
+    {#each statusFilters as option (option.value)}
       <button
         class="filter-pill"
-        class:filter-pill--selected={scopeIsMine}
+        class:filter-pill--selected={filters.status === option.value}
         type="button"
-        aria-pressed={scopeIsMine}
-        data-testid="project-filter-mine"
+        aria-pressed={filters.status === option.value}
+        data-testid={`project-filter-status-${option.value}`}
         onclick={() =>
-          scopeUser && setScope(scopeUser, scopeIsMine ? "all" : "mine")}
+          applyFilters({
+            ...filters,
+            status: filters.status === option.value ? "" : option.value,
+          })}
       >
-        {t("Mine", locale)}
+        {option.label}
       </button>
-    {/if}
+    {/each}
+    <OwnerFilterPills
+      choice={filters.owner}
+      {owners}
+      {locale}
+      kind="project"
+      onselect={(owner) => applyFilters({ ...filters, owner })}
+    />
     {#each availableCategories as category (category)}
       <button
         class="filter-pill"
@@ -387,6 +418,7 @@
           meta={item.category}
           updated={`${t("Updated", locale)} ${formatDate(item.updated_at)}`}
           chips={item.tags}
+          status={item.status}
           owner={foreignOwner(item.owner, userId)}
           favorite={item.is_favorite}
           favoriteBusy={favoriteBusyIds.includes(item.id)}

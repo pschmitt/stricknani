@@ -3,11 +3,27 @@ import { t } from "#lib/i18n.svelte.ts";
 import { accessField, type ResourceAccess } from "#lib/access.ts";
 import { ownerField, type ResourceOwner } from "#lib/owner.ts";
 import type { LibraryScope } from "#lib/library-scope.svelte.ts";
+import { ownerChoiceFromParam, type OwnerChoice } from "#lib/owner-filter.ts";
 import {
   applyListScope,
   type ListScope,
   type YarnWrite,
 } from "../yarns/yarn-api.ts";
+
+export const PROJECT_STATUSES = ["in_progress", "done"] as const;
+export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
+
+export function projectStatusField(value: unknown): ProjectStatus {
+  // Servers that predate project status omit the field: everything is in progress.
+  return value === "done" ? "done" : "in_progress";
+}
+
+export function isProjectStatus(value: unknown): value is ProjectStatus {
+  return (
+    typeof value === "string" &&
+    (PROJECT_STATUSES as readonly string[]).includes(value)
+  );
+}
 
 export interface ProjectSummary {
   id: number;
@@ -15,6 +31,7 @@ export interface ProjectSummary {
   category: string | null;
   tags: string[];
   is_favorite: boolean;
+  status: ProjectStatus;
   updated_at: string;
   preview_url: string | null;
   /** Who owns the project; absent on responses that predate owner info. */
@@ -115,6 +132,8 @@ export interface ProjectWrite {
   tags: string[];
   link: string | null;
   is_ai_enhanced: boolean;
+  /** Omitted on create: the server starts a project in progress. */
+  status?: ProjectStatus;
   yarn_ids: number[];
   /** Yarns created together with a new project and linked to it (imports). */
   new_yarns?: YarnWrite[];
@@ -136,6 +155,10 @@ export interface ProjectFilters {
   category: string;
   tag: string;
   favorite: boolean;
+  /** Empty shows every status. */
+  status: ProjectStatus | "";
+  /** Whose projects: empty = everybody's, `me`, `shared` or an owner id (`?owner=` of the URL). */
+  owner: OwnerChoice;
   page: number;
 }
 
@@ -154,6 +177,8 @@ const emptyFilters: ProjectFilters = {
   category: "",
   tag: "",
   favorite: false,
+  status: "",
+  owner: "",
   page: 1,
 };
 
@@ -165,11 +190,17 @@ export function filtersFromSearch(search: string): ProjectFilters {
     category: params.get("category")?.trim() ?? "",
     tag: params.get("tag")?.trim() ?? "",
     favorite: params.get("favorite") === "true",
+    status: statusParam(params.get("status")),
+    owner: ownerChoiceFromParam(params.get("owner")),
     page:
       Number.isSafeInteger(requestedPage) && requestedPage > 0
         ? requestedPage
         : emptyFilters.page,
   };
+}
+
+function statusParam(value: string | null): ProjectStatus | "" {
+  return isProjectStatus(value) ? value : "";
 }
 
 export function searchFromFilters(filters: ProjectFilters): string {
@@ -178,6 +209,8 @@ export function searchFromFilters(filters: ProjectFilters): string {
   if (filters.category) params.set("category", filters.category);
   if (filters.tag) params.set("tag", filters.tag);
   if (filters.favorite) params.set("favorite", "true");
+  if (filters.status) params.set("status", filters.status);
+  if (filters.owner) params.set("owner", filters.owner);
   if (filters.page > 1) params.set("page", String(filters.page));
   return params.toString();
 }
@@ -286,7 +319,7 @@ export async function createProject(
     signal,
   });
   if (!isRecord(payload)) throw invalidResponse();
-  return parseProjectDetailValue(payload.data);
+  return parseProjectDetail(payload.data);
 }
 
 export async function updateProject(
@@ -303,7 +336,7 @@ export async function updateProject(
     signal,
   });
   if (!isRecord(payload)) throw invalidResponse();
-  return parseProjectDetailValue(payload.data);
+  return parseProjectDetail(payload.data);
 }
 
 export async function deleteProject(
@@ -487,6 +520,20 @@ export async function setProjectFavorite(
   });
 }
 
+export async function setProjectStatus(
+  id: number,
+  status: ProjectStatus,
+  session: SessionData,
+): Promise<ProjectDetail> {
+  const payload: unknown = await apiRequest(`/api/v2/projects/${id}/status`, {
+    method: "PUT",
+    csrfToken: session.csrf_token,
+    body: { status },
+  });
+  if (!isRecord(payload)) throw invalidResponse();
+  return parseProjectDetail(payload.data);
+}
+
 function parseProjectSummary(value: unknown): ProjectSummary {
   if (
     !isRecord(value) ||
@@ -505,6 +552,7 @@ function parseProjectSummary(value: unknown): ProjectSummary {
     category: value.category,
     tags: value.tags,
     is_favorite: value.is_favorite,
+    status: projectStatusField(value.status),
     updated_at: value.updated_at,
     preview_url: value.preview_url,
     ...ownerField(value.owner),
@@ -562,6 +610,7 @@ function parseProjectDetailValue(value: unknown): ProjectDetail {
     category: value.category,
     tags: value.tags,
     is_favorite: value.is_favorite,
+    status: projectStatusField(value.status),
     updated_at: value.updated_at,
     preview_url: preview,
     yarn: value.yarn,

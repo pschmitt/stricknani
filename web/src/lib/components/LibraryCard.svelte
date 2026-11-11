@@ -2,6 +2,7 @@
   import FavoriteButton from "#lib/components/FavoriteButton.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import OwnerBadge from "#lib/components/OwnerBadge.svelte";
+  import StatusBadge from "#lib/components/StatusBadge.svelte";
   import type { ResourceOwner } from "#lib/owner.ts";
 
   export type LibraryCardKind = "project" | "yarn";
@@ -17,6 +18,8 @@
     updated?: string | null;
     /** Rendered as at most three chips. */
     chips?: string[];
+    /** Project status; a project that is done carries a badge, one in progress none. */
+    status?: "in_progress" | "done" | null;
     /** Set only for items the signed-in user does not own. */
     owner?: ResourceOwner | null;
     favorite: boolean;
@@ -34,6 +37,7 @@
     meta = null,
     updated = null,
     chips = [],
+    status = null,
     owner = null,
     favorite,
     favoriteBusy = false,
@@ -76,6 +80,11 @@
       {/if}
       {#if updated}
         <span class="library-card__updated">{updated}</span>
+      {/if}
+      {#if status === "done"}
+        <span class="library-card__status"
+          ><StatusBadge status="done" {locale} /></span
+        >
       {/if}
       {#if shownChips.length}
         <span class="library-card__chips">
@@ -201,6 +210,11 @@
     line-height: 1.35;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .library-card__status {
+    display: flex;
+    min-width: 0;
   }
 
   .library-card__chips {

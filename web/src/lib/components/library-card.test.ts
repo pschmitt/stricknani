@@ -52,4 +52,19 @@ describe("LibraryCard", () => {
     expect(body).toContain('aria-label="Remove from favorites"');
     expect(body).toContain("library-card--yarn");
   });
+
+  it("badges a done project and leaves one in progress plain", () => {
+    const done = render(LibraryCard, {
+      props: { ...base, status: "done" as const },
+    }).body;
+    expect(done).toContain("project-status-badge");
+    expect(done).toContain("Done");
+    const open = render(LibraryCard, {
+      props: { ...base, status: "in_progress" as const },
+    }).body;
+    expect(open).not.toContain("project-status-badge");
+    expect(render(LibraryCard, { props: base }).body).not.toContain(
+      "project-status-badge",
+    );
+  });
 });

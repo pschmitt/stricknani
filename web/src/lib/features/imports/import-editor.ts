@@ -65,6 +65,7 @@ export function projectFromImport(
       otherMaterials: editor.otherMaterials,
       tags: [],
       link: editor.link,
+      status: "in_progress",
       yarnIds: [],
       steps,
     },

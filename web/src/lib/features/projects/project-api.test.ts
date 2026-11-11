@@ -11,6 +11,7 @@ import {
   parseProjectDetail,
   searchFromFilters,
   setProjectFavorite,
+  setProjectStatus,
   updateProject,
   uploadProjectAttachment,
   uploadProjectImage,
@@ -22,6 +23,7 @@ const summary = {
   category: "Socks",
   tags: ["cables", "weekend"],
   is_favorite: false,
+  status: "in_progress",
   updated_at: "2026-10-31T12:00:00.000000Z",
   preview_url: "/media/thumbnails/projects/42/thumb_cover.jpg",
 };
@@ -128,11 +130,51 @@ describe("project URL state and API DTOs", () => {
       category: "Socks",
       tag: "weekend",
       favorite: true,
+      status: "",
+      owner: "",
       page: 3,
     });
     expect(searchFromFilters(filters)).toBe(
       "q=heel+turn&category=Socks&tag=weekend&favorite=true&page=3",
     );
+  });
+
+  it("reads and serializes the status filter and ignores unknown values", () => {
+    const filters = filtersFromSearch("?status=done&q=hat");
+    expect(filters.status).toBe("done");
+    expect(searchFromFilters(filters)).toBe("q=hat&status=done");
+    expect(filtersFromSearch("?status=in_progress").status).toBe("in_progress");
+    expect(filtersFromSearch("?status=archived").status).toBe("");
+    expect(searchFromFilters(filtersFromSearch("?status="))).toBe("");
+  });
+
+  it("treats a payload without status as in progress and keeps done", () => {
+    const { status: _status, ...legacy } = summary;
+    expect(parseProjectDetail({ ...detail, ...legacy }).status).toBe(
+      "in_progress",
+    );
+    expect(parseProjectDetail({ ...detail, status: "done" }).status).toBe(
+      "done",
+    );
+  });
+
+  it("puts the status in the quick toggle request and parses the answer", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        Response.json({ data: { ...detail, status: "done" } }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const updated = await setProjectStatus(42, "done", {
+      csrf_token: "csrf",
+    } as never);
+
+    expect(updated.status).toBe("done");
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("/api/v2/projects/42/status");
+    expect(init.method).toBe("PUT");
+    expect(JSON.parse(String(init.body))).toEqual({ status: "done" });
   });
 
   it("resets invalid pagination to the first page", () => {
@@ -141,6 +183,8 @@ describe("project URL state and API DTOs", () => {
       category: "",
       tag: "",
       favorite: false,
+      status: "",
+      owner: "",
       page: 1,
     });
   });

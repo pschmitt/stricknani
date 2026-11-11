@@ -665,8 +665,13 @@ async function assertNoScopeFilter(page: Page, origin: string): Promise<void> {
     .getByRole("heading", { name: "Projects", exact: true })
     .waitFor({ state: "visible" });
   check(
-    (await page.getByTestId("project-filter-mine").count()) === 0,
-    "a regular user was offered the Mine / All filter",
+    (await page.getByTestId("project-filter-mine").count()) === 1 &&
+      (await page.getByTestId("project-filter-shared").count()) === 1,
+    "a regular user was not offered the Mine / Shared with me owner filter",
+  );
+  check(
+    (await page.getByTestId("project-filter-owner").count()) === 0,
+    "a regular user was offered an owner they cannot see items of",
   );
 }
 

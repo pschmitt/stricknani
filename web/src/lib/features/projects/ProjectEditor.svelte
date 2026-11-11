@@ -1890,6 +1890,17 @@
             <h2 id="basics-heading">{t("Project details", locale)}</h2>
             <div class="field-grid">
               <div class="field">
+                <label for="project-status"
+                  ><LabelIcon name="flag" />{t("Status", locale)}</label
+                >
+                <select id="project-status" bind:value={draft.status}>
+                  <option value="in_progress"
+                    >{t("Project in progress", locale)}</option
+                  >
+                  <option value="done">{t("Done", locale)}</option>
+                </select>
+              </div>
+              <div class="field">
                 <label for="project-category"
                   ><LabelIcon name="folder" />{t("Category", locale)}</label
                 >

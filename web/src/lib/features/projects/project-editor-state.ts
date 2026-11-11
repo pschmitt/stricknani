@@ -1,4 +1,4 @@
-import type { ProjectDetail, ProjectWrite } from "./project-api";
+import type { ProjectDetail, ProjectStatus, ProjectWrite } from "./project-api";
 
 export interface ProjectStepDraft {
   key: number;
@@ -17,6 +17,7 @@ export interface ProjectDraft {
   otherMaterials: string;
   tags: string[];
   link: string;
+  status: ProjectStatus;
   yarnIds: number[];
   steps: ProjectStepDraft[];
 }
@@ -38,6 +39,7 @@ export function blankProjectDraft(): ProjectDraft {
     otherMaterials: "",
     tags: [],
     link: "",
+    status: "in_progress",
     yarnIds: [],
     steps: [],
   };
@@ -59,6 +61,7 @@ export function projectDraftFromDetail(
     otherMaterials: project.other_materials ?? "",
     tags: [...project.tags],
     link: project.link ?? "",
+    status: project.status,
     yarnIds: [...project.yarn_ids],
     steps: [...project.steps]
       .sort((left, right) => left.step_number - right.step_number)
@@ -86,6 +89,7 @@ export function projectWriteFromDraft(
     tags: [...draft.tags],
     link: optionalText(draft.link),
     is_ai_enhanced: isAiEnhanced,
+    status: draft.status,
     yarn_ids: [...new Set(draft.yarnIds)],
     steps: draft.steps.map((step, index) => ({
       ...(step.id === undefined ? {} : { id: step.id }),
