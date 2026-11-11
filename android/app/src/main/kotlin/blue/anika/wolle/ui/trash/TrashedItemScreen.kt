@@ -4,15 +4,12 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
@@ -34,8 +31,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -43,21 +38,22 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
-import blue.anika.wolle.data.api.v2.ProjectV2Dto
-import blue.anika.wolle.data.api.v2.YarnV2Dto
 import blue.anika.wolle.data.repository.AdminFailure
 import blue.anika.wolle.data.repository.TrashFailure
+import blue.anika.wolle.data.settings.DetailCardDomain
+import blue.anika.wolle.data.settings.DetailCardOrder
 import blue.anika.wolle.ui.admin.AdminFailureState
 import blue.anika.wolle.ui.common.DestructiveDeleteDialog
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.YarnLoader
-import coil3.compose.AsyncImage
+import blue.anika.wolle.ui.projects.ProjectDetailContent
+import blue.anika.wolle.ui.yarns.YarnDetailContent
 
 /**
  * A project or yarn in the trash: read-only, online-only, with the banner and its Restore and
- * Delete permanently buttons (the website's `TrashedBanner`). The normal detail screens stay
- * Room-backed; this page shows the main fields of what the server returns for the owner or an
- * administrator.
+ * Delete permanently buttons (the website's `TrashedBanner`). The body is the normal detail
+ * composables (`ProjectDetailContent`, `YarnDetailContent`) in read-only mode, fed with what the
+ * server returns for the owner or an administrator; nothing is stored in Room.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,8 +61,11 @@ fun TrashedItemScreen(
     onBack: () -> Unit,
     onRestored: (kind: String, id: Int) -> Unit,
     onPurged: () -> Unit,
+    onYarnClick: (Int) -> Unit = {},
+    onProjectClick: (Int) -> Unit = {},
     viewModel: TrashedItemViewModel = hiltViewModel(),
 ) {
+    val listState = remember { LazyListState() }
     val phase by viewModel.phase.collectAsStateWithLifecycle()
     val busy by viewModel.busy.collectAsStateWithLifecycle()
     val result by viewModel.result.collectAsStateWithLifecycle()
@@ -128,6 +127,8 @@ fun TrashedItemScreen(
                         onRetry = viewModel::load,
                         onBack = onBack,
                     )
+                // The normal detail composables, read-only: no edit, archive, history or removal
+                // actions, only the banner's Restore and Delete permanently.
                 is TrashedItemPhase.Project ->
                     TrashedContent(
                         isYarn = false,
@@ -136,7 +137,21 @@ fun TrashedItemScreen(
                         onRestore = viewModel::restore,
                         onPurge = { confirmPurge = true },
                     ) {
-                        ProjectFields(p.project, viewModel::mediaUrl)
+                        ProjectDetailContent(
+                            detail = p.detail,
+                            linkedYarns = p.linkedYarns,
+                            cardOrder = DetailCardOrder.defaults(DetailCardDomain.PROJECT),
+                            onCardOrderChanged = {},
+                            resolveMediaUrl = viewModel::mediaUrl,
+                            onYarnClick = onYarnClick,
+                            onDeleteAttachment = {},
+                            onEditSection = {},
+                            canEdit = false,
+                            canArchive = false,
+                            onArchived = {},
+                            history = null,
+                            listState = listState,
+                        )
                     }
                 is TrashedItemPhase.Yarn ->
                     TrashedContent(
@@ -146,7 +161,20 @@ fun TrashedItemScreen(
                         onRestore = viewModel::restore,
                         onPurge = { confirmPurge = true },
                     ) {
-                        YarnFields(p.yarn, viewModel::mediaUrl)
+                        YarnDetailContent(
+                            detail = p.detail,
+                            linkedProjects = p.linkedProjects,
+                            cardOrder = DetailCardOrder.defaults(DetailCardDomain.YARN),
+                            onCardOrderChanged = {},
+                            resolveMediaUrl = viewModel::mediaUrl,
+                            onProjectClick = onProjectClick,
+                            onEditSection = {},
+                            canEdit = false,
+                            canArchive = false,
+                            onArchived = {},
+                            history = null,
+                            listState = listState,
+                        )
                     }
             }
         }
@@ -154,8 +182,9 @@ fun TrashedItemScreen(
 
     if (confirmPurge) {
         DestructiveDeleteDialog(
-            title = stringResource(R.string.trash_purge_dialog_title),
+            title = stringResource(R.string.trash_banner_delete_dialog_title),
             text = stringResource(R.string.trash_purge_dialog_text, name.orEmpty()),
+            confirmLabel = stringResource(R.string.trash_banner_delete),
             onConfirm = {
                 confirmPurge = false
                 viewModel.purge()
@@ -172,23 +201,18 @@ private fun TrashedContent(
     busy: Boolean,
     onRestore: () -> Unit,
     onPurge: () -> Unit,
-    fields: @Composable () -> Unit,
+    detail: @Composable () -> Unit,
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        item {
-            TrashedBanner(
-                isYarn = isYarn,
-                purgeAt = purgeAt,
-                busy = busy,
-                onRestore = onRestore,
-                onPurge = onPurge,
-            )
-        }
-        item { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { fields() } }
+    Column(Modifier.fillMaxSize()) {
+        TrashedBanner(
+            isYarn = isYarn,
+            purgeAt = purgeAt,
+            busy = busy,
+            onRestore = onRestore,
+            onPurge = onPurge,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+        Box(Modifier.weight(1f)) { detail() }
     }
 }
 
@@ -200,6 +224,7 @@ private fun TrashedBanner(
     busy: Boolean,
     onRestore: () -> Unit,
     onPurge: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val days = daysUntilPurge(purgeAt, System.currentTimeMillis())
     val base =
@@ -214,7 +239,7 @@ private fun TrashedBanner(
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.errorContainer,
         contentColor = MaterialTheme.colorScheme.onErrorContainer,
-        modifier = Modifier.fillMaxWidth().testTag("trashed-banner"),
+        modifier = modifier.fillMaxWidth().testTag("trashed-banner"),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(
@@ -251,83 +276,4 @@ private fun TrashedBanner(
             }
         }
     }
-}
-
-@Composable
-private fun Field(label: String, value: String?) {
-    if (value.isNullOrBlank()) return
-    Column {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(value, style = MaterialTheme.typography.bodyLarge)
-    }
-}
-
-@Composable
-private fun Pictures(urls: List<String?>) {
-    val shown = urls.filterNotNull()
-    if (shown.isEmpty()) return
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(shown) { url ->
-            AsyncImage(
-                model = url,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.size(120.dp).clip(MaterialTheme.shapes.medium),
-            )
-        }
-    }
-}
-
-@Composable
-private fun ProjectFields(project: ProjectV2Dto, mediaUrl: (String?) -> String?) {
-    Pictures(project.images.map { mediaUrl(it.thumbnailUrl) })
-    Field(stringResource(R.string.common_field_category), project.category)
-    Field(stringResource(R.string.project_editor_tags_label), project.tags.joinToString(", "))
-    Field(stringResource(R.string.common_field_needles), project.needles)
-    Field(stringResource(R.string.common_field_stitch_sample), project.stitchSample)
-    Field(stringResource(R.string.project_detail_description_title), project.description)
-    Field(stringResource(R.string.project_detail_materials_title), project.otherMaterials)
-    Field(stringResource(R.string.project_detail_notes_title), project.notes)
-    if (project.steps.isNotEmpty()) {
-        Text(
-            stringResource(R.string.project_detail_steps_title),
-            style = MaterialTheme.typography.titleMedium,
-        )
-        project.steps
-            .sortedBy { it.stepNumber }
-            .forEach { step ->
-                Field("${step.stepNumber}. ${step.title}", step.description)
-                if (step.description.isNullOrBlank()) {
-                    Text(
-                        "${step.stepNumber}. ${step.title}",
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
-                }
-            }
-    }
-}
-
-@Composable
-private fun YarnFields(yarn: YarnV2Dto, mediaUrl: (String?) -> String?) {
-    Pictures(yarn.photos.map { mediaUrl(it.thumbnailUrl) })
-    Field(stringResource(R.string.yarn_detail_field_brand), yarn.brand)
-    Field(stringResource(R.string.yarn_detail_field_colorway), yarn.colorway)
-    Field(stringResource(R.string.yarn_detail_field_dye_lot), yarn.dyeLot)
-    Field(stringResource(R.string.yarn_detail_field_fiber_content), yarn.fiberContent)
-    Field(stringResource(R.string.yarn_detail_field_weight_category), yarn.weightCategory)
-    Field(stringResource(R.string.yarn_detail_field_recommended_needles), yarn.recommendedNeedles)
-    Field(
-        stringResource(R.string.yarn_detail_field_skein_weight),
-        yarn.weightGrams?.let { "$it g" },
-    )
-    Field(
-        stringResource(R.string.yarn_detail_field_skein_length),
-        yarn.lengthMeters?.let { "$it m" },
-    )
-    Field(stringResource(R.string.project_detail_description_title), yarn.description)
-    Field(stringResource(R.string.project_detail_notes_title), yarn.notes)
 }

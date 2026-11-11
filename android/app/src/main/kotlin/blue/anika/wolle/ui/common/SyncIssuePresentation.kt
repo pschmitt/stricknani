@@ -39,6 +39,8 @@ fun PendingMutationEntity.syncIssuePresentation(): SyncIssuePresentation {
             MutationEntityType.YARN to MutationOperation.DELETE -> R.string.sync_issue_yarn_delete
             MutationEntityType.YARN to MutationOperation.YARN_PHOTO_DELETE ->
                 R.string.sync_issue_yarn_update
+            MutationEntityType.TRASH to MutationOperation.TRASH_RESTORE ->
+                R.string.sync_issue_trash_restore
             else -> R.string.sync_issue_unknown_change
         }
     return SyncIssuePresentation(

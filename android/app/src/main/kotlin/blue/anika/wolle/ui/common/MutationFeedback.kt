@@ -21,6 +21,13 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 
+/**
+ * What Undo restores: [items] taken to the trash. [viaQueue] is for removals the editors queued
+ * with the form: they may not have reached the server yet, so the restore is queued behind them
+ * (the write queue replays in order) instead of being sent right away.
+ */
+data class TrashUndo(val items: List<TrashRef>, val viaQueue: Boolean = false)
+
 /** A localized, one-shot result emitted after a user-triggered data mutation. */
 data class MutationFeedbackEvent(
     @StringRes val messageResId: Int,
@@ -29,7 +36,7 @@ data class MutationFeedbackEvent(
      * Set when the message says something moved to the trash: the snackbar then offers "Undo",
      * which restores this item.
      */
-    val undo: TrashRef? = null,
+    val undo: TrashUndo? = null,
 )
 
 /**
@@ -52,7 +59,18 @@ class MutationFeedback @Inject constructor() {
 
     /** "Moved to the trash" with an Undo action that restores [item] (see `TrashUndoViewModel`). */
     fun showTrashed(@StringRes messageResId: Int, item: TrashRef, vararg formatArgs: Any) {
-        _events.tryEmit(MutationFeedbackEvent(messageResId, formatArgs.toList(), item))
+        _events.tryEmit(
+            MutationFeedbackEvent(messageResId, formatArgs.toList(), TrashUndo(listOf(item)))
+        )
+    }
+
+    /**
+     * "Moved to the trash" for steps and photos an editor save removed: Undo restores exactly
+     * [items]. Nothing is shown when the save removed nothing.
+     */
+    fun showTrashedBySave(@StringRes messageResId: Int, items: List<TrashRef>) {
+        if (items.isEmpty()) return
+        _events.tryEmit(MutationFeedbackEvent(messageResId, emptyList(), TrashUndo(items, true)))
     }
 
     private companion object {
@@ -65,7 +83,7 @@ class MutationFeedback @Inject constructor() {
 fun MutationFeedbackEffect(
     feedback: MutationFeedback,
     snackbarHostState: SnackbarHostState,
-    onUndo: (TrashRef) -> Unit = {},
+    onUndo: (TrashUndo) -> Unit = {},
 ) {
     val context = LocalContext.current
     val currentOnUndo by rememberUpdatedState(onUndo)

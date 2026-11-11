@@ -3,6 +3,7 @@ package blue.anika.wolle.data.db.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 
 /**
  * A synced project. `category`/`tags`/`isFavorite`/`updatedAt`/`previewUrl` are flattened out of
@@ -11,6 +12,7 @@ import androidx.room.PrimaryKey
  * the repository via `Json.decodeFromString<ProjectDto>(detailJson)` - not deep-normalized into
  * further Room tables/columns, same pattern as syncwich's `RecipeDetailEntity`.
  */
+@Serializable
 @Entity(tableName = "projects")
 data class ProjectEntity(
     @PrimaryKey val id: Int,

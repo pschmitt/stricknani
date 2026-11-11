@@ -62,6 +62,27 @@ describe("trash item parsing", () => {
     });
   });
 
+  it("reads a same-origin thumbnail and ignores anything else", () => {
+    expect(
+      parseTrashItem({
+        ...project,
+        thumbnail_url: "/media/thumbnails/projects/7/thumb_a.jpg",
+      }).thumbnail_url,
+    ).toBe("/media/thumbnails/projects/7/thumb_a.jpg");
+    expect(
+      parseTrashItem({
+        ...project,
+        thumbnail_url: "/api/v2/trash/images/3/thumbnail",
+      }).thumbnail_url,
+    ).toBe("/api/v2/trash/images/3/thumbnail");
+    expect(parseTrashItem(project).thumbnail_url).toBeNull();
+    for (const url of ["https://evil.test/a.jpg", "//evil.test/a.jpg", 5, ""]) {
+      expect(
+        parseTrashItem({ ...project, thumbnail_url: url }).thumbnail_url,
+      ).toBeNull();
+    }
+  });
+
   it("reads parent and detail of a child item", () => {
     const item = parseTrashItem({
       ...project,

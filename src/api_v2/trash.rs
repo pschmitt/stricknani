@@ -30,6 +30,7 @@ pub(super) fn router() -> Router<ApiV2State> {
         .route("/trash", get(list_trash))
         .route("/trash/{kind}/{id}", delete(purge_item))
         .route("/trash/{kind}/{id}/restore", post(restore_item))
+        .route("/trash/{kind}/{id}/thumbnail", get(trashed_thumbnail))
 }
 
 #[derive(Debug, Deserialize)]
@@ -141,4 +142,22 @@ async fn purge_item(
         Ok(()) => StatusCode::NO_CONTENT.into_response(),
         Err(error) => trash_error(error),
     }
+}
+
+/// The thumbnail of an image or photo in the trash (owner and administrators).
+async fn trashed_thumbnail(
+    State(state): State<ApiV2State>,
+    headers: HeaderMap,
+    Path((kind, id)): Path<(String, i64)>,
+) -> Response {
+    let user_id = match resource_user(&state.app, &headers).await {
+        Ok(user_id) => user_id,
+        Err(response) => return *response,
+    };
+    let namespace = match kind.as_str() {
+        "images" => "image",
+        "photos" => "photo",
+        _ => return trash_error(TrashError::NotFound),
+    };
+    crate::media::serve_trashed_media_thumbnail(&state.app, user_id, namespace, id).await
 }

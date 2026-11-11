@@ -135,6 +135,7 @@ import blue.anika.wolle.ui.common.shareUrl
 import blue.anika.wolle.ui.history.HistoryController
 import blue.anika.wolle.ui.history.HistoryPhase
 import blue.anika.wolle.ui.history.HistorySection
+import blue.anika.wolle.ui.history.NoHistory
 import blue.anika.wolle.ui.print.PrintDialog
 import blue.anika.wolle.ui.projects.print.PrintLabels
 import blue.anika.wolle.ui.sharing.SharingDialogHost
@@ -552,7 +553,7 @@ fun ProjectDetailScreen(
 }
 
 @Composable
-private fun ProjectDetailContent(
+internal fun ProjectDetailContent(
     detail: ProjectDto,
     linkedYarns: List<LinkedYarn>,
     cardOrder: List<String>,
@@ -564,14 +565,15 @@ private fun ProjectDetailContent(
     canEdit: Boolean,
     canArchive: Boolean,
     onArchived: () -> Unit,
-    history: HistoryController,
+    /** Null hides the history section (the read-only page of a trashed item). */
+    history: HistoryController?,
     listState: LazyListState,
     modifier: Modifier = Modifier,
 ) {
     // A viewer (or a derived yarn) reads only: no Edit action, no section menu entry.
     val edit: ((String) -> Unit)? = if (canEdit) onEditSection else null
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
-    val historyState by history.state.collectAsStateWithLifecycle()
+    val historyState by (history?.state ?: NoHistory).collectAsStateWithLifecycle()
     val viewerImages =
         remember(detail, resolveMediaUrl, canEdit) {
             projectViewerImages(detail, resolveMediaUrl, canEdit)
@@ -942,7 +944,7 @@ private fun ProjectDetailContent(
                 }
             }
             // Fixed last section (not reorderable); hidden entirely on servers without history.
-            if (historyState.phase != HistoryPhase.Hidden) {
+            if (history != null && historyState.phase != HistoryPhase.Hidden) {
                 item(key = "history") {
                     HistorySection(
                         state = historyState,

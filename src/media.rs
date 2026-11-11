@@ -4767,6 +4767,17 @@ pub(crate) async fn trash_media_row(
         .bind(media_id)
         .execute(&mut **tx)
         .await?;
+    // Deleting the live row cascades to its legacy URL aliases: keep them with
+    // the trashed row so the old URLs work again after a restore.
+    sqlx::query(
+        "INSERT INTO trashed_media_url_aliases \
+         (subdir, parent_id, legacy_filename, legacy_thumbnail, media_id) \
+         SELECT subdir, parent_id, legacy_filename, legacy_thumbnail, media_id \
+         FROM media_url_aliases WHERE media_id = ?",
+    )
+    .bind(media_id)
+    .execute(&mut **tx)
+    .await?;
     sqlx::query("DELETE FROM media_files WHERE id = ?")
         .bind(media_id)
         .execute(&mut **tx)
@@ -4990,11 +5001,70 @@ pub(crate) async fn restore_trashed_media_row(
         .bind(media_id)
         .execute(&mut **tx)
         .await?;
+    // The stashed aliases return with the row; deleting the trashed row then
+    // cascades to the stash.
+    sqlx::query(
+        "INSERT OR IGNORE INTO media_url_aliases \
+         (subdir, parent_id, legacy_filename, legacy_thumbnail, media_id) \
+         SELECT subdir, parent_id, legacy_filename, legacy_thumbnail, media_id \
+         FROM trashed_media_url_aliases WHERE media_id = ?",
+    )
+    .bind(media_id)
+    .execute(&mut **tx)
+    .await?;
     sqlx::query("DELETE FROM trashed_media WHERE id = ?")
         .bind(media_id)
         .execute(&mut **tx)
         .await?;
     Ok(())
+}
+
+/// Serve the thumbnail of a file that was trashed on its own (`namespace` is
+/// `image` or `photo`). Only the owner and administrators may read it; the
+/// normal media URLs of a trashed file stay `404`.
+pub(crate) async fn serve_trashed_media_thumbnail(
+    state: &AppState,
+    actor_id: i64,
+    namespace: &str,
+    public_id: i64,
+) -> Response {
+    if !matches!(namespace, "image" | "photo") {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+    let mut conn = match state.pool.acquire().await {
+        Ok(conn) => conn,
+        Err(_) => return database_error(),
+    };
+    let media = match find_trashed_media(&mut conn, namespace, public_id).await {
+        Ok(Some(media)) => media,
+        Ok(None) => return StatusCode::NOT_FOUND.into_response(),
+        Err(_) => return database_error(),
+    };
+    drop(conn);
+    if media.owner_id != actor_id {
+        match crate::resource_access::is_active_admin(&state.pool, actor_id).await {
+            Ok(true) => {}
+            Ok(false) => return StatusCode::NOT_FOUND.into_response(),
+            Err(_) => return database_error(),
+        }
+    }
+    let (subdir, parent_id) = match (media.project_id, media.yarn_id) {
+        (Some(id), _) => ("projects", id),
+        (None, Some(id)) => ("yarns", id),
+        _ => return StatusCode::NOT_FOUND.into_response(),
+    };
+    let root = match media_root(state) {
+        Ok(root) => root,
+        Err(error) => return error.into_response(),
+    };
+    let path = match thumbnail_path(&root, subdir, parent_id, &media.filename).await {
+        Ok(Some(path)) => path,
+        _ => return StatusCode::NOT_FOUND.into_response(),
+    };
+    match tokio::fs::read(path).await {
+        Ok(bytes) => media_response(&media.filename, "image/jpeg", false, bytes),
+        Err(_) => StatusCode::NOT_FOUND.into_response(),
+    }
 }
 
 /// Re-stamp a project or yarn whose media or steps changed in the trash, so

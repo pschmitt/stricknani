@@ -5,15 +5,21 @@ import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.TRASH_RETENTION_DAYS
 import blue.anika.wolle.data.api.dto.TrashItemDto
+import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.EveryoneScope
+import blue.anika.wolle.data.repository.ProjectRepository
+import blue.anika.wolle.data.repository.QueuedDeleteUndo
 import blue.anika.wolle.data.repository.TrashException
 import blue.anika.wolle.data.repository.TrashFailure
+import blue.anika.wolle.data.repository.TrashKind
 import blue.anika.wolle.data.repository.TrashRef
 import blue.anika.wolle.data.repository.TrashRepository
+import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.repository.toTrashFailure
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.MutationFeedback
+import blue.anika.wolle.ui.common.TrashUndo
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
@@ -26,6 +32,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 
 sealed interface TrashPhase {
     data object Loading : TrashPhase
@@ -174,21 +181,62 @@ constructor(
     }
 }
 
-/** Undo of a delete: restore from the trash, then sync so the item reappears. */
+/**
+ * Undo of a delete: puts the item back, then syncs so it reappears.
+ *
+ * * The delete is **still in the write queue** (offline, or not replayed yet): it never reached the
+ *   server, so the queued delete is cancelled and the cached row is put back.
+ * * The delete **was sent**: the server's restore endpoint is called. Without a connection the
+ *   restore is queued and goes out when the app is online again.
+ */
 @HiltViewModel
 class TrashUndoViewModel
 @Inject
 constructor(
     private val repository: TrashRepository,
+    private val projectRepository: ProjectRepository,
+    private val yarnRepository: YarnRepository,
+    private val pendingMutationDao: PendingMutationDao,
+    private val json: Json,
     private val syncScheduler: SyncScheduler,
     private val feedback: MutationFeedback,
 ) : ViewModel() {
+    fun undo(undo: TrashUndo) {
+        if (undo.viaQueue) undoSaved(undo.items) else undo.items.forEach(::undo)
+    }
+
+    /**
+     * Steps and photos a save removed: the removal may still be queued, so the restores are queued
+     * behind it and replay in order. A removal the server never saw answers "not in the trash",
+     * which the replay ignores.
+     */
+    private fun undoSaved(items: List<TrashRef>) {
+        viewModelScope.launch {
+            try {
+                items.forEach { QueuedDeleteUndo.queueRestore(pendingMutationDao, json, it) }
+                syncScheduler.replayThenSyncNow()
+                feedback.show(R.string.mutation_trash_restore_queued)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (failure: Exception) {
+                feedback.show(R.string.error_trash_restore_failed)
+            }
+        }
+    }
+
     fun undo(ref: TrashRef) {
         viewModelScope.launch {
             try {
-                restoreWithRetry(ref)
-                syncScheduler.syncNow()
-                feedback.show(R.string.mutation_trash_restored)
+                if (cancelQueuedDelete(ref)) {
+                    syncScheduler.syncNow()
+                    feedback.show(R.string.mutation_trash_restored)
+                } else if (hasQueuedDelete(ref)) {
+                    // Queued by an older app version, without a snapshot to put back: restore
+                    // behind the delete once both have reached the server.
+                    queueRestore(ref)
+                } else {
+                    restoreOnline(ref)
+                }
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (failure: Exception) {
@@ -197,9 +245,41 @@ constructor(
         }
     }
 
+    private suspend fun cancelQueuedDelete(ref: TrashRef): Boolean =
+        when (ref.kind) {
+            TrashKind.Project.wire -> projectRepository.undoQueuedDelete(ref.id.toInt())
+            TrashKind.Yarn.wire -> yarnRepository.undoQueuedDelete(ref.id.toInt())
+            else -> false
+        }
+
+    private suspend fun hasQueuedDelete(ref: TrashRef): Boolean =
+        when (ref.kind) {
+            TrashKind.Project.wire -> projectRepository.hasQueuedDelete(ref.id.toInt())
+            TrashKind.Yarn.wire -> yarnRepository.hasQueuedDelete(ref.id.toInt())
+            else -> false
+        }
+
+    private suspend fun restoreOnline(ref: TrashRef) {
+        try {
+            restoreWithRetry(ref)
+        } catch (failure: TrashException) {
+            if (failure.failure != TrashFailure.Offline) throw failure
+            queueRestore(ref)
+            return
+        }
+        syncScheduler.syncNow()
+        feedback.show(R.string.mutation_trash_restored)
+    }
+
+    private suspend fun queueRestore(ref: TrashRef) {
+        QueuedDeleteUndo.queueRestore(pendingMutationDao, json, ref)
+        syncScheduler.replayThenSyncNow()
+        feedback.show(R.string.mutation_trash_restore_queued)
+    }
+
     /**
-     * A project or yarn is deleted by the write queue, which may not have reached the server when
-     * Undo is tapped right away: the first "not in the trash" answers are retried a few times.
+     * A delete that was being sent when Undo is tapped may not be on the server yet: the first "not
+     * in the trash" answers are retried a few times.
      */
     private suspend fun restoreWithRetry(ref: TrashRef) {
         var attempt = 0

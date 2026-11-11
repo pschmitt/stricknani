@@ -56,6 +56,7 @@ import blue.anika.wolle.ui.imports.ImportNotice
 import blue.anika.wolle.ui.imports.LinkImportSession
 import blue.anika.wolle.ui.imports.PickedFileResult
 import blue.anika.wolle.ui.navigation.Route
+import blue.anika.wolle.ui.trash.trashedByProjectSave
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
@@ -763,10 +764,25 @@ constructor(
                 // The import is used up: its draft no longer waits for review.
                 if (id == null) importSession.finish()
                 syncScheduler.replayThenSyncNow()
-                mutationFeedback.show(
-                    if (id == null) R.string.mutation_project_created_queued
-                    else R.string.mutation_project_updated_queued
-                )
+                val trashed =
+                    if (id == null) emptyList()
+                    else
+                        trashedByProjectSave(
+                            initialStepIds = _initialForm.value.steps.map { it.id },
+                            currentStepIds = current.steps.map { it.id },
+                            removedImageIds = current.removedImageIds,
+                        )
+                if (trashed.isEmpty()) {
+                    mutationFeedback.show(
+                        if (id == null) R.string.mutation_project_created_queued
+                        else R.string.mutation_project_updated_queued
+                    )
+                } else {
+                    mutationFeedback.showTrashedBySave(
+                        R.string.mutation_saved_removed_to_trash,
+                        trashed,
+                    )
+                }
                 _saved.value = true
             } catch (e: Exception) {
                 mutationFeedback.show(R.string.error_save_failed)

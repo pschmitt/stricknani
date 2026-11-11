@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, type ComponentProps } from "svelte";
   import { page } from "$app/state";
   import { resolve } from "$app/paths";
   import { ApiError } from "#lib/api.ts";
@@ -184,6 +184,29 @@
     }
   }
 
+  type NavIconName = ComponentProps<typeof NavIcon>["name"];
+
+  /** Pictures that failed to load, so the row falls back to its icon. */
+  let failedThumbs = $state<Record<string, string>>({});
+
+  /** The icon of a row without a picture. */
+  function kindIcon(kind: TrashItem["kind"]): NavIconName {
+    switch (kind) {
+      case "project":
+        return "projects";
+      case "yarn":
+        return "yarns";
+      case "category":
+        return "folder";
+      case "step":
+        return "list-numbers";
+      case "attachment":
+        return "paperclip";
+      default:
+        return "image";
+    }
+  }
+
   function kindLabel(item: TrashItem): string {
     return t(trashKindLabelKey(item.kind), locale);
   }
@@ -288,6 +311,24 @@
       {#each items as item (trashItemKey(item))}
         {@const busy = busyKey === trashItemKey(item)}
         <li class="trash__row" data-kind={item.kind}>
+          <span class="trash__thumb" data-testid="trash-thumb">
+            {#if item.thumbnail_url && failedThumbs[trashItemKey(item)] !== item.thumbnail_url}
+              <img
+                src={item.thumbnail_url}
+                alt=""
+                width="56"
+                height="56"
+                loading="lazy"
+                decoding="async"
+                onerror={() =>
+                  (failedThumbs[trashItemKey(item)] = item.thumbnail_url ?? "")}
+              />
+            {:else}
+              <span class="trash__thumb-icon" aria-hidden="true">
+                <NavIcon name={kindIcon(item.kind)} />
+              </span>
+            {/if}
+          </span>
           <div class="trash__main">
             <p class="trash__kind">{kindLabel(item)}</p>
             <p class="trash__name">
@@ -426,6 +467,31 @@
     border-radius: var(--radius-sm);
     padding: 0.75rem 0.9rem;
     background: var(--surface);
+  }
+
+  .trash__thumb {
+    display: grid;
+    flex: 0 0 3.5rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    place-items: center;
+    overflow: hidden;
+    border-radius: var(--radius-sm);
+    background: var(--surface-muted, var(--line));
+    color: var(--ink-muted);
+  }
+
+  .trash__thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .trash__thumb-icon {
+    display: grid;
+    width: 1.6rem;
+    height: 1.6rem;
   }
 
   .trash__main {

@@ -27,6 +27,8 @@ export interface TrashItem {
   days_remaining: number;
   parent: TrashParent | null;
   detail: string | null;
+  /** Cover or picture of the item (a same-origin media path); null for kinds without one. */
+  thumbnail_url: string | null;
 }
 
 export interface TrashList {
@@ -89,6 +91,12 @@ export function parseTrashItem(value: unknown): TrashItem {
     detail:
       typeof value.detail === "string" && value.detail.trim() !== ""
         ? value.detail
+        : null,
+    thumbnail_url:
+      typeof value.thumbnail_url === "string" &&
+      (value.thumbnail_url.startsWith("/media/") ||
+        value.thumbnail_url.startsWith("/api/v2/trash/"))
+        ? value.thumbnail_url
         : null,
   };
 }

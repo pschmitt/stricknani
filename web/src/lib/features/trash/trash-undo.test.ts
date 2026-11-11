@@ -2,7 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { get } from "svelte/store";
 import { ApiError } from "#lib/api.ts";
 import { clearFeedback, feedback } from "#lib/feedback.ts";
-import { publishMovedToTrash, restoreErrorMessage } from "./trash-undo";
+import {
+  publishMovedToTrash,
+  publishSavedWithRemovals,
+  restoreErrorMessage,
+} from "./trash-undo";
 
 const restore = vi.hoisted(() => vi.fn());
 vi.mock("./trash-api", () => ({ restoreTrashItem: restore }));
@@ -67,6 +71,51 @@ describe("publishMovedToTrash", () => {
     expect(get(feedback)).toMatchObject({
       kind: "error",
       message: "Restore first",
+    });
+  });
+});
+
+describe("publishSavedWithRemovals", () => {
+  const items = [
+    { kind: "step" as const, id: 11 },
+    { kind: "image" as const, id: 5 },
+  ];
+
+  it("restores exactly the removed items in order, then refreshes", async () => {
+    restore.mockResolvedValue(undefined);
+    const onRestored = vi.fn();
+    publishSavedWithRemovals({ session, ownerId: 4, items, onRestored });
+    const event = get(feedback);
+    expect(event).toMatchObject({
+      kind: "success",
+      message: "Saved. What you removed is in the trash for 90 days.",
+      action: { label: "Undo" },
+    });
+
+    await event?.action?.onAction();
+
+    expect(restore.mock.calls).toEqual([
+      ["step", 11, session],
+      ["image", 5, session],
+    ]);
+    expect(onRestored).toHaveBeenCalledOnce();
+    expect(get(feedback)).toMatchObject({
+      message: "Restored from the trash.",
+    });
+  });
+
+  it("stops at the first failure and reports it", async () => {
+    restore.mockRejectedValueOnce(new ApiError("x", 404));
+    const onRestored = vi.fn();
+    publishSavedWithRemovals({ session, ownerId: 4, items, onRestored });
+
+    await get(feedback)?.action?.onAction();
+
+    expect(restore).toHaveBeenCalledTimes(1);
+    expect(onRestored).not.toHaveBeenCalled();
+    expect(get(feedback)).toMatchObject({
+      kind: "error",
+      message: "This item is no longer in the trash.",
     });
   });
 });

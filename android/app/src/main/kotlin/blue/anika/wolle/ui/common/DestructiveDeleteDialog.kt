@@ -32,6 +32,7 @@ fun DestructiveDeleteDialog(
     text: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
+    confirmLabel: String = stringResource(R.string.common_delete),
 ) {
     AlertDialog(
         modifier = Modifier.testTag(DESTRUCTIVE_DELETE_DIALOG_TAG),
@@ -46,7 +47,7 @@ fun DestructiveDeleteDialog(
                         contentColor = androidx.compose.material3.MaterialTheme.colorScheme.error
                     ),
             ) {
-                Text(stringResource(R.string.common_delete))
+                Text(confirmLabel)
             }
         },
         dismissButton = {

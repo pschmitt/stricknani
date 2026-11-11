@@ -70,8 +70,23 @@ class MutationFeedbackTest {
         feedback.show(R.string.mutation_trash_restored)
 
         val (trashed, restored) = nextEvents.await()
-        assertEquals(TrashRef("project", 7), trashed.undo)
-        assertEquals("projects", trashed.undo?.segment)
+        assertEquals(TrashUndo(listOf(TrashRef("project", 7))), trashed.undo)
+        assertEquals("projects", trashed.undo?.items?.single()?.segment)
         assertEquals(null, restored.undo)
+    }
+
+    @Test
+    fun savedRemovalsCarryExactlyTheRemovedItemsAndQueueTheRestore() = runTest {
+        val feedback = MutationFeedback()
+        val nextEvents =
+            async(start = CoroutineStart.UNDISPATCHED) { feedback.events.take(1).toList() }
+        val removed = listOf(TrashRef(TrashKind.Step, 11), TrashRef(TrashKind.Image, 5))
+
+        feedback.showTrashedBySave(R.string.mutation_saved_removed_to_trash, emptyList())
+        feedback.showTrashedBySave(R.string.mutation_saved_removed_to_trash, removed)
+
+        val event = nextEvents.await().single()
+        assertEquals(TrashUndo(removed, viaQueue = true), event.undo)
+        assertEquals(R.string.mutation_saved_removed_to_trash, event.messageResId)
     }
 }

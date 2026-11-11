@@ -18,6 +18,7 @@ const item = (overrides: Partial<TrashItem>): TrashItem => ({
   days_remaining: 80,
   parent: null,
   detail: null,
+  thumbnail_url: null,
   ...overrides,
 });
 
