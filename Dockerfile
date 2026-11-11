@@ -1,4 +1,4 @@
-FROM docker.io/nixos/nix:2.35.5 AS build
+FROM docker.io/nixos/nix:2.35.6 AS build
 
 WORKDIR /src
 
