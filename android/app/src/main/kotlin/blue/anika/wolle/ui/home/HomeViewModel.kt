@@ -22,11 +22,11 @@ import blue.anika.wolle.data.update.UpdateCheckResult
 import blue.anika.wolle.data.update.UpdateChecker
 import blue.anika.wolle.data.update.checkCurrentBuild
 import blue.anika.wolle.sync.SyncScheduler
+import blue.anika.wolle.ui.common.OwnerChoice
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.RefreshTrigger
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
-import blue.anika.wolle.ui.common.OwnerChoice
 import blue.anika.wolle.ui.common.ownerChoiceMatches
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject

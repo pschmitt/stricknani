@@ -32,8 +32,9 @@ fun projectStatusLabel(status: String): Int =
 val PROJECT_STATUSES: List<String> = listOf(ProjectStatus.IN_PROGRESS, ProjectStatus.DONE)
 
 /**
- * The small status pill of a project: a check and "Done", or plain "In progress". Library cards show
- * it for done projects only; the detail page shows both. Same rule on the web (`StatusBadge.svelte`).
+ * The small status pill of a project: a check and "Done", or plain "In progress". Library cards
+ * show it for done projects only; the detail page shows both. Same rule on the web
+ * (`StatusBadge.svelte`).
  */
 @Composable
 fun ProjectStatusBadge(status: String, modifier: Modifier = Modifier) {

@@ -7,14 +7,13 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
 
 /**
  * The owner filter of the project and yarn lists, the same as the web's: [Mine] is the signed-in
- * user's own items, [Shared] everybody else's (shared with the user, or an administrator's view) and
- * [User] one owner's. Null (no choice) shows everything. A `me`, `shared` or numeric user id is also
- * what the screens take as their navigation argument and what the website takes as `?owner=`.
+ * user's own items, [Shared] everybody else's (shared with the user, or an administrator's view)
+ * and [User] one owner's. Null (no choice) shows everything. A `me`, `shared` or numeric user id is
+ * also what the screens take as their navigation argument and what the website takes as `?owner=`.
  */
 sealed interface OwnerChoice {
     data object Mine : OwnerChoice
@@ -67,8 +66,8 @@ fun ownerOptions(badges: Sequence<OwnerBadgeData?>): List<OwnerBadgeData> =
         .toList()
 
 /**
- * "Mine", "Shared with me", one chip per other owner and the "Trash" chip, in the order of the web's
- * pills. [trashedOnly] and [onTrashToggle] drive the Trash chip.
+ * "Mine", "Shared with me", one chip per other owner and the "Trash" chip, in the order of the
+ * web's pills. [trashedOnly] and [onTrashToggle] drive the Trash chip.
  */
 fun LazyListScope.ownerFilterItems(
     choice: OwnerChoice?,

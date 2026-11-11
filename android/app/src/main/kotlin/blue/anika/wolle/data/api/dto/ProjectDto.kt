@@ -8,7 +8,9 @@ object ProjectStatus {
     const val IN_PROGRESS = "in_progress"
     const val DONE = "done"
 
-    /** Anything that is not [DONE] counts as in progress, so an unknown value never hides a project. */
+    /**
+     * Anything that is not [DONE] counts as in progress, so an unknown value never hides a project.
+     */
     fun normalize(value: String?): String = if (value == DONE) DONE else IN_PROGRESS
 }
 

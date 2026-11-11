@@ -10,10 +10,10 @@ import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.OwnerBadgeData
 import blue.anika.wolle.ui.common.OwnerChoice
-import blue.anika.wolle.ui.common.TRASHED_ONLY
 import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.RefreshTrigger
+import blue.anika.wolle.ui.common.TRASHED_ONLY
 import blue.anika.wolle.ui.common.isOfflineFailure
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
 import blue.anika.wolle.ui.common.ownerBadge

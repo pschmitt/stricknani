@@ -113,8 +113,8 @@ import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.NotesDisclosure
 import blue.anika.wolle.ui.common.OwnedKind
 import blue.anika.wolle.ui.common.PhosphorIcons
-import blue.anika.wolle.ui.common.ProjectStatusBadge
 import blue.anika.wolle.ui.common.PhotoEditTarget
+import blue.anika.wolle.ui.common.ProjectStatusBadge
 import blue.anika.wolle.ui.common.ReadingTextScale
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.ReorderableDetailCard
