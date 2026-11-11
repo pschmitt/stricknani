@@ -202,6 +202,34 @@ describe("server payload", () => {
     expect(url).toContain("q=m%C3%BC");
   });
 
+  it("follows the Trash pill and the owner filter", async () => {
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({ data: { tags: [], categories: [], owners: [] } }),
+          { status: 200, headers: { "content-type": "application/json" } },
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await fetchRemoteSuggestions(
+      "projects",
+      "win",
+      new AbortController().signal,
+      { trashed: true, owner: "7" },
+    );
+    const url = String((fetchMock.mock.calls[0] as unknown[])[0]);
+    expect(url).toContain("trashed=only");
+    expect(url).toContain("owner=7");
+    await fetchRemoteSuggestions(
+      "projects",
+      "win",
+      new AbortController().signal,
+    );
+    const plain = String((fetchMock.mock.calls[1] as unknown[])[0]);
+    expect(plain).not.toContain("trashed");
+    expect(plain).not.toContain("owner");
+  });
+
   it("still offers the fixed filters when the server fails", async () => {
     vi.stubGlobal(
       "fetch",

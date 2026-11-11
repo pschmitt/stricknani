@@ -104,6 +104,14 @@ pub(crate) struct Suggestions {
     pub(crate) owners: Vec<OwnerSuggestion>,
 }
 
+/// What the suggestions are drawn from, beyond the caller's scope: the live items (default),
+/// or the trash while the Trash filter is on, optionally of one owner (`owner=`).
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct SuggestionFilter {
+    pub(crate) trashed: bool,
+    pub(crate) owner: Option<resource_access::OwnerFilter>,
+}
+
 /// Suggestions for the text typed into the search bar of the project or yarn list.
 ///
 /// Administrators search everybody's items (as their lists do); everyone else only what they
@@ -113,6 +121,7 @@ pub(crate) async fn suggest(
     user_id: i64,
     kind: SuggestionKind,
     raw_query: &str,
+    filter: SuggestionFilter,
 ) -> Result<Suggestions, SuggestionError> {
     let Some(query) = normalized_query(raw_query) else {
         return Ok(Suggestions::default());
@@ -122,10 +131,14 @@ pub(crate) async fn suggest(
     let mut suggestions = Suggestions::default();
 
     if kind == SuggestionKind::Projects {
-        let counts = crate::projects::tag_counts_for_scope(
+        let counts = crate::projects::tag_counts_for_source(
             state,
             user_id,
             Some(if admin { "all" } else { "mine" }),
+            crate::projects::TagSource {
+                trashed: filter.trashed,
+                owner: filter.owner,
+            },
         )
         .await
         .map_err(|_| SuggestionError::Database)?;
@@ -151,7 +164,7 @@ pub(crate) async fn suggest(
             .map(|(_, tag)| tag)
             .collect();
 
-        let mut names = category_names(&state.pool, user_id, scope).await?;
+        let mut names = category_names(&state.pool, user_id, scope, filter).await?;
         names.sort_by_key(|name| (fold(name), name.clone()));
         let mut ranked: Vec<(u8, String)> = names
             .into_iter()
@@ -166,17 +179,23 @@ pub(crate) async fn suggest(
     }
 
     if admin {
-        let owners = resource_access::visible_owners(
-            &state.pool,
-            user_id,
-            match kind {
-                SuggestionKind::Projects => ResourceKind::Project,
-                SuggestionKind::Yarns => ResourceKind::Yarn,
-            },
-            Scope::All,
-            state.gravatar.enabled,
-        )
-        .await?;
+        let resource = match kind {
+            SuggestionKind::Projects => ResourceKind::Project,
+            SuggestionKind::Yarns => ResourceKind::Yarn,
+        };
+        let owners = if filter.trashed {
+            resource_access::trashed_owners(&state.pool, user_id, resource, state.gravatar.enabled)
+                .await?
+        } else {
+            resource_access::visible_owners(
+                &state.pool,
+                user_id,
+                resource,
+                Scope::All,
+                state.gravatar.enabled,
+            )
+            .await?
+        };
         let mut ranked: Vec<(u8, OwnerSuggestion)> = owners
             .into_iter()
             .filter_map(|owner| {
@@ -208,21 +227,41 @@ async fn category_names(
     pool: &SqlitePool,
     user_id: i64,
     scope: Scope,
+    filter: SuggestionFilter,
 ) -> Result<Vec<String>, sqlx::Error> {
-    let used = match scope {
-        Scope::All => {
-            "SELECT DISTINCT c.name FROM projects p JOIN categories c ON c.id = p.category_id"
-                .to_owned()
+    let (owner_eq, owner_ne) = resource_access::OwnerFilter::binds(filter.owner, user_id);
+    let owner_sql = "(?2 IS NULL OR p.owner_id = ?2) AND (?3 IS NULL OR p.owner_id != ?3)";
+    let join = "SELECT DISTINCT c.name FROM projects p JOIN categories c ON c.id = p.category_id";
+    // A trashed project's category is suggested only while the Trash filter is on; the
+    // category list itself is the live one (trashed categories are not in `categories`).
+    let used = if filter.trashed {
+        match scope {
+            Scope::All => format!("{join} WHERE p.deleted_at IS NOT NULL AND {owner_sql}"),
+            Scope::Mine => {
+                format!("{join} WHERE p.deleted_at IS NOT NULL AND p.owner_id = ?1 AND {owner_sql}")
+            }
         }
-        Scope::Mine => format!(
-            "SELECT DISTINCT c.name FROM projects p JOIN categories c ON c.id = p.category_id \
-             WHERE {}",
-            resource_access::visible_sql(ResourceKind::Project, "p", 1)
-        ),
+    } else {
+        match scope {
+            Scope::All => format!("{join} WHERE p.deleted_at IS NULL AND {owner_sql}"),
+            Scope::Mine => format!(
+                "{join} WHERE {} AND {owner_sql}",
+                resource_access::visible_sql(ResourceKind::Project, "p", 1)
+            ),
+        }
     };
-    let sql = format!("SELECT name FROM categories WHERE user_id = ?1 UNION {used}");
+    let sql = if filter.trashed {
+        used
+    } else if filter.owner.is_some() {
+        // Narrowed to an owner: only the categories their projects use.
+        used
+    } else {
+        format!("SELECT name FROM categories WHERE user_id = ?1 UNION {used}")
+    };
     let rows: Vec<String> = sqlx::query_scalar(sqlx::AssertSqlSafe(sql.as_str()))
         .bind(user_id)
+        .bind(owner_eq)
+        .bind(owner_ne)
         .fetch_all(pool)
         .await?;
     let mut seen = std::collections::HashSet::new();

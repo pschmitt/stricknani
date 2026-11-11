@@ -22,6 +22,7 @@ import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.RefreshTrigger
 import blue.anika.wolle.ui.common.SuggestedFilters
 import blue.anika.wolle.ui.common.SuggestionAction
+import blue.anika.wolle.ui.common.SuggestionPool
 import blue.anika.wolle.ui.common.SuggestionKind
 import blue.anika.wolle.ui.common.TRASHED_ONLY
 import blue.anika.wolle.ui.common.TrashedList
@@ -34,6 +35,7 @@ import blue.anika.wolle.ui.common.ownerChoiceFromArg
 import blue.anika.wolle.ui.common.ownerChoiceMatches
 import blue.anika.wolle.ui.common.ownerOptions
 import blue.anika.wolle.ui.common.toArg
+import blue.anika.wolle.ui.common.trashedOwnerOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
@@ -50,18 +52,14 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+/**
+ * The tags of the projects this device holds, most used first, then by name: the order of the
+ * server's tag list (`GET /api/v2/projects/tags`) and so of the website's chips and suggestions.
+ */
 internal fun projectTags(
     projects: List<ProjectEntity>,
     decodeTags: (ProjectEntity) -> List<String>,
-): List<String> =
-    projects
-        .asSequence()
-        .flatMap { decodeTags(it).asSequence() }
-        .map(String::trim)
-        .filter(String::isNotEmpty)
-        .distinctBy { it.lowercase() }
-        .sortedWith(String.CASE_INSENSITIVE_ORDER)
-        .toList()
+): List<String> = tagCounts(projects.map(decodeTags)).map { it.tag }
 
 internal fun filterProjects(
     entities: List<ProjectEntity>,
@@ -272,6 +270,41 @@ constructor(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
                 TrashedList.Idle,
+            )
+
+    /**
+     * What the search suggestions draw from: the live tags, categories and owners (Room never holds
+     * a trashed item), or those of the trashed items while the Trash filter is on.
+     */
+    val suggestionPool: StateFlow<SuggestionPool> =
+        combine(trashedOnly, fetchedTrash, tags, categories, owners, _currentUserId) { values ->
+                @Suppress("UNCHECKED_CAST") val trashed = values[1] as TrashedList<ProjectListItemDto>
+                val ready = (trashed as? TrashedList.Ready)?.items
+                if (values[0] as Boolean) {
+                    SuggestionPool(
+                        tags =
+                            tagCounts(ready.orEmpty().map { it.tags }).map { it.tag },
+                        categories =
+                            ready
+                                .orEmpty()
+                                .mapNotNull { it.category }
+                                .distinctBy { it.lowercase() }
+                                .sortedWith(String.CASE_INSENSITIVE_ORDER),
+                        owners = trashedOwnerOptions(ready.orEmpty().asSequence().map { it.owner }, values[5] as Long?),
+                    )
+                } else {
+                    @Suppress("UNCHECKED_CAST")
+                    SuggestionPool(
+                        values[2] as List<String>,
+                        (values[3] as List<CategoryEntity>).map { it.name },
+                        values[4] as List<OwnerBadgeData>,
+                    )
+                }
+            }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                SuggestionPool(),
             )
 
     init {

@@ -123,7 +123,10 @@
   // Trash): picking one applies it, as the filter pills do, and drops the typed text.
   const suggestionConfig = $derived({
     load: (query: string, signal: AbortSignal) =>
-      loadFilterSuggestions("yarns", query, locale, signal),
+      loadFilterSuggestions("yarns", query, locale, signal, {
+        trashed: filters.trashed === "only",
+        owner: filters.owner,
+      }),
     select: (suggestion: FilterSuggestion) => {
       searchText = "";
       applyFilters(applyYarnSuggestion(filters, suggestion.action));

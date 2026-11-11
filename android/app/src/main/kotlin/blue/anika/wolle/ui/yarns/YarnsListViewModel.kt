@@ -31,6 +31,7 @@ import blue.anika.wolle.ui.common.ownerChoiceFromArg
 import blue.anika.wolle.ui.common.ownerChoiceMatches
 import blue.anika.wolle.ui.common.ownerOptions
 import blue.anika.wolle.ui.common.toArg
+import blue.anika.wolle.ui.common.trashedOwnerOptions
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
@@ -176,6 +177,24 @@ constructor(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
                 TrashedList.Idle,
+            )
+
+    /** The owners the search suggestions offer: the live ones, or the trash's while that filter is on. */
+    val suggestionOwners: StateFlow<List<OwnerBadgeData>> =
+        combine(trashedOnly, fetchedTrash, owners, _currentUserId) { trashedOnly, trashed, live, me ->
+                if (trashedOnly) {
+                    trashedOwnerOptions(
+                        (trashed as? TrashedList.Ready)?.items.orEmpty().asSequence().map { it.owner },
+                        me,
+                    )
+                } else {
+                    live
+                }
+            }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                emptyList(),
             )
 
     init {

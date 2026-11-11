@@ -28,6 +28,20 @@ class ProjectsListViewModelTest {
     }
 
     @Test
+    fun `the most used tag comes first, then tags by name`() {
+        val tags =
+            projectTags(projects) { entity ->
+                when (entity.id) {
+                    1 -> listOf("quick", "lace")
+                    2 -> listOf("lace")
+                    else -> listOf("Lace", "alpha")
+                }
+            }
+
+        assertEquals(listOf("lace", "alpha", "quick"), tags)
+    }
+
+    @Test
     fun `category and tag filters can be combined`() {
         val filtered =
             filterProjects(

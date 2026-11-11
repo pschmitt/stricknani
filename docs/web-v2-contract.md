@@ -485,7 +485,12 @@ projects the caller sees (everybody's for administrators); yarns have neither.
 else, and never carries an email address. A blank `q` answers three empty
 lists. The clients add the fixed filters (status, Mine and Shared with me,
 Favorites only, Trash) themselves from the same rules, and picking a suggestion
-sets the same filter and URL as the filter pills.
+sets the same filter and URL as the filter pills. Trashed projects and yarns,
+their owners and their categories are never suggested; `trashed=only` (the
+Trash filter is on) draws the suggestions from the trash instead (own trash,
+everybody's for administrators), and `owner=me|shared|<id>` narrows tags and
+categories like it narrows the lists. Tags come most used first, then by name,
+on the web and on Android.
 
 The project DTO keeps v1 project field names and numeric IDs. It includes
 `id`, `name`, `category`, `yarn`, `needles`, `stitch_sample`, `description`,

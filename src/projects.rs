@@ -1965,12 +1965,32 @@ pub(crate) struct TagCount {
     pub(crate) count: i64,
 }
 
+/// Which projects the tag inventory is counted over, beyond the library scope.
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct TagSource {
+    /// Count the projects in the trash instead of the live ones (the owner's and the
+    /// administrators' trash only, never through a share).
+    pub(crate) trashed: bool,
+    /// Narrow to one owner, like the lists' `owner=` filter.
+    pub(crate) owner: Option<crate::resource_access::OwnerFilter>,
+}
+
 /// The distinct project tags visible in the requested library scope. An omitted scope keeps the
 /// historical owned/shared inventory; only administrators can widen it to every project.
 pub(crate) async fn tag_counts_for_scope(
     state: &AppState,
     user_id: i64,
     requested_scope: Option<&str>,
+) -> Result<Vec<TagCount>, ProjectError> {
+    tag_counts_for_source(state, user_id, requested_scope, TagSource::default()).await
+}
+
+/// [`tag_counts_for_scope`] over the live or the trashed projects, optionally of one owner.
+pub(crate) async fn tag_counts_for_source(
+    state: &AppState,
+    user_id: i64,
+    requested_scope: Option<&str>,
+    source: TagSource,
 ) -> Result<Vec<TagCount>, ProjectError> {
     let requested_scope = requested_scope
         .map(|value| {
@@ -1983,26 +2003,36 @@ pub(crate) async fn tag_counts_for_scope(
         crate::resource_access::effective_scope(&state.pool, user_id, Some(requested_scope))
             .await
             .map_err(|_| ProjectError::Database)?;
-    let rows: Vec<String> = match scope {
-        crate::resource_access::Scope::All => {
-            sqlx::query_scalar("SELECT p.tags FROM projects p WHERE p.deleted_at IS NULL")
-                .fetch_all(&state.pool)
-                .await
-        }
-        crate::resource_access::Scope::Mine => {
-            sqlx::query_scalar(
-                "SELECT p.tags FROM projects p WHERE p.deleted_at IS NULL \
-                 AND (p.owner_id = ? OR EXISTS( \
-                 SELECT 1 FROM resource_shares s WHERE s.kind = 'project' \
-                 AND s.resource_id = p.id AND s.user_id = ?))",
-            )
-            .bind(user_id)
-            .bind(user_id)
-            .fetch_all(&state.pool)
-            .await
-        }
-    }
-    .map_err(|_| ProjectError::Database)?;
+    let (owner_eq, owner_ne) = crate::resource_access::OwnerFilter::binds(source.owner, user_id);
+    let state_sql = if source.trashed {
+        "p.deleted_at IS NOT NULL"
+    } else {
+        "p.deleted_at IS NULL"
+    };
+    let sql = match scope {
+        crate::resource_access::Scope::All => format!(
+            "SELECT p.tags FROM projects p WHERE {state_sql} \
+             AND (?1 IS NULL OR p.owner_id = ?1) AND (?2 IS NULL OR p.owner_id != ?2)"
+        ),
+        crate::resource_access::Scope::Mine if source.trashed => format!(
+            "SELECT p.tags FROM projects p WHERE {state_sql} AND p.owner_id = ?3 \
+             AND (?1 IS NULL OR p.owner_id = ?1) AND (?2 IS NULL OR p.owner_id != ?2)"
+        ),
+        crate::resource_access::Scope::Mine => format!(
+            "SELECT p.tags FROM projects p WHERE {state_sql} \
+             AND (p.owner_id = ?3 OR EXISTS( \
+             SELECT 1 FROM resource_shares s WHERE s.kind = 'project' \
+             AND s.resource_id = p.id AND s.user_id = ?3)) \
+             AND (?1 IS NULL OR p.owner_id = ?1) AND (?2 IS NULL OR p.owner_id != ?2)"
+        ),
+    };
+    let rows: Vec<String> = sqlx::query_scalar(sqlx::AssertSqlSafe(sql.as_str()))
+        .bind(owner_eq)
+        .bind(owner_ne)
+        .bind(user_id)
+        .fetch_all(&state.pool)
+        .await
+        .map_err(|_| ProjectError::Database)?;
     // lowercase key -> (spelling -> projects using it)
     let mut groups: std::collections::HashMap<String, std::collections::HashMap<String, i64>> =
         std::collections::HashMap::new();

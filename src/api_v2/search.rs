@@ -22,6 +22,10 @@ struct SuggestionQuery {
     q: Option<String>,
     /// `projects` (default) or `yarns`.
     kind: Option<String>,
+    /// `only` suggests from the trash (the Trash filter is on) instead of the live items.
+    trashed: Option<String>,
+    /// `me`, `shared` or a user id, like the lists' `owner=`: narrows tag and category suggestions.
+    owner: Option<String>,
 }
 
 /// Tag, category and (administrators only) owner suggestions for the typed text.
@@ -54,7 +58,34 @@ async fn search_suggestions(
             }
         },
     };
-    match suggestions::suggest(&state.app, user_id, kind, query.q.as_deref().unwrap_or("")).await {
+    let trashed = match query.trashed.as_deref() {
+        None | Some("") => false,
+        Some("only") => true,
+        Some(_) => {
+            return api_error(
+                StatusCode::UNPROCESSABLE_ENTITY,
+                "validation_error",
+                "Invalid trashed",
+            );
+        }
+    };
+    let Ok(owner) = crate::resource_access::OwnerFilter::parse(query.owner.as_deref()) else {
+        return api_error(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "validation_error",
+            "Invalid owner",
+        );
+    };
+    let filter = suggestions::SuggestionFilter { trashed, owner };
+    match suggestions::suggest(
+        &state.app,
+        user_id,
+        kind,
+        query.q.as_deref().unwrap_or(""),
+        filter,
+    )
+    .await
+    {
         Ok(data) => Json(Envelope { data }).into_response(),
         Err(_) => api_error(
             StatusCode::INTERNAL_SERVER_ERROR,

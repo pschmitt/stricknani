@@ -141,14 +141,15 @@ fun YarnsListScreen(
             Column(Modifier.fillMaxSize()) {
                 val isAdmin = rememberIsAdmin()
                 val fixedLabels = rememberFixedFilterLabels()
+                val suggestionOwners by viewModel.suggestionOwners.collectAsStateWithLifecycle()
                 val suggestions =
-                    remember(searchQuery, owners, isAdmin, fixedLabels) {
+                    remember(searchQuery, suggestionOwners, isAdmin, fixedLabels) {
                         buildFilterSuggestions(
                             query = searchQuery,
                             kind = SuggestionKind.Yarns,
                             tags = emptyList(),
                             categories = emptyList(),
-                            owners = owners,
+                            owners = suggestionOwners,
                             isAdmin = isAdmin,
                             labels = fixedLabels,
                         )

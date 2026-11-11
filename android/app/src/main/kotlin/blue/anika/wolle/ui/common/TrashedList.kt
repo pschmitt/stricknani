@@ -55,3 +55,20 @@ fun filterTrashedYarns(
             yarn.brand?.contains(query, ignoreCase = true) == true ||
             yarn.colorway?.contains(query, ignoreCase = true) == true)
 }
+
+/** The tags, categories and owners the search suggestions of a list draw from. */
+data class SuggestionPool(
+    val tags: List<String> = emptyList(),
+    val categories: List<String> = emptyList(),
+    val owners: List<OwnerBadgeData> = emptyList(),
+)
+
+/**
+ * The other owners of trashed items, as owner options: while the Trash filter is on the
+ * suggestions come from the trashed set, like the server's `trashed=only`.
+ */
+fun trashedOwnerOptions(
+    owners: Sequence<blue.anika.wolle.data.api.dto.OwnerDto?>,
+    currentUserId: Long?,
+): List<OwnerBadgeData> =
+    ownerOptions(owners.map { ownerBadgeOf(it?.id, it?.name, it?.avatarUrl, currentUserId) })

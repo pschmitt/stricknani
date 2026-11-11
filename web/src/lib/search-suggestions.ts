@@ -225,12 +225,21 @@ export function parseRemoteSuggestions(payload: unknown): RemoteSuggestions {
   };
 }
 
+/** The list filters the suggestions follow: the trash while its pill is on, one owner's items. */
+export interface SuggestionScope {
+  trashed?: boolean;
+  owner?: string;
+}
+
 export async function fetchRemoteSuggestions(
   kind: SuggestionKind,
   query: string,
   signal: AbortSignal,
+  scope: SuggestionScope = {},
 ): Promise<RemoteSuggestions> {
   const params = new URLSearchParams({ q: query.trim(), kind });
+  if (scope.trashed) params.set("trashed", "only");
+  if (scope.owner) params.set("owner", scope.owner);
   return parseRemoteSuggestions(
     await apiRequest(`/api/v2/search/suggestions?${params}`, { signal }),
   );
@@ -245,11 +254,12 @@ export async function loadFilterSuggestions(
   query: string,
   locale: Locale,
   signal: AbortSignal,
+  scope: SuggestionScope = {},
 ): Promise<FilterSuggestion[]> {
   if (!foldedQuery(query)) return [];
   let remote: RemoteSuggestions | null = null;
   try {
-    remote = await fetchRemoteSuggestions(kind, query, signal);
+    remote = await fetchRemoteSuggestions(kind, query, signal, scope);
   } catch (error) {
     if (signal.aborted) throw error;
   }

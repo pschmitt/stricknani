@@ -361,3 +361,111 @@ async fn administrators_get_owners_and_everybodys_tags_and_categories() {
     assert_eq!(names, ["Anika"]);
     assert!(tag_names(&body).is_empty());
 }
+
+#[tokio::test]
+async fn suggestions_leave_out_the_trash_unless_the_trash_filter_is_on() {
+    let f = fixture().await;
+    let live = project(&f.pool, f.anika_id, "Live", "2026-01-01T00:00:00Z").await;
+    set_project_tags(&f.pool, live, &["wolle", "wintertag"]).await;
+    categorize(&f.pool, f.anika_id, live, "Winter").await;
+    let binned = project(&f.pool, f.ben_id, "Binned", "2026-01-02T00:00:00Z").await;
+    set_project_tags(&f.pool, binned, &["wintertrash"]).await;
+    categorize(&f.pool, f.ben_id, binned, "Wintertrash").await;
+    // Ben's project is in the trash; the category stays his own live category.
+    let (status, _) = call(
+        &f.app,
+        "DELETE",
+        &format!("/api/v2/projects/{binned}"),
+        BEN_PAT,
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+
+    // Administrators see everybody's items: the trashed one and its owner are not suggested.
+    let (_, body) = call(
+        &f.app,
+        "GET",
+        "/api/v2/search/suggestions?q=win",
+        ADMIN_PAT,
+        None,
+    )
+    .await;
+    assert_eq!(tag_names(&body), ["wintertag"], "{body}");
+    assert_eq!(category_names(&body), ["Winter"], "{body}");
+    let (_, body) = call(
+        &f.app,
+        "GET",
+        "/api/v2/search/suggestions?q=ben",
+        ADMIN_PAT,
+        None,
+    )
+    .await;
+    assert!(
+        body["data"]["owners"].as_array().unwrap().is_empty(),
+        "{body}"
+    );
+
+    // With the Trash filter on, they come from the trashed set instead.
+    let (_, body) = call(
+        &f.app,
+        "GET",
+        "/api/v2/search/suggestions?q=win&trashed=only",
+        ADMIN_PAT,
+        None,
+    )
+    .await;
+    assert_eq!(tag_names(&body), ["wintertrash"], "{body}");
+    assert_eq!(category_names(&body), ["Wintertrash"], "{body}");
+    let (_, body) = call(
+        &f.app,
+        "GET",
+        "/api/v2/search/suggestions?q=ben&trashed=only",
+        ADMIN_PAT,
+        None,
+    )
+    .await;
+    assert_eq!(body["data"]["owners"][0]["name"], "ben", "{body}");
+
+    // Owners of the trash are their own: Ben sees his trash, Anika none of it.
+    let (_, body) = call(
+        &f.app,
+        "GET",
+        "/api/v2/search/suggestions?q=win&trashed=only",
+        BEN_PAT,
+        None,
+    )
+    .await;
+    assert_eq!(tag_names(&body), ["wintertrash"], "{body}");
+    let (_, body) = call(
+        &f.app,
+        "GET",
+        "/api/v2/search/suggestions?q=win&trashed=only",
+        ANIKA_PAT,
+        None,
+    )
+    .await;
+    assert!(tag_names(&body).is_empty(), "{body}");
+
+    // `owner=` narrows tags the way it narrows lists, and bad values are rejected.
+    let (_, body) = call(
+        &f.app,
+        "GET",
+        &format!("/api/v2/search/suggestions?q=win&owner={}", f.anika_id),
+        ADMIN_PAT,
+        None,
+    )
+    .await;
+    assert_eq!(tag_names(&body), ["wintertag"], "{body}");
+    for bad in ["trashed=maybe", "owner=nobody"] {
+        let (status, _) = call(
+            &f.app,
+            "GET",
+            &format!("/api/v2/search/suggestions?q=win&{bad}"),
+            ADMIN_PAT,
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{bad}");
+    }
+}

@@ -138,14 +138,15 @@ fun ProjectsListScreen(
             Column(Modifier.fillMaxSize()) {
                 val isAdmin = rememberIsAdmin()
                 val fixedLabels = rememberFixedFilterLabels()
+                val pool by viewModel.suggestionPool.collectAsStateWithLifecycle()
                 val suggestions =
-                    remember(searchQuery, tags, categories, owners, isAdmin, fixedLabels) {
+                    remember(searchQuery, pool, isAdmin, fixedLabels) {
                         buildFilterSuggestions(
                             query = searchQuery,
                             kind = SuggestionKind.Projects,
-                            tags = tags,
-                            categories = categories.map { it.name },
-                            owners = owners,
+                            tags = pool.tags,
+                            categories = pool.categories,
+                            owners = pool.owners,
                             isAdmin = isAdmin,
                             labels = fixedLabels,
                         )

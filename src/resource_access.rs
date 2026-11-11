@@ -65,6 +65,38 @@ impl OwnerFilter {
     }
 }
 
+/// The owners, other than the caller, of the items in the trash that the caller can open (an
+/// administrator's view of everybody's trash): the owner options while the Trash filter is on.
+pub(crate) async fn trashed_owners(
+    pool: &SqlitePool,
+    actor_id: i64,
+    kind: ResourceKind,
+    gravatar_enabled: bool,
+) -> Result<Vec<OwnerInfo>, sqlx::Error> {
+    let sql = format!(
+        "SELECT DISTINCT t.owner_id FROM {} t \
+         WHERE t.owner_id != ?1 AND t.deleted_at IS NOT NULL",
+        kind.table()
+    );
+    let ids: Vec<i64> = sqlx::query_scalar(sqlx::AssertSqlSafe(sql.as_str()))
+        .bind(actor_id)
+        .fetch_all(pool)
+        .await?;
+    let mut owners = Vec::with_capacity(ids.len());
+    for id in ids {
+        if let Some(owner) = owner_info(pool, actor_id, id, gravatar_enabled).await? {
+            owners.push(owner);
+        }
+    }
+    owners.sort_by(|a, b| {
+        a.name
+            .to_lowercase()
+            .cmp(&b.name.to_lowercase())
+            .then(a.id.cmp(&b.id))
+    });
+    Ok(owners)
+}
+
 /// The owners, other than the caller, of the items the caller sees in `scope`:
 /// the options of the owner filter. Share recipients get names and avatars
 /// only, never emails (see [`owner_info`]).
