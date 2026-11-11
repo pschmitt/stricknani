@@ -355,8 +355,17 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
   await detailHeading.waitFor({ state: "visible" });
   await statusFeedback("Project created.").waitFor({ state: "visible" });
   markStage("checking the photo on the newly created project");
-  const renderedProjectPhoto = page.locator(".photo-strip img");
+  const renderedProjectPhoto = page.locator(
+    ".photo-strip .screen-reference-image",
+  );
   await renderedProjectPhoto.waitFor({ state: "visible" });
+  await expect
+    .poll(() =>
+      renderedProjectPhoto.evaluate(
+        (image) => (image as HTMLImageElement).naturalWidth,
+      ),
+    )
+    .toBeGreaterThan(0);
   check(
     await renderedProjectPhoto.evaluate(
       (image) => (image as HTMLImageElement).naturalWidth > 0,
