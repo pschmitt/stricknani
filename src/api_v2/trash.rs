@@ -1,7 +1,9 @@
 //! The trash: list, restore and delete forever.
 //!
-//! `GET /trash` lists the caller's trashed projects and yarns (`scope=all`
-//! lists every account's, administrators only). `POST /trash/{kind}/{id}/restore`
+//! `GET /trash` lists the caller's trashed projects and yarns, plus what the
+//! caller trashed in somebody else's project or yarn (`scope=all` lists every
+//! account's, administrators only; `can_restore` tells whether the caller may
+//! act on an item). `POST /trash/{kind}/{id}/restore`
 //! and `DELETE /trash/{kind}/{id}` act on one item; `kind` is `projects`,
 //! `yarns`, `categories`, `steps`, `images`, `attachments` or `photos`. Only
 //! the owner and administrators may; anyone else gets `404`. Restoring a child

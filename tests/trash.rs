@@ -2465,3 +2465,60 @@ async fn trash_items_carry_a_thumbnail_the_owner_and_admin_can_load() {
     assert_eq!(get_media(&f, &url, "anika").await.0, StatusCode::NOT_FOUND);
     assert_eq!(get_media(&f, &direct, "anika").await.0, StatusCode::OK);
 }
+
+#[tokio::test]
+async fn the_trash_lists_what_a_deleter_trashed_in_someone_elses_project() {
+    let f = fx().await;
+    let p = f.p1;
+    // The administrator removes a photo of Anika's project.
+    let (status, _) = call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}/images/101"),
+        Some("admin"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+
+    // The owner sees it, with herself as the owner and the right to restore it.
+    let (_, mine) = call(&f, "GET", "/api/v2/trash", Some("anika")).await;
+    assert_eq!(list_ids(&mine), vec![("image".to_owned(), 101)]);
+    assert_eq!(mine["data"][0]["owner"]["id"], f.anika);
+    assert_eq!(mine["data"][0]["can_restore"], true);
+
+    // The deleting administrator sees it in their own view, naming the owner.
+    let (_, admin) = call(&f, "GET", "/api/v2/trash", Some("admin")).await;
+    assert_eq!(list_ids(&admin), vec![("image".to_owned(), 101)]);
+    assert_eq!(admin["data"][0]["owner"]["id"], f.anika);
+    assert_eq!(admin["data"][0]["can_restore"], true);
+
+    // Unrelated accounts see nothing, with either scope.
+    for who in ["ben", "vera"] {
+        let (_, other) = call(&f, "GET", "/api/v2/trash", Some(who)).await;
+        assert!(list_ids(&other).is_empty(), "{who} must not see the item");
+    }
+
+    // An editor who is not an administrator sees what they trashed, but may not restore it.
+    sqlx::query(
+        "UPDATE resource_shares SET role = 'editor' WHERE kind = 'project' AND resource_id = ? AND user_id = ?",
+    )
+    .bind(p)
+    .bind(f.vera)
+    .execute(&f.pool)
+    .await
+    .unwrap();
+    media(&f.pool, f.anika, Some(p), None, 103).await;
+    let (status, _) = call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}/images/103"),
+        Some("vera"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    let (_, vera) = call(&f, "GET", "/api/v2/trash", Some("vera")).await;
+    assert_eq!(list_ids(&vera), vec![("image".to_owned(), 103)]);
+    assert_eq!(vera["data"][0]["can_restore"], false);
+    let (status, _) = call(&f, "POST", "/api/v2/trash/images/103/restore", Some("vera")).await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+}
