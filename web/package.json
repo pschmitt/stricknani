@@ -29,7 +29,7 @@
     "i18n:check": "node scripts/i18n/check-translations.mjs && node scripts/i18n/generate-rust.mjs --check && node scripts/i18n/generate-web.mjs --check"
   },
   "dependencies": {
-    "@sentry/svelte": "11.11.0",
+    "@sentry/svelte": "11.12.0",
     "markdown-it": "15.0.3",
     "prosemirror-commands": "1.7.2",
     "prosemirror-history": "1.5.1",
