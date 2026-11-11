@@ -8,6 +8,7 @@
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
+  import { publishMovedToTrash } from "../trash/trash-undo";
   import {
     createCategory,
     deleteCategory,
@@ -173,6 +174,16 @@
       deleteDialog?.close();
       deleteTarget = null;
       statusMessage = t("Category deleted.", locale);
+      publishMovedToTrash({
+        session: currentSession,
+        ownerId: currentSession.user.id,
+        locale,
+        kind: "category",
+        id: category.id,
+        onRestored: () => {
+          if (userId === currentSession.user?.id) reload += 1;
+        },
+      });
     } catch (error) {
       showMutationError(error, "delete");
     } finally {
@@ -376,6 +387,10 @@
     <p>
       {t("Delete", locale)} <strong>{deleteTarget.name}</strong>? {t(
         "Projects that use this category will no longer show it.",
+        locale,
+      )}
+      {t(
+        "It moves to the trash and can be restored from there for 90 days.",
         locale,
       )}
     </p>

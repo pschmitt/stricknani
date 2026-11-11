@@ -175,6 +175,7 @@
     | "/imports"
     | "/categories"
     | "/gauge"
+    | "/trash"
     | "/privacy"
     | "/about"
     | "/delete-account"

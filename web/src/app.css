@@ -965,6 +965,11 @@ a[data-tone="admin"] {
   --tone: var(--tone-admin);
   --tone-wash: var(--tone-admin-wash);
 }
+.nav-icon[data-tone="trash"],
+a[data-tone="trash"] {
+  --tone: var(--tone-admin);
+  --tone-wash: var(--tone-admin-wash);
+}
 .nav-icon[data-tone="audit"],
 a[data-tone="audit"] {
   --tone: var(--tone-audit);

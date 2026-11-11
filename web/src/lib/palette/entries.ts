@@ -103,6 +103,7 @@ const PAGE_KEYWORDS: Record<string, string[]> = {
   "/create": ["import new"],
   "/categories": ["tags labels organize"],
   "/gauge": ["swatch stitches rows calculator"],
+  "/trash": ["deleted restore undo bin recycle"],
 };
 
 export interface StaticEntryOptions {

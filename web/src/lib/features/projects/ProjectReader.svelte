@@ -39,6 +39,7 @@
   import ProjectTimer from "./ProjectTimer.svelte";
   import { projectTimerPreference } from "#lib/timer-preference.svelte.ts";
   import { publishFeedback } from "#lib/feedback.ts";
+  import { publishMovedToTrash } from "../trash/trash-undo";
   import { msg, t } from "#lib/i18n.svelte.ts";
   import { plainTextSummary } from "./facts-summary.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -236,6 +237,15 @@
       await deleteProject(current.id, currentSession);
       if (generation !== resourceGeneration) return;
       untrack(() => deleteDialog?.close());
+      publishMovedToTrash({
+        session: currentSession,
+        ownerId,
+        locale,
+        kind: "project",
+        id: current.id,
+        onRestored: () =>
+          goto(resolve("/projects/[id]", { id: String(current.id) })),
+      });
       await goto(resolve("/projects"));
     } catch (error) {
       if (generation !== resourceGeneration) return;
@@ -1398,11 +1408,16 @@
     <ConfirmDialog
       bind:this={deleteDialog}
       titleId="reader-delete-project-title"
-      title={t("Delete this project? This cannot be undone.", locale)}
+      title={t("Delete this project?", locale)}
       busy={deleting}
     >
       {#snippet children()}
-        <p>{t("This cannot be undone.", locale)}</p>
+        <p>
+          {t(
+            "It moves to the trash and can be restored from there for 90 days.",
+            locale,
+          )}
+        </p>
         {#if deleteError}<p class="print-error" role="alert">
             {deleteError}
           </p>{/if}

@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { get } from "svelte/store";
 import {
+  FEEDBACK_ACTION_DISMISS_MS,
+  FEEDBACK_DISMISS_MS,
   clearFeedback,
   dismissFeedback,
   feedback,
@@ -65,6 +67,29 @@ describe("owner-scoped feedback events", () => {
     clearFeedback();
     vi.advanceTimersByTime(4_000);
 
+    expect(get(feedback)).toBeNull();
+  });
+
+  it("keeps a toast with an action longer than a plain one", () => {
+    const onAction = vi.fn();
+    const id = publishFeedback({
+      ownerId: 7,
+      kind: "success",
+      message: "Moved to the trash",
+      action: { label: "Undo", onAction },
+    });
+
+    vi.advanceTimersByTime(FEEDBACK_DISMISS_MS);
+    expect(get(feedback)).toMatchObject({ id, action: { label: "Undo" } });
+
+    vi.advanceTimersByTime(FEEDBACK_ACTION_DISMISS_MS - FEEDBACK_DISMISS_MS);
+    expect(get(feedback)).toBeNull();
+    expect(onAction).not.toHaveBeenCalled();
+  });
+
+  it("dismisses a plain success toast after the short delay", () => {
+    publishFeedback({ ownerId: 7, kind: "success", message: "Saved" });
+    vi.advanceTimersByTime(FEEDBACK_DISMISS_MS);
     expect(get(feedback)).toBeNull();
   });
 });

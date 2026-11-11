@@ -2,12 +2,23 @@ import { get, readonly, writable } from "svelte/store";
 
 export type FeedbackKind = "success" | "error";
 
+/** An optional button on a toast, such as "Undo". Dismisses the toast when it runs. */
+export interface FeedbackAction {
+  label: string;
+  onAction: () => void | Promise<void>;
+}
+
 export interface FeedbackEvent {
   id: number;
   ownerId: number;
   kind: FeedbackKind;
   message: string;
+  action?: FeedbackAction;
 }
+
+/** How long a success toast stays; longer with an action so it can be reached. */
+export const FEEDBACK_DISMISS_MS = 4_000;
+export const FEEDBACK_ACTION_DISMISS_MS = 8_000;
 
 const feedbackState = writable<FeedbackEvent | null>(null);
 export const feedback = readonly(feedbackState);
@@ -22,7 +33,10 @@ export function publishFeedback(event: Omit<FeedbackEvent, "id">): number {
   feedbackState.set({ ...event, id });
 
   if (event.kind === "success") {
-    successTimer = setTimeout(() => dismissFeedback(id), 4_000);
+    successTimer = setTimeout(
+      () => dismissFeedback(id),
+      event.action ? FEEDBACK_ACTION_DISMISS_MS : FEEDBACK_DISMISS_MS,
+    );
   } else {
     successTimer = undefined;
   }

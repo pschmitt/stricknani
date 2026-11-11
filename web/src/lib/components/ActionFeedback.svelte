@@ -20,6 +20,22 @@
       ? 0
       : ms;
 
+  let actionBusy = $state(false);
+
+  async function runAction(
+    id: number,
+    onAction: () => void | Promise<void>,
+  ): Promise<void> {
+    if (actionBusy) return;
+    actionBusy = true;
+    dismissFeedback(id);
+    try {
+      await onAction();
+    } finally {
+      actionBusy = false;
+    }
+  }
+
   const currentEvent = $derived(
     ownerId !== null && $feedback?.ownerId === ownerId ? $feedback : null,
   );
@@ -30,6 +46,7 @@
     <div
       class="action-feedback"
       class:action-feedback--error={currentEvent.kind === "error"}
+      class:action-feedback--has-action={Boolean(currentEvent.action)}
       role={currentEvent.kind === "error" ? "alert" : "status"}
       aria-live={currentEvent.kind === "error" ? "assertive" : "polite"}
       aria-atomic="true"
@@ -54,6 +71,18 @@
         {/if}
       </span>
       <span class="action-feedback__text">{currentEvent.message}</span>
+      {#if currentEvent.action}
+        {@const action = currentEvent.action}
+        <button
+          type="button"
+          class="action-feedback__action"
+          data-testid="feedback-action"
+          disabled={actionBusy}
+          onclick={() => void runAction(currentEvent.id, action.onAction)}
+        >
+          {action.label}
+        </button>
+      {/if}
       <button
         type="button"
         class="action-feedback__close"
@@ -113,6 +142,10 @@
     overflow: hidden;
   }
 
+  .action-feedback--has-action {
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+  }
+
   .action-feedback--error {
     --toast-tone: var(--on-danger);
     --toast-tone-wash: var(--danger);
@@ -141,6 +174,27 @@
     padding-block: 0.2rem;
     overflow-y: auto;
     overflow-wrap: anywhere;
+  }
+
+  .action-feedback__action {
+    min-height: 44px;
+    border: 0;
+    border-radius: 999px;
+    padding: 0 0.9rem;
+    color: var(--accent-strong);
+    background: transparent;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .action-feedback__action:hover {
+    background: var(--surface-raised);
+  }
+
+  .action-feedback__action:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: -3px;
   }
 
   .action-feedback__close {

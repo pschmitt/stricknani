@@ -11,6 +11,7 @@
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { publishFeedback } from "#lib/feedback.ts";
+  import { publishMovedToTrash } from "../trash/trash-undo";
   import ReorderableMedia from "../media/ReorderableMedia.svelte";
   import {
     applyOptimisticReorder,
@@ -270,8 +271,17 @@
       if (
         deleteGeneration === generation &&
         isCurrentOperation(resourceId, ownerId)
-      )
+      ) {
         uploadMessage = t("Photo removed.", locale);
+        publishMovedToTrash({
+          session: currentSession,
+          ownerId,
+          locale,
+          kind: "photo",
+          id: photoId,
+          onRestored: () => updateResource(resourceId, ownerId),
+        });
+      }
     } catch (error) {
       if (
         deleteSucceeded
@@ -526,6 +536,10 @@
       {#if deleteTarget}
         <p>
           {t("The photo will be removed from this yarn.", locale)}
+          {t(
+            "It moves to the trash and can be restored from there for 90 days.",
+            locale,
+          )}
         </p>
       {/if}
       {#if deleteTarget && errorMessage}

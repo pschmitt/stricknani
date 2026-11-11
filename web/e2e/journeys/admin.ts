@@ -1050,6 +1050,7 @@ async function assertMoreNavigation(
   const expectedCards: Array<[string, string]> = [
     ["Categories", "/categories"],
     ["Gauge calculator", "/gauge"],
+    ["Trash", "/trash"],
   ];
   if (opts.isAdmin) expectedCards.push(["Admin", "/admin/users"]);
   expectedCards.push(["About", "/about"]);

@@ -34,6 +34,7 @@
   import OcrControl from "#lib/features/media/OcrControl.svelte";
   import ProjectLightbox from "#lib/features/media/ProjectLightbox.svelte";
   import { publishFeedback } from "#lib/feedback.ts";
+  import { publishMovedToTrash } from "../trash/trash-undo";
   import { msg, t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { textSize } from "#lib/text-size.svelte.ts";
@@ -274,10 +275,13 @@
     try {
       await deleteYarn(id, currentSession);
       if (!isCurrentResource(id, ownerId, generation)) return;
-      publishFeedback({
+      publishMovedToTrash({
+        session: currentSession,
         ownerId,
-        kind: "success",
-        message: t("Yarn deleted.", locale),
+        locale,
+        kind: "yarn",
+        id,
+        onRestored: () => goto(resolve("/yarns/[id]", { id: String(id) })),
       });
       untrack(() => deleteDialog?.close());
       await goto(resolve("/yarns"));
@@ -787,7 +791,7 @@
     {#snippet children()}
       <p>
         {t("Delete", locale)} <strong>{currentYarn.name}</strong>? {t(
-          "This cannot be undone.",
+          "It moves to the trash and can be restored from there for 90 days.",
           locale,
         )}
       </p>

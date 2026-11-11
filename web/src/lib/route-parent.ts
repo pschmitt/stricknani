@@ -26,7 +26,7 @@ export function routeParent(pathname: string, basePath: string): string | null {
     parent = "";
   } else if (route === "/privacy") {
     parent = "/about";
-  } else if (route === "/about" || route === "/backups") {
+  } else if (route === "/about" || route === "/backups" || route === "/trash") {
     parent = "/more";
   } else if (route === "/imports") {
     parent = "/create";
