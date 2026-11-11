@@ -35,6 +35,8 @@ export interface HistoryEvent {
    * share role, absent for transfers.
    */
   subject?: HistorySubject | null;
+  /** True only for the automatic purge of the trash: no actor. */
+  system?: boolean;
 }
 
 export interface HistorySubject {
@@ -91,6 +93,7 @@ export function parseHistoryEvent(value: unknown): HistoryEvent {
     media_thumbnails: parseChangeMedia(value.media_thumbnails),
     impersonated_by: parseImpersonator(value.impersonated_by),
     subject: parseSubject(value.subject),
+    system: value.system === true,
   };
 }
 

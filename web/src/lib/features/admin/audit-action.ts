@@ -6,7 +6,9 @@ export type AuditActionIcon =
   | "action-delete"
   | "action-upload"
   | "action-remove"
-  | "action-default";
+  | "action-default"
+  | "trash"
+  | "reset";
 
 export type AuditActionPresentation =
   | {
@@ -26,7 +28,17 @@ const knownActions: Record<
 > = {
   created: { icon: "action-create", messageKey: msg("Created") },
   updated: { icon: "action-update", messageKey: msg("Updated") },
-  deleted: { icon: "action-delete", messageKey: msg("Deleted") },
+  // Before the trash existed a deletion destroyed the item; those rows keep this action.
+  deleted: { icon: "action-delete", messageKey: msg("Deleted permanently") },
+  trashed: { icon: "trash", messageKey: msg("Moved to trash") },
+  restored: { icon: "reset", messageKey: msg("Restored from trash") },
+  purged: { icon: "action-delete", messageKey: msg("Deleted forever") },
+  step_trashed: { icon: "trash", messageKey: msg("Step moved to trash") },
+  step_restored: { icon: "reset", messageKey: msg("Step restored from trash") },
+  step_purged: {
+    icon: "action-delete",
+    messageKey: msg("Step deleted forever"),
+  },
   uploaded: { icon: "action-upload", messageKey: msg("Uploaded") },
   removed: { icon: "action-remove", messageKey: msg("Removed") },
   step_created: { icon: "action-create", messageKey: msg("Step created") },
@@ -96,9 +108,62 @@ const knownActions: Record<
 /** Every action the audit log knows by name (for filter suggestions). */
 export const knownAuditActions: Readonly<typeof knownActions> = knownActions;
 
+function mediaPresentation(
+  action: string,
+  kind: "image" | "attachment" | "photo" | null,
+): AuditActionPresentation | null {
+  if (kind === null) return null;
+  const table: Record<string, Record<string, string>> = {
+    trashed: {
+      image: msg("Image moved to trash"),
+      attachment: msg("Attachment moved to trash"),
+      photo: msg("Photo moved to trash"),
+    },
+    restored: {
+      image: msg("Image restored from trash"),
+      attachment: msg("Attachment restored from trash"),
+      photo: msg("Photo restored from trash"),
+    },
+    purged: {
+      image: msg("Image deleted forever"),
+      attachment: msg("Attachment deleted forever"),
+      photo: msg("Photo deleted forever"),
+    },
+  };
+  const messageKey = table[action]?.[kind];
+  if (!messageKey) return null;
+  return {
+    known: true,
+    icon:
+      action === "trashed"
+        ? "trash"
+        : action === "restored"
+          ? "reset"
+          : "action-delete",
+    messageKey,
+  };
+}
+
+/**
+ * How an action reads. `system` marks the automatic purge of the trash, which has no actor and
+ * reads "Purged automatically after 90 days" instead of "Deleted forever".
+ */
 export function auditActionPresentation(
   action: string,
+  options: {
+    system?: boolean;
+    /** The kind of file a trash event is about; words it "Image moved to trash" etc. */
+    mediaKind?: "image" | "attachment" | "photo" | null;
+  } = {},
 ): AuditActionPresentation {
+  const media = mediaPresentation(action, options.mediaKind ?? null);
+  if (media) return media;
+  if (action === "purged" && options.system === true)
+    return {
+      known: true,
+      icon: "action-delete",
+      messageKey: msg("Purged automatically after 90 days"),
+    };
   const known = Object.hasOwn(knownActions, action)
     ? knownActions[action]
     : undefined;

@@ -649,4 +649,136 @@ describe("administrator API", () => {
       code: "invalid_response",
     });
   });
+
+  describe("trash lifecycle fields", () => {
+    const base = {
+      id: 21,
+      actor_email: "admin@example.invalid",
+      actor_avatar_url: null,
+      legacy_actor_user_id: null,
+      entity_type: "project",
+      entity_id: 3,
+      action: "trashed",
+      created_at: "2026-11-01T12:00:00Z",
+      has_changes: false,
+    };
+    const trash = {
+      deleted_at: "2026-11-01T12:00:00Z",
+      purge_at: "2027-01-30T12:00:00Z",
+      days_remaining: 80,
+      can_restore: true,
+    };
+    const page = (event: unknown) =>
+      Response.json({
+        data: [event],
+        meta: { page: 1, per_page: 50, has_more: false },
+      });
+    const list = () => listAuditEvents({ page: 1, entity: "all", action: "" });
+
+    it("keeps old payloads without the new fields valid", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi
+          .fn()
+          .mockResolvedValue(
+            page({ ...base, action: "deleted", resource: projectResource(3) }),
+          ),
+      );
+      const [event] = (await list()).data;
+      expect(event).toMatchObject({
+        system: false,
+        subject: null,
+        resource: { state: null, trash: null },
+      });
+    });
+
+    it("reads a trashed entry that is still in the trash without a link", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+          page({
+            ...base,
+            subject: { id: 2, name: "Anna", role: null },
+            resource: {
+              ...projectResource(3),
+              href: "/app/projects/3",
+              preview_url:
+                "/api/v2/admin/resources/project/3/media/image/8/thumbnail",
+              exists: false,
+              state: "in_trash",
+              trash,
+            },
+          }),
+        ),
+      );
+      const [event] = (await list()).data;
+      expect(event.resource).toMatchObject({
+        exists: false,
+        state: "in_trash",
+        href: null,
+        preview_url: null,
+        trash,
+      });
+      expect(event.subject).toEqual({ id: 2, name: "Anna" });
+    });
+
+    it("reads the system purge without an actor", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+          page({
+            ...base,
+            actor_email: null,
+            action: "purged",
+            system: true,
+            resource: {
+              ...projectResource(3),
+              href: null,
+              exists: false,
+              state: "gone",
+            },
+          }),
+        ),
+      );
+      const [event] = (await list()).data;
+      expect(event).toMatchObject({
+        system: true,
+        actor_email: null,
+        resource: { state: "gone" },
+      });
+    });
+
+    it("rejects an unknown state or a malformed trash block", async () => {
+      for (const resource of [
+        { ...projectResource(3), state: "archived" },
+        { ...projectResource(3), state: "in_trash", trash: { can_restore: 1 } },
+      ]) {
+        vi.stubGlobal(
+          "fetch",
+          vi.fn().mockResolvedValue(page({ ...base, resource })),
+        );
+        await expect(list()).rejects.toMatchObject({
+          code: "invalid_response",
+        });
+      }
+    });
+
+    it("still rejects a live-resource link for a resource that is gone", async () => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+          page({
+            ...base,
+            resource: {
+              ...projectResource(3),
+              href: "/app/projects/3",
+              exists: false,
+              state: "gone",
+            },
+          }),
+        ),
+      );
+      await expect(list()).rejects.toMatchObject({ code: "invalid_response" });
+    });
+  });
 });

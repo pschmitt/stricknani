@@ -3,8 +3,20 @@
   import { t } from "#lib/i18n.svelte.ts";
   import { auditActionPresentation } from "./audit-action";
 
-  let { action, locale }: { action: string; locale: "en" | "de" } = $props();
-  const presentation = $derived(auditActionPresentation(action));
+  let {
+    action,
+    locale,
+    system = false,
+    mediaKind = null,
+  }: {
+    action: string;
+    locale: "en" | "de";
+    system?: boolean;
+    mediaKind?: "image" | "attachment" | "photo" | null;
+  } = $props();
+  const presentation = $derived(
+    auditActionPresentation(action, { system, mediaKind }),
+  );
   const label = $derived(
     presentation.known
       ? t(presentation.messageKey, locale)
@@ -14,11 +26,13 @@
 
 <span
   class="audit-action-badge"
-  class:action-badge--create={presentation.icon === "action-create"}
   class:action-badge--update={presentation.icon === "action-update"}
+  class:action-badge--create={presentation.icon === "action-create" ||
+    presentation.icon === "reset"}
   class:action-badge--upload={presentation.icon === "action-upload"}
   class:action-badge--delete={presentation.icon === "action-delete" ||
-    presentation.icon === "action-remove"}
+    presentation.icon === "action-remove" ||
+    presentation.icon === "trash"}
   class:action-badge--unknown={!presentation.known}
 >
   <NavIcon name={presentation.icon} />

@@ -22,6 +22,10 @@ describe("auditActionPresentation", () => {
     ["title_image_promoted", "action-update", "Title image changed"],
     ["impersonation_started", "action-default", "Impersonation started"],
     ["impersonation_stopped", "action-default", "Impersonation stopped"],
+    ["trashed", "trash", "Moved to trash"],
+    ["restored", "reset", "Restored from trash"],
+    ["purged", "action-delete", "Deleted forever"],
+    ["deleted", "action-delete", "Deleted permanently"],
   ] as const)(
     "maps %s to its action family and specific label",
     (action, icon, label) => {
@@ -46,5 +50,41 @@ describe("auditActionPresentation", () => {
         label: action,
       });
     }
+  });
+
+  it("words the automatic purge as the system's, not a person's", () => {
+    expect(auditActionPresentation("purged", { system: true })).toEqual({
+      known: true,
+      icon: "action-delete",
+      messageKey: "Purged automatically after 90 days",
+    });
+    expect(auditActionPresentation("purged", { system: false })).toMatchObject({
+      messageKey: "Deleted forever",
+    });
+    expect(auditActionPresentation("trashed", { system: true })).toMatchObject({
+      messageKey: "Moved to trash",
+    });
+  });
+
+  it("words step and file trash events by what they are about", () => {
+    expect(auditActionPresentation("step_trashed")).toMatchObject({
+      icon: "trash",
+      messageKey: "Step moved to trash",
+    });
+    expect(auditActionPresentation("step_purged")).toMatchObject({
+      messageKey: "Step deleted forever",
+    });
+    expect(
+      auditActionPresentation("trashed", { mediaKind: "image" }),
+    ).toMatchObject({ messageKey: "Image moved to trash" });
+    expect(
+      auditActionPresentation("restored", { mediaKind: "attachment" }),
+    ).toMatchObject({ messageKey: "Attachment restored from trash" });
+    expect(
+      auditActionPresentation("purged", { mediaKind: "photo" }),
+    ).toMatchObject({ messageKey: "Photo deleted forever" });
+    expect(auditActionPresentation("removed")).toMatchObject({
+      messageKey: "Removed",
+    });
   });
 });

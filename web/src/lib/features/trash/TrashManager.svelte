@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { page } from "$app/state";
   import { resolve } from "$app/paths";
   import { ApiError } from "#lib/api.ts";
   import Button from "#lib/components/Button.svelte";
@@ -15,7 +16,7 @@
     relativeTime,
   } from "#lib/features/history/history-summary.ts";
   import { t } from "#lib/i18n.svelte.ts";
-  import { scopeFor } from "#lib/library-scope.svelte.ts";
+  import { scopeFor, setScope } from "#lib/library-scope.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import { session } from "#lib/session.svelte.ts";
   import {
@@ -60,6 +61,14 @@
       ? restoredTarget(restored.kind, restored.id, restored.parent)
       : null,
   );
+
+  // The audit log links here with ?scope=all: an administrator lands on everyone's trash.
+  onMount(() => {
+    const requested = page.url.searchParams.get("scope");
+    const current = session.data?.user;
+    if (current?.is_admin && (requested === "all" || requested === "mine"))
+      setScope(current, requested);
+  });
 
   onMount(() =>
     registerPwaUpdateGuard(() => ({
@@ -281,7 +290,21 @@
         <li class="trash__row" data-kind={item.kind}>
           <div class="trash__main">
             <p class="trash__kind">{kindLabel(item)}</p>
-            <p class="trash__name">{item.name}</p>
+            <p class="trash__name">
+              {#if item.kind === "project"}
+                <a
+                  href={resolve("/projects/[id]", { id: String(item.id) })}
+                  data-testid="trash-item-link">{item.name}</a
+                >
+              {:else if item.kind === "yarn"}
+                <a
+                  href={resolve("/yarns/[id]", { id: String(item.id) })}
+                  data-testid="trash-item-link">{item.name}</a
+                >
+              {:else}
+                {item.name}
+              {/if}
+            </p>
             {#if item.detail && item.detail !== item.name}
               <p class="trash__meta">{item.detail}</p>
             {/if}

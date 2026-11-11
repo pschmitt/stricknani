@@ -33,6 +33,7 @@
   import ArchiveControl from "#lib/features/media/ArchiveControl.svelte";
   import PhotoStrip from "#lib/components/PhotoStrip.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
+  import TrashedBanner from "../trash/TrashedBanner.svelte";
   import HistorySection from "#lib/features/history/HistorySection.svelte";
   import ProjectLightbox from "#lib/features/media/ProjectLightbox.svelte";
   import { projectImageEditPath } from "#lib/features/media/photo-editor.ts";
@@ -126,6 +127,7 @@
     session.data?.capabilities.archive_state === true,
   );
   const textSizeClass = $derived(textSize.cssClass);
+  const trashed = $derived(Boolean(project?.trashed_at));
   const canEdit = $derived(mayEdit(project?.access));
   const canManage = $derived(mayManage(project?.access));
   const projectTimersEnabled = $derived(
@@ -1107,7 +1109,7 @@
       {/snippet}
       {#snippet actions()}
         <div class="reader-heading-actions">
-          {#if !adminData && userId !== null}
+          {#if !adminData && !trashed && userId !== null}
             <ProjectTimer
               bind:this={timerControl}
               bind:running={timerRunning}
@@ -1178,7 +1180,7 @@
                 role="menu"
                 aria-label={t("Project actions", locale)}
               >
-                {#if !adminData}
+                {#if !adminData && !trashed}
                   <button
                     class="action-overflow__item"
                     role="menuitem"
@@ -1266,6 +1268,16 @@
         </div>
       {/snippet}
     </PageHeader>
+    {#if !adminData && currentProject.trashed_at}
+      <TrashedBanner
+        kind="project"
+        id={currentProject.id}
+        name={currentProject.name}
+        purgeAt={currentProject.purge_at ?? null}
+        {locale}
+        onrestored={() => (reload += 1)}
+      />
+    {/if}
     {#if !adminData && currentProject.owner && currentProject.access && isRecipient(currentProject.access)}
       <AccessNotice
         kind="projects"
@@ -1379,7 +1391,7 @@
       {/each}
     </div>
 
-    {#if !adminData}
+    {#if !adminData && !trashed}
       <HistorySection
         kind="projects"
         id={project.id}

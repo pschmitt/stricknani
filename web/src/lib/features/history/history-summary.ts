@@ -22,7 +22,10 @@ export function actionTone(action: string): HistoryTone {
       return "update";
     case "action-delete":
     case "action-remove":
+    case "trash":
       return "delete";
+    case "reset":
+      return "create";
     case "action-upload":
       return "upload";
     default:
@@ -30,8 +33,12 @@ export function actionTone(action: string): HistoryTone {
   }
 }
 
-export function actionLabel(action: string, locale: Locale): string {
-  const presentation = auditActionPresentation(action);
+export function actionLabel(
+  action: string,
+  locale: Locale,
+  system = false,
+): string {
+  const presentation = auditActionPresentation(action, { system });
   return presentation.known
     ? t(presentation.messageKey, locale)
     : presentation.label;
@@ -286,12 +293,13 @@ export function eventHeadline(
   changes: ChangeSetV1 | null,
   locale: Locale,
   subject?: HistorySubject | null,
+  system = false,
 ): string {
   return (
     sharingHeadline(action, subject, locale) ??
     timerHeadline(action, changes, locale) ??
     summarizeChanges(changes, locale) ??
-    actionLabel(action, locale)
+    actionLabel(action, locale, system)
   );
 }
 

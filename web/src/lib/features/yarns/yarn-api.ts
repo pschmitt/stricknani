@@ -3,6 +3,7 @@ import { t } from "#lib/i18n.svelte.ts";
 import { accessField, type ResourceAccess } from "#lib/access.ts";
 import { ownerField, type ResourceOwner } from "#lib/owner.ts";
 import type { LibraryScope } from "#lib/library-scope.svelte.ts";
+import { trashedFields } from "../trash/trash-state.ts";
 
 export interface YarnSummary {
   id: number;
@@ -17,6 +18,9 @@ export interface YarnSummary {
   owner?: ResourceOwner | null;
   /** What the signed-in user may do with it; absent on responses that predate sharing. */
   access?: ResourceAccess | null;
+  /** Set only while the yarn is in the trash (owner and administrators can still open it). */
+  trashed_at?: string | null;
+  purge_at?: string | null;
 }
 
 export interface YarnPhoto {
@@ -395,6 +399,7 @@ export function parseYarnDetail(value: unknown): YarnDetail {
       null,
     ...ownerField(value.owner),
     ...accessField(value.access),
+    ...trashedFields(value),
     description: value.description,
     description_html: value.description_html,
     dye_lot: value.dye_lot,
