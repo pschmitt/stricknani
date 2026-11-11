@@ -358,14 +358,14 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    padding: 0.25rem 0;
+    border-radius: var(--radius-lg);
+    padding: 0.5rem 0;
     background: var(--surface);
     box-shadow: var(--shadow);
   }
 
   .suggestion-heading {
-    padding: 0.5rem 0.9rem 0.2rem;
+    padding: 0.5rem 1.25rem 0.2rem;
     color: var(--ink-muted);
     font-size: 0.75rem;
     font-weight: 700;
@@ -378,7 +378,7 @@
     min-height: 44px;
     align-items: center;
     gap: 0.6rem;
-    padding: 0.35rem 0.9rem;
+    padding: 0.35rem 1.25rem;
     color: var(--ink);
     cursor: pointer;
   }
@@ -404,26 +404,26 @@
     display: flex;
     width: 100%;
     min-width: 0;
-    min-height: 48px;
+    min-height: 56px;
     align-items: center;
-    gap: 0.65rem;
-    border: 1px solid var(--control-border);
-    border-radius: var(--radius-xs);
-    padding: 0 0.55rem 0 0.8rem;
+    gap: 0.75rem;
+    border: 0;
+    border-radius: var(--radius-lg);
+    padding: 0 0.5rem 0 1rem;
     color: var(--ink-muted);
-    background: var(--surface);
+    background: var(--surface-highest);
   }
 
   .search-field :global(svg) {
-    width: 1.15rem;
-    height: 1.15rem;
+    width: 1.5rem;
+    height: 1.5rem;
     flex: none;
   }
 
   .search-field input {
     width: 100%;
     min-width: 0;
-    min-height: 46px;
+    min-height: 54px;
     border: 0;
     border-radius: 0;
     padding: 0;
@@ -431,6 +431,11 @@
     color: var(--ink);
     background: transparent;
     font: inherit;
+  }
+
+  .search-field input::placeholder {
+    color: var(--ink-muted);
+    opacity: 1;
   }
 
   .search-field input::-webkit-search-cancel-button {
