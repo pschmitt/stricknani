@@ -391,6 +391,19 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
     "clean saved projects did not enable media management",
   );
 
+  markStage("removing the creation photo before subsequent editor checks");
+  await clickTileDelete(page, page.locator(".reorder-item").first());
+  const creationPhotoDialog = page.getByRole("dialog", {
+    name: "Remove this project photo?",
+    exact: true,
+  });
+  await creationPhotoDialog.waitFor({ state: "visible" });
+  await creationPhotoDialog
+    .getByRole("button", { name: "Remove", exact: true })
+    .click();
+  await creationPhotoDialog.waitFor({ state: "hidden" });
+  await page.locator(".reorder-item img").waitFor({ state: "detached" });
+
   markStage("checking project editor Cancel dirty guard");
   let projectName = page.getByLabel("Project name", { exact: true });
   const cancelLink = page.getByRole("link", { name: "Cancel", exact: true });
@@ -679,8 +692,10 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
   markStage("opening a Recent changes entry to see its recorded diff");
   const historySection = page.locator("[data-history-section]");
   await historySection.scrollIntoViewIfNeeded();
-  const historyRows = historySection.locator("button.entry-row");
-  markStage("history: waiting for the first entry row");
+  const historyRows = historySection.locator(
+    'li.entry[data-tone="update"] button.entry-row',
+  );
+  markStage("history: waiting for the latest update entry");
   await historyRows.first().waitFor({ state: "visible" });
   await historyRows.first().click();
   check(
