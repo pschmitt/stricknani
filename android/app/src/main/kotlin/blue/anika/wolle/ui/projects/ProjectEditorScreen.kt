@@ -91,6 +91,8 @@ import blue.anika.wolle.ui.common.PhotoEditTarget
 import blue.anika.wolle.ui.common.PhotoEditorDialog
 import blue.anika.wolle.ui.common.PhotoReorder
 import blue.anika.wolle.ui.common.ProjectStatusSelectField
+import blue.anika.wolle.ui.common.StagedPhoto
+import blue.anika.wolle.ui.common.StagedRemovalList
 import blue.anika.wolle.ui.common.StickyNoteField
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.UrlTextField
@@ -98,10 +100,13 @@ import blue.anika.wolle.ui.common.rememberCameraDeniedNotifier
 import blue.anika.wolle.ui.common.rememberPhotoCapture
 import blue.anika.wolle.ui.common.rememberPhotoRemovalAnnouncer
 import blue.anika.wolle.ui.common.showFeedback
+import blue.anika.wolle.ui.common.stagedPhotoLabel
 import blue.anika.wolle.ui.common.urlHostOrNull
 import blue.anika.wolle.ui.imports.EditorImportState
 import blue.anika.wolle.ui.imports.ImportLinkCard
 import blue.anika.wolle.ui.imports.readPickedImportFile
+import blue.anika.wolle.ui.trash.saveBarState
+import blue.anika.wolle.ui.trash.stagedRemovals
 import java.io.File
 import kotlinx.coroutines.launch
 
@@ -141,6 +146,7 @@ fun ProjectEditorScreen(
     val picksFromOwner by viewModel.picksFromOwner.collectAsStateWithLifecycle()
     val candidates by viewModel.candidates.collectAsStateWithLifecycle()
     val isDirty by viewModel.isDirty.collectAsStateWithLifecycle()
+    val initialForm by viewModel.initialForm.collectAsStateWithLifecycle()
     val importState by viewModel.importState.collectAsStateWithLifecycle()
     val importNotice by viewModel.importNotice.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -331,7 +337,11 @@ fun ProjectEditorScreen(
                 }
             },
             bottomBar = {
-                EditorSaveBar(isSaving = isSaving, onSave = { viewModel.save(amountLabel) })
+                EditorSaveBar(
+                    isSaving = isSaving,
+                    onSave = { viewModel.save(amountLabel) },
+                    allSaved = saveBarState(viewModel.isEditing, isDirty, isSaving).allSaved,
+                )
             },
         ) { innerPadding ->
             LazyColumn(
@@ -447,6 +457,29 @@ fun ProjectEditorScreen(
                                         viewModel.moveTitleImage(from, to)
                                     }
                                 } else null,
+                        )
+                        StagedRemovalList(
+                            photos =
+                                stagedRemovals(
+                                        initialForm.existingTitleImages,
+                                        form.removedImageIds,
+                                    ) {
+                                        it.id
+                                    }
+                                    .map { image ->
+                                        StagedPhoto(
+                                            key = "title-${image.id}",
+                                            model = viewModel.imageUrl(image.thumbnailUrl),
+                                            label =
+                                                stagedPhotoLabel(
+                                                    image.altText,
+                                                    initialForm.existingTitleImages.indexOf(image) +
+                                                        1,
+                                                ),
+                                            onUndo = { viewModel.restoreTitleImage(image.id) },
+                                        )
+                                    },
+                            modifier = Modifier.padding(top = 12.dp),
                         )
                         // Pictures the import found: tick the ones to keep.
                         if (form.importImageUrls.isNotEmpty()) {
@@ -800,6 +833,29 @@ fun ProjectEditorScreen(
                         onRemoveNewImage = { imageIndex ->
                             viewModel.removeStepImage(index, imageIndex)?.let(announceRemoval)
                         },
+                        stagedImages =
+                            run {
+                                val initialImages =
+                                    initialForm.steps
+                                        .firstOrNull { it.id != null && it.id == step.id }
+                                        ?.existingImages
+                                        .orEmpty()
+                                stagedRemovals(initialImages, form.removedImageIds) { it.id }
+                                    .map { image ->
+                                        StagedPhoto(
+                                            key = "step-${image.id}",
+                                            model = viewModel.imageUrl(image.thumbnailUrl),
+                                            label =
+                                                stagedPhotoLabel(
+                                                    image.altText,
+                                                    initialImages.indexOf(image) + 1,
+                                                ),
+                                            onUndo = {
+                                                viewModel.restoreStepImage(index, image.id)
+                                            },
+                                        )
+                                    }
+                            },
                     )
                 }
                 item {
@@ -923,6 +979,7 @@ private fun StepEditorCard(
     onEditExistingImage: (ImageDto) -> Unit,
     onRemoveExistingImage: (Int) -> Unit,
     onRemoveNewImage: (Int) -> Unit,
+    stagedImages: List<StagedPhoto>,
 ) {
     var menuOpen by remember { mutableStateOf(false) }
     Card(
@@ -1062,6 +1119,7 @@ private fun StepEditorCard(
                     thumbnailSize = 84,
                     reorder = reorder,
                 )
+                StagedRemovalList(stagedImages)
             }
         }
     }

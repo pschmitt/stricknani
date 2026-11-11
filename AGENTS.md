@@ -235,9 +235,15 @@ Use this file as the operational source of truth for working in Stricknani.
 - Give selects an explicit, unique label association and verify their accessible
   names. Nesting option text inside a wrapping label can make the name include
   every option; translated exact-label browser checks should catch this.
-- Preserve drafts on validation, conflict and network failures. Allow media
-  changes only on a saved, clean form, then reload the full resource. Never
-  advance its conflict timestamp blindly while retaining stale draft fields.
+- Preserve drafts on validation, conflict and network failures. Never advance
+  a conflict timestamp blindly while retaining stale draft fields.
+- Editor media: removing a photo, step image or attachment and reordering
+  photos are staged in the form (shown in the "Will be removed when you save"
+  list with Undo, Save enabled, discard keeps them) and applied on Save, after
+  the resource itself, followed by the `publishSavedWithRemovals` Undo
+  feedback; Android does the same. Uploads and photo edits stay immediate and
+  need a saved, clean form, because they reload the full resource. A form with
+  nothing pending shows "All changes saved" beside the disabled Save button.
 - Verify print with real project and step images as well as text. Hidden
   controls must not hide reference diagrams; print should use full media URLs.
 - Verify the realised frontend package before deployment. SvelteKit build

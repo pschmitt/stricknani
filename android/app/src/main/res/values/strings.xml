@@ -898,6 +898,13 @@
     <string name="editor_photo_reorder_hint">Drag to reorder. The first photo is the cover.</string>
     <string name="project_editor_step_removed">Step removed</string>
     <string name="editor_photo_removed">Photo removed.</string>
+    <string name="editor_photo_removed_to_trash">Removed. It goes to the trash when you save.</string>
+    <string name="editor_staged_title">Will be removed when you save</string>
+    <string name="editor_staged_hint">What you remove stays in the trash for 90 days.</string>
+    <string name="editor_staged_photo_label">Photo %1$d</string>
+    <string name="editor_all_saved">All changes saved</string>
+    <string name="trash_owner">Owner: %1$s</string>
+    <string name="trash_cannot_restore">Only the owner or an administrator can restore this.</string>
     <string name="project_editor_tags_placeholder">Add tags…</string>
     <string name="project_editor_tags_suggestions">Tag suggestions</string>
     <string name="project_editor_tag_remove">Remove tag %1$s</string>

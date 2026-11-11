@@ -143,4 +143,20 @@ class TrashDtoTest {
         assertNull(live.trashedAt)
         assertNull(live.purgeAt)
     }
+
+    @Test
+    fun `can_restore defaults to true when the server does not send it`() {
+        val list =
+            json.decodeFromString<TrashListDto>(
+                """
+                {"data":[
+                  {"kind":"image","id":1,"name":"a","can_restore":false},
+                  {"kind":"image","id":2,"name":"b","can_restore":true},
+                  {"kind":"image","id":3,"name":"c"}
+                ]}
+                """
+            )
+
+        assertEquals(listOf(false, true, true), list.data.map { it.canRestore })
+    }
 }

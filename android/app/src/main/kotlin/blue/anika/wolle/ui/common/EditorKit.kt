@@ -112,6 +112,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -135,7 +136,12 @@ import kotlinx.coroutines.launch
  * puts it back; [finalize] releases what the removal kept alive (a copied upload file) once the
  * undo chance has passed.
  */
-class PhotoRemoval(val undo: () -> Unit, val finalize: () -> Unit = {})
+class PhotoRemoval(
+    val undo: () -> Unit,
+    val finalize: () -> Unit = {},
+    /** True for a photo already on the server: it moves to the trash when the form is saved. */
+    val toTrash: Boolean = false,
+)
 
 /**
  * Returns a function that shows the "Photo removed" snackbar with Undo for a [PhotoRemoval] on
@@ -145,6 +151,7 @@ class PhotoRemoval(val undo: () -> Unit, val finalize: () -> Unit = {})
 fun rememberPhotoRemovalAnnouncer(host: SnackbarHostState): (PhotoRemoval) -> Unit {
     val scope = rememberCoroutineScope()
     val message = stringResource(R.string.editor_photo_removed)
+    val trashMessage = stringResource(R.string.editor_photo_removed_to_trash)
     val undoLabel = stringResource(R.string.common_undo)
     return { removal ->
         scope.launch {
@@ -153,7 +160,7 @@ fun rememberPhotoRemovalAnnouncer(host: SnackbarHostState): (PhotoRemoval) -> Un
             try {
                 val result =
                     host.showFeedback(
-                        message = message,
+                        message = if (removal.toTrash) trashMessage else message,
                         kind = FeedbackKind.Info,
                         actionLabel = undoLabel,
                     )
@@ -653,7 +660,13 @@ fun SuggestionTextField(
  * needs a reach to the top corner or closing the keyboard first.
  */
 @Composable
-fun EditorSaveBar(isSaving: Boolean, onSave: () -> Unit, modifier: Modifier = Modifier) {
+fun EditorSaveBar(
+    isSaving: Boolean,
+    onSave: () -> Unit,
+    modifier: Modifier = Modifier,
+    /** An existing record with nothing pending: the button is disabled and says so. */
+    allSaved: Boolean = false,
+) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainer,
         tonalElevation = 3.dp,
@@ -667,7 +680,7 @@ fun EditorSaveBar(isSaving: Boolean, onSave: () -> Unit, modifier: Modifier = Mo
         ) {
             Button(
                 onClick = onSave,
-                enabled = !isSaving,
+                enabled = !isSaving && !allSaved,
                 contentPadding = PaddingValues(horizontal = 24.dp, vertical = 14.dp),
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
             ) {
@@ -675,11 +688,72 @@ fun EditorSaveBar(isSaving: Boolean, onSave: () -> Unit, modifier: Modifier = Mo
                     YarnLoader(size = 26.dp, modifier = Modifier.padding(end = 8.dp))
                 }
                 Text(
-                    stringResource(R.string.common_save),
+                    stringResource(
+                        if (allSaved) R.string.editor_all_saved else R.string.common_save
+                    ),
                     style = MaterialTheme.typography.titleMedium,
                 )
             }
         }
+    }
+}
+
+/** One server photo waiting to be removed on Save, as a row of [StagedRemovalList]. */
+data class StagedPhoto(
+    val key: String,
+    val model: Any?,
+    val label: String,
+    val onUndo: () -> Unit,
+)
+
+/** The label of a staged photo: its description, else "Photo N" ([number] is its old place). */
+@Composable
+fun stagedPhotoLabel(description: String, number: Int): String = description.ifBlank {
+    stringResource(R.string.editor_staged_photo_label, number)
+}
+
+/**
+ * "Will be removed when you save": the server photos taken out of the form, each as a dimmed
+ * thumbnail with a struck-through label and an Undo button, plus the trash-retention hint. Draws
+ * nothing when [photos] is empty.
+ */
+@Composable
+fun StagedRemovalList(photos: List<StagedPhoto>, modifier: Modifier = Modifier) {
+    if (photos.isEmpty()) return
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = modifier.fillMaxWidth()) {
+        Text(
+            stringResource(R.string.editor_staged_title),
+            style = MaterialTheme.typography.labelLarge,
+        )
+        photos.forEach { photo ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                AsyncImage(
+                    model = photo.model,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    alpha = 0.45f,
+                    modifier = Modifier.size(40.dp).clip(MaterialTheme.shapes.small),
+                )
+                Text(
+                    photo.label,
+                    style = MaterialTheme.typography.bodyMedium,
+                    textDecoration = TextDecoration.LineThrough,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = photo.onUndo) { Text(stringResource(R.string.common_undo)) }
+            }
+        }
+        Text(
+            stringResource(R.string.editor_staged_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

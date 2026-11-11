@@ -64,6 +64,8 @@ import blue.anika.wolle.ui.common.PhotoEditHostProvider
 import blue.anika.wolle.ui.common.PhotoEditTarget
 import blue.anika.wolle.ui.common.PhotoEditorDialog
 import blue.anika.wolle.ui.common.PhotoReorder
+import blue.anika.wolle.ui.common.StagedPhoto
+import blue.anika.wolle.ui.common.StagedRemovalList
 import blue.anika.wolle.ui.common.StickyNoteField
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.SuggestionTextField
@@ -71,9 +73,12 @@ import blue.anika.wolle.ui.common.UrlTextField
 import blue.anika.wolle.ui.common.rememberCameraDeniedNotifier
 import blue.anika.wolle.ui.common.rememberPhotoCapture
 import blue.anika.wolle.ui.common.rememberPhotoRemovalAnnouncer
+import blue.anika.wolle.ui.common.stagedPhotoLabel
 import blue.anika.wolle.ui.imports.EditorImportState
 import blue.anika.wolle.ui.imports.ImportLinkCard
 import blue.anika.wolle.ui.projects.yarnImportNotes
+import blue.anika.wolle.ui.trash.saveBarState
+import blue.anika.wolle.ui.trash.stagedRemovals
 import java.io.File
 
 /**
@@ -116,6 +121,7 @@ fun YarnEditorScreen(
     // A reader (viewer, derived yarn) has no editor: a stale link or back stack leaves at once.
     LaunchedEffect(canEdit) { if (viewModel.isEditing && !canEdit) onBack() }
     val isDirty by viewModel.isDirty.collectAsStateWithLifecycle()
+    val initialForm by viewModel.initialForm.collectAsStateWithLifecycle()
     val importState by viewModel.importState.collectAsStateWithLifecycle()
     val importNotice by viewModel.importNotice.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -237,7 +243,13 @@ fun YarnEditorScreen(
                     }
                 }
             },
-            bottomBar = { EditorSaveBar(isSaving = isSaving, onSave = viewModel::save) },
+            bottomBar = {
+                EditorSaveBar(
+                    isSaving = isSaving,
+                    onSave = viewModel::save,
+                    allSaved = saveBarState(viewModel.isEditing, isDirty, isSaving).allSaved,
+                )
+            },
         ) { innerPadding ->
             LazyColumn(
                 modifier =
@@ -404,6 +416,25 @@ fun YarnEditorScreen(
                                         viewModel.moveExistingPhoto(from, to)
                                     }
                                 } else null,
+                        )
+                        StagedRemovalList(
+                            photos =
+                                stagedRemovals(initialForm.existingPhotos, form.removedPhotoIds) {
+                                        it.id
+                                    }
+                                    .map { photo ->
+                                        StagedPhoto(
+                                            key = "photo-${photo.id}",
+                                            model = viewModel.imageUrl(photo.thumbnailUrl),
+                                            label =
+                                                stagedPhotoLabel(
+                                                    photo.altText,
+                                                    initialForm.existingPhotos.indexOf(photo) + 1,
+                                                ),
+                                            onUndo = { viewModel.restorePhoto(photo.id) },
+                                        )
+                                    },
+                            modifier = Modifier.padding(top = 12.dp),
                         )
                         // Pictures the import found: tick the ones to keep.
                         if (form.importImageUrls.isNotEmpty()) {
