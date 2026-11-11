@@ -2121,3 +2121,78 @@ async fn audit_state_covers_categories_and_hides_restore_for_child_events() {
     assert_eq!(image["resource"]["state"], "in_trash");
     assert!(image["resource"].get("trash").is_none());
 }
+
+#[tokio::test]
+async fn trashed_only_honours_the_owner_filter_and_trashed_items_leave_status_and_owner_lists() {
+    let f = fx().await;
+    let (p, y) = (f.p1, f.y1);
+    // Before the trash: vera sees anika's shared project, so anika is one of her owners.
+    let (_, owners) = call(&f, "GET", "/api/v2/projects/owners", Some("vera")).await;
+    assert_eq!(owners["data"].as_array().unwrap().len(), 1, "{owners}");
+    for kind in ["projects", "yarns"] {
+        call(
+            &f,
+            "DELETE",
+            &format!("/api/v2/{kind}/{}", if kind == "projects" { p } else { y }),
+            Some("anika"),
+        )
+        .await;
+    }
+    // Trashed items no longer make their owner an option for recipients or administrators.
+    for (who, kind) in [
+        ("vera", "projects"),
+        ("admin", "projects"),
+        ("admin", "yarns"),
+    ] {
+        let (_, owners) = call(&f, "GET", &format!("/api/v2/{kind}/owners"), Some(who)).await;
+        assert!(
+            owners["data"].as_array().unwrap().is_empty(),
+            "{who} {kind}"
+        );
+    }
+    // Status lists never contain the trash.
+    let (_, in_progress) = call(
+        &f,
+        "GET",
+        "/api/v2/projects?status=in_progress&owner=mine",
+        Some("anika"),
+    )
+    .await;
+    assert!(in_progress["data"].as_array().unwrap().is_empty());
+
+    for kind in ["projects", "yarns"] {
+        let n = |body: &Value| body["data"].as_array().unwrap().len();
+        let anika = f.anika;
+        let vera = f.vera;
+        let cases: [(&str, String, usize); 8] = [
+            ("anika", "owner=me".to_owned(), 1),
+            ("anika", "owner=mine".to_owned(), 1),
+            ("anika", "owner=shared".to_owned(), 0),
+            ("anika", format!("owner={vera}"), 0),
+            ("admin", format!("owner={anika}"), 1),
+            ("admin", "owner=shared".to_owned(), 1),
+            ("admin", "owner=me".to_owned(), 0),
+            ("admin", format!("owner_id={anika}"), 1),
+        ];
+        for (who, filter, expected) in cases {
+            let (status, body) = call(
+                &f,
+                "GET",
+                &format!("/api/v2/{kind}?trashed=only&{filter}"),
+                Some(who),
+            )
+            .await;
+            assert_eq!(status, StatusCode::OK, "{kind} {who} {filter}: {body}");
+            assert_eq!(n(&body), expected, "{kind} {who} {filter}: {body}");
+        }
+        // Recipients never see the trash through a share, whatever they ask for.
+        let (_, body) = call(
+            &f,
+            "GET",
+            &format!("/api/v2/{kind}?trashed=only&owner=shared"),
+            Some("vera"),
+        )
+        .await;
+        assert!(body["data"].as_array().unwrap().is_empty(), "{kind}");
+    }
+}

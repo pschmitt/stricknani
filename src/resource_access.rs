@@ -77,7 +77,10 @@ pub(crate) async fn visible_owners(
 ) -> Result<Vec<OwnerInfo>, sqlx::Error> {
     let table = kind.table();
     let sql = match scope {
-        Scope::All => format!("SELECT DISTINCT t.owner_id FROM {table} t WHERE t.owner_id != ?1"),
+        Scope::All => format!(
+            "SELECT DISTINCT t.owner_id FROM {table} t \
+             WHERE t.owner_id != ?1 AND t.deleted_at IS NULL"
+        ),
         Scope::Mine => format!(
             "SELECT DISTINCT t.owner_id FROM {table} t WHERE t.owner_id != ?1 AND {}",
             visible_sql(kind, "t", 1)
