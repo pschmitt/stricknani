@@ -12,7 +12,9 @@
   import LibraryCard from "#lib/components/LibraryCard.svelte";
   import LibraryGrid from "#lib/components/LibraryGrid.svelte";
   import { t } from "#lib/i18n.svelte.ts";
-  import OwnerFilterPills from "#lib/components/OwnerFilterPills.svelte";
+  import FilterChip from "#lib/components/FilterChip.svelte";
+  import FilterChipRow from "#lib/components/FilterChipRow.svelte";
+  import OwnerFilterChips from "#lib/components/OwnerFilterChips.svelte";
   import { listOwners } from "#lib/owner-filter.ts";
   import { trashDaysLeft } from "#lib/trash-filter.ts";
   import {
@@ -320,49 +322,32 @@
     suggestions={suggestionConfig}
   />
 
-  <div
-    class="filter-pills"
-    role="group"
-    aria-label={t("Filter", locale)}
-    data-testid="project-filter-pills"
-  >
-    <button
-      class="filter-pill"
-      class:filter-pill--selected={allFilterSelected}
-      type="button"
-      aria-pressed={allFilterSelected}
-      data-testid="project-filter-all"
+  <FilterChipRow label={t("Filter", locale)} testid="project-filter-pills">
+    <FilterChip
+      label={t("All", locale)}
+      selected={allFilterSelected}
+      testid="project-filter-all"
       onclick={clearBrowseFilters}
-    >
-      {t("All", locale)}
-    </button>
-    <button
-      class="filter-pill"
-      class:filter-pill--selected={filters.favorite}
-      type="button"
-      aria-pressed={filters.favorite}
-      data-testid="project-filter-favorites"
+    />
+    <FilterChip
+      label={t("Favorites only", locale)}
+      selected={filters.favorite}
+      testid="project-filter-favorites"
       onclick={() => applyFilters({ ...filters, favorite: !filters.favorite })}
-    >
-      {t("Favorites only", locale)}
-    </button>
+    />
     {#each statusFilters as option (option.value)}
-      <button
-        class="filter-pill"
-        class:filter-pill--selected={filters.status === option.value}
-        type="button"
-        aria-pressed={filters.status === option.value}
-        data-testid={`project-filter-status-${option.value}`}
+      <FilterChip
+        label={option.label}
+        selected={filters.status === option.value}
+        testid={`project-filter-status-${option.value}`}
         onclick={() =>
           applyFilters({
             ...filters,
             status: filters.status === option.value ? "" : option.value,
           })}
-      >
-        {option.label}
-      </button>
+      />
     {/each}
-    <OwnerFilterPills
+    <OwnerFilterChips
       choice={filters.owner}
       {owners}
       {locale}
@@ -378,45 +363,31 @@
       onselect={(owner) => applyFilters({ ...filters, owner })}
     />
     {#each availableCategories as category (category)}
-      <button
-        class="filter-pill"
-        class:filter-pill--selected={filters.category === category}
-        type="button"
-        aria-pressed={filters.category === category}
-        data-testid="project-filter-category"
+      <FilterChip
+        label={category}
+        selected={filters.category === category}
+        testid="project-filter-category"
         onclick={() =>
           applyFilters({
             ...filters,
             category: filters.category === category ? "" : category,
           })}
-      >
-        {category}
-      </button>
+      />
     {/each}
     {#each availableTags as tag (tag)}
-      <button
-        class="filter-pill"
-        class:filter-pill--selected={filters.tag.toLocaleLowerCase(locale) ===
-          tag.toLocaleLowerCase(locale)}
-        type="button"
-        aria-pressed={filters.tag.toLocaleLowerCase(locale) ===
-          tag.toLocaleLowerCase(locale)}
-        data-testid="project-filter-tag"
+      {@const tagSelected =
+        filters.tag.toLocaleLowerCase(locale) === tag.toLocaleLowerCase(locale)}
+      <FilterChip
+        label={tag}
+        selected={tagSelected}
+        testid="project-filter-tag"
         onclick={() =>
-          applyFilters({
-            ...filters,
-            tag:
-              filters.tag.toLocaleLowerCase(locale) ===
-              tag.toLocaleLowerCase(locale)
-                ? ""
-                : tag,
-          })}
+          applyFilters({ ...filters, tag: tagSelected ? "" : tag })}
       >
-        <NavIcon name="categories" />
-        {tag}
-      </button>
+        {#snippet leading()}<NavIcon name="categories" />{/snippet}
+      </FilterChip>
     {/each}
-  </div>
+  </FilterChipRow>
 
   {#if errorMessage}
     <div class="notice-error" role="alert">
@@ -516,55 +487,6 @@
 
   .desktop-create {
     min-height: 44px;
-  }
-
-  .filter-pills {
-    display: flex;
-    min-width: 0;
-    gap: 0.5rem;
-    overflow-x: auto;
-    padding: 0.15rem 0 0.35rem;
-    scrollbar-width: thin;
-    overscroll-behavior-inline: contain;
-  }
-
-  .filter-pill {
-    display: inline-flex;
-    min-height: 44px;
-    flex: 0 0 auto;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 0.45rem 0.85rem;
-    color: var(--ink);
-    background: var(--surface);
-    font: inherit;
-    font-size: 0.9rem;
-    cursor: pointer;
-  }
-
-  .filter-pill :global(svg) {
-    width: 1rem;
-    height: 1rem;
-    flex: none;
-  }
-
-  .filter-pill:hover {
-    border-color: var(--accent-strong);
-  }
-
-  .filter-pill:focus-visible {
-    outline: 3px solid color-mix(in srgb, var(--accent-strong) 45%, transparent);
-    outline-offset: 2px;
-  }
-
-  .filter-pill--selected {
-    border-color: var(--primary-container);
-    color: var(--on-primary-container);
-    background: var(--primary-container);
-    font-weight: 650;
   }
 
   .notice-error {
