@@ -46,12 +46,16 @@
     prefillUrlFromSearch,
   } from "../imports/shared-link";
   import YarnPhotoManager from "./YarnPhotoManager.svelte";
+  import AddMediaControl from "#lib/components/AddMediaControl.svelte";
+  import QueuedPhotoList from "../media/QueuedPhotoList.svelte";
+  import { uploadSequentially } from "../media/upload-queue";
   import {
     createYarn,
     deleteYarn,
     getYarn,
     parseYarnDetail,
     updateYarn,
+    uploadYarnPhoto,
     type YarnDetail,
     type YarnWrite,
   } from "./yarn-api";
@@ -121,6 +125,9 @@
   let importAi = $state(false);
   let importWarnings = $state<string[]>([]);
   let importBusy = $state(false);
+  let queuedPhotos = $state<File[]>([]);
+  let createdYarn = $state<YarnDetail | null>(null);
+  let photoUploadProgress = $state(0);
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
@@ -136,7 +143,9 @@
   const sharedAutoStart = $derived(
     yarnId === null && autoStartFromSearch(page.url.search),
   );
-  const isDirty = $derived(savedSnapshot !== JSON.stringify(draft));
+  const isDirty = $derived(
+    savedSnapshot !== JSON.stringify(draft) || queuedPhotos.length > 0,
+  );
   const canManagePhotos = $derived(
     loadedYarn !== null && !isDirty && !saving && !mediaBusy && !deleting,
   );
@@ -154,6 +163,15 @@
       deleting ||
       conflictYarn !== null,
   );
+
+  function addQueuedPhotos(files: File[]): void {
+    const accepted = files.filter((file) => file.type.startsWith("image/"));
+    queuedPhotos = [...queuedPhotos, ...accepted];
+  }
+
+  function removeQueuedPhoto(file: File): void {
+    queuedPhotos = queuedPhotos.filter((candidate) => candidate !== file);
+  }
 
   onMount(() => {
     const unregister = registerPwaUpdateGuard(() => ({
@@ -206,6 +224,8 @@
     conflictDialogError = "";
     if (id === null) {
       loadedYarn = null;
+      createdYarn = null;
+      queuedPhotos = [];
       loadState = "ready";
       loadError = "";
       return () => {
@@ -436,10 +456,35 @@
     try {
       const result =
         id === null
-          ? await createYarn(value, currentSession)
+          ? (createdYarn ?? (await createYarn(value, currentSession)))
           : await updateYarn(id, value, version, currentSession);
       if (!isCurrentRoute(id, ownerId, generation)) return;
+      if (id === null) createdYarn = result;
       applyLoadedYarn(result);
+      if (id === null && queuedPhotos.length) {
+        const attempted = [...queuedPhotos];
+        const uploadResult = await uploadSequentially(
+          attempted,
+          (file) => uploadYarnPhoto(result.id, file, currentSession),
+          (progress) => {
+            if (isCurrentRoute(id, ownerId, generation))
+              photoUploadProgress = progress.current;
+          },
+          () => !isCurrentRoute(id, ownerId, generation),
+        );
+        if (!isCurrentRoute(id, ownerId, generation)) return;
+        const failed = new Set(uploadResult.failures.map(({ file }) => file));
+        queuedPhotos = attempted.filter((file) => failed.has(file));
+        photoUploadProgress = 0;
+        if (queuedPhotos.length) {
+          serverError = t(
+            "Some photos could not be uploaded. Save again to retry them.",
+            locale,
+          );
+          publishFeedback({ ownerId, kind: "error", message: serverError });
+          return;
+        }
+      }
       const successMessage =
         id === null
           ? t("Yarn created.", locale)
@@ -457,6 +502,7 @@
           // The draft expires on its own.
         }
       }
+      if (!isCurrentRoute(id, ownerId, generation)) return;
       await goto(`${resolve("/yarns")}/${result.id}`);
     } catch (error) {
       if (!isCurrentRoute(id, ownerId, generation)) return;
@@ -755,7 +801,7 @@
         autoStart={sharedAutoStart}
         {resumeDraftId}
         replaceNeedsConfirm={isDirty}
-        disabled={saving}
+        disabled={saving || createdYarn !== null}
         bind:busy={importBusy}
         onReady={applyImport}
       />
@@ -807,7 +853,7 @@
             variant="secondary"
             icon="refresh"
             type="button"
-            disabled={saving || mediaBusy || deleting}
+            disabled={saving || mediaBusy || deleting || createdYarn !== null}
             onclick={useLatestValues}
           >
             {t("Load latest values", locale)}
@@ -817,7 +863,7 @@
             variant="primary"
             icon="save"
             type="button"
-            disabled={saving || mediaBusy || deleting}
+            disabled={saving || mediaBusy || deleting || createdYarn !== null}
             onclick={() => {
               const value = makeWrite();
               if (value && conflictYarn)
@@ -838,7 +884,9 @@
       novalidate
       onsubmit={(event) => void submit(event)}
     >
-      <fieldset disabled={saving || mediaBusy || deleting}>
+      <fieldset
+        disabled={saving || mediaBusy || deleting || createdYarn !== null}
+      >
         <legend>{t("Yarn information", locale)}</legend>
         <div class="field-grid">
           <label class="field wide" for={fieldId("name")}>
@@ -897,16 +945,43 @@
 
       {#if loadedYarn}
         <section class="photo-section" aria-labelledby="yarn-photos-title">
-          <YarnPhotoManager
-            yarnId={loadedYarn.id}
-            photos={loadedYarn.photos}
-            {locale}
-            canEdit={canManagePhotos}
-            onResourceUpdated={reloadAfterMediaChange}
-            onMediaBusyChange={(busy, resourceId, ownerId) => {
-              if (resourceId === yarnId && ownerId === userId) mediaBusy = busy;
-            }}
-          />
+          {#if createdYarn && queuedPhotos.length}
+            <h2 id="yarn-photos-title">{t("Photos", locale)}</h2>
+            <AddMediaControl
+              id="new-yarn-photos"
+              {locale}
+              camera
+              label={t("Add photos", locale)}
+              inputLabel={t("Choose yarn photos", locale)}
+              disabled={saving ||
+                session.data?.capabilities.media_upload !== true}
+              onFiles={addQueuedPhotos}
+            />
+            <QueuedPhotoList
+              files={queuedPhotos}
+              {locale}
+              disabled={saving}
+              onRemove={removeQueuedPhoto}
+            />
+            {#if photoUploadProgress > 0}
+              <p class="media-hint" role="status">
+                {t("Uploading photos…", locale)}
+                {photoUploadProgress}/{queuedPhotos.length}
+              </p>
+            {/if}
+          {:else}
+            <YarnPhotoManager
+              yarnId={loadedYarn.id}
+              photos={loadedYarn.photos}
+              {locale}
+              canEdit={canManagePhotos}
+              onResourceUpdated={reloadAfterMediaChange}
+              onMediaBusyChange={(busy, resourceId, ownerId) => {
+                if (resourceId === yarnId && ownerId === userId)
+                  mediaBusy = busy;
+              }}
+            />
+          {/if}
         </section>
       {:else}
         <section class="photo-placeholder" aria-labelledby="yarn-photos-title">
@@ -920,7 +995,30 @@
               {locale}
             />
           {/if}
-          {#if !importImages.length}
+          {#if yarnId === null}
+            <AddMediaControl
+              id="new-yarn-photos"
+              {locale}
+              camera
+              label={t("Add photos", locale)}
+              inputLabel={t("Choose yarn photos", locale)}
+              disabled={saving ||
+                session.data?.capabilities.media_upload !== true}
+              onFiles={addQueuedPhotos}
+            />
+            <QueuedPhotoList
+              files={queuedPhotos}
+              {locale}
+              disabled={saving}
+              onRemove={removeQueuedPhoto}
+            />
+            {#if photoUploadProgress > 0}
+              <p class="media-hint" role="status">
+                {t("Uploading photos…", locale)}
+                {photoUploadProgress}/{queuedPhotos.length}
+              </p>
+            {/if}
+          {:else if !importImages.length}
             <p>
               {t(
                 "Save this yarn first. You can add photos as soon as it has been created.",
@@ -931,7 +1029,9 @@
         </section>
       {/if}
 
-      <fieldset disabled={saving || mediaBusy || deleting}>
+      <fieldset
+        disabled={saving || mediaBusy || deleting || createdYarn !== null}
+      >
         <legend>{t("More yarn details", locale)}</legend>
         <div class="field-grid">
           <label class="field" for={fieldId("fiber_content")}>
@@ -1023,7 +1123,9 @@
         </div>
       </fieldset>
 
-      <fieldset disabled={saving || mediaBusy || deleting}>
+      <fieldset
+        disabled={saving || mediaBusy || deleting || createdYarn !== null}
+      >
         <legend>{t("Description and notes", locale)}</legend>
         <div class="field-grid">
           <div class="field wide">

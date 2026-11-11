@@ -61,6 +61,7 @@
   import ReorderableMedia from "../media/ReorderableMedia.svelte";
   import { groupProjectImages } from "./project-images";
   import AddMediaControl from "#lib/components/AddMediaControl.svelte";
+  import QueuedPhotoList from "../media/QueuedPhotoList.svelte";
   import {
     uploadSequentially,
     type UploadProgress,
@@ -128,6 +129,9 @@
   let yarnLoading = $state(false);
   let uploadProgress = $state<UploadProgress | null>(null);
   let uploadKind = $state<"photo" | "file">("photo");
+  let queuedTitlePhotos = $state<File[]>([]);
+  let queuedStepPhotos = $state<Record<number, File[]>>({});
+  let createdProject = $state<ProjectDetail | null>(null);
   let photoEditImage = $state<ProjectImage | null>(null);
   let photoEditOpen = $state(false);
   let confirmationDialog = $state<ConfirmDialog | undefined>(undefined);
@@ -159,7 +163,10 @@
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
   const isDirty = $derived(
-    savedSnapshot !== JSON.stringify(draft) || tagInput.trim().length > 0,
+    savedSnapshot !== JSON.stringify(draft) ||
+      tagInput.trim().length > 0 ||
+      queuedTitlePhotos.length > 0 ||
+      Object.values(queuedStepPhotos).some((files) => files.length > 0),
   );
   const isCreating = $derived(projectId === null);
   const resumeDraftId = $derived(
@@ -548,6 +555,9 @@
 
   function clearPrivateDraft(): void {
     const empty = blankProjectDraft();
+    createdProject = null;
+    queuedTitlePhotos = [];
+    queuedStepPhotos = {};
     importState = null;
     draft = empty;
     savedSnapshot = JSON.stringify(empty);
@@ -642,6 +652,38 @@
       ...draft.steps,
       { key: ++stepKey, title: "", description: "" },
     ];
+  }
+
+  function queueProjectPhotos(files: File[]): void {
+    queuedTitlePhotos = [
+      ...queuedTitlePhotos,
+      ...files.filter((file) => file.type.startsWith("image/")),
+    ];
+  }
+
+  function queueStepPhotos(key: number, files: File[]): void {
+    queuedStepPhotos = {
+      ...queuedStepPhotos,
+      [key]: [
+        ...(queuedStepPhotos[key] ?? []),
+        ...files.filter((file) => file.type.startsWith("image/")),
+      ],
+    };
+  }
+
+  function removeQueuedProjectPhoto(file: File): void {
+    queuedTitlePhotos = queuedTitlePhotos.filter(
+      (candidate) => candidate !== file,
+    );
+  }
+
+  function removeQueuedStepPhoto(key: number, file: File): void {
+    queuedStepPhotos = {
+      ...queuedStepPhotos,
+      [key]: (queuedStepPhotos[key] ?? []).filter(
+        (candidate) => candidate !== file,
+      ),
+    };
   }
 
   function moveStep(index: number, offset: -1 | 1): void {
@@ -791,7 +833,8 @@
     try {
       const result =
         id === null
-          ? await createProject(value, currentSession, controller.signal)
+          ? (createdProject ??
+            (await createProject(value, currentSession, controller.signal)))
           : expectedUpdatedAt
             ? await updateProject(
                 id,
@@ -810,7 +853,79 @@
         publishFeedback({ ownerId, kind: "error", message: serverError });
         return;
       }
+      if (id === null) createdProject = result;
+      const pendingStepPhotos = queuedStepPhotos;
+      const stepKeys = draft.steps.map((step) => step.key);
+      const pendingStepFiles = stepKeys.map(
+        (key) => pendingStepPhotos[key] ?? [],
+      );
       applyLoadedProject(result);
+      if (
+        id === null &&
+        (queuedTitlePhotos.length ||
+          Object.values(pendingStepPhotos).some((files) => files.length))
+      ) {
+        const failuresByStep: Record<number, File[]> = {};
+        const uploadGroup = async (
+          files: File[],
+          stepId: number | undefined,
+        ): Promise<File[]> => {
+          if (!files.length) return [];
+          const uploadResult = await uploadSequentially(
+            files,
+            (file) =>
+              uploadProjectImage(
+                result.id,
+                file,
+                "",
+                currentSession,
+                stepId,
+                controller.signal,
+              ),
+            (progress) => {
+              if (isCurrentRoute(id, ownerId, generation))
+                uploadProgress =
+                  progress.done < progress.total ? progress : null;
+            },
+            () =>
+              controller.signal.aborted ||
+              !isCurrentRoute(id, ownerId, generation),
+          );
+          return uploadResult.failures.map(({ file }) => file);
+        };
+        const failedTitle = new Set(
+          await uploadGroup(queuedTitlePhotos, undefined),
+        );
+        if (!isCurrentRoute(id, ownerId, generation)) return;
+        for (const [index] of stepKeys.entries()) {
+          const savedStep = result.steps[index];
+          const savedDraftStep = draft.steps[index];
+          if (!savedStep || !savedDraftStep) continue;
+          const failed = await uploadGroup(
+            pendingStepFiles[index] ?? [],
+            savedStep.id,
+          );
+          if (failed.length) failuresByStep[savedDraftStep.key] = failed;
+          if (!isCurrentRoute(id, ownerId, generation)) return;
+        }
+        if (!isCurrentRoute(id, ownerId, generation)) return;
+        queuedTitlePhotos = queuedTitlePhotos.filter((file) =>
+          failedTitle.has(file),
+        );
+        queuedStepPhotos = failuresByStep;
+        uploadProgress = null;
+        if (
+          queuedTitlePhotos.length ||
+          Object.values(queuedStepPhotos).some((files) => files.length)
+        ) {
+          serverError = t(
+            "Some photos could not be uploaded. Save again to retry them.",
+            locale,
+          );
+          publishFeedback({ ownerId, kind: "error", message: serverError });
+          return;
+        }
+      }
       statusMessage =
         id === null
           ? t("Project created.", locale)
@@ -824,6 +939,7 @@
           // The draft expires on its own.
         }
       }
+      if (!isCurrentRoute(id, ownerId, generation)) return;
       await goto(resolve("/projects/[id]", { id: String(result.id) }));
     } catch (error) {
       if (controller.signal.aborted || !isCurrentRoute(id, ownerId, generation))
@@ -1468,7 +1584,7 @@
              materials, pattern and notes, steps. -->
         <fieldset
           class="form-fields"
-          disabled={saving || deleting || mediaBusy}
+          disabled={saving || deleting || mediaBusy || createdProject !== null}
         >
           <section class="form-card">
             <div class="field-grid">
@@ -1501,8 +1617,56 @@
           </section>
         </fieldset>
 
+        {#if isCreating}
+          <section
+            class="form-card"
+            aria-labelledby="queued-project-photos-title"
+          >
+            <h2 id="queued-project-photos-title">
+              {t("Project photos and files", locale)}
+            </h2>
+            <AddMediaControl
+              id="new-project-photos"
+              {locale}
+              camera
+              label={t("Add photos", locale)}
+              inputLabel={t("Choose project photos", locale)}
+              disabled={saving ||
+                session.data?.capabilities.media_upload !== true}
+              hint={t("Media storage is unavailable. Try again later.", locale)}
+              onFiles={queueProjectPhotos}
+            />
+            <QueuedPhotoList
+              files={queuedTitlePhotos}
+              {locale}
+              disabled={saving}
+              onRemove={removeQueuedProjectPhoto}
+            />
+            {#each draft.steps as queuedStep, index (queuedStep.key)}
+              {#if (queuedStepPhotos[queuedStep.key] ?? []).length}
+                <div class="queued-step-photos">
+                  <h3>
+                    {t("Step photos", locale)} · {t("Step", locale)}
+                    {index + 1}
+                  </h3>
+                  <QueuedPhotoList
+                    files={queuedStepPhotos[queuedStep.key] ?? []}
+                    {locale}
+                    disabled={saving}
+                    onRemove={(file) =>
+                      removeQueuedStepPhoto(queuedStep.key, file)}
+                  />
+                </div>
+              {/if}
+            {/each}
+          </section>
+        {/if}
+
         {#if isCreating && importState && (importState.imageUrls.length || importState.assets.length)}
-          <fieldset class="form-fields" disabled={saving}>
+          <fieldset
+            class="form-fields"
+            disabled={saving || createdProject !== null}
+          >
             <section
               class="form-card import-media"
               aria-labelledby="import-media-heading"
@@ -1533,7 +1697,7 @@
           </fieldset>
         {/if}
 
-        {#if project}
+        {#if project && !isCreating}
           <section
             class="form-card media-manager"
             aria-labelledby="media-heading"
@@ -1720,7 +1884,7 @@
 
         <fieldset
           class="form-fields"
-          disabled={saving || deleting || mediaBusy}
+          disabled={saving || deleting || mediaBusy || createdProject !== null}
         >
           <section class="form-card" aria-labelledby="basics-heading">
             <h2 id="basics-heading">{t("Project details", locale)}</h2>
@@ -2024,7 +2188,7 @@
                             rows={4}
                           />
                         </div>
-                        {#if project}
+                        {#if project && !isCreating}
                           <div
                             class="step-photos"
                             use:fileDrop={{
@@ -2073,6 +2237,26 @@
                                 editDisabled={!mediaUploadAvailable}
                               />
                             {/if}
+                          </div>
+                        {:else if isCreating}
+                          <div class="step-photos">
+                            <h4>{t("Step photos", locale)}</h4>
+                            <AddMediaControl
+                              id={`new-step-photo-file-${step.key}`}
+                              {locale}
+                              camera
+                              label={t("Add photos", locale)}
+                              inputLabel={`${t("Choose step photos", locale)} ${index + 1}`}
+                              disabled={saving ||
+                                session.data?.capabilities.media_upload !==
+                                  true}
+                              hint={t(
+                                "Media storage is unavailable. Try again later.",
+                                locale,
+                              )}
+                              onFiles={(files) =>
+                                queueStepPhotos(step.key, files)}
+                            />
                           </div>
                         {/if}
                         {#if importState?.stepImages[step.key]?.length}

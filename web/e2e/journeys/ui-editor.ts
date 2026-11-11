@@ -190,9 +190,36 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
     "Work an even textured panel.",
   );
   markStage("filling the project notes");
+  const notesField = page.getByRole("textbox", { name: "Notes", exact: true });
   await fillMarkdownField(
-    page.getByRole("textbox", { name: "Notes", exact: true }),
-    "Check the width after each repeat.",
+    notesField,
+    "Check the width after each repeat.\n\nMeasure the next repeat.",
+  );
+  await waitTwoAnimationFrames(page);
+  const notesLayout = await page
+    .locator(".sticky-field .md-editor__content")
+    .evaluate((element) => {
+      const paragraphs = Array.from(element.children).filter(
+        (child) => child.tagName === "P",
+      );
+      const first = paragraphs[0]?.getBoundingClientRect();
+      const second = paragraphs[1]?.getBoundingClientRect();
+      return {
+        backgroundImage: getComputedStyle(element).backgroundImage,
+        paragraphCount: paragraphs.length,
+        paragraphGap: first && second ? second.top - first.bottom : Number.NaN,
+        firstParagraphMargin:
+          paragraphs[0] instanceof HTMLElement
+            ? getComputedStyle(paragraphs[0]).marginBottom
+            : "missing",
+      };
+    });
+  check(
+    notesLayout.backgroundImage === "none" &&
+      notesLayout.paragraphCount === 2 &&
+      Math.abs(notesLayout.paragraphGap) <= 1 &&
+      notesLayout.firstParagraphMargin === "0px",
+    `project notes editor has unexpected paragraph styling (${notesLayout.backgroundImage}, ${notesLayout.paragraphGap}px gap, ${notesLayout.firstParagraphMargin} margin)`,
   );
   markStage("filling the project materials");
   await fillMarkdownField(
@@ -245,14 +272,45 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
     .getByText("Riverbend Merino DK", { exact: true })
     .waitFor({ state: "visible", timeout: 5_000 });
   await page.getByRole("button", { name: "Add yarn", exact: true }).click();
+  markStage("selecting a photo before creating the project");
+  const projectPhoto = join(REPO_ROOT, "demo_assets", "demo_image_3.jpg");
+  await page
+    .getByLabel("Choose project photos", { exact: true })
+    .setInputFiles(projectPhoto);
+  const queuedProjectPhoto = page.locator(".queued-photos li img");
+  await queuedProjectPhoto.waitFor({ state: "visible" });
+  await expect
+    .poll(() =>
+      queuedProjectPhoto.evaluate(
+        (image) => (image as HTMLImageElement).naturalWidth,
+      ),
+    )
+    .toBeGreaterThan(0);
+  check(
+    await queuedProjectPhoto.evaluate(
+      (image) => (image as HTMLImageElement).naturalWidth > 0,
+    ),
+    "the selected project photo preview did not load",
+  );
   markStage("submitting the new project");
-  const [createProjectResponse] = await Promise.all([
+  const [createProjectResponse, projectPhotoResponse] = await Promise.all([
     page.waitForResponse(isResponseFor("/api/v2/projects", "POST")),
+    page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        /^\/api\/v2\/projects\/\d+\/images\/title$/.test(
+          urlPath(response.url()),
+        ),
+    ),
     page.getByRole("button", { name: "Create project", exact: true }).click(),
   ]);
   check(
     createProjectResponse.status() === 201,
     "project creation did not succeed against the Rust API",
+  );
+  check(
+    projectPhotoResponse.status() === 201,
+    "the selected project photo did not upload during creation",
   );
   const createdProject = await responseData(createProjectResponse);
   if (createdProject === null) {
@@ -297,6 +355,14 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
   await page.waitForURL(`**${editorPath}`);
   await detailHeading.waitFor({ state: "visible" });
   await statusFeedback("Project created.").waitFor({ state: "visible" });
+  const renderedProjectPhoto = page.locator(".gallery-image img");
+  await renderedProjectPhoto.waitFor({ state: "visible" });
+  check(
+    await renderedProjectPhoto.evaluate(
+      (image) => (image as HTMLImageElement).naturalWidth > 0,
+    ),
+    "the saved project photo was not rendered",
+  );
   markStage("opening the saved project editor");
   await openSavedEditor();
   await page.getByLabel("Project name").waitFor({ state: "visible" });

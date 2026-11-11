@@ -905,7 +905,91 @@ export async function runYarnJourney(
     await page
       .getByLabel("Yarn source URL")
       .fill("https://example.invalid/new-yarn");
+    const creationPhoto = path.join(
+      REPO_ROOT,
+      "demo_assets",
+      "demo_image_1.jpg",
+    );
+    markStage("selecting a photo before creating the yarn");
+    await page
+      .getByLabel("Choose yarn photos", { exact: true })
+      .setInputFiles(creationPhoto);
+    const queuedPhoto = page.locator(".queued-photos li img");
+    await queuedPhoto.waitFor({ state: "visible" });
+    await expect
+      .poll(() =>
+        queuedPhoto.evaluate(
+          (image) => (image as HTMLImageElement).naturalWidth,
+        ),
+      )
+      .toBeGreaterThan(0);
+    const previewLoaded = await queuedPhoto.evaluate(
+      (image) => (image as HTMLImageElement).naturalWidth > 0,
+    );
+    check(previewLoaded, "the selected yarn photo preview did not load");
+
+    let failFirstPhotoUpload = true;
+    await page.route("**/api/v2/yarns/*/photos", async (route) => {
+      if (failFirstPhotoUpload) {
+        failFirstPhotoUpload = false;
+        await route.fulfill({
+          status: 503,
+          contentType: "application/json",
+          body: JSON.stringify({ error: { code: "unavailable" } }),
+        });
+      } else {
+        await route.continue();
+      }
+    });
+    markStage("creating yarn and retrying its first photo upload");
+    const [createResponse, failedPhotoResponse] = await Promise.all([
+      page.waitForResponse(
+        (response) =>
+          response.request().method() === "POST" &&
+          new URL(response.url()).pathname === "/api/v2/yarns",
+      ),
+      page.waitForResponse(
+        (response) =>
+          response.request().method() === "POST" &&
+          /^\/api\/v2\/yarns\/\d+\/photos$/.test(
+            new URL(response.url()).pathname,
+          ),
+      ),
+      page.getByRole("button", { name: "Save yarn" }).click(),
+    ]);
+    check(createResponse.status() === 201, "yarn creation did not succeed");
+    check(
+      failedPhotoResponse.status() === 503,
+      "the first yarn photo upload did not reach the retryable failure",
+    );
+    await page
+      .getByText(
+        "Some photos could not be uploaded. Save again to retry them.",
+        {
+          exact: true,
+        },
+      )
+      .waitFor({ state: "visible" });
+    await expect(queuedPhoto).toBeVisible();
+    const retryPhotoResponse = page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        /^\/api\/v2\/yarns\/\d+\/photos$/.test(
+          new URL(response.url()).pathname,
+        ),
+    );
     await page.getByRole("button", { name: "Save yarn" }).click();
+    const successfulPhotoResponse = await retryPhotoResponse;
+    check(
+      successfulPhotoResponse.status() === 201,
+      "retrying the yarn photo upload did not succeed",
+    );
+    check(
+      observed.filter(
+        ([method, , p]) => method === "POST" && p === "/api/v2/yarns",
+      ).length === 1,
+      "retrying a failed photo upload created a duplicate yarn",
+    );
     await page
       .getByRole("heading", { name: "New browser yarn", exact: true })
       .waitFor({ state: "visible" });
@@ -925,6 +1009,14 @@ export async function runYarnJourney(
       (await page.getByText("100 g", { exact: true }).count()) === 1 &&
         (await page.getByText("250 m", { exact: true }).count()) === 1,
       "created yarn measurements were not rendered",
+    );
+    const createdPhoto = page.locator(".photo-strip img");
+    await createdPhoto.waitFor({ state: "visible" });
+    check(
+      await createdPhoto.evaluate(
+        (image) => (image as HTMLImageElement).naturalWidth > 0,
+      ),
+      "the saved yarn photo was not rendered",
     );
 
     markStage("checking yarn deletion confirmation and deletion");
@@ -1254,19 +1346,30 @@ export async function runYarnJourney(
     const sortedConsole = [...consoleErrors].sort();
     const status503 = observedApiErrors.filter((e) => e[1] === 503);
     const expectedTestErrorConsole =
-      sortedConsole.length === 3 &&
+      sortedConsole.length === 4 &&
       sortedConsole[0] === "http-conflict" &&
       sortedConsole[1] === "http-conflict" &&
       sortedConsole[2] === "resource-load" &&
+      sortedConsole[3] === "resource-load" &&
       observedApiErrors.filter((e) => e[1] === 409).length === 2 &&
-      status503.length === 1 &&
-      status503[0]?.[0] === "DELETE" &&
-      status503[0][2] === `/api/v2/yarns/${createdIdPath}` &&
-      status503[0][3] === "internal_error" &&
+      status503.length === 2 &&
+      status503.some(
+        (entry) =>
+          entry[0] === "DELETE" &&
+          entry[2] === `/api/v2/yarns/${createdIdPath}` &&
+          entry[3] === "internal_error",
+      ) &&
+      status503.some(
+        (entry) =>
+          entry[0] === "POST" &&
+          entry[2] === `/api/v2/yarns/${createdIdPath}/photos` &&
+          entry[3] === "unavailable",
+      ) &&
       JSON.stringify([...resourceFailures].sort()) ===
         JSON.stringify([
           "HTTP 409 category-api",
           "HTTP 409 yarn-api",
+          "HTTP 503 yarn-api",
           "HTTP 503 yarn-api",
         ]);
     const unexpectedConsoleErrors = expectedTestErrorConsole
