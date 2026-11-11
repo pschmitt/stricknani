@@ -59,6 +59,33 @@ object PhotoEditMath {
     /** [steps] quarter turns clockwise (negative: counter-clockwise) from [current]. */
     fun rotateBy(current: Int, steps: Int): Int = normalizeRotation(current + steps * 90)
 
+    /**
+     * Carries [box] through [steps] quarter turns clockwise (negative: counter-clockwise) of the
+     * image, so it frames the same picture content afterwards. One clockwise turn maps (x, y, w, h)
+     * to (1 - y - h, x, h, w); a counter-clockwise one to (y, 1 - x - w, h, w). Clamped to the
+     * image.
+     */
+    fun rotateCrop(box: CropBox, steps: Int): CropBox {
+        var x = box.left
+        var y = box.top
+        var w = box.width
+        var h = box.height
+        repeat(((steps % 4) + 4) % 4) {
+            val nx = 1f - y - h
+            val nw = h
+            val nh = w
+            y = x
+            x = nx
+            w = nw
+            h = nh
+        }
+        w = w.coerceIn(0f, 1f)
+        h = h.coerceIn(0f, 1f)
+        x = x.coerceIn(0f, 1f - w)
+        y = y.coerceIn(0f, 1f - h)
+        return CropBox(x, y, x + w, y + h)
+    }
+
     /** Width and height of an image of [width] x [height] after [rotation] degrees. */
     fun rotatedSize(width: Int, height: Int, rotation: Int): Pair<Int, Int> =
         if (normalizeRotation(rotation) % 180 == 0) width to height else height to width

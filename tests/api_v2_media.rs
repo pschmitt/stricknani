@@ -1286,6 +1286,65 @@ async fn uploads_respect_the_exif_orientation_for_dimensions_and_thumbnails() {
     );
 }
 
+/// One request with both `rotate` and `crop`: the server rotates first and the crop is in
+/// fractions of the rotated image. The photo editors rely on this when they carry a crop through a
+/// rotation, so a 64x32 two-tone image (red left, blue right) turned 90 degrees clockwise (red on
+/// top) and cropped to its bottom-left quarter yields a 16x32 blue region.
+#[tokio::test]
+async fn image_edit_applies_the_crop_in_the_rotated_frame() {
+    let fixture = fixture().await;
+    let (session, csrf) = signed_in(
+        &fixture.app,
+        "media-owner@example.test",
+        "media-owner-password",
+    )
+    .await;
+    let png = two_tone(64, 32, image::ImageFormat::Png);
+    let upload = fixture
+        .app
+        .clone()
+        .oneshot(multipart_request(MultipartSpec {
+            method: "POST",
+            path: &format!("/projects/{}/images/title", fixture.project_id),
+            session: &session,
+            csrf: Some(&csrf),
+            origin: Some(ORIGIN),
+            file_name: "title.png",
+            content_type: "image/png",
+            bytes: &png,
+            alt_text: None,
+        }))
+        .await
+        .unwrap();
+    assert_eq!(upload.status(), StatusCode::CREATED);
+    let image_id = json(upload).await["data"]["id"].as_i64().unwrap();
+    let edit_path = format!("/projects/{}/images/{image_id}/edit", fixture.project_id);
+    // Rotated frame is 32x64; the lower half of its left side is 16x32 and lies in the blue half.
+    let edited = fixture
+        .app
+        .clone()
+        .oneshot(edit_request(
+            &edit_path,
+            &session,
+            &csrf,
+            serde_json::json!({"rotate": 90, "crop": {"x": 0.0, "y": 0.5, "width": 0.5, "height": 0.5}}),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(edited.status(), StatusCode::OK);
+    let (width, height, filename) = stored_size(&fixture.pool, image_id).await;
+    assert_eq!((width, height), (16, 32));
+    let path = files_below(fixture._root.path())
+        .into_iter()
+        .find(|path| path.ends_with(&filename) && !path.to_string_lossy().contains("thumbnails"))
+        .unwrap();
+    let pixel = image::open(path).unwrap().to_rgb8().get_pixel(8, 16).0;
+    assert!(
+        pixel[2] > 150 && pixel[0] < 100,
+        "the region is the blue half: {pixel:?}"
+    );
+}
+
 #[tokio::test]
 async fn image_edits_rotate_and_crop_in_place_and_keep_the_item() {
     let fixture = fixture().await;
