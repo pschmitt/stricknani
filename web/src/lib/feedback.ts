@@ -12,6 +12,14 @@ export interface FeedbackEvent {
 const feedbackState = writable<FeedbackEvent | null>(null);
 export const feedback = readonly(feedbackState);
 
+/**
+ * How long a message stays before it leaves on its own; null means until dismissed. Mirrors the
+ * Android app: confirmations are short, only errors stay so they can not be missed.
+ */
+export function feedbackDurationMs(kind: FeedbackKind): number | null {
+  return kind === "error" ? null : 4_000;
+}
+
 let nextFeedbackId = 0;
 let successTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -21,11 +29,11 @@ export function publishFeedback(event: Omit<FeedbackEvent, "id">): number {
   const id = ++nextFeedbackId;
   feedbackState.set({ ...event, id });
 
-  if (event.kind === "success") {
-    successTimer = setTimeout(() => dismissFeedback(id), 4_000);
-  } else {
-    successTimer = undefined;
-  }
+  const duration = feedbackDurationMs(event.kind);
+  successTimer =
+    duration === null
+      ? undefined
+      : setTimeout(() => dismissFeedback(id), duration);
 
   return id;
 }

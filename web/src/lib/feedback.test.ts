@@ -4,6 +4,7 @@ import {
   clearFeedback,
   dismissFeedback,
   feedback,
+  feedbackDurationMs,
   publishFeedback,
 } from "./feedback";
 
@@ -66,5 +67,22 @@ describe("owner-scoped feedback events", () => {
     vi.advanceTimersByTime(4_000);
 
     expect(get(feedback)).toBeNull();
+  });
+
+  it("leaves confirmations on their own and keeps errors", () => {
+    expect(feedbackDurationMs("success")).toBe(4_000);
+    expect(feedbackDurationMs("error")).toBeNull();
+
+    publishFeedback({
+      ownerId: 7,
+      kind: "success",
+      message: "Project created",
+    });
+    vi.advanceTimersByTime(4_000);
+    expect(get(feedback)).toBeNull();
+
+    publishFeedback({ ownerId: 7, kind: "error", message: "Could not save" });
+    vi.advanceTimersByTime(600_000);
+    expect(get(feedback)).not.toBeNull();
   });
 });
