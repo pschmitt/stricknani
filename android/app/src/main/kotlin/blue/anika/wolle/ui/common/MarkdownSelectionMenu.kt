@@ -69,13 +69,16 @@ private class MarkdownTextContextMenuProvider : TextContextMenuProvider {
     }
 
     override suspend fun showTextContextMenu(dataProvider: TextContextMenuDataProvider) {
-        val menu = ActiveMenu(dataProvider)
+        val menu =
+            ActiveMenu(dataProvider) { closedMenu ->
+                if (active === closedMenu) active = null
+            }
         active?.close()
         active = menu
         try {
             menu.closed.await()
         } finally {
-            if (active === menu) active = null
+            menu.close()
         }
     }
 
@@ -154,11 +157,14 @@ private fun resolveIconResource(context: Context, resourceId: Int): Int? {
     return null
 }
 
-private class ActiveMenu(val dataProvider: TextContextMenuDataProvider) : TextContextMenuSession {
+private class ActiveMenu(
+    val dataProvider: TextContextMenuDataProvider,
+    private val onClose: (ActiveMenu) -> Unit,
+) : TextContextMenuSession {
     val closed = CompletableDeferred<Unit>()
 
     override fun close() {
-        closed.complete(Unit)
+        if (closed.complete(Unit)) onClose(this)
     }
 
     fun onClick(item: TextContextMenuItem) {
