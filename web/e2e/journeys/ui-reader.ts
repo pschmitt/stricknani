@@ -754,6 +754,7 @@ async function checkMoreRoute(ctx: UiCtx): Promise<void> {
   const moreCards: Array<[string, string]> = [
     ["Categories", "/categories"],
     ["Gauge calculator", "/gauge"],
+    ["Trash", "/trash"],
   ];
   const adminCards: Array<[string, string]> = [["Admin", "/admin/users"]];
   const adminCardCounts: number[] = [];

@@ -1,6 +1,8 @@
 package blue.anika.wolle.ui.common
 
 import blue.anika.wolle.R
+import blue.anika.wolle.data.repository.TrashKind
+import blue.anika.wolle.data.repository.TrashRef
 import java.io.IOException
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
@@ -53,5 +55,23 @@ class MutationFeedbackTest {
         assertTrue(IOException("offline").isOfflineFailure())
         assertTrue(IllegalStateException(IOException("offline")).isOfflineFailure())
         assertFalse(IllegalStateException("server rejected request").isOfflineFailure())
+    }
+
+    @Test
+    fun trashedMessagesCarryTheItemToRestoreOnUndo() = runTest {
+        val feedback = MutationFeedback()
+        val nextEvents =
+            async(start = CoroutineStart.UNDISPATCHED) { feedback.events.take(2).toList() }
+
+        feedback.showTrashed(
+            R.string.mutation_moved_to_trash,
+            TrashRef(TrashKind.Project, 7),
+        )
+        feedback.show(R.string.mutation_trash_restored)
+
+        val (trashed, restored) = nextEvents.await()
+        assertEquals(TrashRef("project", 7), trashed.undo)
+        assertEquals("projects", trashed.undo?.segment)
+        assertEquals(null, restored.undo)
     }
 }

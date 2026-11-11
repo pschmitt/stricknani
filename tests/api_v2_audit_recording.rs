@@ -235,7 +235,8 @@ async fn recorded(pool: &SqlitePool, entity: &str, id: i64) -> Vec<Recorded> {
     use sqlx::Row;
     sqlx::query(
         "SELECT action, safe_changes, media_kind, media_public_id, media_name \
-         FROM audit_events WHERE entity_type = ? AND entity_id = ? ORDER BY id",
+         FROM audit_events WHERE entity_type = ? AND entity_id = ? \
+         AND action != 'step_trashed' ORDER BY id",
     )
     .bind(entity)
     .bind(id)
@@ -580,7 +581,7 @@ async fn project_media_events_name_the_file_and_reorders_record_the_new_order() 
     assert_eq!(status, StatusCode::NO_CONTENT);
     let events = recorded(&fixture.pool, "project", id).await;
     let removed = events.last().unwrap();
-    assert_eq!(removed.action, "removed");
+    assert_eq!(removed.action, "trashed");
     assert_eq!(removed.media_kind.as_deref(), Some("attachment"));
     assert_eq!(removed.media_name.as_deref(), Some("chart.png"));
 }
@@ -715,17 +716,18 @@ async fn android_edit_sequence_leaves_only_events_with_renderable_details() {
         .as_array()
         .unwrap()
         .iter()
-        .filter(|event| event["entity_type"] == "project")
+        .filter(|event| event["entity_type"] == "project" && event["action"] != "step_trashed")
         .collect();
     let actions: Vec<_> = events
         .iter()
         .rev()
         .map(|event| event["action"].as_str().unwrap())
+        .filter(|action| *action != "step_trashed")
         .collect();
     assert_eq!(
         actions,
         [
-            "created", "updated", "uploaded", "uploaded", "removed", "removed", "updated",
+            "created", "updated", "uploaded", "uploaded", "trashed", "trashed", "updated",
             "uploaded"
         ]
     );
@@ -738,7 +740,7 @@ async fn android_edit_sequence_leaves_only_events_with_renderable_details() {
             "event {event} has nothing to render"
         );
         if event["media"]["id"] != live_id
-            && (event["action"] == "uploaded" || event["action"] == "removed")
+            && (event["action"] == "uploaded" || event["action"] == "trashed")
         {
             assert!(has_media);
             // Both pictures were removed afterwards: say so instead of linking.

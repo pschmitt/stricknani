@@ -7,6 +7,7 @@
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import ChangeList from "#lib/features/history/ChangeList.svelte";
   import AuditActionBadge from "./AuditActionBadge.svelte";
+  import AuditLifecycle from "./AuditLifecycle.svelte";
   import AuditMediaPreview from "./AuditMediaPreview.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -138,14 +139,27 @@
       <div class="event-actor">
         <UserAvatar
           avatarUrl={detail.event.actor_avatar_url}
-          name={detail.event.actor_email ?? t("Unknown actor", locale)}
+          name={detail.event.actor_email ??
+            (detail.event.system
+              ? t("System", locale)
+              : t("Unknown actor", locale))}
         />
-        <span>{detail.event.actor_email ?? t("Unknown actor", locale)}</span>
+        <span
+          >{detail.event.actor_email ??
+            (detail.event.system
+              ? t("System", locale)
+              : t("Unknown actor", locale))}</span
+        >
         <time datetime={detail.event.created_at}
           >{dateLabel(detail.event.created_at)}</time
         >
       </div>
-      <AuditActionBadge action={detail.event.action} {locale} />
+      <AuditActionBadge
+        action={detail.event.action}
+        {locale}
+        system={detail.event.system}
+        mediaKind={detail.event.media?.kind ?? null}
+      />
       <ResourceCard
         kind={resourceKind}
         name={detail.event.resource.name ??
@@ -154,10 +168,17 @@
           ? null
           : detail.event.resource.href}
         imageUrl={detail.event.resource.preview_url}
-        subtitle={!detail.event.resource.exists
-          ? t("Resource unavailable", locale)
-          : null}
+        subtitle={detail.event.resource.state === "in_trash"
+          ? t("In the trash", locale)
+          : !detail.event.resource.exists
+            ? t("Resource unavailable", locale)
+            : null}
         titleTag="h2"
+      />
+      <AuditLifecycle
+        event={detail.event}
+        {locale}
+        onChanged={() => (retry += 1)}
       />
       {#if detail.event.media}
         <div class="event-media">

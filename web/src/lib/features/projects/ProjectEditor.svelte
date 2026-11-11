@@ -18,6 +18,7 @@
   import PageHeader from "#lib/components/PageHeader.svelte";
   import StickyActionBar from "#lib/components/StickyActionBar.svelte";
   import { publishFeedback } from "#lib/feedback.ts";
+  import { publishMovedToTrash } from "../trash/trash-undo";
   import { msg, t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
@@ -233,7 +234,7 @@
   );
   const confirmationTitle = $derived(
     confirmedAction?.kind === "project"
-      ? t("Delete this project? This cannot be undone.", locale)
+      ? t("Delete this project?", locale)
       : confirmedAction?.kind === "image"
         ? t("Remove this project photo?", locale)
         : t("Remove this attachment?", locale),
@@ -1163,7 +1164,22 @@
                 current,
                 signal,
               );
-      const succeeded = await performMediaMutation(mutation, "media_delete");
+      const trashKind = action.kind;
+      const trashId =
+        action.kind === "image" ? action.imageId : action.attachmentId;
+      const succeeded = await performMediaMutation(
+        mutation,
+        "media_delete",
+        () =>
+          publishMovedToTrash({
+            session: currentSession,
+            ownerId,
+            locale,
+            kind: trashKind,
+            id: trashId,
+            onRestored: reloadProjectAfterRestore,
+          }),
+      );
       if (
         succeeded &&
         isCurrentRoute(id, ownerId, generation) &&
@@ -1181,6 +1197,14 @@
     try {
       await deleteProject(id, currentSession, controller.signal);
       if (!isCurrentRoute(id, ownerId, generation)) return;
+      publishMovedToTrash({
+        session: currentSession,
+        ownerId,
+        locale,
+        kind: "project",
+        id,
+        onRestored: () => goto(resolve("/projects/[id]", { id: String(id) })),
+      });
       await goto(resolve("/projects"));
     } catch (error) {
       if (controller.signal.aborted || !isCurrentRoute(id, ownerId, generation))
@@ -1200,6 +1224,15 @@
         }
       }
     }
+  }
+
+  /** After "Undo" on a removed photo or attachment: show the project as it is now. */
+  async function reloadProjectAfterRestore(): Promise<void> {
+    const id = projectId;
+    if (id === null) return;
+    const latest = await getProject(id, new AbortController().signal);
+    if (projectId !== id || isDirty) return;
+    applyLoadedProject(latest);
   }
 
   function openPhotoEditor(image: ProjectImage): void {
@@ -1310,6 +1343,7 @@
       signal: AbortSignal,
     ) => Promise<unknown>,
     capability: "media_upload" | "media_delete",
+    publishSuccess?: () => void,
   ): Promise<boolean> {
     const currentSession = session.data;
     const id = projectId;
@@ -1335,7 +1369,9 @@
       if (!isCurrentRoute(id, ownerId, generation)) return false;
       applyLoadedProject(latest);
       statusMessage = t("Project media updated.", locale);
-      publishFeedback({ ownerId, kind: "success", message: statusMessage });
+      if (publishSuccess) publishSuccess();
+      else
+        publishFeedback({ ownerId, kind: "success", message: statusMessage });
       return true;
     } catch (error) {
       if (controller.signal.aborted || !isCurrentRoute(id, ownerId, generation))
@@ -2368,9 +2404,22 @@
       >
         {#snippet children()}
           {#if confirmedAction?.kind === "project"}
-            <p>{t("This cannot be undone.", locale)}</p>
-          {:else if mediaError}
-            <p class="field-error" role="alert">{mediaError}</p>
+            <p>
+              {t(
+                "It moves to the trash and can be restored from there for 90 days.",
+                locale,
+              )}
+            </p>
+          {:else}
+            <p>
+              {t(
+                "It moves to the trash and can be restored from there for 90 days.",
+                locale,
+              )}
+            </p>
+            {#if mediaError}
+              <p class="field-error" role="alert">{mediaError}</p>
+            {/if}
           {/if}
         {/snippet}
         {#snippet actions()}

@@ -2,12 +2,23 @@ import { get, readonly, writable } from "svelte/store";
 
 export type FeedbackKind = "success" | "error";
 
+/** An optional button on a toast, such as "Undo". Dismisses the toast when it runs. */
+export interface FeedbackAction {
+  label: string;
+  onAction: () => void | Promise<void>;
+}
+
 export interface FeedbackEvent {
   id: number;
   ownerId: number;
   kind: FeedbackKind;
   message: string;
+  action?: FeedbackAction;
 }
+
+/** How long a success toast stays; longer with an action so it can be reached. */
+export const FEEDBACK_DISMISS_MS = 4_000;
+export const FEEDBACK_ACTION_DISMISS_MS = 8_000;
 
 const feedbackState = writable<FeedbackEvent | null>(null);
 export const feedback = readonly(feedbackState);
@@ -16,8 +27,12 @@ export const feedback = readonly(feedbackState);
  * How long a message stays before it leaves on its own; null means until dismissed. Mirrors the
  * Android app: confirmations are short, only errors stay so they can not be missed.
  */
-export function feedbackDurationMs(kind: FeedbackKind): number | null {
-  return kind === "error" ? null : 4_000;
+export function feedbackDurationMs(
+  kind: FeedbackKind,
+  hasAction = false,
+): number | null {
+  if (kind === "error") return null;
+  return hasAction ? FEEDBACK_ACTION_DISMISS_MS : FEEDBACK_DISMISS_MS;
 }
 
 let nextFeedbackId = 0;
@@ -29,7 +44,7 @@ export function publishFeedback(event: Omit<FeedbackEvent, "id">): number {
   const id = ++nextFeedbackId;
   feedbackState.set({ ...event, id });
 
-  const duration = feedbackDurationMs(event.kind);
+  const duration = feedbackDurationMs(event.kind, event.action !== undefined);
   successTimer =
     duration === null
       ? undefined

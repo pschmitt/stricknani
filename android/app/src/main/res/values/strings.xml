@@ -230,7 +230,7 @@
     <string name="editor_link_clear">Clear link</string>
     <string name="editor_link_invalid">Enter a full web address, for example https://example.com</string>
     <string name="project_editor_delete_dialog_title">Delete project “%1$s”?</string>
-    <string name="project_editor_delete_dialog_text">This cannot be undone.</string>
+    <string name="project_editor_delete_dialog_text">It moves to the trash and can be restored from there for 90 days.</string>
     <string name="project_editor_steps_label">Steps</string>
     <string name="project_editor_step_title_label">Step title</string>
     <string name="project_editor_step_description_label">Step description</string>
@@ -245,7 +245,7 @@
     <string name="project_editor_add_attachment">Add project attachments</string>
     <string name="project_editor_remove_attachment">Remove selected attachment</string>
     <string name="project_attachment_delete_dialog_title">Delete attachment “%1$s”?</string>
-    <string name="project_attachment_delete_dialog_text">This cannot be undone.</string>
+    <string name="project_attachment_delete_dialog_text">It moves to the trash and can be restored from there for 90 days.</string>
     <string name="projects_list_search_placeholder">Search</string>
     <string name="list_filter_all">All</string>
     <string name="projects_list_empty_title">Nothing on the needles yet</string>
@@ -263,7 +263,7 @@
     <string name="categories_delete_description">Delete category</string>
     <string name="categories_rename_dialog_title">Rename category</string>
     <string name="categories_delete_dialog_title">Delete category “%1$s”?</string>
-    <string name="categories_delete_dialog_text">Projects that use this category will no longer show it.</string>
+    <string name="categories_delete_dialog_text">Projects that use this category will no longer show it. It moves to the trash and can be restored from there for 90 days.</string>
 
     <!-- Project import -->
     <string name="project_import_url_label">Pattern page URL</string>
@@ -803,14 +803,10 @@
     <string name="mutation_favorite_removed">Removed from favorites.</string>
     <string name="mutation_favorite_offline">You’re offline - try favouriting again in a moment.</string>
     <string name="mutation_category_renamed">Category “%1$s” renamed to “%2$s”.</string>
-    <string name="mutation_category_deleted">Category “%1$s” deleted.</string>
     <string name="mutation_project_created_queued">Project created.</string>
     <string name="mutation_project_updated_queued">Project saved.</string>
-    <string name="mutation_project_deleted_queued">Project deleted.</string>
-    <string name="mutation_project_attachment_deleted_queued">Attachment deleted.</string>
     <string name="mutation_yarn_created_queued">Yarn created.</string>
     <string name="mutation_yarn_updated_queued">Yarn saved.</string>
-    <string name="mutation_yarn_deleted_queued">Yarn deleted.</string>
 
     <!-- Onboarding errors -->
     <string name="onboarding_error_missing_url_token">Enter the Stricknani address and the access token</string>
@@ -930,7 +926,7 @@
     <string name="admin_event_open">Show details</string>
     <string name="admin_action_created">Created</string>
     <string name="admin_action_updated">Updated</string>
-    <string name="admin_action_deleted">Deleted</string>
+    <string name="admin_action_deleted">Deleted permanently</string>
     <string name="admin_action_uploaded">Uploaded</string>
     <string name="admin_action_removed">Removed</string>
     <string name="admin_action_step_created">Step created</string>
@@ -1000,7 +996,7 @@
     <string name="admin_field_photo_order">Photo order</string>
     <string name="admin_no_details">No details recorded</string>
     <string name="admin_open_item">Open %1$s</string>
-    <string name="admin_item_deleted">Deleted</string>
+    <string name="admin_item_deleted">Deleted permanently</string>
     <string name="admin_media_picture">Picture</string>
     <string name="admin_media_file">File</string>
     <string name="admin_media_deleted_suffix">deleted</string>
@@ -1521,4 +1517,71 @@
     <string name="markdown_editor_link_address">Link address</string>
     <string name="markdown_editor_link_apply">Apply</string>
     <string name="markdown_editor_link_remove">Remove link</string>
+
+    <!-- Trash -->
+    <string name="trash_title">Trash</string>
+    <string name="more_trash_subtitle">Restore deleted items or delete them for good.</string>
+    <string name="trash_intro">Deleted items stay here for %1$d days. Restore them, or delete them for good.</string>
+    <string name="trash_empty_title">The trash is empty.</string>
+    <string name="trash_empty_subtitle">Deleted projects, yarns and more show up here for %1$d days.</string>
+    <string name="trash_kind_project">Project</string>
+    <string name="trash_kind_yarn">Yarn</string>
+    <string name="trash_kind_category">Category</string>
+    <string name="trash_kind_step">Step</string>
+    <string name="trash_kind_image">Image</string>
+    <string name="trash_kind_attachment">Attachment</string>
+    <string name="trash_kind_photo">Photo</string>
+    <string name="trash_kind_item">Item</string>
+    <string name="trash_parent_project">In project %1$s</string>
+    <string name="trash_parent_yarn">In yarn %1$s</string>
+    <string name="trash_deleted_when">Deleted %1$s</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">%1$d day left</item>
+        <item quantity="other">%1$d days left</item>
+    </plurals>
+    <string name="trash_due">Due for deletion</string>
+    <string name="trash_restore">Restore</string>
+    <string name="trash_purge">Delete forever</string>
+    <string name="trash_keep">Keep in trash</string>
+    <string name="trash_purge_dialog_title">Delete forever?</string>
+    <string name="trash_purge_dialog_text">%1$s will be deleted permanently. This cannot be undone.</string>
+    <string name="trash_restored_name">Restored %1$s.</string>
+    <string name="trash_open_project">Open project</string>
+    <string name="trash_open_yarn">Open yarn</string>
+    <string name="trash_undo">Undo</string>
+    <string name="mutation_moved_to_trash">Moved to the trash.</string>
+    <string name="mutation_trash_restored">Restored from the trash.</string>
+    <string name="mutation_trash_purged">Deleted permanently.</string>
+    <string name="error_trash_gone">This item is no longer in the trash.</string>
+    <string name="error_trash_restore_failed">The item could not be restored.</string>
+    <string name="error_trash_restore_parent">Restore the project or yarn it belongs to from the trash first.</string>
+    <string name="error_trash_purge_failed">The item could not be deleted.</string>
+    <string name="error_trash_load_failed">The trash could not be loaded.</string>
+    <string name="error_trash_offline">You are offline. Connect to your server and try again.</string>
+
+    <!-- Trash in the audit log and the activity feed -->
+    <string name="admin_action_trashed">Moved to trash</string>
+    <string name="admin_action_restored">Restored from trash</string>
+    <string name="admin_action_purged">Deleted permanently</string>
+    <string name="admin_action_purged_auto">Purged automatically after 90 days</string>
+    <string name="admin_state_in_trash">In the trash · %1$s</string>
+    <string name="admin_owner_line">Owner: %1$s</string>
+    <string name="admin_actor_system">Automatic purge</string>
+    <string name="admin_open_trash">Open the trash</string>
+    <string name="activity_trashed">%1$s moved %2$s to the trash</string>
+    <string name="activity_restored">%1$s restored %2$s from the trash</string>
+    <string name="activity_purged">%1$s deleted %2$s permanently</string>
+    <string name="activity_purged_auto">%1$s was purged automatically after 90 days</string>
+    <string name="admin_action_step_trashed">Step moved to trash</string>
+    <string name="admin_action_step_restored">Step restored from trash</string>
+    <string name="admin_action_step_purged">Step deleted permanently</string>
+    <string name="error_trash_name_taken">A category with this name exists again. Rename one of them first.</string>
+    <string name="trash_banner_project">This project is in the trash.</string>
+    <string name="trash_banner_yarn">This yarn is in the trash.</string>
+    <string name="trash_banner_due">It is due for deletion.</string>
+    <plurals name="trash_banner_time">
+        <item quantity="one">It will be deleted permanently in %1$d day.</item>
+        <item quantity="other">It will be deleted permanently in %1$d days.</item>
+    </plurals>
+    <string name="trash_banner_delete">Delete permanently</string>
 </resources>

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  parseYarnSummary,
   getLinkedProject,
   getYarn,
   listYarns,
@@ -298,5 +299,26 @@ describe("yarn browser API contract", () => {
         code: "payload_too_large",
       },
     );
+  });
+});
+
+describe("trashed yarn list items", () => {
+  it("reads trashed_at and purge_at of a summary", () => {
+    const summary = parseYarnSummary({
+      id: 3,
+      name: "Wool",
+      brand: null,
+      colorway: null,
+      weight_category: null,
+      is_favorite: false,
+      updated_at: "2026-11-01T10:00:00Z",
+      preview_url: null,
+      trashed_at: "2026-11-02T10:00:00Z",
+      purge_at: "2027-01-31T10:00:00Z",
+    });
+    expect(summary).toMatchObject({
+      trashed_at: "2026-11-02T10:00:00Z",
+      purge_at: "2027-01-31T10:00:00Z",
+    });
   });
 });

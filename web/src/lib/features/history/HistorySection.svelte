@@ -5,6 +5,10 @@
   import SectionHeading from "#lib/components/SectionHeading.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
+  import {
+    isLifecycleAction,
+    lifecycleSubjectText,
+  } from "../trash/trash-state";
   import HistoryEventDetail from "./HistoryEventDetail.svelte";
   import {
     getHistoryDetail,
@@ -198,14 +202,27 @@
 
   function headline(event: HistoryEvent): string {
     if (event.media?.name)
-      return `${actionLabel(event.action, locale)}: ${event.media.name}`;
+      return `${actionLabel(event.action, locale, event.system === true)}: ${event.media.name}`;
     const entry = details[event.id];
     return eventHeadline(
       event.action,
       entry?.state === "ready" ? entry.detail.changes : null,
       locale,
       event.subject,
+      event.system === true,
     );
+  }
+
+  /** "Owner: Anna" on moved-to-trash, restore and purge entries an administrator or the system caused. */
+  function ownerNote(event: HistoryEvent): string | null {
+    return isLifecycleAction(event.action)
+      ? lifecycleSubjectText(
+          event.subject
+            ? { id: event.subject.id, name: event.subject.name }
+            : null,
+          locale,
+        )
+      : null;
   }
 
   function byOther(event: HistoryEvent): string | null {
@@ -279,13 +296,20 @@
               <span class="entry-headline">{headline(event)}</span>
               <span class="entry-meta">
                 <span class="entry-action"
-                  >{actionLabel(event.action, locale)}</span
+                  >{actionLabel(
+                    event.action,
+                    locale,
+                    event.system === true,
+                  )}</span
                 >
                 <time
                   datetime={event.created_at}
                   title={fullDate(event.created_at, locale)}
                   >{relativeTime(event.created_at, now, locale)}</time
                 >
+                {#if ownerNote(event)}
+                  <span class="entry-actor">{ownerNote(event)}</span>
+                {/if}
                 {#if event.impersonated_by}
                   <span class="entry-actor">
                     <span

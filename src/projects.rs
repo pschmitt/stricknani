@@ -48,6 +48,10 @@ pub(crate) struct ListQuery {
     /// Administrator-only restriction to one owner's projects.
     #[serde(default)]
     pub(crate) owner_id: Option<i64>,
+    /// List only trashed projects (API v2 `trashed=only`): the caller's own,
+    /// or any account's for administrators. Never set by API v1.
+    #[serde(skip)]
+    pub(crate) trashed_only: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -118,6 +122,11 @@ pub(crate) struct ProjectListItem {
     pub(crate) is_favorite: bool,
     pub(crate) updated_at: String,
     pub(crate) preview_url: Option<String>,
+    /// Set while the project is in the trash (API v2 `trashed=only` lists).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) trashed_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) purge_at: Option<String>,
     pub(crate) owner: Option<crate::resource_access::OwnerInfo>,
     /// The caller's role; set on API v2 only.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -142,6 +151,12 @@ pub(crate) struct ProjectResponse {
     pub(crate) is_favorite: bool,
     pub(crate) created_at: String,
     pub(crate) updated_at: String,
+    /// Set while the project is in the trash: only its owner and administrators
+    /// can open it then, read-only (API v2).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) trashed_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) purge_at: Option<String>,
     pub(crate) yarn_ids: Vec<i64>,
     pub(crate) steps: Vec<StepResponse>,
     // Media upload/import routes land in a later slice; this DTO returns empty arrays meanwhile.
@@ -242,6 +257,7 @@ struct ProjectRow {
     is_ai_enhanced: bool,
     created_at: String,
     updated_at: String,
+    deleted_at: Option<String>,
 }
 
 #[derive(Debug, FromRow)]
@@ -254,6 +270,7 @@ struct ProjectListRow {
     is_favorite: bool,
     updated_at: String,
     share_role: Option<String>,
+    deleted_at: Option<String>,
 }
 
 #[derive(Debug, FromRow)]
@@ -337,16 +354,21 @@ pub(crate) async fn list_for_owner_with_tag_policy(
     };
     let v2 = matches!(tag_policy, TagPolicy::PreserveLabels);
     // API v2 lists what is shared with the caller next to their own projects.
-    let share_user = (v2 && scope == crate::resource_access::Scope::Mine).then_some(user_id);
+    // The trash is the owner's and the administrators': never through a share.
+    let trashed_only = query.trashed_only;
+    let share_user =
+        (v2 && scope == crate::resource_access::Scope::Mine && !trashed_only).then_some(user_id);
     let rows = sqlx::query_as::<_, ProjectListRow>(
         "SELECT p.id, p.owner_id, p.name, c.name AS category, p.tags, \
                 EXISTS(SELECT 1 FROM user_favorites f \
                        WHERE f.user_id = ? AND f.project_id = p.id) AS is_favorite, \
                 p.updated_at, \
                 (SELECT s.role FROM resource_shares s WHERE s.kind = 'project' \
-                 AND s.resource_id = p.id AND s.user_id = ?) AS share_role \
+                 AND s.resource_id = p.id AND s.user_id = ?) AS share_role, \
+                p.deleted_at \
          FROM projects p LEFT JOIN categories c ON c.id = p.category_id \
-         WHERE ((? IS NULL OR p.owner_id = ?) OR (? IS NOT NULL AND EXISTS( \
+         WHERE ((? = 0 AND p.deleted_at IS NULL) OR (? = 1 AND p.deleted_at IS NOT NULL)) \
+           AND ((? IS NULL OR p.owner_id = ?) OR (? IS NOT NULL AND EXISTS( \
                 SELECT 1 FROM resource_shares s WHERE s.kind = 'project' \
                 AND s.resource_id = p.id AND s.user_id = ?))) \
            AND (? IS NULL OR c.name = ?) \
@@ -361,6 +383,8 @@ pub(crate) async fn list_for_owner_with_tag_policy(
     )
     .bind(user_id)
     .bind(user_id)
+    .bind(i64::from(trashed_only))
+    .bind(i64::from(trashed_only))
     .bind(owner_filter)
     .bind(owner_filter)
     .bind(share_user)
@@ -416,7 +440,17 @@ pub(crate) async fn list_for_owner_with_tag_policy(
                 .map_err(|_| ProjectError::Database)?,
             );
         }
+        let (trashed_at, purge_at) = crate::trash::trash_times(row.deleted_at.as_deref());
+        let access = access.map(|access| {
+            if trashed_at.is_some() {
+                crate::resource_access::AccessInfo::read_only_trashed(access.role)
+            } else {
+                access
+            }
+        });
         items.push(ProjectListItem {
+            trashed_at,
+            purge_at,
             owner: owners.get(&row.owner_id).cloned().flatten(),
             id: row.id,
             name: row.name,
@@ -852,6 +886,8 @@ pub(crate) async fn update_for_owner_with_tag_policy(
             .is_err()
         || replace_steps(
             &mut transaction,
+            actor_id,
+            user_id,
             project_id,
             &current_step_ids,
             &payload.steps,
@@ -980,7 +1016,7 @@ pub(crate) async fn delete_for_owner(
     )
     .bind(user_id)
     .bind(project_id)
-    .bind(changed_at)
+    .bind(&changed_at)
     .execute(&mut *transaction)
     .await
     .is_err()
@@ -995,11 +1031,18 @@ pub(crate) async fn delete_for_owner(
             .await
             .map_err(|_| ProjectError::Database)?
             .ok_or(ProjectError::NotFound)?;
-    match sqlx::query("DELETE FROM projects WHERE id = ? AND owner_id = ?")
-        .bind(project_id)
-        .bind(user_id)
-        .execute(&mut *transaction)
-        .await
+    // Soft delete: the row, its steps, media, links and shares stay in the
+    // trash until it is restored or purged.
+    match sqlx::query(
+        "UPDATE projects SET deleted_at = ?, deleted_by = ? \
+         WHERE id = ? AND owner_id = ? AND deleted_at IS NULL",
+    )
+    .bind(changed_at)
+    .bind(actor_id)
+    .bind(project_id)
+    .bind(user_id)
+    .execute(&mut *transaction)
+    .await
     {
         Ok(result) if result.rows_affected() == 1 => {}
         Ok(_) => return Err(ProjectError::NotFound),
@@ -1012,13 +1055,14 @@ pub(crate) async fn delete_for_owner(
     {
         return Err(ProjectError::Database);
     }
-    if crate::audit::record_with_data(
+    if crate::audit::record_lifecycle(
         &mut transaction,
-        actor_id,
+        Some(actor_id),
+        user_id,
         AuditEntity::Project,
         project_id,
-        AuditAction::Deleted,
-        Some(&old_name),
+        AuditAction::Trashed,
+        &old_name,
         None,
     )
     .await
@@ -1026,6 +1070,98 @@ pub(crate) async fn delete_for_owner(
     {
         return Err(ProjectError::Database);
     }
+    transaction
+        .commit()
+        .await
+        .map_err(|_| ProjectError::Database)
+}
+
+/// Take a project out of the trash. Only its owner or an administrator may.
+///
+/// The project reappears for its owner and for the accounts it is shared
+/// with (the shares were kept), and sync clients fetch it again: its
+/// `updated_at` moves past the deletion tombstone, which is removed so that a
+/// fresh full sync does not list the project as deleted.
+pub(crate) async fn restore_for_actor(
+    state: &AppState,
+    actor_id: i64,
+    project_id: i64,
+) -> Result<(), ProjectError> {
+    use crate::resource_access::{Need, ResourceKind};
+    let grant = crate::resource_access::grant_including_trashed(
+        &state.pool,
+        actor_id,
+        ResourceKind::Project,
+        project_id,
+    )
+    .await
+    .map_err(|_| ProjectError::Database)?
+    .ok_or(ProjectError::NotFound)?;
+    if !Need::Manage.allows(grant.access) {
+        return Err(ProjectError::Forbidden);
+    }
+    let owner_id = grant.owner_id;
+    let mut transaction = crate::db::begin_write(&state.pool)
+        .await
+        .map_err(|_| ProjectError::Database)?;
+    let row = sqlx::query_as::<_, (String, String, Option<String>)>(
+        "SELECT name, updated_at, deleted_at FROM projects WHERE id = ? AND owner_id = ?",
+    )
+    .bind(project_id)
+    .bind(owner_id)
+    .fetch_optional(&mut *transaction)
+    .await
+    .map_err(|_| ProjectError::Database)?
+    .ok_or(ProjectError::NotFound)?;
+    let (name, previous, deleted_at) = row;
+    if deleted_at.is_none() {
+        // Not in the trash: nothing to restore.
+        return Err(ProjectError::NotFound);
+    }
+    let candidates =
+        crate::sharing::project_candidates(&mut transaction, project_id, owner_id, &[])
+            .await
+            .map_err(|_| ProjectError::Database)?;
+    let watch = crate::sharing::watch(&mut transaction, candidates)
+        .await
+        .map_err(|_| ProjectError::Database)?;
+    let updated_at = next_timestamp(&previous).ok_or(ProjectError::Database)?;
+    sqlx::query(
+        "UPDATE projects SET deleted_at = NULL, deleted_by = NULL, updated_at = ? \
+         WHERE id = ? AND owner_id = ?",
+    )
+    .bind(updated_at)
+    .bind(project_id)
+    .bind(owner_id)
+    .execute(&mut *transaction)
+    .await
+    .map_err(|_| ProjectError::Database)?;
+    sqlx::query("DELETE FROM deletion_events WHERE entity_type = 'project' AND entity_id = ?")
+        .bind(project_id)
+        .execute(&mut *transaction)
+        .await
+        .map_err(|_| ProjectError::Database)?;
+    let linked = linked_yarn_ids(&mut transaction, project_id)
+        .await
+        .map_err(|_| ProjectError::Database)?;
+    bump_yarn_timestamps(&mut transaction, &linked)
+        .await
+        .map_err(|_| ProjectError::Database)?;
+    crate::sharing::settle(&mut transaction, watch, false)
+        .await
+        .map_err(|_| ProjectError::Database)?;
+    crate::audit::record_lifecycle(
+        &mut transaction,
+        Some(actor_id),
+        owner_id,
+        AuditEntity::Project,
+        project_id,
+        AuditAction::Restored,
+        &name,
+        None,
+    )
+    .await
+    .map_err(|_| ProjectError::Database)?;
     transaction
         .commit()
         .await
@@ -1130,22 +1266,32 @@ pub(crate) async fn load_project_with_tag_policy(
     tag_policy: TagPolicy,
 ) -> Result<Option<ProjectResponse>, sqlx::Error> {
     let actor_id = user_id;
-    let Some(grant) = crate::resource_access::grant(
+    let mut grant = crate::resource_access::grant(
         &state.pool,
         actor_id,
         crate::resource_access::ResourceKind::Project,
         project_id,
         tag_policy.surface(),
     )
-    .await?
-    else {
+    .await?;
+    if grant.is_none() && matches!(tag_policy, TagPolicy::PreserveLabels) {
+        // A trashed project opens read-only for its owner and administrators.
+        grant = crate::resource_access::grant_including_trashed(
+            &state.pool,
+            actor_id,
+            crate::resource_access::ResourceKind::Project,
+            project_id,
+        )
+        .await?;
+    }
+    let Some(grant) = grant else {
         return Ok(None);
     };
     let user_id = grant.owner_id;
     let row = sqlx::query_as::<_, ProjectRow>(
         "SELECT p.id, p.name, c.name AS category, p.needles, p.stitch_sample, \
                 p.description, p.notes, p.other_materials, p.tags, p.link, \
-                p.link_archive, p.is_ai_enhanced, p.created_at, p.updated_at \
+                p.link_archive, p.is_ai_enhanced, p.created_at, p.updated_at, p.deleted_at \
          FROM projects p LEFT JOIN categories c ON c.id = p.category_id \
          WHERE p.id = ? AND p.owner_id = ?",
     )
@@ -1159,7 +1305,7 @@ pub(crate) async fn load_project_with_tag_policy(
     let yarns = sqlx::query_as::<_, (i64, String)>(
         "SELECT y.id, y.name FROM project_yarns py \
          JOIN yarns y ON y.id = py.yarn_id \
-         WHERE py.project_id = ? ORDER BY py.rowid",
+         WHERE py.project_id = ? AND y.deleted_at IS NULL ORDER BY py.rowid",
     )
     .bind(project_id)
     .fetch_all(&state.pool)
@@ -1185,7 +1331,10 @@ pub(crate) async fn load_project_with_tag_policy(
     let (images, attachments) =
         crate::media::project_media(&state.pool, user_id, project_id).await?;
     let yarn = yarns.first().map(|(_, name)| name.clone());
+    let (trashed_at, purge_at) = crate::trash::trash_times(row.deleted_at.as_deref());
     Ok(Some(ProjectResponse {
+        trashed_at: trashed_at.clone(),
+        purge_at,
         id: row.id,
         name: row.name,
         category: row.category,
@@ -1215,7 +1364,14 @@ pub(crate) async fn load_project_with_tag_policy(
         images,
         attachments,
         owner,
-        access: matches!(tag_policy, TagPolicy::PreserveLabels).then(|| grant.into()),
+        access: matches!(tag_policy, TagPolicy::PreserveLabels).then(|| {
+            let access = crate::resource_access::AccessInfo::from(grant);
+            if trashed_at.is_some() {
+                crate::resource_access::AccessInfo::read_only_trashed(access.role)
+            } else {
+                access
+            }
+        }),
     }))
 }
 
@@ -1474,7 +1630,8 @@ async fn owned_yarn_ids(
             continue;
         }
         let found_id = sqlx::query_scalar::<_, i64>(
-            "SELECT y.id FROM yarns y WHERE y.id = ?1 AND (y.owner_id = ?2 OR EXISTS( \
+            "SELECT y.id FROM yarns y WHERE y.id = ?1 AND y.deleted_at IS NULL \
+             AND (y.owner_id = ?2 OR EXISTS( \
              SELECT 1 FROM project_yarns py WHERE py.yarn_id = y.id AND py.project_id = ?3))",
         )
         .bind(yarn_id)
@@ -1588,6 +1745,8 @@ async fn insert_steps(
 
 async fn replace_steps(
     transaction: &mut Transaction<'_, Sqlite>,
+    actor_id: i64,
+    owner_id: i64,
     project_id: i64,
     existing_ids: &HashSet<i64>,
     steps: &[StepWriteRequest],
@@ -1597,11 +1756,8 @@ async fn replace_steps(
         .filter_map(|step| step.id.filter(|id| existing_ids.contains(id)))
         .collect();
     for removed_id in existing_ids.difference(&retained_ids) {
-        sqlx::query("DELETE FROM project_steps WHERE id = ? AND project_id = ?")
-            .bind(removed_id)
-            .bind(project_id)
-            .execute(&mut **transaction)
-            .await?;
+        // A step left out of the update goes to the trash with its images.
+        crate::trash::trash_step(transaction, actor_id, owner_id, project_id, *removed_id).await?;
     }
     for (position, step) in steps.iter().enumerate() {
         let step_number = if step.step_number == 0 {
@@ -1702,15 +1858,16 @@ pub(crate) async fn tag_counts_for_scope(
             .map_err(|_| ProjectError::Database)?;
     let rows: Vec<String> = match scope {
         crate::resource_access::Scope::All => {
-            sqlx::query_scalar("SELECT p.tags FROM projects p")
+            sqlx::query_scalar("SELECT p.tags FROM projects p WHERE p.deleted_at IS NULL")
                 .fetch_all(&state.pool)
                 .await
         }
         crate::resource_access::Scope::Mine => {
             sqlx::query_scalar(
-                "SELECT p.tags FROM projects p WHERE p.owner_id = ? OR EXISTS( \
+                "SELECT p.tags FROM projects p WHERE p.deleted_at IS NULL \
+                 AND (p.owner_id = ? OR EXISTS( \
                  SELECT 1 FROM resource_shares s WHERE s.kind = 'project' \
-                 AND s.resource_id = p.id AND s.user_id = ?)",
+                 AND s.resource_id = p.id AND s.user_id = ?))",
             )
             .bind(user_id)
             .bind(user_id)

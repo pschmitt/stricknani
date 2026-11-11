@@ -213,7 +213,7 @@ async fn category_events_cover_mutations_but_not_duplicates_conflicts_or_missing
         vec![
             "created".to_owned(),
             "updated".to_owned(),
-            "deleted".to_owned(),
+            "trashed".to_owned(),
         ]
     );
 
@@ -304,7 +304,7 @@ async fn yarn_events_share_mutation_transactions_and_skip_cas_conflicts() {
         vec![
             "created".to_owned(),
             "updated".to_owned(),
-            "deleted".to_owned(),
+            "trashed".to_owned(),
         ]
     );
 

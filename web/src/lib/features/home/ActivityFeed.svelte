@@ -1,6 +1,10 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import { resolve } from "$app/paths";
+  import { publishFeedback } from "#lib/feedback.ts";
+  import { session } from "#lib/session.svelte.ts";
+  import { restoreTrashItem } from "../trash/trash-api";
+  import { restoreErrorMessage } from "../trash/trash-undo";
   import Button from "#lib/components/Button.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
@@ -8,6 +12,7 @@
     ACTIVITY_FULL_PAGE_SIZE,
     ACTIVITY_PAGE_SIZE,
     activityDetail,
+    activityLifecycleNote,
     activityIcon,
     activitySentence,
     activityTime,
@@ -89,6 +94,31 @@
     }
   }
 
+  let restoringId = $state<number | null>(null);
+
+  async function restoreItem(item: ActivityItem): Promise<void> {
+    const currentSession = session.data;
+    if (!currentSession?.user || restoringId !== null) return;
+    restoringId = item.id;
+    try {
+      await restoreTrashItem(item.entity_type, item.entity_id, currentSession);
+      publishFeedback({
+        ownerId: currentSession.user.id,
+        kind: "success",
+        message: t("Restored from the trash.", locale),
+      });
+      attempt += 1;
+    } catch (error) {
+      publishFeedback({
+        ownerId: currentSession.user.id,
+        kind: "error",
+        message: restoreErrorMessage(error, locale),
+      });
+    } finally {
+      restoringId = null;
+    }
+  }
+
   const title = $derived(t(full ? "Activity" : "Recent activity", locale));
   const days = $derived(groupActivity(items, locale));
 </script>
@@ -155,6 +185,7 @@
             {#each day.items as item, index (item.id)}
               {@const sentence = activitySentence(item, locale)}
               {@const detail = activityDetail(item, locale)}
+              {@const note = activityLifecycleNote(item, locale)}
               {@const icon = activityIcon(item.action)}
               {#snippet row()}
                 <span class="tl__node" aria-hidden="true">
@@ -184,7 +215,7 @@
                   <span class="tl__meta"
                     ><time datetime={item.created_at}
                       >{activityTime(item.created_at, locale)}</time
-                    >{#if detail}{" "}· {detail}{/if}</span
+                    >{#if detail}{" "}· {detail}{/if}{#if note}{" "}· {note}{/if}</span
                   >
                 </span>
                 {#if item.thumbnail_url}
@@ -199,7 +230,9 @@
               <li
                 class="tl__entry"
                 data-tone={item.entity_type}
-                data-deleted={!item.exists ? "" : undefined}
+                data-deleted={!item.exists && item.state !== "in_trash"
+                  ? ""
+                  : undefined}
                 style:--i={Math.min(index, 8)}
               >
                 {#if item.exists && item.href}
@@ -214,6 +247,28 @@
                   >
                 {:else}
                   <div class="tl__row">{@render row()}</div>
+                {/if}
+                {#if item.action === "trashed" && item.state === "in_trash" && item.trash !== null}
+                  <p class="tl__actions">
+                    <a
+                      href={resolve("/trash")}
+                      data-testid="activity-open-trash"
+                      >{t("Open trash", locale)}</a
+                    >
+                    {#if item.trash?.can_restore}
+                      <button
+                        type="button"
+                        class="tl__restore"
+                        data-testid="activity-restore"
+                        disabled={restoringId !== null}
+                        onclick={() => void restoreItem(item)}
+                      >
+                        {restoringId === item.id
+                          ? t("Restoring…", locale)
+                          : t("Restore", locale)}
+                      </button>
+                    {/if}
+                  </p>
                 {/if}
               </li>
             {/each}
@@ -397,6 +452,27 @@
   }
   .tl__meta time {
     font-variant-numeric: tabular-nums;
+  }
+  .tl__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    margin: 0;
+    padding-left: calc(var(--pad) + var(--node) + var(--gap));
+    font-size: 0.88rem;
+  }
+  .tl__actions a,
+  .tl__restore {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    border: 0;
+    padding: 0;
+    color: var(--accent-strong);
+    background: none;
+    font: inherit;
+    font-weight: 650;
+    cursor: pointer;
   }
   .tl__thumb {
     width: 2.25rem;

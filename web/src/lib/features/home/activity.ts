@@ -1,6 +1,16 @@
 import { ApiError, apiRequest } from "#lib/api.ts";
 import { msg, t, type Locale } from "#lib/i18n.svelte.ts";
 import { fieldNoun } from "#lib/features/history/history-summary.ts";
+import {
+  parseLifecycleSubject,
+  parseResourceState,
+  parseTrashStatus,
+  trashedStateText,
+  lifecycleSubjectText,
+  type LifecycleSubject,
+  type ResourceState,
+  type TrashStatus,
+} from "#lib/features/trash/trash-state.ts";
 
 export const ACTIVITY_PAGE_SIZE = 6;
 /** Rows per page on the full activity page. */
@@ -27,6 +37,14 @@ export interface ActivityItem {
   thumbnail_url: string | null;
   actor: ActivityActor;
   changed_fields: string[];
+  /** Where the item is now; absent on older servers. */
+  state: ResourceState | null;
+  /** Present only while the item is in the trash. */
+  trash: TrashStatus | null;
+  /** True only for the automatic purge of the trash: no actor. */
+  system: boolean;
+  /** The owner, named on events an administrator or the system caused. */
+  subject: LifecycleSubject | null;
 }
 
 export interface ActivityPage {
@@ -72,6 +90,8 @@ export function parseActivityItem(value: unknown): ActivityItem {
     ? value.changed_fields.filter((f): f is string => typeof f === "string")
     : [];
   const exists = value.exists === true;
+  const state = parseResourceState(value.state, invalid);
+  const trash = parseTrashStatus(value.trash, invalid);
   return {
     id: value.id,
     first_event_id: positive(value.first_event_id)
@@ -91,7 +111,8 @@ export function parseActivityItem(value: unknown): ActivityItem {
         ? value.entity_name
         : null,
     exists,
-    href: exists ? localPath(value.href) : null,
+    // An item in the trash has no page to open: the link would answer 404.
+    href: exists && state !== "in_trash" ? localPath(value.href) : null,
     thumbnail_url: localPath(value.thumbnail_url),
     actor: {
       name: typeof actor.name === "string" ? actor.name : null,
@@ -99,6 +120,10 @@ export function parseActivityItem(value: unknown): ActivityItem {
       avatar_url: localPath(actor.avatar_url),
     },
     changed_fields: fields,
+    state,
+    trash,
+    system: value.system === true,
+    subject: parseLifecycleSubject(value.subject),
   };
 }
 
@@ -150,6 +175,9 @@ const selfSentences: Record<string, string> = {
   deleted: msg("You deleted {name}"),
   uploaded: msg("You added files to {name}"),
   removed: msg("You removed files from {name}"),
+  trashed: msg("You moved {name} to the trash"),
+  restored: msg("You restored {name} from the trash"),
+  purged: msg("You deleted {name} permanently"),
 };
 const otherSentences: Record<string, string> = {
   created: msg("An admin created {name}"),
@@ -157,7 +185,11 @@ const otherSentences: Record<string, string> = {
   deleted: msg("An admin deleted {name}"),
   uploaded: msg("An admin added files to {name}"),
   removed: msg("An admin removed files from {name}"),
+  trashed: msg("An admin moved {name} to the trash"),
+  restored: msg("An admin restored {name} from the trash"),
+  purged: msg("An admin deleted {name} permanently"),
 };
+const systemPurged = msg("{name} was purged automatically after 90 days");
 const selfFallback = msg("You changed {name}");
 const otherFallback = msg("An admin changed {name}");
 
@@ -168,7 +200,10 @@ export function activitySentence(
 ): ActivitySentence {
   const table = item.actor.is_self ? selfSentences : otherSentences;
   const fallback = item.actor.is_self ? selfFallback : otherFallback;
-  const template = t(table[item.action] ?? fallback, locale);
+  const template =
+    item.system && item.action === "purged"
+      ? t(systemPurged, locale)
+      : t(table[item.action] ?? fallback, locale);
   const known = item.entity_name !== null;
   const name = known
     ? item.entity_name
@@ -252,9 +287,24 @@ export function activityAgo(
   return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(then);
 }
 
+/** The owner and trash state of a lifecycle entry: "Owner: Anna · In the trash · 12 days left". */
+export function activityLifecycleNote(
+  item: ActivityItem,
+  locale: Locale,
+): string {
+  return [
+    item.subject?.name ? lifecycleSubjectText(item.subject, locale) : null,
+    trashedStateText(item.action, item.state, item.trash, locale),
+  ]
+    .filter((part): part is string => part !== null)
+    .join(" · ");
+}
+
 /** Icon of a timeline node: what happened, not what it happened to. */
 export type ActivityIcon =
   | "sparkle"
+  | "trash"
+  | "reset"
   | "action-update"
   | "camera"
   | "action-delete"
@@ -276,6 +326,9 @@ const exactIcons: Record<string, ActivityIcon> = {
   step_image_uploaded: "camera",
   attachment_uploaded: "action-upload",
   deleted: "action-delete",
+  trashed: "trash",
+  restored: "reset",
+  purged: "action-delete",
   step_deleted: "action-delete",
   attachment_deleted: "action-delete",
   image_deleted: "action-delete",
@@ -294,6 +347,9 @@ export function activityIcon(action: string): ActivityIcon {
   if (key.endsWith("_uploaded")) return "camera";
   if (key.endsWith("_deleted")) return "action-delete";
   if (key.endsWith("_removed")) return "action-remove";
+  if (key.endsWith("_trashed")) return "trash";
+  if (key.endsWith("_restored")) return "reset";
+  if (key.endsWith("_purged")) return "action-delete";
   return "action-default";
 }
 
@@ -359,6 +415,9 @@ function mergeable(newer: ActivityItem, older: ActivityItem): boolean {
     newer.action === older.action &&
     newer.action !== "created" &&
     newer.action !== "deleted" &&
+    newer.action !== "trashed" &&
+    newer.action !== "restored" &&
+    newer.action !== "purged" &&
     sameActor(newer, older)
   );
 }

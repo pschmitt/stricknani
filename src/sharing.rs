@@ -159,6 +159,17 @@ async fn access_event(
     kind: ResourceKind,
     resource_id: i64,
 ) -> Result<(), sqlx::Error> {
+    // Access is back (re-share, or a trashed item restored): an older
+    // "access ended" tombstone would make a full sync list the item as deleted.
+    sqlx::query(
+        "DELETE FROM deletion_events \
+         WHERE owner_id = ? AND entity_type = ? AND entity_id = ? AND shared = 1",
+    )
+    .bind(user_id)
+    .bind(kind.as_str())
+    .bind(resource_id)
+    .execute(&mut *conn)
+    .await?;
     sqlx::query(
         "INSERT INTO access_events (user_id, entity_type, entity_id, changed_at) \
          VALUES (?, ?, ?, ?) \
@@ -1026,7 +1037,7 @@ pub(crate) async fn linkable_yarns(
         "SELECT y.id, y.name, y.brand, y.colorway, y.weight_category, \
                 EXISTS(SELECT 1 FROM project_yarns py \
                        WHERE py.project_id = ?2 AND py.yarn_id = y.id) AS linked \
-         FROM yarns y WHERE y.owner_id = ?1 \
+         FROM yarns y WHERE y.owner_id = ?1 AND y.deleted_at IS NULL \
            AND (?3 IS NULL OR y.name LIKE ?3 ESCAPE '!' \
                 OR COALESCE(y.brand, '') LIKE ?3 ESCAPE '!' \
                 OR COALESCE(y.colorway, '') LIKE ?3 ESCAPE '!') \

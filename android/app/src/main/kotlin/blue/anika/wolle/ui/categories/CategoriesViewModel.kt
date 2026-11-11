@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.CategoryEntity
 import blue.anika.wolle.data.repository.CategoryRepository
+import blue.anika.wolle.data.repository.TrashKind
+import blue.anika.wolle.data.repository.TrashRef
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.RefreshController
@@ -149,7 +151,10 @@ constructor(
             try {
                 categoryRepository.delete(category.id)
                 categoryRepository.sync()
-                mutationFeedback.show(R.string.mutation_category_deleted, category.name)
+                mutationFeedback.showTrashed(
+                    R.string.mutation_moved_to_trash,
+                    TrashRef(TrashKind.Category, category.id),
+                )
             } catch (_: Exception) {
                 mutationFeedback.show(R.string.error_delete_category_failed, category.name)
             }

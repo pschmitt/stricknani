@@ -8,6 +8,7 @@ import {
   groupActivity,
   mergeActivityRuns,
   activityDetail,
+  activityLifecycleNote,
   activitySentence,
   loadActivity,
   mergeActivity,
@@ -358,5 +359,89 @@ describe("mergeActivityRuns", () => {
       new Date(2026, 10, 3, 12),
     );
     expect(days).toHaveLength(2);
+  });
+});
+
+describe("trash activity", () => {
+  const trashed = {
+    ...raw,
+    action: "trashed",
+    exists: false,
+    count: 1,
+    state: "in_trash",
+    trash: {
+      deleted_at: "2026-11-03T10:00:00Z",
+      purge_at: "2027-02-01T10:00:00Z",
+      days_remaining: 89,
+      can_restore: true,
+    },
+  };
+
+  it("keeps old items valid without the new fields", () => {
+    const item = parseActivityItem(raw);
+    expect(item).toMatchObject({
+      state: null,
+      trash: null,
+      system: false,
+      subject: null,
+    });
+  });
+
+  it("does not link an item that sits in the trash", () => {
+    const item = parseActivityItem({ ...trashed, exists: true });
+    expect(item.state).toBe("in_trash");
+    expect(item.href).toBeNull();
+    expect(item.trash?.can_restore).toBe(true);
+    expect(() => parseActivityItem({ ...raw, state: "somewhere" })).toThrow();
+  });
+
+  it("words trash events for you, an administrator and the system", () => {
+    expect(activitySentence(parseActivityItem(trashed), "en")).toEqual({
+      before: "You moved ",
+      name: "Winter socks",
+      after: " to the trash",
+    });
+    const admin = parseActivityItem({
+      ...trashed,
+      action: "restored",
+      actor: { name: null, is_self: false, avatar_url: null },
+    });
+    expect(activitySentence(admin, "en").before).toBe("An admin restored ");
+    const system = parseActivityItem({
+      ...trashed,
+      action: "purged",
+      system: true,
+      actor: { name: null, is_self: false, avatar_url: null },
+    });
+    expect(activitySentence(system, "en")).toEqual({
+      before: "",
+      name: "Winter socks",
+      after: " was purged automatically after 90 days",
+    });
+  });
+
+  it("uses the trash and restore icons", () => {
+    expect(activityIcon("trashed")).toBe("trash");
+    expect(activityIcon("restored")).toBe("reset");
+    expect(activityIcon("purged")).toBe("action-delete");
+    expect(activityIcon("step_trashed")).toBe("trash");
+    expect(activityIcon("step_restored")).toBe("reset");
+  });
+
+  it("never folds lifecycle events into a run", () => {
+    const a = parseActivityItem({ ...trashed, id: 2, first_event_id: 2 });
+    const b = parseActivityItem({ ...trashed, id: 1, first_event_id: 1 });
+    expect(mergeActivityRuns([a, b])).toHaveLength(2);
+  });
+
+  it("summarizes owner and state", () => {
+    const item = parseActivityItem({
+      ...trashed,
+      subject: { id: 2, name: "Anna", role: null },
+    });
+    expect(activityLifecycleNote(item, "en")).toBe(
+      "Owner: Anna · In the trash · 89 days left",
+    );
+    expect(activityLifecycleNote(parseActivityItem(raw), "en")).toBe("");
   });
 });

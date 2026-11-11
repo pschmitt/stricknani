@@ -398,7 +398,7 @@ async fn project_title_and_step_uploads_share_storage_and_delete_semantics() {
         .unwrap();
     assert_eq!(deleted.status(), StatusCode::NO_CONTENT);
     let removed: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM audit_events WHERE actor_user_id = ? AND entity_type = 'project' AND entity_id = ? AND action = 'removed'",
+        "SELECT COUNT(*) FROM audit_events WHERE actor_user_id = ? AND entity_type = 'project' AND entity_id = ? AND action = 'trashed'",
     )
     .bind(fixture.owner_id)
     .bind(fixture.project_id)

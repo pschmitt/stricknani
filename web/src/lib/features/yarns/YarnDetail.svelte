@@ -26,6 +26,7 @@
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ShareMenuItem from "#lib/components/ShareMenuItem.svelte";
+  import TrashedBanner from "../trash/TrashedBanner.svelte";
   import HistorySection from "#lib/features/history/HistorySection.svelte";
   import PhotoStrip from "#lib/components/PhotoStrip.svelte";
   import { yarnPhotoEditPath } from "#lib/features/media/photo-editor.ts";
@@ -34,6 +35,7 @@
   import OcrControl from "#lib/features/media/OcrControl.svelte";
   import ProjectLightbox from "#lib/features/media/ProjectLightbox.svelte";
   import { publishFeedback } from "#lib/feedback.ts";
+  import { publishMovedToTrash } from "../trash/trash-undo";
   import { msg, t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { textSize } from "#lib/text-size.svelte.ts";
@@ -99,6 +101,7 @@
   );
   const yarnId = $derived(id);
   const textSizeClass = $derived(textSize.cssClass);
+  const trashed = $derived(Boolean(yarn?.trashed_at));
   const canEdit = $derived(mayEdit(yarn?.access));
   const canManage = $derived(mayManage(yarn?.access));
   // OCR and link archiving are owner-scoped on the server: nobody else gets them.
@@ -274,10 +277,13 @@
     try {
       await deleteYarn(id, currentSession);
       if (!isCurrentResource(id, ownerId, generation)) return;
-      publishFeedback({
+      publishMovedToTrash({
+        session: currentSession,
         ownerId,
-        kind: "success",
-        message: t("Yarn deleted.", locale),
+        locale,
+        kind: "yarn",
+        id,
+        onRestored: () => goto(resolve("/yarns/[id]", { id: String(id) })),
       });
       untrack(() => deleteDialog?.close());
       await goto(resolve("/yarns"));
@@ -627,23 +633,25 @@
                 role="menu"
                 aria-label={t("Yarn actions", locale)}
               >
-                <button
-                  class="action-overflow__item"
-                  role="menuitem"
-                  type="button"
-                  disabled={busyFavorite}
-                  onclick={() => {
-                    close();
-                    void toggleFavorite();
-                  }}
-                >
-                  <NavIcon name="heart" />
-                  <span
-                    >{currentYarn.is_favorite
-                      ? t("Remove from favorites", locale)
-                      : t("Add to favorites", locale)}</span
+                {#if !trashed}
+                  <button
+                    class="action-overflow__item"
+                    role="menuitem"
+                    type="button"
+                    disabled={busyFavorite}
+                    onclick={() => {
+                      close();
+                      void toggleFavorite();
+                    }}
                   >
-                </button>
+                    <NavIcon name="heart" />
+                    <span
+                      >{currentYarn.is_favorite
+                        ? t("Remove from favorites", locale)
+                        : t("Add to favorites", locale)}</span
+                    >
+                  </button>
+                {/if}
                 <ShareMenuItem
                   title={currentYarn.name}
                   ownerId={userId}
@@ -687,6 +695,16 @@
       {/snippet}
     </PageHeader>
 
+    {#if currentYarn.trashed_at}
+      <TrashedBanner
+        kind="yarn"
+        id={currentYarn.id}
+        name={currentYarn.name}
+        purgeAt={currentYarn.purge_at ?? null}
+        {locale}
+        onrestored={() => (reload += 1)}
+      />
+    {/if}
     {#if currentYarn.owner && currentYarn.access && isRecipient(currentYarn.access)}
       <AccessNotice
         kind="yarns"
@@ -759,12 +777,14 @@
       </div>
     </div>
 
-    <HistorySection
-      kind="yarns"
-      id={currentYarn.id}
-      {locale}
-      currentEmail={session.data?.user?.email ?? null}
-    />
+    {#if !trashed}
+      <HistorySection
+        kind="yarns"
+        id={currentYarn.id}
+        {locale}
+        currentEmail={session.data?.user?.email ?? null}
+      />
+    {/if}
   </main>
   <ProjectLightbox
     images={lightboxImages}
@@ -787,7 +807,7 @@
     {#snippet children()}
       <p>
         {t("Delete", locale)} <strong>{currentYarn.name}</strong>? {t(
-          "This cannot be undone.",
+          "It moves to the trash and can be restored from there for 90 days.",
           locale,
         )}
       </p>

@@ -42,6 +42,12 @@
         locale,
       )}
     />
+    <NavigationTile
+      href={resolve("/trash")}
+      icon="trash"
+      title={t("Trash", locale)}
+      description={t("Restore deleted items or delete them for good.", locale)}
+    />
   </nav>
 
   {#if user}

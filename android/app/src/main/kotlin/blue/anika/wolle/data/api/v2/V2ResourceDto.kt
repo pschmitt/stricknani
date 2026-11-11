@@ -55,6 +55,9 @@ data class ProjectV2Dto(
     val attachments: List<AttachmentDto> = emptyList(),
     val owner: OwnerDto? = null,
     val access: AccessDto? = null,
+    /** Set only while the item sits in the trash (ISO strings). */
+    @SerialName("trashed_at") val trashedAt: String? = null,
+    @SerialName("purge_at") val purgeAt: String? = null,
 )
 
 /** `YarnDto` in `api_v2/yarns.rs`. */
@@ -84,6 +87,9 @@ data class YarnV2Dto(
     val photos: List<YarnPhotoDto> = emptyList(),
     val owner: OwnerDto? = null,
     val access: AccessDto? = null,
+    /** Set only while the item sits in the trash (ISO strings). */
+    @SerialName("trashed_at") val trashedAt: String? = null,
+    @SerialName("purge_at") val purgeAt: String? = null,
 )
 
 /** Body of the three media-order routes: the complete desired order, no version or If-Match. */

@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -46,6 +47,8 @@ import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.admin.DayLabel
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.trash.daysLeft
+import blue.anika.wolle.ui.trash.daysLeftText
 import coil3.compose.AsyncImage
 import java.time.LocalDate
 import java.time.ZoneId
@@ -63,6 +66,7 @@ fun ActivitySection(
     previewUrl: (String?) -> String?,
     onProjectClick: (Int) -> Unit,
     onYarnClick: (Int) -> Unit,
+    onTrashClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     /** Home shows the first page only and links to the full page; the page itself pages. */
     onShowMore: (() -> Unit)? = null,
@@ -133,6 +137,7 @@ fun ActivitySection(
                                     when (val target = row.target) {
                                         is ActivityTarget.Project -> onProjectClick(target.id)
                                         is ActivityTarget.Yarn -> onYarnClick(target.id)
+                                        ActivityTarget.Trash -> onTrashClick()
                                         null -> Unit
                                     }
                                 },
@@ -364,6 +369,7 @@ private fun activityIcon(kind: ActivityIconKind): ImageVector =
         ActivityIconKind.Camera -> PhosphorIcons.Camera
         ActivityIconKind.Trash -> PhosphorIcons.Trash
         ActivityIconKind.Minus -> PhosphorIcons.Minus
+        ActivityIconKind.Restore -> Icons.AutoMirrored.Filled.Undo
         ActivityIconKind.Attachment -> PhosphorIcons.Paperclip
         ActivityIconKind.Other -> PhosphorIcons.NotePencil
     }
@@ -373,6 +379,10 @@ private fun activityIcon(kind: ActivityIconKind): ImageVector =
 private fun metaText(row: ActivityRowModel, time: String?): String {
     val parts = mutableListOf<String>()
     if (time != null) parts += time
+    row.trashDaysLeft?.let { days ->
+        parts += stringResource(R.string.admin_state_in_trash, daysLeftText(daysLeft(days)))
+    }
+    row.ownerName?.let { parts += stringResource(R.string.admin_owner_line, it) }
     if (row.count > 1) {
         parts += pluralStringResource(R.plurals.activity_changes_count, row.count, row.count)
     }
@@ -408,9 +418,15 @@ private fun activitySentence(row: ActivityRowModel): AnnotatedString {
             ActivityVerb.Deleted -> R.string.activity_deleted
             ActivityVerb.Uploaded -> R.string.activity_uploaded
             ActivityVerb.Removed -> R.string.activity_removed
+            ActivityVerb.Trashed -> R.string.activity_trashed
+            ActivityVerb.Restored -> R.string.activity_restored
+            ActivityVerb.Purged -> R.string.activity_purged
+            ActivityVerb.PurgedAuto -> R.string.activity_purged_auto
             ActivityVerb.Changed -> R.string.activity_changed
         }
-    val text = stringResource(template, actor, name)
+    val text =
+        if (row.verb == ActivityVerb.PurgedAuto) stringResource(template, name)
+        else stringResource(template, actor, name)
     val range = nameRange(text, name)
     return buildAnnotatedString {
         append(text)

@@ -82,6 +82,7 @@ async fn known_app_routes_use_a_private_shell_and_manifest_hashes() {
         "/app/share",
         "/app/more",
         "/app/backups",
+        "/app/trash",
         "/app/admin",
         "/app/audit",
         "/app/admin/resources/project/42",

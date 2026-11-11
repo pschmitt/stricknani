@@ -514,7 +514,8 @@ async fn load_updates(
            FROM {table} r \
            LEFT JOIN access_events ev ON ev.user_id = ?2 \
                 AND ev.entity_type = '{kind}' AND ev.entity_id = r.id \
-           WHERE (?1 IS NULL OR r.owner_id = ?1 \
+           WHERE r.deleted_at IS NULL \
+             AND (?1 IS NULL OR r.owner_id = ?1 \
                   OR (?2 IS NOT NULL AND {visible})) \
          ) x \
          WHERE (?3 IS NULL OR x.at <= ?3) \

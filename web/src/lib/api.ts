@@ -361,6 +361,12 @@ function localizedError(code: string): string {
     oidc_identity_unlinked: t(
       "No Stricknani account is linked to this login yet. Sign in with your password, then link it in your account settings.",
     ),
+    name_taken: t(
+      "A category with this name exists now. Rename it, then restore this one.",
+    ),
+    parent_in_trash: t(
+      "Restore the project or yarn it belongs to from the trash first.",
+    ),
     oidc_disabled: t("This sign-in method is not available."),
     identity_already_linked: t(
       "This login is already linked to a Stricknani account.",

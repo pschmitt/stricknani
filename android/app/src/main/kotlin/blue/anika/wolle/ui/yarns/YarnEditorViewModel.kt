@@ -17,6 +17,8 @@ import blue.anika.wolle.data.imports.ImportDrafts
 import blue.anika.wolle.data.imports.ImportTarget
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.ImportedYarnPreview
+import blue.anika.wolle.data.repository.TrashKind
+import blue.anika.wolle.data.repository.TrashRef
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.repository.access
 import blue.anika.wolle.data.repository.movedItem
@@ -428,7 +430,10 @@ constructor(
             try {
                 yarnRepository.deleteYarn(id)
                 syncScheduler.replayThenSyncNow()
-                mutationFeedback.show(R.string.mutation_yarn_deleted_queued)
+                mutationFeedback.showTrashed(
+                    R.string.mutation_moved_to_trash,
+                    TrashRef(TrashKind.Yarn, id),
+                )
                 _deleted.value = true
             } catch (e: Exception) {
                 mutationFeedback.show(R.string.error_delete_failed)

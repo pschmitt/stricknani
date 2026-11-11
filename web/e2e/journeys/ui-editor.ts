@@ -830,7 +830,7 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
     .getByRole("button", { name: "Delete project", exact: true })
     .click();
   const projectDeleteDialog = page.getByRole("dialog", {
-    name: "Delete this project? This cannot be undone.",
+    name: "Delete this project?",
     exact: true,
   });
   await projectDeleteDialog.waitFor({ state: "visible" });

@@ -76,6 +76,9 @@ import blue.anika.wolle.ui.share.ShareImportKind
 import blue.anika.wolle.ui.share.shareStage
 import blue.anika.wolle.ui.signin.SignInAgainScreen
 import blue.anika.wolle.ui.signin.SignedOutBanner
+import blue.anika.wolle.ui.trash.TrashScreen
+import blue.anika.wolle.ui.trash.TrashUndoViewModel
+import blue.anika.wolle.ui.trash.TrashedItemScreen
 import blue.anika.wolle.ui.yarns.YarnDetailScreen
 import blue.anika.wolle.ui.yarns.YarnEditorScreen
 import blue.anika.wolle.ui.yarns.YarnsListScreen
@@ -168,7 +171,8 @@ fun StricknaniNavHost(
     val motion = androidx.compose.runtime.remember { ScreenMotion() }
     val reduceMotion = animationsDisabled()
 
-    MutationFeedbackEffect(mutationFeedback, snackbarHostState)
+    val trashUndo: TrashUndoViewModel = hiltViewModel()
+    MutationFeedbackEffect(mutationFeedback, snackbarHostState, onUndo = trashUndo::undo)
 
     // The command palette: a swipe up from the bottom bar, or the search action of More.
     var paletteOpen by rememberSaveable { mutableStateOf(false) }
@@ -389,6 +393,7 @@ fun StricknaniNavHost(
                             )
                         },
                         onSeeAllActivity = { navController.navigate(Route.Activity) },
+                        onTrashClick = { navController.navigate(Route.Trash) },
                         onOpenDraft = { navController.navigate(draftRoute(it)) },
                     )
                 }
@@ -397,6 +402,7 @@ fun StricknaniNavHost(
                         onBack = { navController.navigateUp() },
                         onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
                         onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
+                        onTrashClick = { navController.navigate(Route.Trash) },
                     )
                 }
                 screen<Route.Projects>(motion) {
@@ -432,6 +438,7 @@ fun StricknaniNavHost(
                         },
                         onCreateClick = { navController.navigate(Route.Create) },
                         onGaugeClick = { navController.navigate(Route.Gauge) },
+                        onTrashClick = { navController.navigate(Route.Trash) },
                         onSearchClick = { paletteOpen = true },
                     )
                 }
@@ -460,6 +467,31 @@ fun StricknaniNavHost(
                         onBack = { navController.navigateUp() },
                         onOpenProject = { id -> navController.navigate(Route.ProjectDetail(id)) },
                         onOpenYarn = { id -> navController.navigate(Route.YarnDetail(id)) },
+                        onOpenTrash = { navController.navigate(Route.Trash) },
+                    )
+                }
+                screen<Route.Trash>(motion) {
+                    TrashScreen(
+                        onBack = { navController.navigateUp() },
+                        onOpenProject = { id -> navController.navigate(Route.ProjectDetail(id)) },
+                        onOpenYarn = { id -> navController.navigate(Route.YarnDetail(id)) },
+                        onOpenTrashed = { kind, id ->
+                            navController.navigate(Route.TrashedItem(kind, id))
+                        },
+                    )
+                }
+                screen<Route.TrashedItem>(motion) {
+                    TrashedItemScreen(
+                        onBack = { navController.navigateUp() },
+                        onRestored = { kind, id ->
+                            val live: Route =
+                                if (kind == "yarn") Route.YarnDetail(id)
+                                else Route.ProjectDetail(id)
+                            navController.navigate(live) {
+                                popUpTo<Route.TrashedItem> { inclusive = true }
+                            }
+                        },
+                        onPurged = { navController.navigateUp() },
                     )
                 }
                 screen<Route.AdminAccounts>(motion) {

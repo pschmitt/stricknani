@@ -229,7 +229,7 @@
     <string name="editor_link_clear">Link löschen</string>
     <string name="editor_link_invalid">Gib eine vollständige Webadresse ein, zum Beispiel https://example.com</string>
     <string name="project_editor_delete_dialog_title">Projekt „%1$s“ löschen?</string>
-    <string name="project_editor_delete_dialog_text">Dieser Vorgang kann nicht rückgängig gemacht werden.</string>
+    <string name="project_editor_delete_dialog_text">Es wandert in den Papierkorb und lässt sich dort 90 Tage lang wiederherstellen.</string>
     <string name="project_editor_steps_label">Schritte</string>
     <string name="project_editor_step_title_label">Schritt-Titel</string>
     <string name="project_editor_step_description_label">Schrittbeschreibung</string>
@@ -244,7 +244,7 @@
     <string name="project_editor_add_attachment">Projektanhänge hinzufügen</string>
     <string name="project_editor_remove_attachment">Ausgewählten Anhang entfernen</string>
     <string name="project_attachment_delete_dialog_title">Anhang „%1$s“ löschen?</string>
-    <string name="project_attachment_delete_dialog_text">Dieser Vorgang kann nicht rückgängig gemacht werden.</string>
+    <string name="project_attachment_delete_dialog_text">Es wandert in den Papierkorb und lässt sich dort 90 Tage lang wiederherstellen.</string>
     <string name="projects_list_search_placeholder">Suchen</string>
     <string name="list_filter_all">Alle</string>
     <string name="projects_list_empty_title">Noch nichts auf den Nadeln</string>
@@ -262,7 +262,7 @@
     <string name="categories_delete_description">Kategorie löschen</string>
     <string name="categories_rename_dialog_title">Kategorie umbenennen</string>
     <string name="categories_delete_dialog_title">Kategorie „%1$s“ löschen?</string>
-    <string name="categories_delete_dialog_text">Projekte, die diese Kategorie verwenden, zeigen sie danach nicht mehr an.</string>
+    <string name="categories_delete_dialog_text">Projekte, die diese Kategorie verwenden, zeigen sie danach nicht mehr an. Es wandert in den Papierkorb und lässt sich dort 90 Tage lang wiederherstellen.</string>
 
     <!-- Project import -->
     <string name="project_import_url_label">URL der Anleitungsseite</string>
@@ -802,14 +802,10 @@
     <string name="mutation_favorite_removed">Aus Favoriten entfernt.</string>
     <string name="mutation_favorite_offline">Du bist offline - versuch es gleich nochmal.</string>
     <string name="mutation_category_renamed">Kategorie „%1$s“ in „%2$s“ umbenannt.</string>
-    <string name="mutation_category_deleted">Kategorie „%1$s“ gelöscht.</string>
     <string name="mutation_project_created_queued">Projekt erstellt.</string>
     <string name="mutation_project_updated_queued">Projekt gespeichert.</string>
-    <string name="mutation_project_deleted_queued">Projekt gelöscht.</string>
-    <string name="mutation_project_attachment_deleted_queued">Anhang gelöscht.</string>
     <string name="mutation_yarn_created_queued">Garn angelegt.</string>
     <string name="mutation_yarn_updated_queued">Garn gespeichert.</string>
-    <string name="mutation_yarn_deleted_queued">Garn gelöscht.</string>
 
     <!-- Onboarding errors -->
     <string name="onboarding_error_missing_url_token">Gib die Stricknani-Adresse und den Zugangstoken ein</string>
@@ -929,7 +925,7 @@
     <string name="admin_event_open">Details anzeigen</string>
     <string name="admin_action_created">Erstellt</string>
     <string name="admin_action_updated">Geändert</string>
-    <string name="admin_action_deleted">Gelöscht</string>
+    <string name="admin_action_deleted">Endgültig gelöscht</string>
     <string name="admin_action_uploaded">Hochgeladen</string>
     <string name="admin_action_removed">Entfernt</string>
     <string name="admin_action_step_created">Schritt erstellt</string>
@@ -999,7 +995,7 @@
     <string name="admin_field_photo_order">Reihenfolge der Fotos</string>
     <string name="admin_no_details">Keine Details aufgezeichnet</string>
     <string name="admin_open_item">%1$s öffnen</string>
-    <string name="admin_item_deleted">Gelöscht</string>
+    <string name="admin_item_deleted">Endgültig gelöscht</string>
     <string name="admin_media_picture">Bild</string>
     <string name="admin_media_file">Datei</string>
     <string name="admin_media_deleted_suffix">gelöscht</string>
@@ -1518,4 +1514,71 @@
     <string name="markdown_editor_link_address">Link-Adresse</string>
     <string name="markdown_editor_link_apply">Übernehmen</string>
     <string name="markdown_editor_link_remove">Link entfernen</string>
+
+    <!-- Papierkorb -->
+    <string name="trash_title">Papierkorb</string>
+    <string name="more_trash_subtitle">Gelöschte Elemente wiederherstellen oder endgültig löschen.</string>
+    <string name="trash_intro">Gelöschte Elemente bleiben hier %1$d Tage lang erhalten. Stelle sie wieder her oder lösche sie endgültig.</string>
+    <string name="trash_empty_title">Der Papierkorb ist leer.</string>
+    <string name="trash_empty_subtitle">Gelöschte Projekte, Garne und mehr erscheinen hier %1$d Tage lang.</string>
+    <string name="trash_kind_project">Projekt</string>
+    <string name="trash_kind_yarn">Garn</string>
+    <string name="trash_kind_category">Kategorie</string>
+    <string name="trash_kind_step">Schritt</string>
+    <string name="trash_kind_image">Bild</string>
+    <string name="trash_kind_attachment">Anhang</string>
+    <string name="trash_kind_photo">Foto</string>
+    <string name="trash_kind_item">Element</string>
+    <string name="trash_parent_project">In Projekt %1$s</string>
+    <string name="trash_parent_yarn">In Garn %1$s</string>
+    <string name="trash_deleted_when">Gelöscht %1$s</string>
+    <plurals name="trash_days_left">
+        <item quantity="one">Noch %1$d Tag</item>
+        <item quantity="other">Noch %1$d Tage</item>
+    </plurals>
+    <string name="trash_due">Zum Löschen fällig</string>
+    <string name="trash_restore">Wiederherstellen</string>
+    <string name="trash_purge">Endgültig löschen</string>
+    <string name="trash_keep">Im Papierkorb lassen</string>
+    <string name="trash_purge_dialog_title">Endgültig löschen?</string>
+    <string name="trash_purge_dialog_text">%1$s wird endgültig gelöscht. Das lässt sich nicht rückgängig machen.</string>
+    <string name="trash_restored_name">%1$s wiederhergestellt.</string>
+    <string name="trash_open_project">Projekt öffnen</string>
+    <string name="trash_open_yarn">Garn öffnen</string>
+    <string name="trash_undo">Rückgängig</string>
+    <string name="mutation_moved_to_trash">In den Papierkorb verschoben.</string>
+    <string name="mutation_trash_restored">Aus dem Papierkorb wiederhergestellt.</string>
+    <string name="mutation_trash_purged">Endgültig gelöscht.</string>
+    <string name="error_trash_gone">Dieses Element ist nicht mehr im Papierkorb.</string>
+    <string name="error_trash_restore_failed">Das Element konnte nicht wiederhergestellt werden.</string>
+    <string name="error_trash_restore_parent">Stelle zuerst das Projekt oder Garn, zu dem es gehört, aus dem Papierkorb wieder her.</string>
+    <string name="error_trash_purge_failed">Das Element konnte nicht gelöscht werden.</string>
+    <string name="error_trash_load_failed">Der Papierkorb konnte nicht geladen werden.</string>
+    <string name="error_trash_offline">Du bist offline. Verbinde dich mit deinem Server und versuche es erneut.</string>
+
+    <!-- Papierkorb im Prüfprotokoll und im Aktivitätsverlauf -->
+    <string name="admin_action_trashed">In den Papierkorb verschoben</string>
+    <string name="admin_action_restored">Aus dem Papierkorb wiederhergestellt</string>
+    <string name="admin_action_purged">Endgültig gelöscht</string>
+    <string name="admin_action_purged_auto">Nach 90 Tagen automatisch gelöscht</string>
+    <string name="admin_state_in_trash">Im Papierkorb · %1$s</string>
+    <string name="admin_owner_line">Besitzer: %1$s</string>
+    <string name="admin_actor_system">Automatische Bereinigung</string>
+    <string name="admin_open_trash">Papierkorb öffnen</string>
+    <string name="activity_trashed">%1$s %2$s in den Papierkorb verschoben</string>
+    <string name="activity_restored">%1$s %2$s aus dem Papierkorb wiederhergestellt</string>
+    <string name="activity_purged">%1$s %2$s endgültig gelöscht</string>
+    <string name="activity_purged_auto">%1$s wurde nach 90 Tagen automatisch gelöscht</string>
+    <string name="admin_action_step_trashed">Schritt in den Papierkorb verschoben</string>
+    <string name="admin_action_step_restored">Schritt aus dem Papierkorb wiederhergestellt</string>
+    <string name="admin_action_step_purged">Schritt endgültig gelöscht</string>
+    <string name="error_trash_name_taken">Es gibt wieder eine Kategorie mit diesem Namen. Benenne zuerst eine der beiden um.</string>
+    <string name="trash_banner_project">Dieses Projekt ist im Papierkorb.</string>
+    <string name="trash_banner_yarn">Dieses Garn ist im Papierkorb.</string>
+    <string name="trash_banner_due">Es ist zum Löschen fällig.</string>
+    <plurals name="trash_banner_time">
+        <item quantity="one">Es wird in %1$d Tag endgültig gelöscht.</item>
+        <item quantity="other">Es wird in %1$d Tagen endgültig gelöscht.</item>
+    </plurals>
+    <string name="trash_banner_delete">Endgültig löschen</string>
 </resources>

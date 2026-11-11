@@ -257,7 +257,8 @@ async fn reminder_project(
 ) -> Result<Option<ReminderProject>, sqlx::Error> {
     let Some(row) = sqlx::query(
         "SELECT p.name, t.total_seconds, t.started_at FROM projects p \
-         JOIN project_timers t ON t.project_id = p.id WHERE p.id = ?",
+         JOIN project_timers t ON t.project_id = p.id \
+         WHERE p.id = ? AND p.deleted_at IS NULL",
     )
     .bind(project_id)
     .fetch_optional(pool)

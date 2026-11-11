@@ -54,6 +54,7 @@ fun SettingsScreen(
     onCategoryClick: (SettingsCategory) -> Unit,
     onCreateClick: () -> Unit,
     onGaugeClick: () -> Unit,
+    onTrashClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
     adminAccess: AdminAccessViewModel = hiltViewModel(),
     accountAvatar: AccountAvatarViewModel = hiltViewModel(),
@@ -111,6 +112,14 @@ fun SettingsScreen(
                                     subtitle = stringResource(R.string.more_gauge_subtitle),
                                     tag = "more-gauge",
                                     onClick = onGaugeClick,
+                                )
+                            MoreLink.Trash ->
+                                MoreActionRow(
+                                    icon = PhosphorIcons.Trash,
+                                    title = stringResource(R.string.trash_title),
+                                    subtitle = stringResource(R.string.more_trash_subtitle),
+                                    tag = "more-trash",
+                                    onClick = onTrashClick,
                                 )
                             is MoreLink.Category ->
                                 SettingsCategoryRow(link.category, profile, onCategoryClick)

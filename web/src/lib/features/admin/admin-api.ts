@@ -4,6 +4,14 @@ import {
   parseChangeMedia,
   type ChangeMedia,
 } from "#lib/features/history/media-change.ts";
+import {
+  parseLifecycleSubject,
+  parseResourceState,
+  parseTrashStatus,
+  type LifecycleSubject,
+  type ResourceState,
+  type TrashStatus,
+} from "#lib/features/trash/trash-state.ts";
 
 export interface AdminUser {
   id: number;
@@ -32,6 +40,10 @@ export interface AuditEvent {
   media_thumbnails: ChangeMedia | null;
   /** The administrator who made this change while acting as the actor. */
   impersonated_by: Impersonator | null;
+  /** True only for the automatic 90-day purge of the trash: no actor. */
+  system: boolean;
+  /** The owner of the resource, named on events an administrator or the system caused. */
+  subject: LifecycleSubject | null;
 }
 
 export interface Impersonator {
@@ -74,7 +86,12 @@ export interface AuditResourceReference {
   name_source: "event" | "current" | "unavailable";
   href: string | null;
   preview_url: string | null;
+  /** False while the resource is in the trash or gone. */
   exists: boolean;
+  /** Where the resource is now; null on servers that predate the trash. */
+  state: ResourceState | null;
+  /** Present only while the resource is in the trash. */
+  trash: TrashStatus | null;
 }
 
 export interface ChangeStep {
@@ -243,6 +260,8 @@ function parseAuditEvent(value: unknown): AuditEvent {
     media: parseAuditMedia(value.media),
     media_thumbnails: parseChangeMedia(value.media_thumbnails),
     impersonated_by: parseImpersonator(value.impersonated_by),
+    system: value.system === true,
+    subject: parseLifecycleSubject(value.subject),
   };
 }
 
@@ -293,8 +312,14 @@ function parseAuditResourceReference(
   value: unknown,
   event: Record<string, unknown>,
 ): AuditResourceReference {
+  if (!record(value)) throw invalidResponse();
+  const state = parseResourceState(value.state, invalidResponse);
+  const trash = parseTrashStatus(value.trash, invalidResponse);
+  // A resource in the trash has no page and no media to open: never link or preview it.
+  const inTrash = state === "in_trash";
+  const href = inTrash ? null : value.href;
+  const previewUrl = inTrash ? null : value.preview_url;
   if (
-    !record(value) ||
     !(
       value.kind === null ||
       value.kind === "project" ||
@@ -306,19 +331,19 @@ function parseAuditResourceReference(
     (value.name_source !== "event" &&
       value.name_source !== "current" &&
       value.name_source !== "unavailable") ||
-    !(value.href === null || typeof value.href === "string") ||
+    !(href === null || typeof href === "string") ||
     !validAuditPreviewUrl(
-      value.preview_url,
+      previewUrl,
       value.kind,
       value.id,
-      value.href,
+      href,
       value.exists,
     ) ||
     typeof value.exists !== "boolean"
   )
     throw invalidResponse();
 
-  if (value.href !== null) {
+  if (href !== null) {
     const resourceHrefs =
       value.kind !== null && value.exists && value.id > 0
         ? [
@@ -332,8 +357,8 @@ function parseAuditResourceReference(
         : [];
     const eventHref = `/app/admin/audit/${event.id}`;
     if (
-      !resourceHrefs.includes(value.href as string) &&
-      !(value.href === eventHref && !value.exists)
+      !resourceHrefs.includes(href as string) &&
+      !(href === eventHref && !value.exists)
     ) {
       throw invalidResponse();
     }
@@ -345,9 +370,11 @@ function parseAuditResourceReference(
     id: value.id,
     name: value.name,
     name_source: value.name_source,
-    href: value.href,
-    preview_url: value.preview_url,
+    href,
+    preview_url: previewUrl,
     exists: value.exists,
+    state,
+    trash,
   };
 }
 

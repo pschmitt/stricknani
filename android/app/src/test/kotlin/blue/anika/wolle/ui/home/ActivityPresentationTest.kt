@@ -3,6 +3,8 @@ package blue.anika.wolle.ui.home
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.ActivityActorDto
 import blue.anika.wolle.data.api.dto.ActivityItemDto
+import blue.anika.wolle.data.api.dto.AuditSubjectDto
+import blue.anika.wolle.data.api.dto.TrashStateDto
 import blue.anika.wolle.ui.admin.DayLabel
 import java.time.LocalDate
 import java.time.ZoneId
@@ -264,5 +266,79 @@ class ActivityPresentationTest {
             )
         assertEquals(listOf(1, 1), days.map { it.rows.size })
         assertEquals(2, days[0].rows[0].count)
+    }
+
+    @Test
+    fun `trash actions have their own verbs and icons`() {
+        assertEquals(ActivityVerb.Trashed, activityVerb("trashed"))
+        assertEquals(ActivityVerb.Restored, activityVerb("restored"))
+        assertEquals(ActivityVerb.Purged, activityVerb("purged"))
+        assertEquals(ActivityIconKind.Trash, activityIconKind("trashed"))
+        assertEquals(ActivityIconKind.Trash, activityIconKind("purged"))
+        assertEquals(ActivityIconKind.Restore, activityIconKind("restored"))
+    }
+
+    @Test
+    fun `an item in the trash opens the trash, not its page, and shows its days left`() {
+        val row =
+            activityRow(
+                item(action = "trashed", exists = false)
+                    .copy(
+                        state = "in_trash",
+                        trash = TrashStateDto(daysRemaining = 88, canRestore = true),
+                    )
+            )
+
+        assertEquals(ActivityTarget.Trash, row.target)
+        assertEquals(88, row.trashDaysLeft)
+        assertEquals(false, row.deleted)
+        assertEquals(ActivityVerb.Trashed, row.verb)
+    }
+
+    @Test
+    fun `a restored item is a normal row again and an old payload keeps working`() {
+        assertEquals(
+            ActivityTarget.Project(17),
+            activityRow(item(action = "restored").copy(state = "active")).target,
+        )
+        val old = activityRow(item(action = "deleted", exists = false))
+        assertNull(old.target)
+        assertNull(old.trashDaysLeft)
+        assertNull(old.ownerName)
+    }
+
+    @Test
+    fun `the automatic purge has no actor and names the owner`() {
+        val row =
+            activityRow(
+                item(action = "purged", exists = false, self = false, actorName = null)
+                    .copy(
+                        system = true,
+                        state = "gone",
+                        subject = AuditSubjectDto(id = 2, name = "Anika"),
+                    )
+            )
+
+        assertEquals(ActivityVerb.PurgedAuto, row.verb)
+        assertEquals(false, row.actorIsSelf)
+        assertNull(row.actorName)
+        assertEquals("Anika", row.ownerName)
+        assertNull(row.target)
+    }
+
+    @Test
+    fun `trash events are single events and never fold into a run`() {
+        val today = LocalDate.of(2026, 11, 3)
+        val days =
+            groupActivity(
+                listOf(
+                    item(id = 3, action = "trashed", exists = false),
+                    item(id = 2, action = "trashed", exists = false),
+                ),
+                today,
+                ZoneId.of("UTC"),
+            )
+
+        assertEquals(2, days.single().rows.size)
     }
 }

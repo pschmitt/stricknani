@@ -53,6 +53,7 @@ mod signup;
 mod sync;
 mod telemetry;
 mod tools;
+mod trash;
 mod yarns;
 
 use self::{access::OwnerRequestLimiter, imports::PreviewLimiter};
@@ -188,6 +189,7 @@ fn router_with_context(
         .merge(project_timer::router())
         .merge(push::router())
         .merge(yarns::router())
+        .merge(trash::router())
         .merge(categories::router())
         .merge(media::router())
         .merge(imports::router())

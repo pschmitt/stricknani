@@ -71,6 +71,13 @@ data class AuditResourceDto(
     val href: String? = null,
     @SerialName("preview_url") val previewUrl: String? = null,
     val exists: Boolean = false,
+    /**
+     * `active`, `in_trash` or `gone` (see [RESOURCE_STATE_ACTIVE] and friends). Null on servers
+     * without the trash: read it with `itemState()`, which falls back to [exists].
+     */
+    val state: String? = null,
+    /** Only while [state] is `in_trash`: when it goes and whether the viewer can restore it. */
+    val trash: TrashStateDto? = null,
 )
 
 /**
@@ -119,12 +126,15 @@ data class AuditEventDto(
      * key is missing on old servers and events without such changes.
      */
     @SerialName("media_thumbnails") val mediaThumbs: Map<String, HistoryMediaDto> = emptyMap(),
+    /** True only for the automatic purge after 90 days: nobody did it, so there is no actor. */
+    val system: Boolean = false,
 )
 
 /**
  * `subject` of `shared`, `share_role_changed`, `share_revoked`, `share_left` and
  * `ownership_transferred` events: [id] and [name] are null once that account was deleted, [role] is
- * the share role and absent for transfers.
+ * the share role and absent for transfers. Trash events an administrator did, and the automatic
+ * purge, carry the owner of the item here (with no role).
  */
 @Serializable
 data class AuditSubjectDto(val id: Long? = null, val name: String? = null, val role: String? = null)

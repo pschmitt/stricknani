@@ -7,6 +7,7 @@ export const MORE_SECTION_PATHS = [
   "/imports",
   "/categories",
   "/gauge",
+  "/trash",
   "/admin",
   "/about",
   "/account",

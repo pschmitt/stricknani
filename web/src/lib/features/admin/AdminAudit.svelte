@@ -10,6 +10,7 @@
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import AuditActionBadge from "./AuditActionBadge.svelte";
+  import AuditLifecycle from "./AuditLifecycle.svelte";
   import AuditMediaPreview from "./AuditMediaPreview.svelte";
   import { knownAuditActions } from "./audit-action";
   import {
@@ -230,8 +231,19 @@
     void updateFilters({ page: 1, entity, action: actionDraft.trim() });
   }
 
+  /** Whether the row has an owner or trash note to show on its note line. */
+  function hasLifecycle(event: AuditEvent): boolean {
+    return (
+      event.subject !== null ||
+      event.action === "step_trashed" ||
+      (event.media !== null && event.action === "trashed") ||
+      (event.action === "trashed" && event.resource.state !== null)
+    );
+  }
+
   function actorLabel(event: AuditEvent): string {
     if (event.actor_email) return event.actor_email;
+    if (event.system) return t("System", locale);
     if (event.legacy_actor_user_id !== null)
       return `${t(legacyUserMessage, locale)} #${event.legacy_actor_user_id}`;
     return t("Unknown actor", locale);
@@ -402,9 +414,17 @@
               {@const resourceKind = event.resource.kind ?? "resource"}
               <li class="event-row">
                 <div class="event-action">
-                  <AuditActionBadge action={event.action} {locale} />
+                  <AuditActionBadge
+                    action={event.action}
+                    {locale}
+                    system={event.system}
+                    mediaKind={event.media?.kind ?? null}
+                  />
                 </div>
-                <div class="event-resource" class:no-media={!event.media}>
+                <div
+                  class="event-resource"
+                  class:no-media={!event.media && !hasLifecycle(event)}
+                >
                   {#if event.entity_type === "user"}
                     <p class="impersonation-event">
                       <strong
@@ -425,6 +445,11 @@
                     <!-- Every row reserves this line so rows keep one height, with or without media;
                        rows without media shift the card down by half of it to stay centered. -->
                     <div class="event-note">
+                      <AuditLifecycle
+                        {event}
+                        {locale}
+                        onChanged={() => (retry += 1)}
+                      />
                       {#if event.media}
                         {#if event.media.exists && event.media.is_image && event.media.thumbnail_url}
                           <img

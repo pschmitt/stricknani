@@ -50,6 +50,7 @@ mod restore;
 pub mod security;
 pub(crate) mod sharing;
 pub mod sync;
+pub mod trash;
 pub mod url_import;
 pub mod wayback;
 mod web;

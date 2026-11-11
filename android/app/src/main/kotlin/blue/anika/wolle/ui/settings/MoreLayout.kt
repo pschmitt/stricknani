@@ -6,15 +6,18 @@ sealed interface MoreLink {
 
     data object Gauge : MoreLink
 
+    /** The trash (de: Papierkorb), right after the gauge calculator like the website's More. */
+    data object Trash : MoreLink
+
     data class Category(val category: SettingsCategory) : MoreLink
 }
 
 /**
- * The More screen's order: Create, Categories, Gauge calculator; then the Settings group (Account
- * settings first, drawn by the screen, then Language and User interface from [settings]); the Data
- * group ([data]: Admin for administrators, keeping up to date and backup); then [footer], About on
- * its own at the bottom. Sign out lives only in Account settings. [interfacePages] are opened from
- * User interface rather than from More itself.
+ * The More screen's order: Create, Categories, Gauge calculator, Trash; then the Settings group
+ * (Account settings first, drawn by the screen, then Language and User interface from [settings]);
+ * the Data group ([data]: Admin for administrators, keeping up to date and backup); then [footer],
+ * About on its own at the bottom. Sign out lives only in Account settings. [interfacePages] are
+ * opened from User interface rather than from More itself.
  */
 data class MoreLayout(
     val links: List<MoreLink>,
@@ -36,6 +39,7 @@ fun moreLayout(isAdmin: Boolean): MoreLayout =
                 MoreLink.Create,
                 MoreLink.Category(SettingsCategory.Categories),
                 MoreLink.Gauge,
+                MoreLink.Trash,
             ),
         settings =
             listOf(

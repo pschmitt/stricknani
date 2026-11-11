@@ -3,7 +3,14 @@ import type { NavIconName } from "./components/NavIcon.svelte";
 
 /** The destinations of the desktop rail and the phone bar; the command palette lists the same. */
 export interface NavItem {
-  href: "/" | "/projects" | "/yarns" | "/create" | "/categories" | "/gauge";
+  href:
+    | "/"
+    | "/projects"
+    | "/yarns"
+    | "/create"
+    | "/categories"
+    | "/gauge"
+    | "/trash";
   label: string;
   icon: NavIconName;
 }
@@ -18,4 +25,5 @@ export const mainNavigation: readonly NavItem[] = [
 export const secondaryNavigation: readonly NavItem[] = [
   { href: "/categories", label: msg("Categories"), icon: "categories" },
   { href: "/gauge", label: msg("Gauge calculator"), icon: "gauge" },
+  { href: "/trash", label: msg("Trash"), icon: "trash" },
 ];

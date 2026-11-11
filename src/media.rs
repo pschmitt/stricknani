@@ -2281,9 +2281,7 @@ pub(crate) async fn delete_project_media(
         let _ = tx.rollback().await;
         return Err(MediaOperationError::Database);
     }
-    if sqlx::query("DELETE FROM media_files WHERE id = ?")
-        .bind(row.id)
-        .execute(&mut *tx)
+    if trash_media_row(&mut tx, row.id, actor_id, &trash_stamp(), false)
         .await
         .is_err()
     {
@@ -2317,7 +2315,7 @@ pub(crate) async fn delete_project_media(
         actor_id,
         AuditEntity::Project,
         project_id,
-        AuditAction::Removed,
+        AuditAction::Trashed,
         &crate::audit::MediaRef {
             kind: if row.kind == "attachment" {
                 crate::audit::MediaKind::Attachment
@@ -2435,9 +2433,7 @@ pub(crate) async fn delete_yarn_photo_for_owner(
         let _ = tx.rollback().await;
         return Err(MediaOperationError::Database);
     }
-    if sqlx::query("DELETE FROM media_files WHERE id = ?")
-        .bind(photo.id)
-        .execute(&mut *tx)
+    if trash_media_row(&mut tx, photo.id, actor_id, &trash_stamp(), false)
         .await
         .is_err()
     {
@@ -2469,7 +2465,7 @@ pub(crate) async fn delete_yarn_photo_for_owner(
         actor_id,
         AuditEntity::Yarn,
         yarn_id,
-        AuditAction::Removed,
+        AuditAction::Trashed,
         &crate::audit::MediaRef {
             kind: crate::audit::MediaKind::Photo,
             public_id: photo.public_id,
@@ -2861,7 +2857,21 @@ async fn serve_registered(
         .await
         {
             Ok(Some(_)) => {}
-            Ok(None) => return StatusCode::FORBIDDEN.into_response(),
+            Ok(None) => {
+                // Administrators open trashed items read-only, pictures included.
+                match crate::resource_access::grant_including_trashed(
+                    &state.pool,
+                    user_id,
+                    kind,
+                    parent_id,
+                )
+                .await
+                {
+                    Ok(Some(_)) => {}
+                    Ok(None) => return StatusCode::FORBIDDEN.into_response(),
+                    Err(_) => return database_error(),
+                }
+            }
             Err(_) => return database_error(),
         }
     }
@@ -4720,4 +4730,286 @@ mod people_avatar_url_tests {
             .expect("upload url");
         assert!(upload.starts_with("/api/v2/people/7/avatar/thumb_"));
     }
+}
+
+// --- trash -----------------------------------------------------------------
+
+fn trash_stamp() -> String {
+    chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Micros, true)
+}
+
+/// Every column of `media_files` that a trashed row keeps (everything but
+/// the primary key). A test compares this list with the live table so that a
+/// later migration cannot silently drop a column from the trash.
+pub(crate) const TRASHED_MEDIA_COLUMNS: &str = "owner_id, project_id, yarn_id, step_id, kind, \
+    filename, original_filename, content_type, size_bytes, width, height, alt_text, is_primary, \
+    is_safe_inline, created_at, legacy_image_type, is_stitch_sample, legacy_source, legacy_id, \
+    public_id, legacy_is_title_image, position, is_project_cover";
+
+/// Move a media row into the trash instead of deleting it. The file stays on
+/// disk: the garbage-collection trigger skips names a trashed row still holds.
+/// `with_step` marks images that go to the trash together with their step.
+pub(crate) async fn trash_media_row(
+    tx: &mut Transaction<'_, Sqlite>,
+    media_id: i64,
+    actor_id: i64,
+    deleted_at: &str,
+    with_step: bool,
+) -> Result<(), sqlx::Error> {
+    let sql = format!(
+        "INSERT INTO trashed_media (id, {TRASHED_MEDIA_COLUMNS}, with_step, deleted_at, deleted_by) \
+         SELECT id, {TRASHED_MEDIA_COLUMNS}, ?, ?, ? FROM media_files WHERE id = ?"
+    );
+    sqlx::query(sqlx::AssertSqlSafe(sql.as_str()))
+        .bind(with_step)
+        .bind(deleted_at)
+        .bind(actor_id)
+        .bind(media_id)
+        .execute(&mut **tx)
+        .await?;
+    sqlx::query("DELETE FROM media_files WHERE id = ?")
+        .bind(media_id)
+        .execute(&mut **tx)
+        .await?;
+    Ok(())
+}
+
+/// Why a trashed media row could not be put back.
+#[derive(Debug)]
+pub(crate) enum MediaRestoreError {
+    NotFound,
+    /// The project, yarn or step it belonged to is in the trash too.
+    ParentInTrash,
+    Database,
+}
+
+impl From<sqlx::Error> for MediaRestoreError {
+    fn from(_: sqlx::Error) -> Self {
+        Self::Database
+    }
+}
+
+/// What the trash shows and audits about one trashed media row.
+pub(crate) struct TrashedMedia {
+    pub(crate) id: i64,
+    pub(crate) owner_id: i64,
+    pub(crate) project_id: Option<i64>,
+    pub(crate) yarn_id: Option<i64>,
+    pub(crate) public_id: i64,
+    pub(crate) kind: String,
+    pub(crate) filename: String,
+    pub(crate) original_filename: String,
+}
+
+impl TrashedMedia {
+    pub(crate) fn audit_ref(&self) -> crate::audit::MediaRef {
+        crate::audit::MediaRef {
+            kind: match self.kind.as_str() {
+                "attachment" => crate::audit::MediaKind::Attachment,
+                "photo" => crate::audit::MediaKind::Photo,
+                _ => crate::audit::MediaKind::Image,
+            },
+            public_id: self.public_id,
+            name: Some(crate::audit::media_label(
+                Some(self.original_filename.as_str()),
+                &self.filename,
+                self.public_id,
+            )),
+        }
+    }
+}
+
+/// Look up a trashed media row by its API id in `namespace` (`image`,
+/// `photo` or `attachment`).
+pub(crate) async fn find_trashed_media(
+    conn: &mut sqlx::SqliteConnection,
+    namespace: &str,
+    public_id: i64,
+) -> Result<Option<TrashedMedia>, sqlx::Error> {
+    let kinds = match namespace {
+        "image" => "('title', 'step')",
+        "photo" => "('photo')",
+        _ => "('attachment')",
+    };
+    let sql = format!(
+        "SELECT id, owner_id, project_id, yarn_id, public_id, kind, filename, original_filename \
+         FROM trashed_media WHERE public_id = ? AND kind IN {kinds}"
+    );
+    sqlx::query_as::<
+        _,
+        (
+            i64,
+            i64,
+            Option<i64>,
+            Option<i64>,
+            i64,
+            String,
+            String,
+            String,
+        ),
+    >(sqlx::AssertSqlSafe(sql.as_str()))
+    .bind(public_id)
+    .fetch_optional(conn)
+    .await
+    .map(|row| {
+        row.map(
+            |(id, owner_id, project_id, yarn_id, public_id, kind, filename, original_filename)| {
+                TrashedMedia {
+                    id,
+                    owner_id,
+                    project_id,
+                    yarn_id,
+                    public_id,
+                    kind,
+                    filename,
+                    original_filename,
+                }
+            },
+        )
+    })
+}
+
+/// Put a trashed media row back at the end of its group. The parent must be
+/// live. A restored row never takes over the primary image or the project
+/// cover from a live one.
+pub(crate) async fn restore_trashed_media_row(
+    tx: &mut Transaction<'_, Sqlite>,
+    media_id: i64,
+    check_parent: bool,
+) -> Result<(), MediaRestoreError> {
+    let (owner_id, project_id, yarn_id, step_id, kind, was_primary, was_cover) = sqlx::query_as::<
+        _,
+        (
+            i64,
+            Option<i64>,
+            Option<i64>,
+            Option<i64>,
+            String,
+            bool,
+            bool,
+        ),
+    >(
+        "SELECT owner_id, project_id, yarn_id, step_id, kind, is_primary, is_project_cover \
+         FROM trashed_media WHERE id = ?",
+    )
+    .bind(media_id)
+    .fetch_optional(&mut **tx)
+    .await?
+    .ok_or(MediaRestoreError::NotFound)?;
+    if check_parent {
+        if let Some(project_id) = project_id {
+            let live = sqlx::query_scalar::<_, bool>(
+                "SELECT EXISTS(SELECT 1 FROM projects WHERE id = ? AND deleted_at IS NULL)",
+            )
+            .bind(project_id)
+            .fetch_one(&mut **tx)
+            .await?;
+            if !live {
+                return Err(MediaRestoreError::ParentInTrash);
+            }
+        }
+        if let Some(yarn_id) = yarn_id {
+            let live = sqlx::query_scalar::<_, bool>(
+                "SELECT EXISTS(SELECT 1 FROM yarns WHERE id = ? AND deleted_at IS NULL)",
+            )
+            .bind(yarn_id)
+            .fetch_one(&mut **tx)
+            .await?;
+            if !live {
+                return Err(MediaRestoreError::ParentInTrash);
+            }
+        }
+        if let Some(step_id) = step_id {
+            let live = sqlx::query_scalar::<_, bool>(
+                "SELECT EXISTS(SELECT 1 FROM project_steps WHERE id = ?)",
+            )
+            .bind(step_id)
+            .fetch_one(&mut **tx)
+            .await?;
+            if !live {
+                return Err(MediaRestoreError::ParentInTrash);
+            }
+        }
+    }
+    let position = match (project_id, yarn_id) {
+        (Some(project_id), _) if kind != "attachment" => {
+            next_project_position(tx, project_id, step_id).await?
+        }
+        (Some(_), _) => 0,
+        (None, Some(yarn_id)) => next_yarn_position(tx, yarn_id).await?,
+        (None, None) => 0,
+    };
+    let primary_taken = match (kind.as_str(), project_id, yarn_id) {
+        ("title", Some(project_id), _) => {
+            sqlx::query_scalar::<_, bool>(
+                "SELECT EXISTS(SELECT 1 FROM media_files WHERE project_id = ? \
+                 AND kind = 'title' AND is_primary = 1)",
+            )
+            .bind(project_id)
+            .fetch_one(&mut **tx)
+            .await?
+        }
+        ("photo", _, Some(yarn_id)) => {
+            sqlx::query_scalar::<_, bool>(
+                "SELECT EXISTS(SELECT 1 FROM media_files WHERE yarn_id = ? \
+                 AND kind = 'photo' AND is_primary = 1)",
+            )
+            .bind(yarn_id)
+            .fetch_one(&mut **tx)
+            .await?
+        }
+        _ => true,
+    };
+    let cover_taken = match project_id {
+        Some(project_id) => {
+            sqlx::query_scalar::<_, bool>(
+                "SELECT EXISTS(SELECT 1 FROM media_files WHERE project_id = ? \
+                 AND kind IN ('title', 'step') AND is_project_cover = 1)",
+            )
+            .bind(project_id)
+            .fetch_one(&mut **tx)
+            .await?
+        }
+        None => true,
+    };
+    let _ = owner_id;
+    let columns = TRASHED_MEDIA_COLUMNS
+        .replace("is_primary", "?")
+        .replace("is_project_cover", "?")
+        .replace("position", "?");
+    // `replace` turned the three names into placeholders in column order
+    // (is_primary, position, is_project_cover); bind them in that order.
+    let sql = format!(
+        "INSERT INTO media_files (id, {TRASHED_MEDIA_COLUMNS}) \
+         SELECT id, {columns} FROM trashed_media WHERE id = ?"
+    );
+    sqlx::query(sqlx::AssertSqlSafe(sql.as_str()))
+        .bind(was_primary && !primary_taken)
+        .bind(position)
+        .bind(was_cover && !cover_taken)
+        .bind(media_id)
+        .execute(&mut **tx)
+        .await?;
+    sqlx::query("DELETE FROM trashed_media WHERE id = ?")
+        .bind(media_id)
+        .execute(&mut **tx)
+        .await?;
+    Ok(())
+}
+
+/// Re-stamp a project or yarn whose media or steps changed in the trash, so
+/// that sync clients fetch it again.
+pub(crate) async fn bump_parent_after_trash_change(
+    tx: &mut Transaction<'_, Sqlite>,
+    owner_id: i64,
+    project_id: Option<i64>,
+    yarn_id: Option<i64>,
+) -> Result<(), sqlx::Error> {
+    if let Some(project_id) = project_id {
+        bump_project_timestamp(tx, owner_id, project_id).await?;
+    }
+    if let Some(yarn_id) = yarn_id {
+        bump_yarn_timestamp(tx, owner_id, yarn_id).await?;
+    }
+    Ok(())
 }

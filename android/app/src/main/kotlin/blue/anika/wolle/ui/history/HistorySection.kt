@@ -267,8 +267,8 @@ private fun HistoryTimeline(state: HistoryUiState, controller: HistoryController
 }
 
 @Composable
-private fun actionLabel(action: String): String {
-    val presentation = auditActionPresentation(action)
+private fun actionLabel(action: String, system: Boolean = false): String {
+    val presentation = auditActionPresentation(action, system)
     return presentation.labelRes?.let { stringResource(it) } ?: presentation.fallbackLabel
 }
 
@@ -285,14 +285,14 @@ private fun historyHeadline(event: AuditEventDto, state: HistoryUiState): String
         return stringResource(line.textRes, person, role)
     }
     event.media?.displayName()?.let { name ->
-        return "${actionLabel(event.action)}: $name"
+        return "${actionLabel(event.action, event.system)}: $name"
     }
     val loaded = state.details[event.id] as? HistoryDetailState.Loaded
     timerEventLine(event.action, loaded?.detail?.changes)?.let { line ->
         return line.time?.let { stringResource(line.textRes, it) } ?: stringResource(line.textRes)
     }
     val parts = summaryParts(loaded?.detail?.changes)
-    if (parts.isEmpty()) return actionLabel(event.action)
+    if (parts.isEmpty()) return actionLabel(event.action, event.system)
     val andWord = stringResource(R.string.history_list_and)
     val texts = parts.map { part ->
         when (part) {
@@ -359,11 +359,11 @@ private fun HistoryRow(
     last: Boolean,
     onOpen: () -> Unit,
 ) {
-    val kind = auditActionPresentation(event.action).kind
+    val kind = auditActionPresentation(event.action, event.system).kind
     val tone = kind.tone().color()
     val railColor = tone.copy(alpha = 0.35f)
     val other = otherActor(event.actorEmail, currentEmail)
-    val action = actionLabel(event.action)
+    val action = actionLabel(event.action, event.system)
     val time = relativeTime(event)
     val date = fullDate(event)
     val context = LocalContext.current
@@ -446,7 +446,7 @@ private fun HistoryEventSheet(
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val kind = auditActionPresentation(event.action).kind
+    val kind = auditActionPresentation(event.action, event.system).kind
     val tone = kind.tone().color()
     val other = otherActor(event.actorEmail, currentEmail)
     val detailMedia = (detail as? HistoryDetailState.Loaded)?.detail?.event?.mediaThumbs.orEmpty()
@@ -473,7 +473,7 @@ private fun HistoryEventSheet(
                         modifier = Modifier.semantics { heading() },
                     )
                     Text(
-                        actionLabel(event.action),
+                        actionLabel(event.action, event.system),
                         style = MaterialTheme.typography.labelLarge,
                         color = tone,
                     )

@@ -315,7 +315,7 @@ async fn project_favorites_are_idempotent_filterable_and_delete_keeps_ids_stable
     .fetch_all(&pool)
     .await
     .expect("deleted project audit history should remain queryable");
-    assert_eq!(actions, vec!["created".to_owned(), "deleted".to_owned()]);
+    assert_eq!(actions, vec!["created".to_owned(), "trashed".to_owned()]);
     let recreated = app
         .oneshot(request(
             "POST",

@@ -3,6 +3,7 @@ import { t } from "#lib/i18n.svelte.ts";
 import { accessField, type ResourceAccess } from "#lib/access.ts";
 import { ownerField, type ResourceOwner } from "#lib/owner.ts";
 import type { LibraryScope } from "#lib/library-scope.svelte.ts";
+import { trashedFields } from "../trash/trash-state.ts";
 import {
   applyListScope,
   type ListScope,
@@ -21,6 +22,9 @@ export interface ProjectSummary {
   owner?: ResourceOwner | null;
   /** What the signed-in user may do with it; absent on responses that predate sharing. */
   access?: ResourceAccess | null;
+  /** Set only while the project is in the trash (owner and administrators can still open it). */
+  trashed_at?: string | null;
+  purge_at?: string | null;
 }
 
 export interface ProjectStep {
@@ -509,6 +513,7 @@ function parseProjectSummary(value: unknown): ProjectSummary {
     preview_url: value.preview_url,
     ...ownerField(value.owner),
     ...accessField(value.access),
+    ...trashedFields(value),
   };
 }
 
@@ -584,6 +589,7 @@ function parseProjectDetailValue(value: unknown): ProjectDetail {
     attachments,
     ...ownerField(value.owner),
     ...accessField(value.access),
+    ...trashedFields(value),
   };
 }
 

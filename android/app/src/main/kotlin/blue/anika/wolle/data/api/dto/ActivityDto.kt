@@ -29,6 +29,14 @@ data class ActivityItemDto(
     val actor: ActivityActorDto = ActivityActorDto(),
     @SerialName("changed_fields") val changedFields: List<String> = emptyList(),
     val count: Int = 1,
+    /** `active`, `in_trash` or `gone`; null on servers without the trash. */
+    val state: String? = null,
+    /** Only while [state] is `in_trash`. */
+    val trash: TrashStateDto? = null,
+    /** True only for the automatic purge after 90 days (no actor). */
+    val system: Boolean = false,
+    /** The owner of the item for trash events an administrator did and for the automatic purge. */
+    val subject: AuditSubjectDto? = null,
 )
 
 @Serializable

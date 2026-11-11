@@ -346,6 +346,7 @@ private fun PaletteIcon.vector() =
         PaletteIcon.Import -> PhosphorIcons.DownloadSimple
         PaletteIcon.Categories -> PhosphorIcons.Tag
         PaletteIcon.Gauge -> PhosphorIcons.Ruler
+        PaletteIcon.Trash -> PhosphorIcons.Trash
         PaletteIcon.Account -> PhosphorIcons.UserCircle
         PaletteIcon.Backup -> PhosphorIcons.FloppyDisk
         PaletteIcon.About -> PhosphorIcons.Info

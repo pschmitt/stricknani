@@ -21,6 +21,7 @@ enum class PaletteIcon {
     Import,
     Categories,
     Gauge,
+    Trash,
     Account,
     Backup,
     About,
