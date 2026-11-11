@@ -82,6 +82,7 @@ import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.AdminUserDto
 import blue.anika.wolle.data.repository.AdminFailure
 import blue.anika.wolle.ui.common.EmptyState
+import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.YarnLoader
 
@@ -89,6 +90,8 @@ import blue.anika.wolle.ui.common.YarnLoader
 @Composable
 fun AdminAccountsScreen(
     onBack: () -> Unit,
+    onOpenUserProjects: (userId: Long) -> Unit = {},
+    onOpenUserYarns: (userId: Long) -> Unit = {},
     viewModel: AdminAccountsViewModel = hiltViewModel(),
     identitiesViewModel: AdminIdentitiesViewModel = hiltViewModel(),
 ) {
@@ -186,6 +189,8 @@ fun AdminAccountsScreen(
                                             ) {
                                                 { identitiesViewModel.open(user) }
                                             } else null,
+                                        onOpenProjects = { onOpenUserProjects(user.id) },
+                                        onOpenYarns = { onOpenUserYarns(user.id) },
                                         onResetPassword = {
                                             viewModel.clearForm()
                                             toReset = user
@@ -305,6 +310,8 @@ private fun AccountRow(
     avatarUrl: String?,
     onToggleActive: () -> Unit,
     onShowLogins: (() -> Unit)?,
+    onOpenProjects: () -> Unit,
+    onOpenYarns: () -> Unit,
     onResetPassword: () -> Unit,
     onImpersonate: (() -> Unit)?,
 ) {
@@ -423,6 +430,25 @@ private fun AccountRow(
                             },
                         )
                     }
+                    // Same entries and order as the web menu: the user's projects and yarns.
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.destination_label_projects)) },
+                        leadingIcon = { Icon(PhosphorIcons.Hoodie, contentDescription = null) },
+                        modifier = Modifier.testTag("admin-account-projects-${user.id}"),
+                        onClick = {
+                            menuOpen = false
+                            onOpenProjects()
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.destination_label_yarns)) },
+                        leadingIcon = { Icon(MdiIcons.YarnBall, contentDescription = null) },
+                        modifier = Modifier.testTag("admin-account-yarns-${user.id}"),
+                        onClick = {
+                            menuOpen = false
+                            onOpenYarns()
+                        },
+                    )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.admin_accounts_reset_password)) },
                         leadingIcon = { Icon(Icons.Filled.LockReset, contentDescription = null) },
