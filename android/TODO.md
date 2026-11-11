@@ -43,14 +43,14 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## SNA-110: Formatting icons in the text-selection menu
 
-Status: in progress (2026-11-11, Codex)
+Status: **done** (2026-11-11, Codex)
 
 - [x] Use the same six Material glyphs as the Markdown editor toolbar.
 - [x] Preserve supplied text actions in a scoped touch-selection popup.
 - [x] Resolve Android theme icon attributes; retain editor focus and support Back/outside dismissal.
 - [x] Remote Kotlin compilation and formatter checks; signed APK build.
-- [ ] Collect the final unit-test and lint receipt.
-- [ ] Verify touch actions and dismissal on a phone; install on available test devices.
+- [x] Final unit tests and lint passed on `148454a2`.
+- [x] Signed `148454a2` installed and checked on the available phone: matching icons, formatting, outside/Back dismissal, and reopening; Visual and Raw modes checked. Other test devices were offline.
 
 Web parity: the six formatting actions already have icons in the web toolbar; this is Android's platform selection popup.
 
