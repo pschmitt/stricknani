@@ -24,7 +24,10 @@
   } from "#lib/access.ts";
   import StickyActionBar from "#lib/components/StickyActionBar.svelte";
   import { publishFeedback } from "#lib/feedback.ts";
-  import { publishMovedToTrash } from "../trash/trash-undo";
+  import {
+    publishMovedToTrash,
+    publishSavedWithRemovals,
+  } from "../trash/trash-undo";
   import { msg, t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
@@ -50,9 +53,19 @@
   import AddMediaControl from "#lib/components/AddMediaControl.svelte";
   import QueuedPhotoList from "../media/QueuedPhotoList.svelte";
   import { uploadSequentially } from "../media/upload-queue";
+  import { putOrder, yarnPhotoOrderPath } from "../media/media-reorder";
+  import {
+    YARN_GROUP,
+    emptyStaged,
+    hasPendingMedia,
+    planMediaSave,
+    stagedRemovalCount,
+    type StagedMedia,
+  } from "../media/media-staging";
   import {
     createYarn,
     deleteYarn,
+    deleteYarnPhoto,
     getYarn,
     parseYarnDetail,
     updateYarn,
@@ -144,11 +157,19 @@
   const sharedAutoStart = $derived(
     yarnId === null && autoStartFromSearch(page.url.search),
   );
+  /** Photo removals and the photo order, which wait for Save. */
+  let staged = $state<StagedMedia>(emptyStaged());
   const isDirty = $derived(
-    savedSnapshot !== JSON.stringify(draft) || queuedPhotos.length > 0,
+    savedSnapshot !== JSON.stringify(draft) ||
+      queuedPhotos.length > 0 ||
+      hasPendingMedia(loadedYarn?.photos ?? [], staged, () => YARN_GROUP),
   );
   const canManagePhotos = $derived(
     loadedYarn !== null && !isDirty && !saving && !mediaBusy && !deleting,
+  );
+  /** Removing and reordering only change the form, so a dirty form may do both. */
+  const canStagePhotos = $derived(
+    loadedYarn !== null && !saving && !mediaBusy && !deleting,
   );
   const saveLabel = $derived(
     saving
@@ -218,6 +239,7 @@
     saving = false;
     mediaBusy = false;
     deleting = false;
+    staged = emptyStaged();
     deleteError = "";
     untrack(() => deleteDialog?.close());
     untrack(() => conflictDialog?.close());
@@ -311,6 +333,7 @@
   function applyLoadedYarn(yarn: YarnDetail) {
     const nextDraft = draftFromYarn(yarn);
     loadedYarn = yarn;
+    staged = emptyStaged();
     draft = nextDraft;
     expectedUpdatedAt = yarn.updated_at;
     savedSnapshot = JSON.stringify(nextDraft);
@@ -461,7 +484,69 @@
           : await updateYarn(id, value, version, currentSession);
       if (!isCurrentRoute(id, ownerId, generation)) return;
       if (id === null) createdYarn = result;
-      applyLoadedYarn(result);
+      // Photo removals and the photo order of the form go out after the yarn itself.
+      let savedYarn = result;
+      let leftoverMedia = emptyStaged();
+      const trashedPhotos: number[] = [];
+      let mediaFailed = false;
+      const before = loadedYarn;
+      if (
+        id !== null &&
+        before &&
+        hasPendingMedia(before.photos, staged, () => YARN_GROUP)
+      ) {
+        const plan = planMediaSave(
+          before.photos,
+          [],
+          staged,
+          new Set(),
+          () => YARN_GROUP,
+        );
+        const settle = async (
+          work: () => Promise<unknown>,
+          done?: () => void,
+          failedWith?: () => void,
+        ): Promise<void> => {
+          try {
+            await work();
+            done?.();
+          } catch (error) {
+            // Already gone on the server: nothing left to do for this one.
+            if (error instanceof ApiError && error.status === 404) done?.();
+            else {
+              mediaFailed = true;
+              failedWith?.();
+            }
+          }
+        };
+        for (const photoId of plan.deleteImageIds) {
+          await settle(
+            () => deleteYarnPhoto(id, photoId, currentSession),
+            () => trashedPhotos.push(photoId),
+            () => leftoverMedia.removedImageIds.push(photoId),
+          );
+        }
+        if (!mediaFailed) {
+          for (const order of plan.orders)
+            await settle(() =>
+              putOrder(yarnPhotoOrderPath(id), order.ids, currentSession),
+            );
+        }
+        if (!isCurrentRoute(id, ownerId, generation)) return;
+        if (mediaFailed) leftoverMedia.order = staged.order;
+        savedYarn = await getYarn(id);
+        if (!isCurrentRoute(id, ownerId, generation)) return;
+      }
+      applyLoadedYarn(savedYarn);
+      staged = leftoverMedia;
+      if (mediaFailed) {
+        serverError = t(
+          "Saved, but some photos could not be removed. Save again to retry.",
+          locale,
+        );
+        publishFeedback({ ownerId, kind: "error", message: serverError });
+        return;
+      }
       if (id === null && queuedPhotos.length) {
         const attempted = [...queuedPhotos];
         const uploadResult = await uploadSequentially(
@@ -490,11 +575,28 @@
         id === null
           ? t("Yarn created.", locale)
           : t("Yarn changes saved.", locale);
-      publishFeedback({
-        ownerId,
-        kind: "success",
-        message: successMessage,
-      });
+      if (trashedPhotos.length > 0) {
+        const yarnPath = `${resolve("/yarns")}/${result.id}`;
+        publishSavedWithRemovals({
+          session: currentSession,
+          ownerId,
+          locale,
+          items: trashedPhotos.map((photoId) => ({
+            kind: "photo" as const,
+            id: photoId,
+          })),
+          onRestored: () =>
+            window.location.pathname === yarnPath
+              ? window.location.reload()
+              : goto(yarnPath),
+        });
+      } else {
+        publishFeedback({
+          ownerId,
+          kind: "success",
+          message: successMessage,
+        });
+      }
       // The import is done with: take it off the "Waiting for review" list.
       if (importedDraftId !== null) {
         try {
@@ -979,6 +1081,8 @@
               photos={loadedYarn.photos}
               {locale}
               canEdit={canManagePhotos}
+              canStage={canStagePhotos}
+              bind:staged
               onResourceUpdated={reloadAfterMediaChange}
               onMediaBusyChange={(busy, resourceId, ownerId) => {
                 if (resourceId === yarnId && ownerId === userId)
@@ -1182,7 +1286,10 @@
 
       {#if loadedYarn && !canManagePhotos && !mediaBusy && isDirty}
         <p class="media-hint">
-          {t("Save your changes before editing photos.", locale)}
+          {t(
+            "Save your changes to add or edit photos. You can already remove and reorder them.",
+            locale,
+          )}
         </p>
       {/if}
 
@@ -1217,7 +1324,16 @@
             >
           {:else if isDirty}
             <span class="draft-note">
-              {t("Your edits stay here if saving fails.", locale)}
+              {stagedRemovalCount(staged) > 0
+                ? t(
+                    "Unsaved changes. Removed items go to the trash when you save.",
+                    locale,
+                  )
+                : t("Your edits stay here if saving fails.", locale)}
+            </span>
+          {:else if yarnId !== null}
+            <span class="draft-note" data-testid="saved-state">
+              {t("All changes saved", locale)}
             </span>
           {/if}
         {/snippet}

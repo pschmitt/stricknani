@@ -57,28 +57,39 @@ data class TrashRowModel(
     val ownerName: String?,
     val ownerEmail: String?,
     val ownerAvatarUrl: String?,
+    /** True when the owner is somebody else than the signed-in user: the row says "Owner: X". */
+    val ownerIsForeign: Boolean,
+    /** False: only the owner or an administrator can restore or delete it; no buttons. */
+    val canRestore: Boolean,
     val deletedAt: String?,
     val daysLeft: DaysLeft,
 )
 
 /**
- * The row of an item. The owner is named only for an administrator's "All users" list
- * ([showOwner]); the signed-in user knows their own items.
+ * The row of an item. The owner is named for an administrator's "All users" list ([showOwner]) and
+ * whenever it is somebody else than [currentUserId] (an item the user trashed in a shared project
+ * or yarn); the signed-in user knows their own items.
  */
-fun trashRow(item: TrashItemDto, showOwner: Boolean): TrashRowModel =
-    TrashRowModel(
+fun trashRow(item: TrashItemDto, showOwner: Boolean, currentUserId: Long? = null): TrashRowModel {
+    val owner = item.owner
+    val foreign = owner != null && currentUserId != null && owner.id != currentUserId
+    val named = owner?.takeIf { showOwner || foreign }
+    return TrashRowModel(
         ref = TrashRef(item.kind, item.id),
         kindLabelRes = trashKindLabelRes(item.kind),
         name = item.name?.trim()?.ifBlank { null },
         parentKind = item.parent?.kind?.ifBlank { null },
         parentName = item.parent?.name?.trim()?.ifBlank { null },
         detail = item.detail?.trim()?.ifBlank { null },
-        ownerName = item.owner?.takeIf { showOwner }?.name?.ifBlank { null },
-        ownerEmail = item.owner?.takeIf { showOwner }?.email?.ifBlank { null },
-        ownerAvatarUrl = item.owner?.takeIf { showOwner }?.avatarUrl,
+        ownerName = named?.let { it.name.trim().ifBlank { it.email.ifBlank { null } } },
+        ownerEmail = named?.email?.ifBlank { null },
+        ownerAvatarUrl = named?.avatarUrl,
+        ownerIsForeign = foreign,
+        canRestore = item.canRestore,
         deletedAt = item.deletedAt,
         daysLeft = daysLeft(item.daysRemaining),
     )
+}
 
 /** When an item was deleted, in epoch millis; null when the server's timestamp is unreadable. */
 fun trashDeletedMillis(deletedAt: String?): Long? = deletedAt?.let {

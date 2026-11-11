@@ -191,6 +191,7 @@ private fun TrashList(
     onOpenTrashed: (kind: String, id: Int) -> Unit,
 ) {
     val showOwner = state.scope == TrashScope.All
+    val currentUserId by viewModel.currentUserId.collectAsStateWithLifecycle()
     LazyColumn(
         modifier = Modifier.fillMaxSize().testTag("trash-list"),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
@@ -211,7 +212,7 @@ private fun TrashList(
         }
         items(state.items, key = { "${it.kind}:${it.id}" }) { item ->
             TrashRow(
-                row = trashRow(item, showOwner),
+                row = trashRow(item, showOwner, currentUserId),
                 busy = state.busy != null,
                 avatarUrl = viewModel.avatarUrl(item.owner?.avatarUrl),
                 thumbnailUrl = viewModel.avatarUrl(item.thumbnailUrl),
@@ -293,7 +294,8 @@ private fun TrashRow(
                             size = 24.dp,
                         )
                         Text(
-                            owner,
+                            if (row.ownerIsForeign) stringResource(R.string.trash_owner, owner)
+                            else owner,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -310,33 +312,42 @@ private fun TrashRow(
                         if (row.daysLeft is DaysLeft.Due) MaterialTheme.colorScheme.error
                         else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(top = 4.dp),
-                ) {
-                    OutlinedButton(
-                        onClick = onRestore,
-                        enabled = !busy,
-                        modifier = Modifier.testTag("trash-restore"),
+                if (row.canRestore) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(top = 4.dp),
                     ) {
-                        Icon(
-                            PhosphorIcons.ClockCounterClockwise,
-                            contentDescription = null,
-                            modifier = Modifier.padding(end = 6.dp),
-                        )
-                        Text(stringResource(R.string.trash_restore))
+                        OutlinedButton(
+                            onClick = onRestore,
+                            enabled = !busy,
+                            modifier = Modifier.testTag("trash-restore"),
+                        ) {
+                            Icon(
+                                PhosphorIcons.ClockCounterClockwise,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 6.dp),
+                            )
+                            Text(stringResource(R.string.trash_restore))
+                        }
+                        TextButton(
+                            onClick = onPurge,
+                            enabled = !busy,
+                            colors =
+                                ButtonDefaults.textButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error
+                                ),
+                            modifier = Modifier.testTag("trash-purge"),
+                        ) {
+                            Text(stringResource(R.string.trash_purge))
+                        }
                     }
-                    TextButton(
-                        onClick = onPurge,
-                        enabled = !busy,
-                        colors =
-                            ButtonDefaults.textButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            ),
-                        modifier = Modifier.testTag("trash-purge"),
-                    ) {
-                        Text(stringResource(R.string.trash_purge))
-                    }
+                } else {
+                    Text(
+                        stringResource(R.string.trash_cannot_restore),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp).testTag("trash-cannot-restore"),
+                    )
                 }
             }
         }

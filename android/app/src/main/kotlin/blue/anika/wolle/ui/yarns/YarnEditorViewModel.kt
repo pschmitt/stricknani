@@ -41,6 +41,7 @@ import blue.anika.wolle.ui.imports.EditorImportState
 import blue.anika.wolle.ui.imports.ImportNotice
 import blue.anika.wolle.ui.imports.LinkImportSession
 import blue.anika.wolle.ui.navigation.Route
+import blue.anika.wolle.ui.trash.restoredInOrder
 import blue.anika.wolle.ui.trash.trashedByYarnSave
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -208,6 +209,9 @@ constructor(
     /** The form as loaded (or empty for a new record); [isDirty] compares against it. */
     private val _initialForm = MutableStateFlow(YarnEditorFormState())
 
+    /** The form as loaded: the server photos removed in [form] are still listed here. */
+    val initialForm: StateFlow<YarnEditorFormState> = _initialForm.asStateFlow()
+
     /** True once anything differs from what was loaded - leaving then asks before discarding. */
     val isDirty: StateFlow<Boolean> =
         combine(_form, _initialForm) { current, initial -> current != initial }
@@ -355,8 +359,21 @@ constructor(
                         removedPhotoIds = it.removedPhotoIds - photoId,
                     )
                 }
-            }
+            },
+            toTrash = true,
         )
+    }
+
+    /** Puts a removed server photo back at its original place (the persistent Undo). */
+    fun restorePhoto(photoId: Int) {
+        val initial = _initialForm.value.existingPhotos
+        updateForm {
+            it.copy(
+                existingPhotos =
+                    restoredInOrder(it.existingPhotos, initial, photoId) { photo -> photo.id },
+                removedPhotoIds = it.removedPhotoIds - photoId,
+            )
+        }
     }
 
     fun save() {

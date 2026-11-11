@@ -394,16 +394,29 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
 
   markStage("removing the creation photo before subsequent editor checks");
   await clickTileDelete(page, page.locator(".reorder-item").first());
-  const creationPhotoDialog = page.getByRole("dialog", {
-    name: "Remove this project photo?",
+  // The removal is staged: no dialog, no request, and Save becomes available.
+  await page.getByTestId("removed-media").waitFor({ state: "visible" });
+  await page.locator(".reorder-item img").waitFor({ state: "detached" });
+  const creationPhotoSave = page.getByRole("button", {
+    name: "Save changes",
     exact: true,
   });
-  await creationPhotoDialog.waitFor({ state: "visible" });
-  await creationPhotoDialog
-    .getByRole("button", { name: "Remove", exact: true })
-    .click();
-  await creationPhotoDialog.waitFor({ state: "hidden" });
+  check(
+    (await creationPhotoSave.isEnabled()) &&
+      !st.projectMutationRequests.some(
+        ([method, path]) =>
+          method === "DELETE" && path.startsWith(`${projectApiPath}/images/`),
+      ),
+    "removing the creation photo reached the server before Save",
+  );
+  await creationPhotoSave.click();
+  await page.waitForURL(`**${editorPath}`);
+  await statusFeedback("What you removed is in the trash").waitFor({
+    state: "visible",
+  });
+  await openSavedEditor();
   await page.locator(".reorder-item img").waitFor({ state: "detached" });
+  await page.getByTestId("saved-state").waitFor({ state: "visible" });
 
   markStage("checking project editor Cancel dirty guard");
   let projectName = page.getByLabel("Project name", { exact: true });
@@ -749,7 +762,7 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
   // The new photo opens its editor right away; close it again.
   await dismissPhotoEditor(page);
 
-  markStage("checking project photo removal confirmation while busy");
+  markStage("staging a project photo removal until Save");
   const projectPhotoRemove = page.getByRole("button", {
     name: "Remove photo",
     exact: true,
@@ -758,18 +771,21 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
     (await projectPhotoRemove.count()) === 1,
     "the uploaded project photo has no unique removal action",
   );
+  const imageDeleteCount = st.projectMutationRequests.length;
   await clickTileDelete(page, page.locator(".reorder-item").first());
-  const imageDialog = page.getByRole("dialog", {
-    name: "Remove this project photo?",
-    exact: true,
-  });
-  await imageDialog.waitFor({ state: "visible" });
-  await imageDialog
-    .getByRole("button", { name: "Cancel", exact: true })
-    .click();
-  await imageDialog.waitFor({ state: "hidden" });
+  const removedMedia = page.getByTestId("removed-media");
+  await removedMedia.waitFor({ state: "visible" });
+  await page.locator(".reorder-item img").waitFor({ state: "detached" });
+  check(
+    st.projectMutationRequests.length === imageDeleteCount,
+    "removing a project photo sent a request before Save",
+  );
+  await removedMedia.getByTestId("removed-media-restore").click();
+  await page.locator(".reorder-item img").waitFor({ state: "visible" });
+  await removedMedia.waitFor({ state: "hidden" });
+  await page.getByTestId("saved-state").waitFor({ state: "visible" });
   await clickTileDelete(page, page.locator(".reorder-item").first());
-  await imageDialog.waitFor({ state: "visible" });
+  await removedMedia.waitFor({ state: "visible" });
 
   const projectImageDeleteUrl = `**/api/v2/projects/${editorProjectId}/images/*`;
   const heldProjectImageDeletes: Route[] = [];
@@ -781,52 +797,41 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
     }
   };
   await page.route(projectImageDeleteUrl, holdProjectImageDelete);
-  const imageDeleteCount = st.projectMutationRequests.length;
-  await imageDialog
-    .getByRole("button", { name: "Remove", exact: true })
-    .click();
-  const imageRemoveButton = imageDialog.getByRole("button", {
-    name: "Remove",
+  const saveWithRemoval = page.getByRole("button", {
+    name: "Saving…",
     exact: true,
   });
-  const imageCancelButton = imageDialog.getByRole("button", {
-    name: "Cancel",
-    exact: true,
-  });
-  await expect(imageRemoveButton).toBeDisabled();
-  await expect(imageCancelButton).toBeDisabled();
-  const imageDeleteMutation = lastMutation();
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await expect.poll(() => heldProjectImageDeletes.length).toBe(1);
   check(
-    heldProjectImageDeletes.length === 1 &&
-      st.projectMutationRequests.length === imageDeleteCount + 1 &&
-      imageDeleteMutation !== undefined &&
-      imageDeleteMutation[0] === "DELETE" &&
-      (await imageDialog.isVisible()) &&
-      (await imageRemoveButton.isDisabled()) &&
-      (await imageCancelButton.isDisabled()),
-    "project photo removal did not hold one request with disabled actions",
+    (await saveWithRemoval.count()) === 1 &&
+      (await saveWithRemoval.isDisabled()),
+    "saving a staged project photo removal did not hold the Save button busy",
   );
-  await page.keyboard.press("Escape");
-  await imageDialog.waitFor({ state: "visible" });
-  await page.keyboard.press("Enter");
+  await page.keyboard.press("Control+s");
   await waitTwoAnimationFrames(page);
   check(
-    st.projectMutationRequests.length === imageDeleteCount + 1,
-    "busy project photo confirmation allowed a duplicate request",
+    heldProjectImageDeletes.length === 1,
+    "a busy save allowed a duplicate photo removal request",
   );
   await heldProjectImageDeletes[0].continue();
   await page.unroute(projectImageDeleteUrl, holdProjectImageDelete);
-  await page.locator(".reorder-item img").waitFor({ state: "detached" });
+  await page.waitForURL(`**${editorPath}`);
+  await statusFeedback("What you removed is in the trash").waitFor({
+    state: "visible",
+  });
   check(
-    (await page
-      .getByText("or drop images here", { exact: true })
-      .isVisible()) &&
-      st.projectResponses.some(
-        ([path, status]) =>
-          path.startsWith(`${projectApiPath}/images/`) && status === 204,
-      ),
-    "the confirmed photo removal did not refresh the editor",
+    st.projectResponses.some(
+      ([path, status]) =>
+        path.startsWith(`${projectApiPath}/images/`) && status === 204,
+    ),
+    "the saved photo removal did not reach the server",
   );
+  await openSavedEditor();
+  await page.locator(".reorder-item img").waitFor({ state: "detached" });
+  await page
+    .getByText("or drop images here", { exact: true })
+    .waitFor({ state: "visible" });
 
   markStage("confirming project deletion through the editor");
   await page

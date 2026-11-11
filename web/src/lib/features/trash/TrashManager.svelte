@@ -352,10 +352,15 @@
             {#if item.parent}
               <p class="trash__meta">{parentLabel(item)}</p>
             {/if}
-            {#if showsOwner(scope, item) && item.owner}
+            {#if showsOwner(scope, item, session.data?.user?.id) && item.owner}
               <p class="trash__meta trash__owner">
                 <OwnerBadge owner={item.owner} {locale} />
-                <span>{item.owner.name}</span>
+                <span
+                  >{t("Owner: {name}", locale).replace(
+                    "{name}",
+                    item.owner.name,
+                  )}</span
+                >
               </p>
             {/if}
             <p class="trash__meta">
@@ -371,26 +376,35 @@
             </p>
           </div>
           <div class="trash__actions">
-            <Button
-              variant="secondary"
-              icon="reset"
-              type="button"
-              disabled={busyKey !== null}
-              data-testid="trash-restore"
-              onclick={() => void restore(item)}
-            >
-              {busy ? t("Restoring…", locale) : t("Restore", locale)}
-            </Button>
-            <Button
-              variant="danger"
-              icon="action-delete"
-              type="button"
-              disabled={busyKey !== null}
-              data-testid="trash-purge"
-              onclick={() => askPurge(item)}
-            >
-              {t("Delete forever", locale)}
-            </Button>
+            {#if item.can_restore}
+              <Button
+                variant="secondary"
+                icon="reset"
+                type="button"
+                disabled={busyKey !== null}
+                data-testid="trash-restore"
+                onclick={() => void restore(item)}
+              >
+                {busy ? t("Restoring…", locale) : t("Restore", locale)}
+              </Button>
+              <Button
+                variant="danger"
+                icon="action-delete"
+                type="button"
+                disabled={busyKey !== null}
+                data-testid="trash-purge"
+                onclick={() => askPurge(item)}
+              >
+                {t("Delete forever", locale)}
+              </Button>
+            {:else}
+              <p class="trash__meta">
+                {t(
+                  "Only the owner or an administrator can restore this.",
+                  locale,
+                )}
+              </p>
+            {/if}
           </div>
         </li>
       {/each}

@@ -120,6 +120,9 @@ pub struct TrashItem {
     pub id: i64,
     pub name: String,
     pub owner: Option<OwnerInfo>,
+    /// Whether the caller may restore or delete the item: its owner and
+    /// administrators. The rest only see what they trashed themselves.
+    pub can_restore: bool,
     pub deleted_at: String,
     /// When the server destroys the item unless it is restored.
     pub purge_at: String,
@@ -186,8 +189,9 @@ struct ListRow {
     thumbnail_url: Option<String>,
 }
 
-/// Items in the trash, newest deletion first. `Mine` lists the caller's own;
-/// `All` is for administrators and lists every account's.
+/// Items in the trash, newest deletion first. `Mine` lists the caller's own and
+/// what the caller trashed in somebody else's project or yarn (the item names
+/// its owner); `All` is for administrators and lists every account's.
 pub(crate) async fn list(
     state: &AppState,
     actor_id: i64,
@@ -204,17 +208,17 @@ pub(crate) async fn list(
         (
             "project",
             "SELECT id, name, owner_id, deleted_at FROM projects \
-             WHERE deleted_at IS NOT NULL AND (?1 IS NULL OR owner_id = ?1)",
+             WHERE deleted_at IS NOT NULL AND (?1 IS NULL OR owner_id = ?1 OR deleted_by = ?1)",
         ),
         (
             "yarn",
             "SELECT id, name, owner_id, deleted_at FROM yarns \
-             WHERE deleted_at IS NOT NULL AND (?1 IS NULL OR owner_id = ?1)",
+             WHERE deleted_at IS NOT NULL AND (?1 IS NULL OR owner_id = ?1 OR deleted_by = ?1)",
         ),
         (
             "category",
             "SELECT id, name, user_id, deleted_at FROM trashed_categories \
-             WHERE ?1 IS NULL OR user_id = ?1",
+             WHERE ?1 IS NULL OR user_id = ?1 OR deleted_by = ?1",
         ),
     ] {
         for row in sqlx::query(sql).bind(owner).fetch_all(&state.pool).await? {
@@ -235,7 +239,7 @@ pub(crate) async fn list(
     for row in sqlx::query(
         "SELECT s.id, s.title, s.owner_id, s.deleted_at, p.id, p.name \
          FROM trashed_steps s JOIN projects p ON p.id = s.project_id \
-         WHERE p.deleted_at IS NULL AND (?1 IS NULL OR s.owner_id = ?1)",
+         WHERE p.deleted_at IS NULL AND (?1 IS NULL OR s.owner_id = ?1 OR s.deleted_by = ?1)",
     )
     .bind(owner)
     .fetch_all(&state.pool)
@@ -264,7 +268,7 @@ pub(crate) async fn list(
          FROM trashed_media m \
          LEFT JOIN projects p ON p.id = m.project_id \
          LEFT JOIN yarns y ON y.id = m.yarn_id \
-         WHERE m.with_step = 0 AND (?1 IS NULL OR m.owner_id = ?1) \
+         WHERE m.with_step = 0 AND (?1 IS NULL OR m.owner_id = ?1 OR m.deleted_by = ?1) \
            AND COALESCE(p.deleted_at, y.deleted_at) IS NULL \
            AND (m.step_id IS NULL OR NOT EXISTS (SELECT 1 FROM trashed_steps s WHERE s.id = m.step_id))",
     )
@@ -311,6 +315,7 @@ pub(crate) async fn list(
     rows.sort_by(|a, b| (&b.deleted_at, a.kind, b.id).cmp(&(&a.deleted_at, b.kind, a.id)));
     rows.truncate(LIST_LIMIT as usize);
     let now = Utc::now();
+    let actor_is_admin = resource_access::is_active_admin(&state.pool, actor_id).await?;
     let mut owners = std::collections::HashMap::new();
     let mut items = Vec::with_capacity(rows.len());
     for row in rows {
@@ -333,6 +338,7 @@ pub(crate) async fn list(
             id: row.id,
             name: row.name,
             owner: owners.get(&row.owner_id).cloned().flatten(),
+            can_restore: actor_is_admin || row.owner_id == actor_id,
             purge_at: stamp(trashed + Duration::days(RETENTION_DAYS)),
             days_remaining: days_remaining(trashed, now),
             deleted_at: row.deleted_at,

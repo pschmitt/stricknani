@@ -3,6 +3,7 @@ package blue.anika.wolle.ui.trash
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.dto.TRASH_RETENTION_DAYS
 import blue.anika.wolle.data.api.dto.TrashItemDto
 import blue.anika.wolle.data.db.dao.PendingMutationDao
@@ -26,10 +27,12 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -63,7 +66,15 @@ constructor(
     private val syncScheduler: SyncScheduler,
     private val feedback: MutationFeedback,
     private val mediaUrlResolver: MediaUrlResolver,
+    capabilities: ApiCapabilities,
 ) : ViewModel() {
+    /** The signed-in user's id; null while unknown (a legacy server). */
+    val currentUserId: StateFlow<Long?> =
+        capabilities.state
+            .map { it.user?.id }
+            .distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
     private val _state = MutableStateFlow(TrashState())
     val state: StateFlow<TrashState> = _state.asStateFlow()
 

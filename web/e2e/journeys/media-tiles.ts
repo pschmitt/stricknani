@@ -409,8 +409,8 @@ async function checkMakeCover(
     announced &&
       after[0] === before[1] &&
       after[1] === before[0] &&
-      requests.length === 1,
-    `${tag}: Make cover moves the photo to the front with one request`,
+      requests.length === 0,
+    `${tag}: Make cover moves the photo to the front and sends nothing before Save`,
     `(${JSON.stringify(before)} -> ${JSON.stringify(after)}, ` +
       `${requests.length} request(s))`,
   );

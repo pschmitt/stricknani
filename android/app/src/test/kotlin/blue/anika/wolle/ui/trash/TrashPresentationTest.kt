@@ -10,7 +10,9 @@ import blue.anika.wolle.data.repository.TrashRef
 import blue.anika.wolle.data.repository.trashFailureFor
 import blue.anika.wolle.data.repository.trashSegment
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TrashPresentationTest {
@@ -72,6 +74,47 @@ class TrashPresentationTest {
 
         assertEquals("Anika", trashRow(item, showOwner = true).ownerName)
         assertNull(trashRow(item.copy(owner = null), showOwner = true).ownerName)
+    }
+
+    @Test
+    fun `an item owned by somebody else names the owner even outside the all scope`() {
+        val item =
+            TrashItemDto(
+                kind = "image",
+                id = 4,
+                owner = OwnerDto(id = 2, email = "a@example.com", name = "Anika"),
+                canRestore = false,
+            )
+
+        val foreign = trashRow(item, showOwner = false, currentUserId = 1)
+        assertEquals("Anika", foreign.ownerName)
+        assertTrue(foreign.ownerIsForeign)
+        assertFalse(foreign.canRestore)
+
+        val own = trashRow(item, showOwner = false, currentUserId = 2)
+        assertNull(own.ownerName)
+        assertFalse(own.ownerIsForeign)
+
+        // Unknown user (legacy server): nothing is marked foreign.
+        assertNull(trashRow(item, showOwner = false, currentUserId = null).ownerName)
+        // The all scope still names every owner, but only a foreign one reads "Owner: X".
+        val all = trashRow(item, showOwner = true, currentUserId = 2)
+        assertEquals("Anika", all.ownerName)
+        assertFalse(all.ownerIsForeign)
+    }
+
+    @Test
+    fun `an owner without a name is shown by email`() {
+        val item = TrashItemDto(kind = "photo", id = 4, owner = OwnerDto(2, "a@example.com", ""))
+        assertEquals(
+            "a@example.com",
+            trashRow(item, showOwner = false, currentUserId = 1).ownerName,
+        )
+    }
+
+    @Test
+    fun `an item can be restored unless the server says it cannot`() {
+        assertTrue(trashRow(TrashItemDto(kind = "step", id = 1), showOwner = false).canRestore)
     }
 
     @Test

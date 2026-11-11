@@ -902,6 +902,13 @@
     <string name="editor_photo_reorder_hint">Zum Sortieren ziehen. Das erste Foto ist das Titelbild.</string>
     <string name="project_editor_step_removed">Schritt entfernt</string>
     <string name="editor_photo_removed">Foto entfernt.</string>
+    <string name="editor_photo_removed_to_trash">Entfernt. Beim Speichern landet es im Papierkorb.</string>
+    <string name="editor_staged_title">Wird beim Speichern entfernt</string>
+    <string name="editor_staged_hint">Was du entfernst, bleibt 90 Tage im Papierkorb.</string>
+    <string name="editor_staged_photo_label">Foto %1$d</string>
+    <string name="editor_all_saved">Alle Änderungen gespeichert</string>
+    <string name="trash_owner">Besitzer: %1$s</string>
+    <string name="trash_cannot_restore">Nur der Besitzer oder ein Administrator kann das wiederherstellen.</string>
     <string name="project_editor_tags_placeholder">Schlagwörter hinzufügen…</string>
     <string name="project_editor_tags_suggestions">Tag-Vorschläge</string>
     <string name="project_editor_tag_remove">Schlagwort %1$s entfernen</string>

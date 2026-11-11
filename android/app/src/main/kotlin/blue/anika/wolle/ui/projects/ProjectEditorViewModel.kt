@@ -58,6 +58,7 @@ import blue.anika.wolle.ui.imports.ImportNotice
 import blue.anika.wolle.ui.imports.LinkImportSession
 import blue.anika.wolle.ui.imports.PickedFileResult
 import blue.anika.wolle.ui.navigation.Route
+import blue.anika.wolle.ui.trash.restoredInOrder
 import blue.anika.wolle.ui.trash.trashedByProjectSave
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -308,6 +309,9 @@ constructor(
 
     /** The form as loaded (or empty for a new record); [isDirty] compares against it. */
     private val _initialForm = MutableStateFlow(ProjectEditorFormState())
+
+    /** The form as loaded: the server images removed in [form] are still listed here. */
+    val initialForm: StateFlow<ProjectEditorFormState> = _initialForm.asStateFlow()
 
     /** True once anything differs from what was loaded - leaving then asks before discarding. */
     val isDirty: StateFlow<Boolean> =
@@ -656,8 +660,35 @@ constructor(
                         removedImageIds = it.removedImageIds - imageId,
                     )
                 }
-            }
+            },
+            toTrash = true,
         )
+    }
+
+    /** Puts a removed server title image back at its original place (the persistent Undo). */
+    fun restoreTitleImage(imageId: Int) {
+        val initial = _initialForm.value.existingTitleImages
+        updateForm {
+            it.copy(
+                existingTitleImages =
+                    restoredInOrder(it.existingTitleImages, initial, imageId) { image -> image.id },
+                removedImageIds = it.removedImageIds - imageId,
+            )
+        }
+    }
+
+    /** Puts a removed server step image back at its original place (the persistent Undo). */
+    fun restoreStepImage(stepIndex: Int, imageId: Int) {
+        val stepId = _form.value.steps.getOrNull(stepIndex)?.id ?: return
+        val initial =
+            _initialForm.value.steps.firstOrNull { it.id == stepId }?.existingImages ?: return
+        updateStep(stepIndex) {
+            it.copy(
+                existingImages =
+                    restoredInOrder(it.existingImages, initial, imageId) { image -> image.id }
+            )
+        }
+        updateForm { it.copy(removedImageIds = it.removedImageIds - imageId) }
     }
 
     /** Moves a server title image to another place; the first one is the project cover. */
@@ -731,7 +762,8 @@ constructor(
                     it.copy(existingImages = it.existingImages.inserted(index, image))
                 }
                 updateForm { it.copy(removedImageIds = it.removedImageIds - imageId) }
-            }
+            },
+            toTrash = true,
         )
     }
 

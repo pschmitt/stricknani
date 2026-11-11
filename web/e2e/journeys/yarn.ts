@@ -616,27 +616,53 @@ export async function runYarnJourney(
       "uploaded photo did not appear in the yarn gallery",
     );
     const newPhoto = page.locator(".reorder-item").nth(newPhotoIndex);
-    markStage("opening photo removal confirmation");
+    markStage("staging the photo removal");
+    const photoDeletes = () =>
+      observed.filter(
+        ([method, , p]) => method === "DELETE" && p.includes("/photos/"),
+      ).length;
+    const deletesBefore = photoDeletes();
     await newPhoto.hover();
     await newPhoto.getByRole("button", { name: "Remove photo" }).click();
-    const photoDialog = page.getByRole("dialog", {
-      name: "Remove this photo?",
-    });
-    markStage("waiting for photo removal confirmation");
-    await photoDialog.waitFor({ state: "visible" });
-    markStage("cancelling the photo removal confirmation");
-    await page.keyboard.press("Escape");
-    await photoDialog.waitFor({ state: "hidden" });
-    markStage("reopening photo removal confirmation");
-    await newPhoto.getByRole("button", { name: "Remove photo" }).click();
-    await photoDialog.waitFor({ state: "visible" });
-    markStage("confirming photo removal");
-    await photoDialog.getByRole("button", { name: "Remove photo" }).click();
+    // No confirmation dialog and no request: the removal waits for Save.
+    const removedList = page.getByTestId("removed-media");
+    await removedList.waitFor({ state: "visible" });
+    await page.waitForFunction(
+      (expected) =>
+        document.querySelectorAll(".reorder-item").length === expected,
+      beforePhotoCount,
+    );
+    check(
+      photoDeletes() === deletesBefore,
+      "removing a yarn photo reached the server before Save",
+    );
+    check(
+      (await page.getByRole("button", { name: "Save changes" }).isEnabled()) &&
+        (await page.getByTestId("saved-state").count()) === 0,
+      "staging a yarn photo removal did not enable Save",
+    );
+    markStage("undoing the staged photo removal");
+    await removedList.getByTestId("removed-media-restore").click();
+    await removedList.waitFor({ state: "hidden" });
+    await page.waitForFunction(
+      (expected) =>
+        document.querySelectorAll(".reorder-item").length === expected,
+      beforePhotoCount + 1,
+    );
+    await page.getByTestId("saved-state").waitFor({ state: "visible" });
+    markStage("removing the photo again and saving");
+    await page
+      .locator(".reorder-item")
+      .nth(newPhotoIndex)
+      .getByRole("button", { name: "Remove photo" })
+      .click();
+    await removedList.waitFor({ state: "visible" });
+    await page.getByRole("button", { name: "Save changes" }).click();
     markStage("waiting for yarn photo removal result");
     try {
       await page
         .getByRole("status")
-        .filter({ hasText: "Photo removed." })
+        .filter({ hasText: "What you removed is in the trash" })
         .waitFor({ state: "visible", timeout: 15_000 });
     } catch (error) {
       if (!(error instanceof errors.TimeoutError)) throw error;
@@ -649,7 +675,10 @@ export async function runYarnJourney(
           `(API status ${removeStatus ?? "not observed"})`,
       );
     }
-    await page.locator(".reorder-item").waitFor({ state: "visible" });
+    check(
+      photoDeletes() === deletesBefore + 1,
+      "saving did not remove the staged yarn photo exactly once",
+    );
     check(
       observed.some(
         ([, status, p]) =>
@@ -657,6 +686,11 @@ export async function runYarnJourney(
       ),
       "yarn photo upload or removal did not reach API v2",
     );
+    markStage("reopening the yarn editor after the save");
+    await page.waitForURL(`**/app/yarns/${yarnId}`);
+    await page.getByRole("link", { name: "Edit yarn", exact: true }).click();
+    await page.waitForURL(`**/app/yarns/${yarnId}/edit`);
+    await page.locator(".reorder-item").first().waitFor({ state: "visible" });
 
     markStage("dropping files on the yarn photo section");
     const dropPhotoUrls = await page
@@ -726,13 +760,15 @@ export async function runYarnJourney(
     const droppedPhoto = page.locator(".reorder-item").nth(droppedIndex);
     await droppedPhoto.hover();
     await droppedPhoto.getByRole("button", { name: "Remove photo" }).click();
-    const dropDialog = page.getByRole("dialog", { name: "Remove this photo?" });
-    await dropDialog.waitFor({ state: "visible" });
-    await dropDialog.getByRole("button", { name: "Remove photo" }).click();
+    await page.getByTestId("removed-media").waitFor({ state: "visible" });
+    await page.getByRole("button", { name: "Save changes" }).click();
     await page
       .getByRole("status")
-      .filter({ hasText: "Photo removed." })
+      .filter({ hasText: "What you removed is in the trash" })
       .waitFor({ state: "visible", timeout: 15_000 });
+    await page.waitForURL(`**/app/yarns/${yarnId}`);
+    await page.getByRole("link", { name: "Edit yarn", exact: true }).click();
+    await page.waitForURL(`**/app/yarns/${yarnId}/edit`);
     await page.waitForFunction(
       (previous) =>
         document.querySelectorAll(".reorder-item").length === previous,

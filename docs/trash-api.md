@@ -59,9 +59,12 @@ Owner or administrator only; anyone else gets `404`.
   chip use them (Android fetches them online: trashed items are not synced into
   Room) and open the read-only trashed page of the item.
 
-* `GET /api/v2/trash?scope=mine|all` lists the caller's trash
+* `GET /api/v2/trash?scope=mine|all` lists the caller's trash: the items the
+  caller owns plus those the caller trashed in somebody else's project or yarn
+  (`owner` names the owner; `can_restore` is false when the caller is neither
+  owner nor administrator, who may restore and purge only)
   (`all`: administrators only, others always get `mine`):
-  `{"data": [{kind, id, name, owner, deleted_at, purge_at, days_remaining,
+  `{"data": [{kind, id, name, owner, can_restore, deleted_at, purge_at, days_remaining,
   parent?, detail?, thumbnail_url?}], "meta": {"scope", "retention_days": 90}}`. `kind` is
   `project`, `yarn`, `category`, `step`, `image`, `attachment` or `photo`.
   Children carry `parent` (`{kind: "project"|"yarn", id, name}`).

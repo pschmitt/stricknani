@@ -42,6 +42,12 @@ data class TrashItemDto(
      * administrator-scoped `/media/...` path that also works while the item is in the trash.
      */
     @SerialName("thumbnail_url") val thumbnailUrl: String? = null,
+    /**
+     * False when the caller trashed the item in someone else's project or yarn: only the owner or
+     * an administrator may restore or delete it for good. Absent on an older server, which only
+     * lists items the caller may restore.
+     */
+    @SerialName("can_restore") val canRestore: Boolean = true,
 )
 
 @Serializable
