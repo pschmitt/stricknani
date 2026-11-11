@@ -101,10 +101,6 @@
       </button>
     </dialog>
   {/if}
-{:else}
-  <span class="media-gone" data-audit-media-deleted>
-    {isFile ? t("File deleted", locale) : t("Picture deleted", locale)}
-  </span>
 {/if}
 
 <style>
@@ -142,11 +138,6 @@
   }
   .media-note--deleted .media-note__name {
     text-decoration: line-through;
-  }
-  .media-gone {
-    color: var(--ink-muted);
-    font-size: 0.85rem;
-    white-space: nowrap;
   }
   .media-dialog {
     max-width: min(92vw, 60rem);

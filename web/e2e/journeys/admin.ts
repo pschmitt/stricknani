@@ -2835,7 +2835,7 @@ async function runAcceptance(
             (row) =>
               !row.querySelector(
                 ".show-diff, [data-audit-media-show], [data-audit-media-open], " +
-                  "[data-audit-media-deleted], [data-audit-no-details]",
+                  "[data-audit-media-note], [data-audit-no-details]",
               ),
           ).length,
       );
@@ -3046,8 +3046,10 @@ async function runAcceptance(
     await deletedFileRow.waitFor({ state: "visible" });
     check(
       (await deletedFileRow.locator(".media-note--deleted").count()) === 1 &&
-        (await deletedFileRow.locator("[data-audit-media-deleted]").count()) ===
-          1 &&
+        (await deletedFileRow
+          .locator("[data-audit-media-note]")
+          .getByText("deleted", { exact: false })
+          .count()) === 1 &&
         (await deletedFileRow
           .getByRole("link", { name: "Open file" })
           .count()) === 0,

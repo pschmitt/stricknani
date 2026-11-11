@@ -74,7 +74,7 @@ describe("AuditMediaPreview", () => {
     expect(body).toContain("Open file");
   });
 
-  it("says a deleted picture or file is deleted instead of linking", () => {
+  it("omits the action control for deleted media", () => {
     for (const [media, text] of [
       [gone(picture), "Picture deleted"],
       [gone(file), "File deleted"],
@@ -82,8 +82,8 @@ describe("AuditMediaPreview", () => {
       const { body } = render(AuditMediaPreview, {
         props: { media, locale: "en" as const },
       });
-      expect(body).toContain("data-audit-media-deleted");
-      expect(body).toContain(text);
+      expect(body).not.toContain("data-audit-media-deleted");
+      expect(body).not.toContain(text);
       expect(body).not.toContain("href=");
       expect(body).not.toContain("<img");
     }
@@ -96,6 +96,19 @@ describe("AuditMediaPreview", () => {
     expect(note).toContain("chart.pdf");
     expect(note).toContain("File");
     expect(note).toContain("deleted");
+  });
+
+  it("keeps deleted media status in the note variant", () => {
+    const { body } = render(AuditMediaPreview, {
+      props: {
+        media: gone(picture),
+        locale: "en" as const,
+        variant: "note" as const,
+      },
+    });
+    expect(body).toContain("front.png");
+    expect(body).toContain("Picture");
+    expect(body).toContain("deleted");
   });
 });
 
