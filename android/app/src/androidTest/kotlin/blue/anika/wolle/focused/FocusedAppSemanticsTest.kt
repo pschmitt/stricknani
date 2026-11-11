@@ -96,9 +96,7 @@ class FocusedAppSemanticsTest {
         composeRule.onNodeWithText("Yarns").performClick()
         waitForText("Riverbend Merino DK", timeoutMillis = 120_000)
         composeRule.onNodeWithContentDescription("Search").performClick()
-        composeRule
-            .onNodeWithContentDescription("Search")
-            .performTextInput("focused-no-yarn-match")
+        composeRule.onNodeWithContentDescription("Search").performTextInput("focused-no-yarn-match")
         waitForText("No yarn matches those filters.")
 
         composeRule.onNodeWithText("Search").performClick()
