@@ -191,10 +191,9 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
   );
   markStage("filling the project notes");
   const notesField = page.getByRole("textbox", { name: "Notes", exact: true });
-  await fillMarkdownField(
-    notesField,
-    "Check the width after each repeat.\n\nMeasure the next repeat.",
-  );
+  await fillMarkdownField(notesField, "Check the width after each repeat.");
+  await page.keyboard.press("Enter");
+  await page.keyboard.type("Measure the next repeat.");
   await waitTwoAnimationFrames(page);
   const notesLayout = await page
     .locator(".sticky-field .md-editor__content")
