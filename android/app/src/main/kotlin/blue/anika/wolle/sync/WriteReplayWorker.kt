@@ -246,7 +246,8 @@ constructor(
                     }
                 }
             }
-            MutationOperation.DELETE -> projectRepository.replayDelete(mutation.localId)
+            MutationOperation.DELETE ->
+                projectRepository.replayDelete(mutation.localId, mutation.createdAt)
             MutationOperation.PROJECT_TITLE_IMAGE_UPLOAD -> {
                 val upload = json.decodeFromString<PendingUpload>(mutation.payloadJson!!)
                 projectRepository.replayTitleImageUpload(mutation.localId, upload)
