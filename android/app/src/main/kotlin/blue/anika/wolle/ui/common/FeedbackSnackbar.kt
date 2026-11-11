@@ -51,21 +51,28 @@ enum class FeedbackKind {
 }
 
 /**
- * [SnackbarVisuals] that carry a [kind]. Success and info messages leave after the standard short
- * time; errors and offline notes stay until dismissed, so they can not be missed.
+ * How long a message of [kind] stays. Success, info and offline notes ("Project created." parked
+ * for the next sync) are confirmations, not problems: they leave on their own, after the short
+ * standard time, or the long one when there is an action to reach (Undo). Only errors stay until
+ * dismissed, so a failure can not be missed. The host scales finite durations for accessibility
+ * (TalkBack timeouts), so none of them vanishes before it can be read out.
  */
+internal fun feedbackDuration(kind: FeedbackKind, hasAction: Boolean): SnackbarDuration =
+    when (kind) {
+        FeedbackKind.Error -> SnackbarDuration.Indefinite
+        FeedbackKind.Success,
+        FeedbackKind.Info,
+        FeedbackKind.Offline ->
+            if (hasAction || kind == FeedbackKind.Offline) SnackbarDuration.Long
+            else SnackbarDuration.Short
+    }
+
+/** [SnackbarVisuals] that carry a [kind]; see [feedbackDuration] for how long they stay. */
 class FeedbackVisuals(
     override val message: String,
     val kind: FeedbackKind = FeedbackKind.Success,
     override val actionLabel: String? = null,
-    override val duration: SnackbarDuration =
-        when (kind) {
-            FeedbackKind.Success,
-            FeedbackKind.Info ->
-                if (actionLabel != null) SnackbarDuration.Long else SnackbarDuration.Short
-            FeedbackKind.Error,
-            FeedbackKind.Offline -> SnackbarDuration.Indefinite
-        },
+    override val duration: SnackbarDuration = feedbackDuration(kind, actionLabel != null),
 ) : SnackbarVisuals {
     override val withDismissAction: Boolean
         get() = kind == FeedbackKind.Error || kind == FeedbackKind.Offline
