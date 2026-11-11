@@ -72,12 +72,29 @@
     type UploadQueueResult,
   } from "../media/upload-queue";
   import {
-    applyOptimisticReorder,
     projectStepOrderPath,
     projectTitleOrderPath,
     putOrder,
-    replaceGroup,
   } from "../media/media-reorder";
+  import RemovedMediaList, {
+    type RemovedEntry,
+  } from "../media/RemovedMediaList.svelte";
+  import {
+    TITLE_GROUP,
+    applyStagedImages,
+    emptyStaged,
+    hasPendingMedia,
+    hasStagedMedia,
+    planMediaSave,
+    stageAttachmentRemoval,
+    stageImageRemoval,
+    stageMove,
+    stagedRemovalCount,
+    stepGroup,
+    unstageAttachmentRemoval,
+    unstageImageRemoval,
+    type StagedMedia,
+  } from "../media/media-staging";
   import {
     createProject,
     deleteProject,
@@ -103,10 +120,7 @@
 
   type LoadState = "loading" | "ready" | "not-found" | "error" | "signed-out";
   type DraftField = keyof ProjectDraft;
-  type ConfirmedAction =
-    | { kind: "project" }
-    | { kind: "image"; imageId: number }
-    | { kind: "attachment"; attachmentId: number };
+  type ConfirmedAction = { kind: "project" };
 
   let { projectId }: { projectId: number | null } = $props();
   let loadState = $state<LoadState>("loading");
@@ -129,6 +143,8 @@
   let saving = $state(false);
   let deleting = $state(false);
   let mediaBusy = $state(false);
+  /** Photo and file removals and reorders that wait for Save. */
+  let staged = $state<StagedMedia>(emptyStaged());
   let categoryLoading = $state(false);
   let yarnLoading = $state(false);
   let uploadProgress = $state<UploadProgress | null>(null);
@@ -170,7 +186,8 @@
     savedSnapshot !== JSON.stringify(draft) ||
       tagInput.trim().length > 0 ||
       queuedTitlePhotos.length > 0 ||
-      Object.values(queuedStepPhotos).some((files) => files.length > 0),
+      Object.values(queuedStepPhotos).some((files) => files.length > 0) ||
+      hasPendingMedia(project?.images ?? [], staged),
   );
   const isCreating = $derived(projectId === null);
   const resumeDraftId = $derived(
@@ -195,28 +212,60 @@
   const mediaUploadAvailable = $derived(
     mediaAvailable && session.data?.capabilities.media_upload === true,
   );
-  const mediaDeleteAvailable = $derived(
-    mediaAvailable && session.data?.capabilities.media_delete === true,
+  /** Removing and reordering only change the form, so a dirty form may do both. */
+  const stagingAvailable = $derived(
+    project !== null &&
+      projectId === project.id &&
+      !saving &&
+      !deleting &&
+      !mediaBusy &&
+      session.data?.user !== null &&
+      session.data?.user !== undefined,
   );
-  const imageGroups = $derived(
-    groupProjectImages(
-      project?.images ?? [],
-      project?.steps.map((step) => step.id) ?? [],
+  const mediaDeleteAvailable = $derived(
+    stagingAvailable && session.data?.capabilities.media_delete === true,
+  );
+  /** The photos as the form shows them: staged removals hidden, staged orders applied. */
+  const viewImages = $derived(applyStagedImages(project?.images ?? [], staged));
+  const viewAttachments = $derived(
+    (project?.attachments ?? []).filter(
+      (attachment) => !staged.removedAttachmentIds.includes(attachment.id),
     ),
+  );
+  const removedEntries = $derived<RemovedEntry[]>([
+    ...(project?.images ?? [])
+      .filter((image) => staged.removedImageIds.includes(image.id))
+      .map((image) => ({
+        key: `image:${image.id}`,
+        thumbnailUrl: image.thumbnail_url,
+        label: image.alt_text ?? t("Project photo", locale),
+        restoreLabel: t("Undo removing this photo", locale),
+      })),
+    ...(project?.attachments ?? [])
+      .filter((attachment) =>
+        staged.removedAttachmentIds.includes(attachment.id),
+      )
+      .map((attachment) => ({
+        key: `attachment:${attachment.id}`,
+        label: attachment.original_filename ?? attachment.filename,
+        restoreLabel: t("Undo removing this file", locale),
+      })),
+  ]);
+  const imageGroups = $derived(
+    groupProjectImages(viewImages, project?.steps.map((step) => step.id) ?? []),
   );
   const titleImages = $derived(imageGroups.gallery);
   const stepImageGroups = $derived(
     (project?.steps ?? [])
       .map((step) => ({
         step,
-        images:
-          project?.images.filter((image) => image.step_id === step.id) ?? [],
+        images: viewImages.filter((image) => image.step_id === step.id),
       }))
       .filter((group) => group.images.length > 0),
   );
   function imagesOfStep(stepId: number | undefined): ProjectImage[] {
     if (stepId === undefined) return [];
-    return project?.images.filter((image) => image.step_id === stepId) ?? [];
+    return viewImages.filter((image) => image.step_id === stepId);
   }
   const otherImages = $derived(imageGroups.orphans);
   const saveDisabled = $derived(
@@ -235,16 +284,8 @@
       };
     }),
   );
-  const confirmationTitle = $derived(
-    confirmedAction?.kind === "project"
-      ? t("Delete this project?", locale)
-      : confirmedAction?.kind === "image"
-        ? t("Remove this project photo?", locale)
-        : t("Remove this attachment?", locale),
-  );
-  const confirmationBusy = $derived(
-    confirmedAction?.kind === "project" ? deleting : mediaBusy,
-  );
+  const confirmationTitle = $derived(t("Delete this project?", locale));
+  const confirmationBusy = $derived(deleting);
 
   onMount(() => {
     const unregister = registerPwaUpdateGuard(() => ({
@@ -560,6 +601,7 @@
   function clearPrivateDraft(): void {
     const empty = blankProjectDraft();
     createdProject = null;
+    staged = emptyStaged();
     queuedTitlePhotos = [];
     queuedStepPhotos = {};
     importState = null;
@@ -870,7 +912,36 @@
           : (project?.steps ?? [])
               .map((step) => step.id)
               .filter((stepId) => !result.steps.some((s) => s.id === stepId));
-      applyLoadedProject(result);
+      // Photo and file removals and reorders of the form go out after the project itself.
+      let savedProject = result;
+      let leftoverMedia = emptyStaged();
+      let mediaTrashed: { kind: "image" | "attachment"; id: number }[] = [];
+      let mediaFailed = false;
+      if (id !== null && project && hasPendingMedia(project.images, staged)) {
+        const applied = await applyStagedMedia(
+          id,
+          project,
+          removedStepIds,
+          currentSession,
+          controller.signal,
+        );
+        if (!isCurrentRoute(id, ownerId, generation)) return;
+        mediaTrashed = applied.trashed;
+        leftoverMedia = applied.leftover;
+        mediaFailed = hasStagedMedia(leftoverMedia);
+        savedProject = await getProject(id, controller.signal);
+        if (!isCurrentRoute(id, ownerId, generation)) return;
+      }
+      applyLoadedProject(savedProject);
+      staged = leftoverMedia;
+      if (mediaFailed) {
+        serverError = t(
+          "Saved, but some photos or files could not be removed. Save again to retry.",
+          locale,
+        );
+        publishFeedback({ ownerId, kind: "error", message: serverError });
+        return;
+      }
       if (
         id === null &&
         (queuedTitlePhotos.length ||
@@ -941,7 +1012,7 @@
         id === null
           ? t("Project created.", locale)
           : t("Project changes saved.", locale);
-      if (removedStepIds.length > 0) {
+      if (removedStepIds.length > 0 || mediaTrashed.length > 0) {
         const projectPath = resolve("/projects/[id]", {
           id: String(result.id),
         });
@@ -949,10 +1020,13 @@
           session: currentSession,
           ownerId,
           locale,
-          items: removedStepIds.map((stepId) => ({
-            kind: "step" as const,
-            id: stepId,
-          })),
+          items: [
+            ...removedStepIds.map((stepId) => ({
+              kind: "step" as const,
+              id: stepId,
+            })),
+            ...mediaTrashed,
+          ],
           // The project page loads itself once: reload it when it is the page on screen.
           onRestored: () =>
             window.location.pathname === projectPath
@@ -1045,6 +1119,7 @@
 
   function applyLoadedProject(value: ProjectDetail): void {
     project = value;
+    staged = emptyStaged();
     const previousSteps = draft.steps;
     draft = projectDraftFromDetail(
       value,
@@ -1126,13 +1201,13 @@
       id === null ||
       !project ||
       project.id !== id ||
-      (action.kind === "project" &&
-        (isDirty || saving || mediaBusy || deleting)) ||
-      (action.kind !== "project" && !mediaDeleteAvailable)
+      isDirty ||
+      saving ||
+      mediaBusy ||
+      deleting
     )
       return;
     confirmedAction = action;
-    mediaError = "";
     confirmationOwnerId = currentSession.user.id;
     confirmationProjectId = id;
     confirmationGeneration = routeGeneration;
@@ -1156,70 +1231,7 @@
       project.id !== id
     )
       return;
-    const isProjectDelete = action.kind === "project";
-    if (
-      isProjectDelete
-        ? isDirty || saving || mediaBusy || deleting
-        : !mediaDeleteAvailable || mediaBusy
-    )
-      return;
-    if (
-      action.kind === "image" &&
-      !project.images.some((image) => image.id === action.imageId)
-    )
-      return;
-    if (
-      action.kind === "attachment" &&
-      !project.attachments.some(
-        (attachment) => attachment.id === action.attachmentId,
-      )
-    )
-      return;
-    if (!isProjectDelete) {
-      const mutation =
-        action.kind === "image"
-          ? (
-              key: number,
-              current: NonNullable<typeof session.data>,
-              signal: AbortSignal,
-            ) => deleteProjectImage(key, action.imageId, current, signal)
-          : (
-              key: number,
-              current: NonNullable<typeof session.data>,
-              signal: AbortSignal,
-            ) =>
-              deleteProjectAttachment(
-                key,
-                action.attachmentId,
-                current,
-                signal,
-              );
-      const trashKind = action.kind;
-      const trashId =
-        action.kind === "image" ? action.imageId : action.attachmentId;
-      const succeeded = await performMediaMutation(
-        mutation,
-        "media_delete",
-        () =>
-          publishMovedToTrash({
-            session: currentSession,
-            ownerId,
-            locale,
-            kind: trashKind,
-            id: trashId,
-            onRestored: reloadProjectAfterRestore,
-          }),
-      );
-      if (
-        succeeded &&
-        isCurrentRoute(id, ownerId, generation) &&
-        confirmedAction === action
-      ) {
-        untrack(() => confirmationDialog?.close());
-        confirmedAction = null;
-      }
-      return;
-    }
+    if (isDirty || saving || mediaBusy || deleting) return;
     const controller = new AbortController();
     operationControllers.add(controller);
     deleting = true;
@@ -1358,12 +1370,45 @@
     }
   }
 
-  async function removeImage(imageId: number): Promise<void> {
-    openConfirmation({ kind: "image", imageId });
+  /**
+   * Takes a photo out of the form. Nothing reaches the server before Save; the photo shows in
+   * the "Will be removed when you save" list with an Undo, and the toast offers Undo as well.
+   */
+  function removeImage(imageId: number): void {
+    if (!mediaDeleteAvailable) return;
+    statusMessage = "";
+    staged = stageImageRemoval(staged, imageId);
+    announceStagedRemoval(
+      () => (staged = unstageImageRemoval(staged, imageId)),
+    );
   }
 
-  async function removeAttachment(attachmentId: number): Promise<void> {
-    openConfirmation({ kind: "attachment", attachmentId });
+  function removeAttachment(attachmentId: number): void {
+    if (!mediaDeleteAvailable) return;
+    statusMessage = "";
+    staged = stageAttachmentRemoval(staged, attachmentId);
+    announceStagedRemoval(
+      () => (staged = unstageAttachmentRemoval(staged, attachmentId)),
+    );
+  }
+
+  function announceStagedRemoval(undo: () => void): void {
+    const ownerId = userId;
+    if (ownerId === null) return;
+    publishFeedback({
+      ownerId,
+      kind: "success",
+      message: t("Removed. It goes to the trash when you save.", locale),
+      action: { label: t("Undo", locale), onAction: undo },
+    });
+  }
+
+  function restoreRemoved(key: string): void {
+    const [kind, rawId] = key.split(":");
+    const id = Number(rawId);
+    if (kind === "image") staged = unstageImageRemoval(staged, id);
+    else if (kind === "attachment")
+      staged = unstageAttachmentRemoval(staged, id);
   }
 
   async function performMediaMutation(
@@ -1417,80 +1462,114 @@
     }
   }
 
-  /** Reorder one image group (title images or one step) optimistically. */
-  async function reorderImages(
+  /** Stages a move inside one image group (title images or one step); Save sends the order. */
+  function reorderImages(
     stepId: number | null,
     from: number,
     to: number,
   ): Promise<boolean> {
-    const currentSession = session.data;
-    const id = projectId;
-    if (!currentSession?.user || id === null || !mediaAvailable || !project)
-      return false;
+    if (!stagingAvailable) return Promise.resolve(false);
     const group =
       stepId === null
         ? titleImages
         : (stepImageGroups.find((entry) => entry.step.id === stepId)?.images ??
           []);
-    const ownerId = currentSession.user.id;
-    const generation = routeGeneration;
-    const controller = new AbortController();
-    operationControllers.add(controller);
-    mediaBusy = true;
-    mediaError = "";
-    const reloadProject = async (): Promise<void> => {
-      const latest = await getProject(id, controller.signal);
-      if (isCurrentRoute(id, ownerId, generation)) applyLoadedProject(latest);
+    const next = stageMove(
+      staged,
+      stepId === null ? TITLE_GROUP : stepGroup(stepId),
+      group,
+      from,
+      to,
+    );
+    if (next === staged) return Promise.resolve(false);
+    statusMessage = "";
+    staged = next;
+    return Promise.resolve(true);
+  }
+
+  /**
+   * Applies the staged photo and file changes after the project itself was saved: removals first
+   * (the server moves them to the trash), then the orders of the groups that stay. Photos of a
+   * step the save removed went to the trash with that step. Returns what went to the trash and
+   * whether everything worked; what failed stays staged.
+   */
+  async function applyStagedMedia(
+    projectIdValue: number,
+    serverProject: ProjectDetail,
+    goneStepIds: number[],
+    currentSession: NonNullable<typeof session.data>,
+    signal: AbortSignal,
+  ): Promise<{
+    trashed: { kind: "image" | "attachment"; id: number }[];
+    /** What is still staged because it could not be applied. */
+    leftover: StagedMedia;
+  }> {
+    const plan = planMediaSave(
+      serverProject.images,
+      serverProject.attachments.map((attachment) => attachment.id),
+      staged,
+      new Set(goneStepIds.map(stepGroup)),
+    );
+    const trashed: { kind: "image" | "attachment"; id: number }[] = [];
+    const leftover = emptyStaged();
+    let failed = false;
+    const settle = async (
+      work: () => Promise<unknown>,
+      done?: () => void,
+      failedWith?: () => void,
+    ): Promise<void> => {
+      try {
+        await work();
+        done?.();
+      } catch (error) {
+        // Already gone on the server: nothing left to do for this one.
+        if (error instanceof ApiError && error.status === 404) done?.();
+        else {
+          failed = true;
+          failedWith?.();
+        }
+      }
     };
-    try {
-      const ok = await applyOptimisticReorder({
-        items: group,
-        from,
-        to,
-        setItems: (next) => {
-          if (project && isCurrentRoute(id, ownerId, generation))
-            project = {
-              ...project,
-              images: replaceGroup(project.images, group, next),
-            };
-        },
-        send: (ids) =>
-          putOrder(
-            stepId === null
-              ? projectTitleOrderPath(id)
-              : projectStepOrderPath(id, stepId),
-            ids,
-            currentSession,
-            controller.signal,
-          ),
-        refetch: reloadProject,
-        onError: (error) => {
-          if (
-            controller.signal.aborted ||
-            !isCurrentRoute(id, ownerId, generation)
-          )
-            return;
-          mediaError = safeError(
-            error,
-            t("The photo order could not be saved.", locale),
-          );
-          publishFeedback({ ownerId, kind: "error", message: mediaError });
-        },
-      });
-      // Reordering bumps updated_at and the canonical cover; reload both.
-      if (ok) await reloadProject();
-      return ok;
-    } catch (error) {
-      if (!controller.signal.aborted && isCurrentRoute(id, ownerId, generation))
-        mediaError = safeError(
-          error,
-          t("The project media could not be updated.", locale),
-        );
-      return false;
-    } finally {
-      operationControllers.delete(controller);
-      if (isCurrentRoute(id, ownerId, generation)) mediaBusy = false;
+    for (const imageId of plan.deleteImageIds) {
+      await settle(
+        () =>
+          deleteProjectImage(projectIdValue, imageId, currentSession, signal),
+        () => trashed.push({ kind: "image", id: imageId }),
+        () => leftover.removedImageIds.push(imageId),
+      );
     }
+    for (const attachmentId of plan.deleteAttachmentIds) {
+      await settle(
+        () =>
+          deleteProjectAttachment(
+            projectIdValue,
+            attachmentId,
+            currentSession,
+            signal,
+          ),
+        () => trashed.push({ kind: "attachment", id: attachmentId }),
+        () => leftover.removedAttachmentIds.push(attachmentId),
+      );
+    }
+    if (!failed) {
+      for (const order of plan.orders) {
+        await settle(() =>
+          putOrder(
+            order.group === TITLE_GROUP
+              ? projectTitleOrderPath(projectIdValue)
+              : projectStepOrderPath(
+                  projectIdValue,
+                  Number(order.group.slice("step:".length)),
+                ),
+            order.ids,
+            currentSession,
+            signal,
+          ),
+        );
+      }
+    }
+    if (failed) leftover.order = staged.order;
+    return { trashed, leftover };
   }
 
   function safeError(error: unknown, fallback: string): string {
@@ -1777,7 +1856,10 @@
             <h2 id="media-heading">{t("Project photos and files", locale)}</h2>
             {#if !mediaAvailable}
               <p class="field-hint">
-                {t("Save your changes before editing project media.", locale)}
+                {t(
+                  "Save your changes to add or edit photos and files. You can already remove and reorder them.",
+                  locale,
+                )}
               </p>
             {/if}
             {#if mediaAvailable && (!mediaUploadAvailable || !mediaDeleteAvailable)}
@@ -1785,10 +1867,7 @@
                 {t("Media storage is unavailable. Try again later.", locale)}
               </p>
             {/if}
-            {#if mediaError && confirmedAction?.kind !== "image" && confirmedAction?.kind !== "attachment"}<p
-                class="field-error"
-                role="alert"
-              >
+            {#if mediaError}<p class="field-error" role="alert">
                 {mediaError}
               </p>{/if}
             {#if uploadProgress}
@@ -1851,9 +1930,9 @@
                     label={t("Project cover", locale)}
                     fallbackAlt={t("Project photo", locale)}
                     showCover
-                    disabled={!mediaAvailable}
+                    disabled={!stagingAvailable}
                     onMove={(from, to) => reorderImages(null, from, to)}
-                    onDelete={(image) => void removeImage(image.id)}
+                    onDelete={(image) => removeImage(image.id)}
                     deleteDisabled={!mediaDeleteAvailable}
                     onEdit={openPhotoEditor}
                     editDisabled={!mediaUploadAvailable}
@@ -1875,7 +1954,7 @@
                     fallbackAlt={t("Project photo", locale)}
                     reorderable={false}
                     onMove={async () => false}
-                    onDelete={(image) => void removeImage(image.id)}
+                    onDelete={(image) => removeImage(image.id)}
                     deleteDisabled={!mediaDeleteAvailable}
                     onEdit={openPhotoEditor}
                     editDisabled={!mediaUploadAvailable}
@@ -1907,10 +1986,10 @@
                 onFiles: (files) => void addAttachments(files),
               }}
             >
-              {#if project.attachments.length}
+              {#if viewAttachments.length}
                 <h3>{t("Attachments", locale)}</h3>
                 <ul class="attachment-list">
-                  {#each project.attachments as attachment (attachment.id)}
+                  {#each viewAttachments as attachment (attachment.id)}
                     <li>
                       <a href={attachment.url}
                         >{attachment.original_filename ??
@@ -1930,7 +2009,7 @@
                         variant="ghost"
                         icon="action-delete"
                         disabled={!mediaDeleteAvailable}
-                        onclick={() => void removeAttachment(attachment.id)}
+                        onclick={() => removeAttachment(attachment.id)}
                       >
                         {t("Remove attachment", locale)}
                       </Button>
@@ -1942,7 +2021,7 @@
                 id="project-attachment-file"
                 {locale}
                 accept=""
-                empty={!project.attachments.length}
+                empty={!viewAttachments.length}
                 label={t("Add attachment", locale)}
                 inputLabel={t("Choose attachments", locale)}
                 dropHint={t("or drop files here", locale)}
@@ -1951,6 +2030,12 @@
                 onFiles={(files) => void addAttachments(files)}
               />
             </div>
+            <RemovedMediaList
+              entries={removedEntries}
+              {locale}
+              disabled={saving}
+              onRestore={restoreRemoved}
+            />
           </section>
         {/if}
 
@@ -2311,10 +2396,10 @@
                                 {locale}
                                 label={stepLabel}
                                 fallbackAlt={t("Step photo", locale)}
-                                disabled={!mediaAvailable}
+                                disabled={!stagingAvailable}
                                 onMove={(from, to) =>
                                   reorderImages(step.id ?? null, from, to)}
-                                onDelete={(image) => void removeImage(image.id)}
+                                onDelete={(image) => removeImage(image.id)}
                                 deleteDisabled={!mediaDeleteAvailable}
                                 onEdit={openPhotoEditor}
                                 editDisabled={!mediaUploadAvailable}
@@ -2419,7 +2504,16 @@
               >
             {:else if isDirty}
               <span class="dirty-note" role="status"
-                >{t("Unsaved changes", locale)}</span
+                >{stagedRemovalCount(staged) > 0
+                  ? t(
+                      "Unsaved changes. Removed items go to the trash when you save.",
+                      locale,
+                    )
+                  : t("Unsaved changes", locale)}</span
+              >
+            {:else if !isCreating}
+              <span class="dirty-note" role="status" data-testid="saved-state"
+                >{t("All changes saved", locale)}</span
               >
             {/if}
           {/snippet}

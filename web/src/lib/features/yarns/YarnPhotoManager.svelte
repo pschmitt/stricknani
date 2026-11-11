@@ -2,7 +2,6 @@
   import { onMount, tick, untrack } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import Button from "#lib/components/Button.svelte";
-  import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
   import PhotoEditor from "#lib/features/media/PhotoEditor.svelte";
   import { yarnPhotoEditPath } from "#lib/features/media/photo-editor.ts";
@@ -11,15 +10,18 @@
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { publishFeedback } from "#lib/feedback.ts";
-  import { publishMovedToTrash } from "../trash/trash-undo";
   import ReorderableMedia from "../media/ReorderableMedia.svelte";
+  import RemovedMediaList from "../media/RemovedMediaList.svelte";
   import {
-    applyOptimisticReorder,
-    putOrder,
-    yarnPhotoOrderPath,
-  } from "../media/media-reorder";
+    YARN_GROUP,
+    applyStagedImages,
+    stageImageRemoval,
+    stageMove,
+    unstageImageRemoval,
+    type StagedMedia,
+  } from "../media/media-staging";
   import { fileDrop } from "#lib/components/file-drop.ts";
-  import { deleteYarnPhoto, uploadYarnPhoto, type YarnPhoto } from "./yarn-api";
+  import { uploadYarnPhoto, type YarnPhoto } from "./yarn-api";
 
   let {
     yarnId,
@@ -28,6 +30,8 @@
     ownerId = null,
     ocrEnabled = false,
     canEdit = true,
+    canStage = true,
+    staged = $bindable(),
     readOnly = false,
     onResourceUpdated,
     onMediaBusyChange,
@@ -37,7 +41,12 @@
     locale: "en" | "de";
     ownerId?: number | null;
     ocrEnabled?: boolean;
+    /** Adding and editing photos: only on a saved form, as they reload the yarn. */
     canEdit?: boolean;
+    /** Removing and reordering: allowed on a dirty form too, they wait for Save. */
+    canStage?: boolean;
+    /** Removals and the order of the photos that wait for Save. */
+    staged: StagedMedia;
     readOnly?: boolean;
     onResourceUpdated: (yarnId: number, ownerId: number) => Promise<void>;
     onMediaBusyChange?: (
@@ -47,31 +56,33 @@
     ) => void;
   } = $props();
 
-  // Optimistic order shown until the server copy arrives through the photos prop.
-  let optimisticPhotos = $state<YarnPhoto[] | null>(null);
-  const photos = $derived(optimisticPhotos ?? serverPhotos);
-  let reordering = $state(false);
+  /** The photos as the form shows them: staged removals hidden, the staged order applied. */
+  const photos = $derived(
+    applyStagedImages(serverPhotos, staged, () => YARN_GROUP),
+  );
+  const removedEntries = $derived(
+    serverPhotos
+      .filter((photo) => staged.removedImageIds.includes(photo.id))
+      .map((photo) => ({
+        key: String(photo.id),
+        thumbnailUrl: photo.thumbnail_url,
+        label: photo.alt_text ?? t("Yarn photo", locale),
+        restoreLabel: t("Undo removing this photo", locale),
+      })),
+  );
   let uploading = $state(false);
   let uploadMessage = $state("");
   let errorMessage = $state("");
-  let deleting = $state(false);
   let selectedPhoto = $state<YarnPhoto | null>(null);
   let editedPhoto = $state<YarnPhoto | null>(null);
   let editorOpen = $state(false);
-  let deleteTarget = $state<YarnPhoto | null>(null);
-  let deleteOwnerId = $state<number | null>(null);
-  let deleteYarnId = $state<number | null>(null);
   let zoomDialog = $state<HTMLDialogElement | null>(null);
   let zoomTitle = $state<HTMLHeadingElement | null>(null);
-  let deleteDialog = $state<ConfirmDialog | undefined>(undefined);
-  let deleteDialogOpen = $state(false);
-  let deleteGeneration = 0;
 
   const reorderAvailable = $derived(
     !readOnly &&
-      canEdit &&
+      canStage &&
       !uploading &&
-      !deleting &&
       session.data?.user !== null &&
       session.data?.user !== undefined,
   );
@@ -79,44 +90,8 @@
     !readOnly && canEdit && session.data?.capabilities.media_upload === true,
   );
   const mediaDeleteAvailable = $derived(
-    !readOnly && canEdit && session.data?.capabilities.media_delete === true,
+    !readOnly && canStage && session.data?.capabilities.media_delete === true,
   );
-
-  $effect(() => {
-    const currentYarnId = yarnId;
-    const currentOwnerId = session.data?.user?.id ?? null;
-    untrack(() => {
-      if (
-        deleteTarget &&
-        (deleteYarnId !== currentYarnId || deleteOwnerId !== currentOwnerId)
-      ) {
-        deleteGeneration += 1;
-        untrack(() => deleteDialog?.close());
-        deleteDialogOpen = false;
-        deleteTarget = null;
-        deleteOwnerId = null;
-        deleteYarnId = null;
-        deleting = false;
-        errorMessage = "";
-      }
-    });
-  });
-
-  onMount(() => {
-    const onKeydown = (event: KeyboardEvent) => {
-      if (
-        event.defaultPrevented ||
-        event.key !== "Escape" ||
-        !deleteDialogOpen ||
-        deleting
-      )
-        return;
-      event.preventDefault();
-      closeDeleteDialog();
-    };
-    window.addEventListener("keydown", onKeydown);
-    return () => window.removeEventListener("keydown", onKeydown);
-  });
 
   function isCurrentOperation(resourceId: number, ownerId: number): boolean {
     return yarnId === resourceId && session.data?.user?.id === ownerId;
@@ -173,7 +148,7 @@
     }
   }
 
-  const editBusy = $derived(uploading || deleting || reordering);
+  const editBusy = $derived(uploading);
 
   function openPhotoEditor(photo: YarnPhoto) {
     if (!mediaUploadAvailable || editBusy) return;
@@ -197,156 +172,31 @@
     }
   }
 
-  function confirmDelete(photo: YarnPhoto) {
-    const currentSession = session.data;
-    if (
-      !currentSession?.user ||
-      !mediaDeleteAvailable ||
-      uploading ||
-      deleting ||
-      !photos.some((candidate) => candidate.id === photo.id)
-    )
-      return;
-    deleteGeneration += 1;
-    deleteOwnerId = currentSession.user.id;
-    deleteYarnId = yarnId;
-    deleteTarget = photo;
-    errorMessage = "";
-    deleteDialog?.showModal();
-    deleteDialogOpen = true;
-  }
-
-  function closeDeleteDialog(invalidate = true): void {
-    if (invalidate) deleteGeneration += 1;
-    untrack(() => deleteDialog?.close());
-    deleteDialogOpen = false;
-    deleteTarget = null;
-    deleteOwnerId = null;
-    deleteYarnId = null;
-  }
-
-  function isCurrentDelete(
-    resourceId: number,
-    ownerId: number,
-    photoId: number,
-    generation: number,
-  ): boolean {
-    return (
-      deleteGeneration === generation &&
-      deleteYarnId === resourceId &&
-      deleteOwnerId === ownerId &&
-      deleteTarget?.id === photoId &&
-      isCurrentOperation(resourceId, ownerId)
-    );
-  }
-
-  async function removePhoto() {
-    const photo = deleteTarget;
-    const currentSession = session.data;
-    if (!photo || !currentSession?.user || !mediaDeleteAvailable || deleting)
-      return;
-    const resourceId = yarnId;
-    const ownerId = currentSession.user.id;
-    const photoId = photo.id;
-    const generation = deleteGeneration;
-    if (
-      deleteYarnId !== resourceId ||
-      deleteOwnerId !== ownerId ||
-      deleteTarget?.id !== photoId ||
-      !photos.some((candidate) => candidate.id === photoId)
-    )
-      return;
-    const updateResource = onResourceUpdated;
-    const notifyMediaBusy = onMediaBusyChange;
-    let deleteSucceeded = false;
-    deleting = true;
-    errorMessage = "";
-    notifyMediaBusy?.(true, resourceId, ownerId);
-    try {
-      await deleteYarnPhoto(resourceId, photoId, currentSession);
-      if (!isCurrentDelete(resourceId, ownerId, photoId, generation)) return;
-      deleteSucceeded = true;
-      closeDeleteDialog(false);
-      await updateResource(resourceId, ownerId);
-      if (
-        deleteGeneration === generation &&
-        isCurrentOperation(resourceId, ownerId)
-      ) {
-        uploadMessage = t("Photo removed.", locale);
-        publishMovedToTrash({
-          session: currentSession,
-          ownerId,
-          locale,
-          kind: "photo",
-          id: photoId,
-          onRestored: () => updateResource(resourceId, ownerId),
-        });
-      }
-    } catch (error) {
-      if (
-        deleteSucceeded
-          ? deleteGeneration === generation &&
-            isCurrentOperation(resourceId, ownerId)
-          : isCurrentDelete(resourceId, ownerId, photoId, generation)
-      )
-        errorMessage =
-          error instanceof ApiError && error.status === 404
-            ? t("This photo is no longer available.", locale)
-            : error instanceof Error
-              ? error.message
-              : t("The photo could not be removed.", locale);
-    } finally {
-      if (
-        deleteGeneration === generation &&
-        isCurrentOperation(resourceId, ownerId)
-      ) {
-        deleting = false;
-        notifyMediaBusy?.(false, resourceId, ownerId);
-      }
-    }
-  }
-
-  async function reorderPhotos(from: number, to: number): Promise<boolean> {
-    const currentSession = session.data;
-    if (!currentSession?.user || !reorderAvailable || reordering) return false;
-    const resourceId = yarnId;
-    const ownerId = currentSession.user.id;
-    const updateResource = onResourceUpdated;
-    const notifyMediaBusy = onMediaBusyChange;
-    reordering = true;
-    errorMessage = "";
-    notifyMediaBusy?.(true, resourceId, ownerId);
-    try {
-      const ok = await applyOptimisticReorder({
-        items: photos,
-        from,
-        to,
-        setItems: (next) => (optimisticPhotos = next),
-        send: (ids) =>
-          putOrder(yarnPhotoOrderPath(resourceId), ids, currentSession),
-        refetch: () => updateResource(resourceId, ownerId),
-        onError: (error) => {
-          if (!isCurrentOperation(resourceId, ownerId)) return;
-          publishFeedback({
-            ownerId,
-            kind: "error",
-            message:
-              error instanceof Error
-                ? error.message
-                : t("The photo order could not be saved.", locale),
-          });
+  /** Takes a photo out of the form; Save moves it to the trash, Undo puts it back. */
+  function removePhoto(photo: YarnPhoto) {
+    const ownerId = session.data?.user?.id;
+    if (!mediaDeleteAvailable || ownerId === undefined) return;
+    staged = stageImageRemoval(staged, photo.id);
+    publishFeedback({
+      ownerId,
+      kind: "success",
+      message: t("Removed. It goes to the trash when you save.", locale),
+      action: {
+        label: t("Undo", locale),
+        onAction: () => {
+          staged = unstageImageRemoval(staged, photo.id);
         },
-      });
-      // Reorder bumps the yarn timestamp; reload so the editor stays in sync.
-      if (ok) await updateResource(resourceId, ownerId);
-      return ok;
-    } finally {
-      optimisticPhotos = null;
-      if (isCurrentOperation(resourceId, ownerId)) {
-        reordering = false;
-        notifyMediaBusy?.(false, resourceId, ownerId);
-      }
-    }
+      },
+    });
+  }
+
+  /** Stages a move; Save sends the new order. */
+  function reorderPhotos(from: number, to: number): Promise<boolean> {
+    if (!reorderAvailable) return Promise.resolve(false);
+    const next = stageMove(staged, YARN_GROUP, photos, from, to);
+    if (next === staged) return Promise.resolve(false);
+    staged = next;
+    return Promise.resolve(true);
   }
 
   async function showPhoto(photo: YarnPhoto) {
@@ -442,7 +292,7 @@
   {:else if uploadMessage}
     <p class="upload-state" role="status" aria-live="polite">{uploadMessage}</p>
   {/if}
-  {#if errorMessage && !deleteTarget}
+  {#if errorMessage}
     <p class="error-message" role="alert">{errorMessage}</p>
   {/if}
 
@@ -454,16 +304,12 @@
       fallbackAlt={t("Yarn photo", locale)}
       showCover
       reorderable={reorderAvailable}
-      disabled={reordering}
       onMove={reorderPhotos}
       onOpen={(photo) => void showPhoto(photo)}
-      onEdit={canEdit && !readOnly ? openPhotoEditor : undefined}
+      onEdit={readOnly ? undefined : openPhotoEditor}
       editDisabled={!mediaUploadAvailable || editBusy}
-      onDelete={canEdit && !readOnly ? confirmDelete : undefined}
-      deleteDisabled={!mediaDeleteAvailable ||
-        uploading ||
-        deleting ||
-        reordering}
+      onDelete={readOnly ? undefined : removePhoto}
+      deleteDisabled={!mediaDeleteAvailable || uploading}
     >
       {#snippet actions(photo)}
         <OcrControl
@@ -526,49 +372,11 @@
     />
   {/if}
 
-  <ConfirmDialog
-    bind:this={deleteDialog}
-    titleId="remove-photo-title"
-    title={t("Remove this photo?", locale)}
-    busy={deleting}
-  >
-    {#snippet children()}
-      {#if deleteTarget}
-        <p>
-          {t("The photo will be removed from this yarn.", locale)}
-          {t(
-            "It moves to the trash and can be restored from there for 90 days.",
-            locale,
-          )}
-        </p>
-      {/if}
-      {#if deleteTarget && errorMessage}
-        <p class="error-message" role="alert">{errorMessage}</p>
-      {/if}
-    {/snippet}
-    {#snippet actions()}
-      <Button
-        type="button"
-        class="quiet-button"
-        variant="secondary"
-        icon="cancel"
-        onclick={() => closeDeleteDialog()}
-        disabled={deleting}
-      >
-        {t("Keep photo", locale)}
-      </Button>
-      <Button
-        type="button"
-        class="danger-button"
-        variant="danger"
-        icon="action-delete"
-        disabled={!mediaDeleteAvailable || deleting}
-        onclick={() => void removePhoto()}
-      >
-        {deleting ? t("Removing…", locale) : t("Remove photo", locale)}
-      </Button>
-    {/snippet}
-  </ConfirmDialog>
+  <RemovedMediaList
+    entries={removedEntries}
+    {locale}
+    onRestore={(key) => (staged = unstageImageRemoval(staged, Number(key)))}
+  />
 </section>
 
 <style>

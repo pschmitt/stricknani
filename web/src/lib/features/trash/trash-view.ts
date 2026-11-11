@@ -8,9 +8,17 @@ export function effectiveTrashScope(
   return isAdmin ? chosen : "mine";
 }
 
-/** Whether the owner is worth showing: administrators looking at other people's items. */
-export function showsOwner(scope: TrashScope, item: TrashItem): boolean {
-  return scope === "all" && item.owner !== null;
+/**
+ * Whether the owner is worth showing: administrators looking at everyone's items, and items the
+ * viewer trashed in somebody else's project or yarn (they sit in "mine" with their owner named).
+ */
+export function showsOwner(
+  scope: TrashScope,
+  item: TrashItem,
+  viewerId?: number | null,
+): boolean {
+  if (item.owner === null) return false;
+  return scope === "all" || (viewerId != null && item.owner.id !== viewerId);
 }
 
 /** Newest deletion first; ties keep the server order. */

@@ -13,6 +13,7 @@ const item = (overrides: Partial<TrashItem>): TrashItem => ({
   id: 1,
   name: "Socks",
   owner: { id: 2, email: "a@example.test", name: "Anna", avatar_url: null },
+  can_restore: true,
   deleted_at: "2026-11-01T10:00:00Z",
   purge_at: "2027-01-30T10:00:00Z",
   days_remaining: 80,
@@ -38,10 +39,15 @@ describe("trash view helpers", () => {
     expect(effectiveTrashScope(false, "all")).toBe("mine");
   });
 
-  it("shows the owner only in the everyone scope", () => {
+  it("shows the owner in the everyone scope and for items of someone else", () => {
+    const owner = item({}).owner;
+    expect(owner).not.toBeNull();
     expect(showsOwner("all", item({}))).toBe(true);
     expect(showsOwner("mine", item({}))).toBe(false);
     expect(showsOwner("all", item({ owner: null }))).toBe(false);
+    // Mine: only what the viewer trashed in somebody else's project names its owner.
+    expect(showsOwner("mine", item({}), (owner?.id ?? 0) + 1)).toBe(true);
+    expect(showsOwner("mine", item({}), owner?.id)).toBe(false);
   });
 
   it("sorts newest deletion first and keeps ties stable", () => {

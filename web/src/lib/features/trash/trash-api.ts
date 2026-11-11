@@ -21,6 +21,8 @@ export interface TrashItem {
   id: number;
   name: string;
   owner: ResourceOwner | null;
+  /** Whether the caller may restore or delete the item (its owner and administrators). */
+  can_restore: boolean;
   deleted_at: string;
   purge_at: string;
   /** Whole days left, rounded up; 0 when the item is due for deletion. */
@@ -84,6 +86,7 @@ export function parseTrashItem(value: unknown): TrashItem {
     id: value.id,
     name: value.name,
     owner: parseOwner(value.owner),
+    can_restore: value.can_restore !== false,
     deleted_at: value.deleted_at,
     purge_at: value.purge_at,
     days_remaining: value.days_remaining,
