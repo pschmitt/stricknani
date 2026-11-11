@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   daysUntilPurge,
-  trashedFields,
   isLifecycleAction,
   lifecycleSubjectText,
   liveResourceHref,
@@ -104,20 +103,6 @@ describe("lifecycle text", () => {
 });
 
 describe("trashed project or yarn fields", () => {
-  it("reads them only while the item is in the trash", () => {
-    expect(trashedFields({})).toEqual({});
-    expect(trashedFields({ trashed_at: null, purge_at: null })).toEqual({});
-    expect(
-      trashedFields({
-        trashed_at: "2026-11-01T10:00:00Z",
-        purge_at: "2027-01-30T10:00:00Z",
-      }),
-    ).toEqual({
-      trashed_at: "2026-11-01T10:00:00Z",
-      purge_at: "2027-01-30T10:00:00Z",
-    });
-  });
-
   it("counts the days until the purge, rounded up", () => {
     const now = new Date("2026-11-01T10:00:00Z");
     expect(daysUntilPurge("2026-11-04T09:00:00Z", now)).toBe(3);

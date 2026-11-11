@@ -118,19 +118,6 @@ export function liveResourceHref(
   return state === "in_trash" || !exists ? null : href;
 }
 
-/** `trashed_at` and `purge_at` of a project or yarn: set only while it sits in the trash. */
-export function trashedFields(value: Record<string, unknown>): {
-  trashed_at?: string | null;
-  purge_at?: string | null;
-} {
-  const trashedAt =
-    typeof value.trashed_at === "string" ? value.trashed_at : null;
-  const purgeAt = typeof value.purge_at === "string" ? value.purge_at : null;
-  return trashedAt === null && purgeAt === null
-    ? {}
-    : { trashed_at: trashedAt, purge_at: purgeAt };
-}
-
 /** Whole days until `purgeAt`, rounded up; 0 when due or unreadable. */
 export function daysUntilPurge(
   purgeAt: string,
