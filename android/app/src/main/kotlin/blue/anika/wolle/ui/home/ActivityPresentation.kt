@@ -1,6 +1,7 @@
 package blue.anika.wolle.ui.home
 
 import blue.anika.wolle.data.api.dto.ActivityItemDto
+import blue.anika.wolle.data.api.dto.RESOURCE_STATE_IN_TRASH
 import blue.anika.wolle.data.util.DateTimeUtils
 import blue.anika.wolle.ui.admin.DayLabel
 import blue.anika.wolle.ui.admin.dayLabelFor
@@ -30,6 +31,14 @@ enum class ActivityVerb {
     Deleted,
     Uploaded,
     Removed,
+    /** Moved to the trash. */
+    Trashed,
+    /** Restored from the trash. */
+    Restored,
+    /** Deleted for good by hand; the legacy hard delete reads [Deleted]. */
+    Purged,
+    /** The automatic purge after 90 days: nobody did it. */
+    PurgedAuto,
     /** The legacy imported actions (`step_updated` and the like) and anything unknown. */
     Changed,
 }
@@ -41,6 +50,9 @@ fun activityVerb(action: String): ActivityVerb =
         "deleted" -> ActivityVerb.Deleted
         "uploaded" -> ActivityVerb.Uploaded
         "removed" -> ActivityVerb.Removed
+        "trashed" -> ActivityVerb.Trashed
+        "restored" -> ActivityVerb.Restored
+        "purged" -> ActivityVerb.Purged
         else -> ActivityVerb.Changed
     }
 
@@ -56,6 +68,8 @@ enum class ActivityIconKind {
     Trash,
     /** something was removed */
     Minus,
+    /** restored from the trash */
+    Restore,
     /** a file other than a photo was added */
     Attachment,
     /** anything the app does not know by name */
@@ -77,6 +91,9 @@ private val exactIcons =
         "step_image_uploaded" to ActivityIconKind.Camera,
         "attachment_uploaded" to ActivityIconKind.Attachment,
         "deleted" to ActivityIconKind.Trash,
+        "trashed" to ActivityIconKind.Trash,
+        "purged" to ActivityIconKind.Trash,
+        "restored" to ActivityIconKind.Restore,
         "step_deleted" to ActivityIconKind.Trash,
         "attachment_deleted" to ActivityIconKind.Trash,
         "image_deleted" to ActivityIconKind.Trash,
@@ -105,6 +122,12 @@ sealed interface ActivityTarget {
     data class Project(val id: Int) : ActivityTarget
 
     data class Yarn(val id: Int) : ActivityTarget
+
+    /**
+     * The item is in the trash: its page would answer 404 and there is no read-only item view, so
+     * the row leads to the Trash screen.
+     */
+    data object Trash : ActivityTarget
 }
 
 /**
@@ -130,8 +153,12 @@ data class ActivityRowModel(
     val thumbnailUrl: String?,
     val target: ActivityTarget?,
     val createdAt: String,
+    /** Days left while the item sits in the trash; null when it is not in the trash. */
+    val trashDaysLeft: Int? = null,
+    /** The owner of the item, for trash events an administrator did and the automatic purge. */
+    val ownerName: String? = null,
 ) {
-    /** A deleted resource: muted and not tappable. */
+    /** A deleted resource: muted and not tappable. An item in the trash leads to the trash. */
     val deleted: Boolean
         get() = target == null
 }
@@ -140,8 +167,11 @@ data class ActivityRowModel(
 fun activityRow(item: ActivityItemDto): ActivityRowModel {
     val isYarn = item.entityType == "yarn"
     val nouns = item.changedFields.mapNotNull(::fieldNounRes).distinct()
+    val inTrash = item.state == RESOURCE_STATE_IN_TRASH
     val target =
-        if (!item.exists) {
+        if (inTrash) {
+            ActivityTarget.Trash
+        } else if (!item.exists) {
             null
         } else if (isYarn) {
             ActivityTarget.Yarn(item.entityId)
@@ -152,9 +182,11 @@ fun activityRow(item: ActivityItemDto): ActivityRowModel {
         }
     return ActivityRowModel(
         key = item.id,
-        verb = activityVerb(item.action),
+        verb =
+            if (item.system && item.action.lowercase() == "purged") ActivityVerb.PurgedAuto
+            else activityVerb(item.action),
         icon = activityIconKind(item.action),
-        actorIsSelf = item.actor.isSelf,
+        actorIsSelf = item.actor.isSelf && !item.system,
         actorName = item.actor.name?.takeIf { it.isNotBlank() && !item.actor.isSelf },
         isYarn = isYarn,
         entityName = item.entityName?.takeIf { it.isNotBlank() },
@@ -164,6 +196,8 @@ fun activityRow(item: ActivityItemDto): ActivityRowModel {
         thumbnailUrl = item.thumbnailUrl.takeIf { item.exists },
         target = target,
         createdAt = item.createdAt,
+        trashDaysLeft = if (inTrash) item.trash?.daysRemaining ?: 0 else null,
+        ownerName = item.subject?.name?.trim()?.ifBlank { null },
     )
 }
 
@@ -202,6 +236,9 @@ private fun ActivityItemDto.foldsInto(newer: ActivityItemDto): Boolean =
         action == newer.action &&
         action != "created" &&
         action != "deleted" &&
+        action != "trashed" &&
+        action != "restored" &&
+        action != "purged" &&
         sameActor(newer)
 
 /**

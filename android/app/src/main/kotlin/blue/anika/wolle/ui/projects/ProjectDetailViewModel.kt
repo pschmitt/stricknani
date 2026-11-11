@@ -19,6 +19,8 @@ import blue.anika.wolle.data.repository.ItemLoad
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.SharedKind
 import blue.anika.wolle.data.repository.SharingRepository
+import blue.anika.wolle.data.repository.TrashKind
+import blue.anika.wolle.data.repository.TrashRef
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.repository.access
 import blue.anika.wolle.data.settings.AppPreferencesRepository
@@ -825,7 +827,10 @@ constructor(
             try {
                 projectRepository.deleteProject(projectId)
                 syncScheduler.replayThenSyncNow()
-                mutationFeedback.show(R.string.mutation_project_deleted_queued)
+                mutationFeedback.showTrashed(
+                    R.string.mutation_moved_to_trash,
+                    TrashRef(TrashKind.Project, projectId),
+                )
                 _deleted.value = true
             } catch (e: Exception) {
                 mutationFeedback.show(R.string.error_delete_failed)
@@ -839,7 +844,10 @@ constructor(
             try {
                 projectRepository.queueAttachmentDelete(projectId, attachmentId)
                 syncScheduler.replayThenSyncNow()
-                mutationFeedback.show(R.string.mutation_project_attachment_deleted_queued)
+                mutationFeedback.showTrashed(
+                    R.string.mutation_moved_to_trash,
+                    TrashRef(TrashKind.Attachment, attachmentId),
+                )
             } catch (e: Exception) {
                 mutationFeedback.show(R.string.error_attachment_delete_failed)
             }

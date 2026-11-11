@@ -2965,3 +2965,25 @@ web catalogs (`stricknani/locales/{en,de}`), same defaults, same order.
 
 Status: **done** except the T134 and T135 items (own tasks), 2026-11-09. Impersonate opens the web app at `/app/admin/users?impersonate=<id>` (the native session never switches account). The transfer switch already existed; the explanation text under it was added.
 
+
+## SNA-108: Trash (Papierkorb) and Undo after deleting
+
+Deleting a project or yarn moves it to the trash for 90 days (server: `GET /api/v2/trash`,
+`POST /api/v2/trash/{segment}/{id}/restore`, `DELETE /api/v2/trash/{segment}/{id}`). Same wording as the
+web (`web/src/lib/features/trash`).
+
+- [x] More -> Trash screen (`ui/trash`): kind, name, parent, owner (administrators, with the shared
+      Mine / All choice), "Deleted ... ago", "N days left" / "Due for deletion", Restore, Delete
+      forever with a confirmation, empty/loading/error states, offline panel. A restore triggers a sync.
+- [x] "Moved to the trash." with an Undo action after deleting a project, yarn, category or
+      attachment (`MutationFeedback.showTrashed`); delete confirmations say it can be restored for 90
+      days.
+- [x] Audit log (list and detail), Recent changes and Home activity know `trashed`, `restored` and
+      `purged`, `resource.state`/`trash`, the system purge and the owner line; an item in the trash
+      leads to the Trash screen, never to its page. Restore button in the audit detail when allowed.
+- [ ] Undo and the trash wording for steps, images and photos removed in the editors: the editors save
+      them with the form (queued writes), so there is no single delete to undo. The Trash screen already
+      lists and restores every kind the server sends (step, image, attachment, photo, category).
+- [ ] Undo of a project or yarn deleted while offline: the delete is still in the write queue, so
+      Undo needs a connection and waits for the queue to reach the server (retries for a few seconds).
+- [x] Command palette: a "Trash" page entry.

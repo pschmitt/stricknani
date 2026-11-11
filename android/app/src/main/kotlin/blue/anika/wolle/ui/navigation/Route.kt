@@ -73,6 +73,9 @@ sealed interface Route {
     /** Administrator audit log (SNA-86) - reachable from Settings -> Admin. */
     @Serializable data object AdminAudit : Route
 
+    /** The trash: deleted items wait here for 90 days - reachable from More. */
+    @Serializable data object Trash : Route
+
     /** Administrator account list (SNA-86) - reachable from Settings -> Admin. */
     @Serializable data object AdminAccounts : Route
 
@@ -157,6 +160,7 @@ enum class TopLevelDestination(
             Route.Libraries::class,
             Route.AdminAudit::class,
             Route.AdminAccounts::class,
+            Route.Trash::class,
         ),
     ),
 }

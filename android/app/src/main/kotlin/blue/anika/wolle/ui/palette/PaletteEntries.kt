@@ -165,6 +165,7 @@ object PaletteEntries {
             }
             out += page(destination.name, title, icon, destination.route)
         }
+        out += page("trash", R.string.trash_title, PaletteIcon.Trash, Route.Trash)
         for (category in pageCategories) {
             if (category == SettingsCategory.Admin && !isAdmin) continue
             out +=

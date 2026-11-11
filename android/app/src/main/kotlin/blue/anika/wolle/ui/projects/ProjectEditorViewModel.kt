@@ -29,6 +29,8 @@ import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.SharingError
 import blue.anika.wolle.data.repository.SharingException
 import blue.anika.wolle.data.repository.SharingRepository
+import blue.anika.wolle.data.repository.TrashKind
+import blue.anika.wolle.data.repository.TrashRef
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.repository.access
 import blue.anika.wolle.data.repository.movedItem
@@ -802,7 +804,10 @@ constructor(
             try {
                 projectRepository.deleteProject(id)
                 syncScheduler.replayThenSyncNow()
-                mutationFeedback.show(R.string.mutation_project_deleted_queued)
+                mutationFeedback.showTrashed(
+                    R.string.mutation_moved_to_trash,
+                    TrashRef(TrashKind.Project, id),
+                )
                 _deleted.value = true
             } catch (e: Exception) {
                 mutationFeedback.show(R.string.error_delete_failed)

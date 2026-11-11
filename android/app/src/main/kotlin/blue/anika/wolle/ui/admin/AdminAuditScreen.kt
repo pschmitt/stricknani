@@ -36,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -83,6 +84,8 @@ import blue.anika.wolle.ui.common.WordDiff
 import blue.anika.wolle.ui.common.YarnLoader
 import blue.anika.wolle.ui.history.MediaChangeCard
 import blue.anika.wolle.ui.history.mediaChangeRows
+import blue.anika.wolle.ui.trash.daysLeft
+import blue.anika.wolle.ui.trash.daysLeftText
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -94,6 +97,7 @@ fun AdminAuditScreen(
     onBack: () -> Unit,
     onOpenProject: (Int) -> Unit = {},
     onOpenYarn: (Int) -> Unit = {},
+    onOpenTrash: () -> Unit = {},
     viewModel: AdminAuditViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -158,6 +162,7 @@ fun AdminAuditScreen(
                                     when (target) {
                                         is AuditTarget.Project -> onOpenProject(target.id.toInt())
                                         is AuditTarget.Yarn -> onOpenYarn(target.id.toInt())
+                                        is AuditTarget.InTrash -> onOpenTrash()
                                         else -> Unit
                                     }
                                 },
@@ -175,6 +180,11 @@ fun AdminAuditScreen(
             avatarUrl = viewModel::avatarUrl,
             onDismiss = viewModel::closeEvent,
             onRetry = { event -> viewModel.openEvent(event) },
+            onOpenTrash = {
+                viewModel.closeEvent()
+                onOpenTrash()
+            },
+            onRestore = viewModel::restore,
         )
     }
 }
@@ -376,8 +386,8 @@ private fun entityTitle(event: AuditEventDto): String {
 }
 
 @Composable
-private fun actionLabel(action: String): String {
-    val presentation = auditActionPresentation(action)
+private fun actionLabel(action: String, system: Boolean = false): String {
+    val presentation = auditActionPresentation(action, system)
     return presentation.labelRes?.let { stringResource(it) } ?: presentation.fallbackLabel
 }
 
@@ -400,12 +410,14 @@ private fun AuditRow(
     val kind = auditActionPresentation(event.action).kind
     val tone = kind.tone().color()
     val title = entityTitle(event)
-    val action = actionLabel(event.action)
+    val action = actionLabel(event.action, event.system)
     val typeLabel =
         entityTypeLabelRes(event.entityType)?.let { stringResource(it) } ?: event.entityType
     val time = formatTime(event)
     val actor = event.actorEmail ?: stringResource(R.string.admin_actor_unknown)
     val target = event.target()
+    // An item in the trash has no page (it would answer 404): a tap opens its details, whose link
+    // leads to the Trash screen.
     val navigable = target is AuditTarget.Project || target is AuditTarget.Yarn
     val description = stringResource(R.string.admin_event_description, action, title, actor, time)
     val detailKind = event.detailKind()
@@ -464,6 +476,23 @@ private fun AuditRow(
                             modifier = Modifier.testTag("admin-audit-row-deleted"),
                         )
                     }
+                    event.inTrashState()?.let { inTrash ->
+                        Text(
+                            inTrashText(inTrash),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.testTag("admin-audit-row-in-trash"),
+                        )
+                    }
+                    event.lifecycleOwnerName()?.let { owner ->
+                        Text(
+                            stringResource(R.string.admin_owner_line, owner),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
                 AuditMediaThumb(event.media, Modifier.padding(horizontal = 8.dp))
                 Column(
@@ -516,6 +545,8 @@ private fun AuditDetailSheet(
     avatarUrl: (String?) -> String?,
     onDismiss: () -> Unit,
     onRetry: (AuditEventDto) -> Unit,
+    onOpenTrash: () -> Unit,
+    onRestore: (AuditEventDto) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
@@ -536,6 +567,7 @@ private fun AuditDetailSheet(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             AuditDetailHeader(event, avatarUrl)
+            AuditTrashActions(event, onOpenTrash, onRestore)
             when (state) {
                 is AuditDetailState.Loading ->
                     if (state.event.media != null) {
@@ -606,7 +638,7 @@ private fun AuditDetailSheet(
 
 @Composable
 private fun AuditDetailHeader(event: AuditEventDto, avatarUrl: (String?) -> String?) {
-    val kind = auditActionPresentation(event.action).kind
+    val kind = auditActionPresentation(event.action, event.system).kind
     val tone = kind.tone().color()
     val typeLabel =
         entityTypeLabelRes(event.entityType)?.let { stringResource(it) } ?: event.entityType
@@ -624,7 +656,7 @@ private fun AuditDetailHeader(event: AuditEventDto, avatarUrl: (String?) -> Stri
         ActionBadge(kind)
         Column(Modifier.weight(1f)) {
             Text(
-                actionLabel(event.action),
+                actionLabel(event.action, event.system),
                 style = MaterialTheme.typography.titleLarge,
                 color = tone,
             )
@@ -638,28 +670,82 @@ private fun AuditDetailHeader(event: AuditEventDto, avatarUrl: (String?) -> Stri
     }
     DetailLine(label = stringResource(R.string.admin_detail_what)) {
         Text(typeLabel, style = MaterialTheme.typography.bodyLarge)
-        if (!event.resource.exists) {
-            Text(
-                stringResource(R.string.admin_detail_gone),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        when (val itemState = event.resource.itemState().takeIf { event.stateDescribesItem() }) {
+            is AuditItemState.InTrash ->
+                Text(
+                    inTrashText(itemState),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.testTag("admin-audit-detail-in-trash"),
+                )
+            AuditItemState.Gone ->
+                Text(
+                    stringResource(R.string.admin_detail_gone),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            AuditItemState.Active,
+            null -> Unit
         }
     }
     DetailLine(label = stringResource(R.string.admin_detail_who)) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            AdminAvatar(avatarUrl(event.actorAvatarUrl), event.actorEmail, size = 28.dp)
+        if (event.system) {
             Text(
-                event.actorEmail ?: stringResource(R.string.admin_actor_unknown),
+                stringResource(R.string.admin_actor_system),
                 style = MaterialTheme.typography.bodyLarge,
             )
+        } else {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                AdminAvatar(avatarUrl(event.actorAvatarUrl), event.actorEmail, size = 28.dp)
+                Text(
+                    event.actorEmail ?: stringResource(R.string.admin_actor_unknown),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+            }
+        }
+    }
+    event.lifecycleOwnerName()?.let { owner ->
+        DetailLine(label = stringResource(R.string.sharing_owner)) {
+            Text(owner, style = MaterialTheme.typography.bodyLarge)
         }
     }
     DetailLine(label = stringResource(R.string.admin_detail_when)) {
         Text(whenText, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+/** "In the trash · 85 days left". */
+@Composable
+private fun inTrashText(state: AuditItemState.InTrash): String =
+    stringResource(R.string.admin_state_in_trash, daysLeftText(daysLeft(state.daysRemaining)))
+
+/** The way to the trash for an item in it: the Trash screen, and Restore when allowed. */
+@Composable
+private fun AuditTrashActions(
+    event: AuditEventDto,
+    onOpenTrash: () -> Unit,
+    onRestore: (AuditEventDto) -> Unit,
+) {
+    if (event.resource.itemState() !is AuditItemState.InTrash) return
+    val restoreRef = event.restoreRef()
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (restoreRef != null) {
+            Button(
+                onClick = { onRestore(event) },
+                modifier = Modifier.testTag("admin-audit-restore"),
+            ) {
+                Text(stringResource(R.string.trash_restore))
+            }
+        }
+        OutlinedButton(
+            onClick = onOpenTrash,
+            modifier = Modifier.testTag("admin-audit-open-trash"),
+        ) {
+            Text(stringResource(R.string.admin_open_trash))
+        }
     }
 }
 

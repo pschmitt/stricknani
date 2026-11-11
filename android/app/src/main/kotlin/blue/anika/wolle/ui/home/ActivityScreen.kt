@@ -35,6 +35,7 @@ fun ActivityScreen(
     onBack: () -> Unit,
     onProjectClick: (Int) -> Unit,
     onYarnClick: (Int) -> Unit,
+    onTrashClick: () -> Unit = {},
     viewModel: ActivityViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -64,6 +65,7 @@ fun ActivityScreen(
                     previewUrl = viewModel::previewUrl,
                     onProjectClick = onProjectClick,
                     onYarnClick = onYarnClick,
+                    onTrashClick = onTrashClick,
                     onShowMore = viewModel::loadMore,
                     onRetry = viewModel::reload,
                     showTitle = false,

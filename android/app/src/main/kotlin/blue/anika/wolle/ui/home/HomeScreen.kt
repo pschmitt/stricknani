@@ -125,6 +125,7 @@ fun HomeScreen(
     onCreateClick: () -> Unit,
     onOpenSyncIssues: () -> Unit,
     onSeeAllActivity: () -> Unit = {},
+    onTrashClick: () -> Unit = {},
     /** Opens the editor on an import draft that waits for review. */
     onOpenDraft: (ImportJobDto) -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
@@ -442,6 +443,7 @@ fun HomeScreen(
                                 previewUrl = viewModel::previewUrl,
                                 onProjectClick = onProjectClick,
                                 onYarnClick = onYarnClick,
+                                onTrashClick = onTrashClick,
                                 onSeeAll = onSeeAllActivity,
                             )
                         }

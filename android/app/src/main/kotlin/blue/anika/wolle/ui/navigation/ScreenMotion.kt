@@ -70,6 +70,7 @@ private val ROUTE_CLASSES: List<KClass<out Route>> =
         Route.Libraries::class,
         Route.AdminAudit::class,
         Route.AdminAccounts::class,
+        Route.Trash::class,
         Route.SettingsCategoryRoute::class,
     )
 

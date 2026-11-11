@@ -26,6 +26,7 @@ import blue.anika.wolle.data.api.v2.PhotoEditV2Api
 import blue.anika.wolle.data.api.v2.ProjectsV2Api
 import blue.anika.wolle.data.api.v2.SharingV2Api
 import blue.anika.wolle.data.api.v2.SyncV2Api
+import blue.anika.wolle.data.api.v2.TrashV2Api
 import blue.anika.wolle.data.api.v2.YarnsV2Api
 import blue.anika.wolle.data.errorreporting.ErrorReportingApi
 import blue.anika.wolle.data.export.DataExportApi
@@ -269,4 +270,8 @@ object NetworkModule {
     @Singleton
     fun provideCategoriesV2Api(retrofit: Retrofit): CategoriesV2Api =
         retrofit.create(CategoriesV2Api::class.java)
+
+    @Provides
+    @Singleton
+    fun provideTrashV2Api(retrofit: Retrofit): TrashV2Api = retrofit.create(TrashV2Api::class.java)
 }

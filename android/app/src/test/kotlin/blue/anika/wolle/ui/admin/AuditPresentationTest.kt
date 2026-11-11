@@ -6,8 +6,14 @@ import blue.anika.wolle.data.api.dto.AdminUserDto
 import blue.anika.wolle.data.api.dto.AuditEventDto
 import blue.anika.wolle.data.api.dto.AuditMediaDto
 import blue.anika.wolle.data.api.dto.AuditResourceDto
+import blue.anika.wolle.data.api.dto.AuditSubjectDto
 import blue.anika.wolle.data.api.dto.ChangeStep
 import blue.anika.wolle.data.api.dto.ChangeValue
+import blue.anika.wolle.data.api.dto.RESOURCE_STATE_ACTIVE
+import blue.anika.wolle.data.api.dto.RESOURCE_STATE_GONE
+import blue.anika.wolle.data.api.dto.RESOURCE_STATE_IN_TRASH
+import blue.anika.wolle.data.api.dto.TrashStateDto
+import blue.anika.wolle.data.repository.TrashRef
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -292,5 +298,157 @@ class AuditPresentationTest {
         assertTrue(name.startsWith("9-"))
         assertTrue(name.none { it == '/' || it == '\\' || it == ' ' || it == '?' })
         assertEquals("5-file", safeAuditFileName(AuditMediaDto(id = 5, name = null)))
+    }
+
+    private fun trashEvent(
+        action: String,
+        state: String? = null,
+        exists: Boolean = false,
+        canRestore: Boolean = false,
+        system: Boolean = false,
+        subject: AuditSubjectDto? = null,
+        kind: String? = "project",
+    ) =
+        AuditEventDto(
+            id = 9,
+            entityType = "project",
+            entityId = 3,
+            action = action,
+            createdAt = "2026-11-01T10:00:00Z",
+            resource =
+                AuditResourceDto(
+                    kind = kind,
+                    id = 3,
+                    name = "Socks",
+                    exists = exists,
+                    state = state,
+                    trash =
+                        if (state == RESOURCE_STATE_IN_TRASH) {
+                            TrashStateDto(daysRemaining = 12, canRestore = canRestore)
+                        } else null,
+                ),
+            system = system,
+            subject = subject,
+        )
+
+    @Test
+    fun `trash actions have their own labels and icon kinds`() {
+        assertEquals(R.string.admin_action_trashed, auditActionPresentation("trashed").labelRes)
+        assertEquals(R.string.admin_action_restored, auditActionPresentation("restored").labelRes)
+        assertEquals(R.string.admin_action_purged, auditActionPresentation("purged").labelRes)
+        assertEquals(AuditActionKind.Delete, auditActionPresentation("trashed").kind)
+        assertEquals(AuditActionKind.Restore, auditActionPresentation("restored").kind)
+        assertEquals(AuditTone.Green, AuditActionKind.Restore.tone())
+        // The legacy hard delete and a manual purge read the same.
+        assertEquals(R.string.admin_action_deleted, auditActionPresentation("deleted").labelRes)
+        assertTrue("trashed" in knownAuditActionNames)
+        assertTrue("restored" in knownAuditActionNames)
+        assertTrue("purged" in knownAuditActionNames)
+    }
+
+    @Test
+    fun `only the automatic purge says purged after 90 days`() {
+        assertEquals(
+            R.string.admin_action_purged_auto,
+            auditActionPresentation("purged", system = true).labelRes,
+        )
+        assertEquals(
+            R.string.admin_action_purged,
+            auditActionPresentation("purged", system = false).labelRes,
+        )
+        assertEquals(
+            R.string.admin_action_trashed,
+            auditActionPresentation("trashed", system = true).labelRes,
+        )
+    }
+
+    @Test
+    fun `the item state follows the server and falls back to exists for old payloads`() {
+        assertEquals(AuditItemState.Active, AuditResourceDto(exists = true).itemState())
+        assertEquals(AuditItemState.Gone, AuditResourceDto(exists = false).itemState())
+        assertEquals(
+            AuditItemState.Gone,
+            AuditResourceDto(exists = false, state = RESOURCE_STATE_GONE).itemState(),
+        )
+        assertEquals(
+            AuditItemState.InTrash(daysRemaining = 12, canRestore = true),
+            trashEvent("trashed", RESOURCE_STATE_IN_TRASH, canRestore = true).resource.itemState(),
+        )
+        // In the trash without the trash block: zero days, not restorable.
+        assertEquals(
+            AuditItemState.InTrash(0, false),
+            AuditResourceDto(state = RESOURCE_STATE_IN_TRASH).itemState(),
+        )
+    }
+
+    @Test
+    fun `an item in the trash does not link to its page`() {
+        val inTrash = trashEvent("trashed", RESOURCE_STATE_IN_TRASH, canRestore = true)
+        assertEquals(AuditTarget.InTrash(canRestore = true), inTrash.target())
+        assertEquals(
+            AuditTarget.InTrash(canRestore = false),
+            trashEvent("trashed", RESOURCE_STATE_IN_TRASH).target(),
+        )
+        // A restored one is a normal item again.
+        assertEquals(
+            AuditTarget.Project(3),
+            trashEvent("restored", RESOURCE_STATE_ACTIVE, exists = true).target(),
+        )
+        assertEquals(AuditTarget.Deleted, trashEvent("purged", RESOURCE_STATE_GONE).target())
+        // Old payload: no state, still gone.
+        assertEquals(AuditTarget.Deleted, trashEvent("deleted").target())
+        // Other kinds in the trash lead to the trash too (no page of their own to 404).
+        assertEquals(
+            AuditTarget.InTrash(false),
+            trashEvent("trashed", RESOURCE_STATE_IN_TRASH, kind = "category").target(),
+        )
+    }
+
+    @Test
+    fun `restore is offered only for a restorable item in the trash`() {
+        assertEquals(
+            TrashRef("project", 3),
+            trashEvent("trashed", RESOURCE_STATE_IN_TRASH, canRestore = true).restoreRef(),
+        )
+        assertNull(trashEvent("trashed", RESOURCE_STATE_IN_TRASH).restoreRef())
+        assertNull(trashEvent("restored", RESOURCE_STATE_ACTIVE, exists = true).restoreRef())
+        assertNull(trashEvent("purged", RESOURCE_STATE_GONE).restoreRef())
+    }
+
+    @Test
+    fun `lifecycle events name the owner, other events do not`() {
+        val owner = AuditSubjectDto(id = 2, name = " Anika ", role = null)
+        assertEquals("Anika", trashEvent("trashed", subject = owner).lifecycleOwnerName())
+        assertEquals(
+            "Anika",
+            trashEvent("purged", system = true, subject = owner).lifecycleOwnerName(),
+        )
+        assertEquals("Anika", trashEvent("deleted", subject = owner).lifecycleOwnerName())
+        assertNull(trashEvent("shared", subject = owner).lifecycleOwnerName())
+        assertNull(trashEvent("trashed").lifecycleOwnerName())
+        assertNull(
+            trashEvent("trashed", subject = AuditSubjectDto(id = null, name = null))
+                .lifecycleOwnerName()
+        )
+    }
+
+    @Test
+    fun `file and step events do not show the parent's trash state or a restore button`() {
+        val step = trashEvent("step_trashed", RESOURCE_STATE_IN_TRASH, canRestore = true)
+        assertNull(step.inTrashState())
+        assertNull(step.restoreRef())
+        assertEquals(AuditTarget.InTrash(false), step.target())
+        assertEquals(
+            R.string.admin_action_step_trashed,
+            auditActionPresentation("step_trashed").labelRes,
+        )
+        assertEquals(AuditActionKind.Restore, auditActionPresentation("step_restored").kind)
+
+        val file =
+            trashEvent("trashed", RESOURCE_STATE_IN_TRASH, canRestore = true)
+                .copy(media = AuditMediaDto(kind = "image", id = 5))
+        assertNull(file.inTrashState())
+        assertNull(file.restoreRef())
+        assertEquals(AuditTarget.InTrash(false), file.target())
     }
 }

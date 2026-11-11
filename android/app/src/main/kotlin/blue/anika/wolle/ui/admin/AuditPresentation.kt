@@ -2,6 +2,7 @@ package blue.anika.wolle.ui.admin
 
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Edit
@@ -11,8 +12,13 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.AuditEventDto
 import blue.anika.wolle.data.api.dto.AuditMediaDto
+import blue.anika.wolle.data.api.dto.AuditResourceDto
 import blue.anika.wolle.data.api.dto.ChangeStep
 import blue.anika.wolle.data.api.dto.ChangeValue
+import blue.anika.wolle.data.api.dto.RESOURCE_STATE_ACTIVE
+import blue.anika.wolle.data.api.dto.RESOURCE_STATE_GONE
+import blue.anika.wolle.data.api.dto.RESOURCE_STATE_IN_TRASH
+import blue.anika.wolle.data.repository.TrashRef
 import blue.anika.wolle.data.util.DateTimeUtils
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.history.TIMER_SECONDS_FIELD
@@ -36,6 +42,8 @@ enum class AuditActionKind {
     Delete,
     Upload,
     Remove,
+    /** Restored from the trash. */
+    Restore,
     Impersonate,
     Other,
 }
@@ -61,6 +69,12 @@ private val knownActions: Map<String, Pair<AuditActionKind, Int>> =
         "created" to (AuditActionKind.Create to R.string.admin_action_created),
         "updated" to (AuditActionKind.Update to R.string.admin_action_updated),
         "deleted" to (AuditActionKind.Delete to R.string.admin_action_deleted),
+        "trashed" to (AuditActionKind.Delete to R.string.admin_action_trashed),
+        "restored" to (AuditActionKind.Restore to R.string.admin_action_restored),
+        "purged" to (AuditActionKind.Delete to R.string.admin_action_purged),
+        "step_trashed" to (AuditActionKind.Delete to R.string.admin_action_step_trashed),
+        "step_restored" to (AuditActionKind.Restore to R.string.admin_action_step_restored),
+        "step_purged" to (AuditActionKind.Delete to R.string.admin_action_step_purged),
         "uploaded" to (AuditActionKind.Upload to R.string.admin_action_uploaded),
         "removed" to (AuditActionKind.Remove to R.string.admin_action_removed),
         "step_created" to (AuditActionKind.Create to R.string.admin_action_step_created),
@@ -102,7 +116,19 @@ private val knownActions: Map<String, Pair<AuditActionKind, Int>> =
 /** Action names the filter offers as suggestions (the server filters on the exact name). */
 val knownAuditActionNames: List<String> = knownActions.keys.toList()
 
-fun auditActionPresentation(action: String): AuditActionPresentation {
+/**
+ * The label and icon of an action. [system] marks the automatic purge after 90 days, which reads
+ * "Purged automatically after 90 days" (a manual purge and legacy `deleted` rows say "Deleted
+ * permanently").
+ */
+fun auditActionPresentation(action: String, system: Boolean = false): AuditActionPresentation {
+    if (action == "purged" && system) {
+        return AuditActionPresentation(
+            AuditActionKind.Delete,
+            R.string.admin_action_purged_auto,
+            action,
+        )
+    }
     val known = knownActions[action]
     return if (known != null) {
         AuditActionPresentation(known.first, known.second, action)
@@ -122,6 +148,7 @@ fun AuditActionKind.icon(): ImageVector =
         AuditActionKind.Delete -> PhosphorIcons.Trash
         AuditActionKind.Upload -> Icons.Filled.CloudUpload
         AuditActionKind.Remove -> Icons.Filled.RemoveCircle
+        AuditActionKind.Restore -> Icons.AutoMirrored.Filled.Undo
         AuditActionKind.Impersonate -> PhosphorIcons.UserCircle
         AuditActionKind.Other -> PhosphorIcons.ClockCounterClockwise
     }
@@ -129,7 +156,8 @@ fun AuditActionKind.icon(): ImageVector =
 /** create: green, update: blue, delete/remove: red, upload: marigold, anything else: muted. */
 fun AuditActionKind.tone(): AuditTone =
     when (this) {
-        AuditActionKind.Create -> AuditTone.Green
+        AuditActionKind.Create,
+        AuditActionKind.Restore -> AuditTone.Green
         AuditActionKind.Update -> AuditTone.Blue
         AuditActionKind.Delete,
         AuditActionKind.Remove -> AuditTone.Red
@@ -317,12 +345,77 @@ fun unavailableReasonRes(reason: String?): Int =
 
 // --- What an event offers: its resource, its media, its details --------------------------------
 
+/** What became of the item an event was about: still there, in the trash, or gone for good. */
+sealed interface AuditItemState {
+    data object Active : AuditItemState
+
+    /** In the trash for [daysRemaining] more days; [canRestore] says whether the viewer may. */
+    data class InTrash(val daysRemaining: Int, val canRestore: Boolean) : AuditItemState
+
+    data object Gone : AuditItemState
+}
+
+/**
+ * The state of an event's resource; servers without the trash only say [AuditResourceDto.exists].
+ */
+fun AuditResourceDto.itemState(): AuditItemState =
+    when (state) {
+        RESOURCE_STATE_IN_TRASH ->
+            AuditItemState.InTrash(trash?.daysRemaining ?: 0, trash?.canRestore ?: false)
+        RESOURCE_STATE_GONE -> AuditItemState.Gone
+        RESOURCE_STATE_ACTIVE -> AuditItemState.Active
+        else -> if (exists) AuditItemState.Active else AuditItemState.Gone
+    }
+
+/** Actions of the trash lifecycle (and the legacy hard delete): they name the owner. */
+private val lifecycleActions =
+    setOf(
+        "trashed",
+        "restored",
+        "purged",
+        "deleted",
+        "step_trashed",
+        "step_restored",
+        "step_purged",
+    )
+
+/**
+ * The owner of the item for an event an administrator did (or the automatic purge did): "Owner:
+ * Anika". Null for everything else, and when that account is gone.
+ */
+fun AuditEventDto.lifecycleOwnerName(): String? =
+    if (action in lifecycleActions) subject?.name?.trim()?.ifBlank { null } else null
+
+/**
+ * Whether [AuditResourceDto.state] describes what the event is about. For a file event (it has
+ * `media`) and a step event (`step_*`) it describes the parent project or yarn, not the file or
+ * step, so no state line and no Restore button: the Trash screen is where those come back.
+ */
+fun AuditEventDto.stateDescribesItem(): Boolean = media == null && !action.startsWith("step_")
+
+/** The in-trash state to show for an event, or null when it does not describe the item. */
+fun AuditEventDto.inTrashState(): AuditItemState.InTrash? =
+    if (stateDescribesItem()) resource.itemState() as? AuditItemState.InTrash else null
+
+/** The item an event can restore: in the trash and restorable by the viewer. */
+fun AuditEventDto.restoreRef(): TrashRef? {
+    val state = inTrashState()
+    if (state == null || !state.canRestore || entityId <= 0) return null
+    return TrashRef(resource.kind ?: entityType, entityId)
+}
+
 /** Where tapping an event's item should lead. */
 sealed interface AuditTarget {
     /** The normal project page (the server grants administrators every project). */
     data class Project(val id: Long) : AuditTarget
 
     data class Yarn(val id: Long) : AuditTarget
+
+    /**
+     * The item is in the trash: the normal page would answer 404 and there is no read-only item
+     * view, so this leads to the Trash screen (restorable when [canRestore]).
+     */
+    data class InTrash(val canRestore: Boolean) : AuditTarget
 
     /** The project or yarn no longer exists: show a "deleted" state, not a dead link. */
     data object Deleted : AuditTarget
@@ -333,6 +426,9 @@ sealed interface AuditTarget {
 
 fun AuditEventDto.target(): AuditTarget {
     val kind = resource.kind ?: entityType
+    (resource.itemState() as? AuditItemState.InTrash)?.let {
+        return AuditTarget.InTrash(it.canRestore && stateDescribesItem())
+    }
     if (kind != "project" && kind != "yarn") return AuditTarget.None
     if (!resource.exists || entityId <= 0) return AuditTarget.Deleted
     return if (kind == "project") AuditTarget.Project(entityId) else AuditTarget.Yarn(entityId)

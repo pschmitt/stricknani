@@ -2,12 +2,18 @@ package blue.anika.wolle.ui.admin
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.AuditDetailDto
 import blue.anika.wolle.data.api.dto.AuditEventDto
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.AdminException
 import blue.anika.wolle.data.repository.AdminFailure
 import blue.anika.wolle.data.repository.AdminRepository
+import blue.anika.wolle.data.repository.TrashRepository
+import blue.anika.wolle.data.repository.toTrashFailure
+import blue.anika.wolle.sync.SyncScheduler
+import blue.anika.wolle.ui.common.MutationFeedback
+import blue.anika.wolle.ui.trash.restoreFailureRes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
@@ -64,6 +70,9 @@ class AdminAuditViewModel
 constructor(
     private val repository: AdminRepository,
     private val mediaUrlResolver: MediaUrlResolver,
+    private val trashRepository: TrashRepository,
+    private val syncScheduler: SyncScheduler,
+    private val feedback: MutationFeedback,
 ) : ViewModel() {
     private val _state = MutableStateFlow(AuditListState())
     val state: StateFlow<AuditListState> = _state.asStateFlow()
@@ -171,6 +180,24 @@ constructor(
                         event,
                         (failure as? AdminException)?.failure ?: AdminFailure.Other,
                     )
+            }
+        }
+    }
+
+    /** Restores the item of an event that sits in the trash, then syncs and refreshes the list. */
+    fun restore(event: AuditEventDto) {
+        val ref = event.restoreRef() ?: return
+        viewModelScope.launch {
+            try {
+                trashRepository.restore(ref)
+                syncScheduler.syncNow()
+                feedback.show(R.string.mutation_trash_restored)
+                closeEvent()
+                load(reset = true, userInitiated = false)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (failure: Exception) {
+                feedback.show(restoreFailureRes(failure.toTrashFailure()))
             }
         }
     }
