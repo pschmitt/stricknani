@@ -11,6 +11,7 @@ import { chmodSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { expect } from "@playwright/test";
 import type { BrowserContextOptions, Locator, Page } from "@playwright/test";
+import { dismissPhotoEditor } from "../lib/ui-helpers";
 import { AcceptanceFailure, fillMarkdownField, fn } from "../lib/common";
 import { REPO_ROOT } from "../lib/fixture";
 import type { E2eConfig, LiveFixture } from "../lib/harness";
@@ -243,20 +244,6 @@ async function shot(
   } catch {
     // A screenshot is evidence only; never fail the behavioral check on it.
   }
-}
-
-/**
- * A newly uploaded photo opens its editor right away; close it again so the tiles stay reachable.
- */
-async function dismissPhotoEditor(page: Page): Promise<void> {
-  const editor = page.locator("dialog.photo-editor[open]");
-  try {
-    await editor.waitFor({ state: "visible", timeout: 3_000 });
-  } catch {
-    return;
-  }
-  await editor.getByRole("button", { name: "Cancel" }).first().click();
-  await editor.waitFor({ state: "hidden" });
 }
 
 /** Action visibility (rest, hover, focus, touch) and tile geometry. */

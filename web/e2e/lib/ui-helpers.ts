@@ -689,6 +689,20 @@ export async function saveRemoteProjectVersion(
   );
 }
 
+/**
+ * A newly uploaded photo opens its editor right away; close it again so the tiles stay reachable.
+ */
+export async function dismissPhotoEditor(page: Page): Promise<void> {
+  const editor = page.locator("dialog.photo-editor[open]");
+  try {
+    await editor.waitFor({ state: "visible", timeout: 3_000 });
+  } catch {
+    return;
+  }
+  await editor.getByRole("button", { name: "Cancel" }).first().click();
+  await editor.waitFor({ state: "hidden" });
+}
+
 /** Reveal a photo tile's hover-only trash button and press it with the mouse. */
 export async function clickTileDelete(
   page: Page,

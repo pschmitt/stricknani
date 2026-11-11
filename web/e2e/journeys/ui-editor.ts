@@ -29,6 +29,7 @@ import {
   assertMobileAppHeader,
   assertShellAvatar,
   clickTileDelete,
+  dismissPhotoEditor,
   exerciseGaugeCalculator,
   measureLibraryDensity,
   openAccountFromProfile,
@@ -745,6 +746,8 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
     (await page.locator(".reorder-item img").count()) === 1,
     "the project media list did not refresh after upload",
   );
+  // The new photo opens its editor right away; close it again.
+  await dismissPhotoEditor(page);
 
   markStage("checking project photo removal confirmation while busy");
   const projectPhotoRemove = page.getByRole("button", {

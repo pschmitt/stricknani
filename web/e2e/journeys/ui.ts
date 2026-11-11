@@ -897,6 +897,8 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
     (await page.locator(".project-card").count()) === 1,
     "project search did not return the matching card",
   );
+  // The filter suggestions of the search field overlay the pills while the field is focused.
+  await searchBox.press("Escape");
   markStage("filtering project library by category");
   const categoryPill = page
     .getByTestId("project-filter-category")

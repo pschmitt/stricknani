@@ -2999,7 +2999,9 @@ async function runAcceptance(
     const deletedEventRow = page
       .locator(".event-row")
       .filter({ hasText: "Deleted" })
-      .filter({ hasText: crossOwnerName });
+      .filter({ hasText: crossOwnerName })
+      // The trashed and the permanent deletion both read as deleted once the project is gone.
+      .first();
     const deletedResourceLink = deletedEventRow.locator(
       "a.resource-card__link",
     );
