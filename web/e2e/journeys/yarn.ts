@@ -963,6 +963,7 @@ export async function runYarnJourney(
       "the first yarn photo upload did not reach the retryable failure",
     );
     await page
+      .getByRole("alert")
       .getByText(
         "Some photos could not be uploaded. Save again to retry them.",
         {
