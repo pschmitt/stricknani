@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { foreignOwner, ownerField, parseOwner } from "./owner";
+import { foreignOwner, nameFromEmail, ownerField, parseOwner } from "./owner";
 
 const anika = {
   id: 7,
@@ -24,7 +24,7 @@ describe("resource owner", () => {
     ).toEqual({
       id: 3,
       email: "bo@example.test",
-      name: "bo",
+      name: "Bo",
       avatar_url: null,
     });
   });
@@ -43,5 +43,14 @@ describe("resource owner", () => {
     expect(foreignOwner(anika, null)).toBeNull();
     expect(foreignOwner(null, 1)).toBeNull();
     expect(foreignOwner(undefined, 1)).toBeNull();
+  });
+});
+
+describe("nameFromEmail", () => {
+  it("turns the local part into a readable name", () => {
+    expect(nameFromEmail("anika.bergmann@example.test")).toBe("Anika Bergmann");
+    expect(nameFromEmail("play_r-bw@example.test")).toBe("Play R Bw");
+    expect(nameFromEmail("ai@example.test")).toBe("Ai");
+    expect(nameFromEmail("..@example.test")).toBe("..@example.test");
   });
 });

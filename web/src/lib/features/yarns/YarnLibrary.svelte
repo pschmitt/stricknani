@@ -11,7 +11,9 @@
   import CreateFab from "#lib/components/CreateFab.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import { t } from "#lib/i18n.svelte.ts";
-  import OwnerFilterPills from "#lib/components/OwnerFilterPills.svelte";
+  import FilterChip from "#lib/components/FilterChip.svelte";
+  import FilterChipRow from "#lib/components/FilterChipRow.svelte";
+  import OwnerFilterChips from "#lib/components/OwnerFilterChips.svelte";
   import { listOwners } from "#lib/owner-filter.ts";
   import { trashDaysLeft } from "#lib/trash-filter.ts";
   import {
@@ -242,36 +244,21 @@
     suggestions={suggestionConfig}
   />
 
-  <div
-    class="filter-pills"
-    role="group"
-    aria-label={t("Filter", locale)}
-    data-testid="yarn-filter-pills"
-  >
-    <button
-      class="filter-pill"
-      class:filter-pill--selected={!filters.favorite &&
-        !filters.owner &&
-        !filters.trashed}
-      type="button"
-      aria-pressed={!filters.favorite && !filters.owner && !filters.trashed}
-      data-testid="yarn-filter-all"
+  <FilterChipRow label={t("Filter", locale)} testid="yarn-filter-pills">
+    <FilterChip
+      label={t("All", locale)}
+      selected={!filters.favorite && !filters.owner && !filters.trashed}
+      testid="yarn-filter-all"
       onclick={() =>
         applyFilters({ ...filters, favorite: false, owner: "", trashed: "" })}
-    >
-      {t("All", locale)}
-    </button>
-    <button
-      class="filter-pill"
-      class:filter-pill--selected={filters.favorite}
-      type="button"
-      aria-pressed={filters.favorite}
-      data-testid="yarn-filter-favorites"
+    />
+    <FilterChip
+      label={t("Favorites only", locale)}
+      selected={filters.favorite}
+      testid="yarn-filter-favorites"
       onclick={() => applyFilters({ ...filters, favorite: !filters.favorite })}
-    >
-      {t("Favorites only", locale)}
-    </button>
-    <OwnerFilterPills
+    />
+    <OwnerFilterChips
       choice={filters.owner}
       {owners}
       {locale}
@@ -286,7 +273,7 @@
       }}
       onselect={(owner) => applyFilters({ ...filters, owner })}
     />
-  </div>
+  </FilterChipRow>
 
   {#if errorMessage}
     <div class="notice-error" role="alert">
@@ -386,49 +373,6 @@
 
   .desktop-create {
     min-height: 44px;
-  }
-
-  .filter-pills {
-    display: flex;
-    min-width: 0;
-    gap: 0.5rem;
-    overflow-x: auto;
-    padding: 0.15rem 0 0.35rem;
-    overscroll-behavior-inline: contain;
-    scrollbar-width: thin;
-  }
-
-  .filter-pill {
-    display: inline-flex;
-    min-height: 44px;
-    flex: 0 0 auto;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    padding: 0.45rem 0.85rem;
-    color: var(--ink);
-    background: var(--surface);
-    font: inherit;
-    font-size: 0.9rem;
-    cursor: pointer;
-  }
-
-  .filter-pill:hover {
-    border-color: var(--accent-strong);
-  }
-
-  .filter-pill:focus-visible {
-    outline: 3px solid color-mix(in srgb, var(--accent-strong) 45%, transparent);
-    outline-offset: 2px;
-  }
-
-  .filter-pill--selected {
-    border-color: var(--primary-container);
-    color: var(--on-primary-container);
-    background: var(--primary-container);
-    font-weight: 650;
   }
 
   .notice-error {

@@ -574,10 +574,21 @@ pub(crate) async fn owner_info(
 
 pub(crate) fn display_name(email: &str) -> String {
     let local = email.split('@').next().unwrap_or(email);
-    let mut chars = local.chars();
-    match chars.next() {
-        Some(first) => first.to_uppercase().chain(chars).collect(),
-        None => email.to_owned(),
+    // "anika.bergmann" reads as "Anika Bergmann"; separators between words become spaces.
+    let words: Vec<String> = local
+        .split(['.', '_', '-'])
+        .filter(|word| !word.is_empty())
+        .map(|word| {
+            let mut chars = word.chars();
+            chars.next().map_or_else(String::new, |first| {
+                first.to_uppercase().chain(chars).collect()
+            })
+        })
+        .collect();
+    if words.is_empty() {
+        email.to_owned()
+    } else {
+        words.join(" ")
     }
 }
 
@@ -589,5 +600,8 @@ mod tests {
     fn display_name_capitalises_local_part() {
         assert_eq!(display_name("anika@example.org"), "Anika");
         assert_eq!(display_name("x"), "X");
+        assert_eq!(display_name("anika.bergmann@example.org"), "Anika Bergmann");
+        assert_eq!(display_name("play_r-bw@example.org"), "Play R Bw");
+        assert_eq!(display_name("..@example.org"), "..@example.org");
     }
 }

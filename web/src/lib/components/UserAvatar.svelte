@@ -1,5 +1,5 @@
 <script lang="ts">
-  type Size = "small" | "large";
+  type Size = "chip" | "small" | "large";
 
   let {
     avatarUrl,
@@ -22,7 +22,12 @@
   }
 </script>
 
-<span class="user-avatar" class:large={size === "large"} aria-hidden="true">
+<span
+  class="user-avatar"
+  class:large={size === "large"}
+  class:chip={size === "chip"}
+  aria-hidden="true"
+>
   {#if imageSource}
     {@const source = imageSource}
     {#key source}
@@ -60,6 +65,14 @@
     flex-basis: 2.75rem;
     width: 2.75rem;
     height: 2.75rem;
+  }
+
+  /* A filter chip's leading icon: Android's 18dp. */
+  .user-avatar.chip {
+    flex-basis: 1.125rem;
+    width: 1.125rem;
+    height: 1.125rem;
+    font-size: 0.65rem;
   }
 
   .user-avatar img {
