@@ -592,7 +592,7 @@
     background: var(--surface-highest);
   }
 
-  /* On a sticky note the editor is part of the paper: no box, ruled lines, the note's ink. */
+  /* On a sticky note the editor is part of the unruled paper. */
   .md-editor--sticky {
     --md-line-height: 1.6;
   }
@@ -602,14 +602,11 @@
     border: 0;
     padding: 0.25rem 0.4rem;
     color: var(--sticky-ink);
-    background: repeating-linear-gradient(
-        to bottom,
-        transparent 0 calc(var(--md-line-height) * 1em - 1px),
-        color-mix(in srgb, var(--sticky-ink) 16%, transparent)
-          calc(var(--md-line-height) * 1em - 1px)
-          calc(var(--md-line-height) * 1em)
-      )
-      0 0.25rem / 100% calc(var(--md-line-height) * 1em) local;
+    background: transparent;
+  }
+
+  .md-editor--sticky .md-editor__surface :global(.md-editor__content p) {
+    margin: 0;
   }
 
   .md-editor--sticky .md-editor__raw:focus-visible,
