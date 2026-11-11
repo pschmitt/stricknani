@@ -354,7 +354,8 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
   await page.waitForURL(`**${editorPath}`);
   await detailHeading.waitFor({ state: "visible" });
   await statusFeedback("Project created.").waitFor({ state: "visible" });
-  const renderedProjectPhoto = page.locator(".gallery-image img");
+  markStage("checking the photo on the newly created project");
+  const renderedProjectPhoto = page.locator(".photo-strip img");
   await renderedProjectPhoto.waitFor({ state: "visible" });
   check(
     await renderedProjectPhoto.evaluate(
