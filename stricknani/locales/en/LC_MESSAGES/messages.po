@@ -49,8 +49,8 @@ msgstr "Main navigation"
 #: src/import_service.rs:704 web/src/lib/components/CommandPalette.svelte:108
 #: web/src/lib/features/account/BackupsSection.svelte:445
 #: web/src/lib/features/account/BackupsSection.svelte:461
-#: web/src/lib/features/projects/ProjectLibrary.svelte:250
-#: web/src/lib/features/projects/ProjectLibrary.svelte:261
+#: web/src/lib/features/projects/ProjectLibrary.svelte:255
+#: web/src/lib/features/projects/ProjectLibrary.svelte:266
 #: web/src/lib/nav-items.ts:13
 msgid "Projects"
 msgstr "Projects"
@@ -59,8 +59,8 @@ msgstr "Projects"
 #: web/src/lib/features/account/BackupsSection.svelte:447
 #: web/src/lib/features/account/BackupsSection.svelte:467
 #: web/src/lib/features/yarns/YarnDetail.svelte:353
-#: web/src/lib/features/yarns/YarnLibrary.svelte:167
-#: web/src/lib/features/yarns/YarnLibrary.svelte:178
+#: web/src/lib/features/yarns/YarnLibrary.svelte:177
+#: web/src/lib/features/yarns/YarnLibrary.svelte:188
 #: web/src/lib/nav-items.ts:14
 msgid "Yarns"
 msgstr "Yarns"
@@ -434,7 +434,7 @@ msgstr "Add a category above to make your project library easier to browse."
 msgid "Add a note"
 msgstr "Add a note"
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:264
+#: web/src/lib/features/yarns/YarnLibrary.svelte:285
 msgid "Add a skein to keep its details and project links together."
 msgstr "Add a skein to keep its details and project links together."
 
@@ -481,7 +481,7 @@ msgstr "Add to favorites"
 
 #: web/src/lib/features/projects/YarnPicker.svelte:126
 #: web/src/lib/features/yarns/YarnForm.svelte:772
-#: web/src/lib/features/yarns/YarnLibrary.svelte:184
+#: web/src/lib/features/yarns/YarnLibrary.svelte:194
 msgid "Add yarn"
 msgstr "Add yarn"
 
@@ -594,8 +594,8 @@ msgstr ""
 "you cannot sign in, contact the instance operator."
 
 #: web/src/lib/components/ScopeFilter.svelte:26
-#: web/src/lib/features/projects/ProjectLibrary.svelte:297
-#: web/src/lib/features/yarns/YarnLibrary.svelte:214
+#: web/src/lib/features/projects/ProjectLibrary.svelte:302
+#: web/src/lib/features/yarns/YarnLibrary.svelte:227
 msgid "All"
 msgstr "All"
 
@@ -861,11 +861,11 @@ msgstr "Bottom left corner"
 msgid "Bottom right corner"
 msgstr "Bottom right corner"
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:253
+#: web/src/lib/features/projects/ProjectLibrary.svelte:258
 msgid "Browse and find your knitting projects."
 msgstr "Browse and find your knitting projects."
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:170
+#: web/src/lib/features/yarns/YarnLibrary.svelte:180
 msgid "Browse the yarns connected to your projects."
 msgstr "Browse the yarns connected to your projects."
 
@@ -1132,8 +1132,8 @@ msgstr "Choose yarn photos"
 msgid "Clear"
 msgstr "Clear"
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:397
-#: web/src/lib/features/yarns/YarnLibrary.svelte:259
+#: web/src/lib/features/projects/ProjectLibrary.svelte:410
+#: web/src/lib/features/yarns/YarnLibrary.svelte:280
 msgid "Clear filters"
 msgstr "Clear filters"
 
@@ -1472,7 +1472,7 @@ msgstr "Detail card order saved."
 msgid "Detail cards"
 msgstr "Detail cards"
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:281
+#: web/src/lib/features/yarns/YarnLibrary.svelte:302
 msgid "Details to add"
 msgstr "Details to add"
 
@@ -1551,7 +1551,7 @@ msgstr "Do not worry, your projects are safe in the basket."
 #: web/src/lib/components/StatusBadge.svelte:22
 #: web/src/lib/features/gauge/SwatchSizeDialog.svelte:117
 #: web/src/lib/features/projects/ProjectEditor.svelte:1900
-#: web/src/lib/features/projects/ProjectLibrary.svelte:62
+#: web/src/lib/features/projects/ProjectLibrary.svelte:64
 #: web/src/lib/features/sharing/ShareDialog.svelte:360
 msgid "Done"
 msgstr "Done"
@@ -1879,8 +1879,8 @@ msgstr "Favorite yarns"
 msgid "Favorite yarns could not be loaded."
 msgstr "Favorite yarns could not be loaded."
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:307
-#: web/src/lib/features/yarns/YarnLibrary.svelte:224
+#: web/src/lib/features/projects/ProjectLibrary.svelte:312
+#: web/src/lib/features/yarns/YarnLibrary.svelte:237
 msgid "Favorites only"
 msgstr "Favorites only"
 
@@ -1893,8 +1893,8 @@ msgid "File"
 msgstr "File"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:366
-#: web/src/lib/features/projects/ProjectLibrary.svelte:286
-#: web/src/lib/features/yarns/YarnLibrary.svelte:203
+#: web/src/lib/features/projects/ProjectLibrary.svelte:291
+#: web/src/lib/features/yarns/YarnLibrary.svelte:213
 msgid "Filter"
 msgstr "Filter"
 
@@ -2309,6 +2309,15 @@ msgstr "In progress"
 #: web/src/lib/error-copy.ts:32
 msgid "In the great ball of yarn that is the internet, this is a loose end."
 msgstr "In the great ball of yarn that is the internet, this is a loose end."
+
+#: web/src/lib/components/LibraryCard.svelte:60
+msgid "In trash · 1 day left"
+msgstr "In trash · 1 day left"
+
+#: web/src/lib/components/LibraryCard.svelte:61
+#, python-brace-format
+msgid "In trash · {count} days left"
+msgstr "In trash · {count} days left"
 
 #: web/src/lib/features/projects/ProjectReader.svelte:1205
 #: web/src/lib/features/yarns/YarnDetail.svelte:609
@@ -2751,7 +2760,7 @@ msgstr "Media storage is unavailable. Try again later."
 msgid "Member"
 msgstr "Member"
 
-#: web/src/lib/components/OwnerFilterPills.svelte:33
+#: web/src/lib/components/OwnerFilterPills.svelte:35
 #: web/src/lib/components/ScopeFilter.svelte:25
 msgid "Mine"
 msgstr "Mine"
@@ -2864,8 +2873,8 @@ msgstr "New password"
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1452
 #: web/src/lib/features/projects/ProjectEditor.svelte:1462
-#: web/src/lib/features/projects/ProjectLibrary.svelte:267
-#: web/src/lib/features/projects/ProjectLibrary.svelte:455
+#: web/src/lib/features/projects/ProjectLibrary.svelte:272
+#: web/src/lib/features/projects/ProjectLibrary.svelte:469
 #: web/src/lib/features/yarns/YarnForm.svelte:816
 #: web/src/lib/palette/entries.ts:149 web/src/routes/create/+page.svelte:22
 msgid "New project"
@@ -2889,14 +2898,14 @@ msgstr "New version ready"
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1577
 #: web/src/lib/features/yarns/YarnForm.svelte:716
-#: web/src/lib/features/yarns/YarnLibrary.svelte:317
+#: web/src/lib/features/yarns/YarnLibrary.svelte:339
 #: web/src/lib/palette/entries.ts:157 web/src/routes/create/+page.svelte:32
 msgid "New yarn"
 msgstr "New yarn"
 
 #: web/src/lib/components/PhotoStrip.svelte:146
-#: web/src/lib/features/projects/ProjectLibrary.svelte:447
-#: web/src/lib/features/yarns/YarnLibrary.svelte:309
+#: web/src/lib/features/projects/ProjectLibrary.svelte:461
+#: web/src/lib/features/yarns/YarnLibrary.svelte:331
 msgid "Next"
 msgstr "Next"
 
@@ -2991,7 +3000,7 @@ msgstr "No pattern description yet."
 msgid "No photos yet."
 msgstr "No photos yet."
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:394
+#: web/src/lib/features/projects/ProjectLibrary.svelte:407
 msgid "No projects match those filters."
 msgstr "No projects match those filters."
 
@@ -3038,7 +3047,7 @@ msgstr "No yarn is linked to this project yet."
 msgid "No yarn matches that search."
 msgstr "No yarn matches that search."
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:256
+#: web/src/lib/features/yarns/YarnLibrary.svelte:277
 msgid "No yarn matches those filters."
 msgstr "No yarn matches those filters."
 
@@ -3105,7 +3114,7 @@ msgid "Nothing matches"
 msgstr "Nothing matches"
 
 #: web/src/lib/features/home/HomeDashboard.svelte:245
-#: web/src/lib/features/projects/ProjectLibrary.svelte:400
+#: web/src/lib/features/projects/ProjectLibrary.svelte:413
 msgid "Nothing on the needles yet"
 msgstr "Nothing on the needles yet"
 
@@ -3340,8 +3349,8 @@ msgstr "PDF link not attached"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:514
 #: web/src/lib/features/admin/AdminUsers.svelte:851
-#: web/src/lib/features/projects/ProjectLibrary.svelte:440
-#: web/src/lib/features/yarns/YarnLibrary.svelte:302
+#: web/src/lib/features/projects/ProjectLibrary.svelte:454
+#: web/src/lib/features/yarns/YarnLibrary.svelte:324
 msgid "Page"
 msgstr "Page"
 
@@ -3562,8 +3571,8 @@ msgid "Preparing your review"
 msgstr "Preparing your review"
 
 #: web/src/lib/components/PhotoStrip.svelte:137
-#: web/src/lib/features/projects/ProjectLibrary.svelte:438
-#: web/src/lib/features/yarns/YarnLibrary.svelte:300
+#: web/src/lib/features/projects/ProjectLibrary.svelte:452
+#: web/src/lib/features/yarns/YarnLibrary.svelte:322
 msgid "Previous"
 msgstr "Previous"
 
@@ -3675,7 +3684,7 @@ msgstr "Project image viewer"
 
 #: web/src/lib/components/StatusBadge.svelte:22
 #: web/src/lib/features/projects/ProjectEditor.svelte:1898
-#: web/src/lib/features/projects/ProjectLibrary.svelte:61
+#: web/src/lib/features/projects/ProjectLibrary.svelte:63
 msgid "Project in progress"
 msgstr "In progress"
 
@@ -3689,7 +3698,7 @@ msgstr "Project media updated."
 msgid "Project name"
 msgstr "Project name"
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:431
+#: web/src/lib/features/projects/ProjectLibrary.svelte:445
 msgid "Project pages"
 msgstr "Project pages"
 
@@ -3896,8 +3905,8 @@ msgstr "Remove"
 msgid "Remove attachment"
 msgstr "Remove attachment"
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:278
-#: web/src/lib/features/yarns/YarnLibrary.svelte:195
+#: web/src/lib/features/projects/ProjectLibrary.svelte:283
+#: web/src/lib/features/yarns/YarnLibrary.svelte:205
 msgid "Remove filter"
 msgstr "Remove filter"
 
@@ -4265,9 +4274,9 @@ msgid "Scroll down to Delete account and choose Delete my account."
 msgstr "Scroll down to Delete account and choose Delete my account."
 
 #: web/src/lib/components/CommandPalette.svelte:297
-#: web/src/lib/features/projects/ProjectLibrary.svelte:277
+#: web/src/lib/features/projects/ProjectLibrary.svelte:282
 #: web/src/lib/features/projects/YarnPicker.svelte:76
-#: web/src/lib/features/yarns/YarnLibrary.svelte:194
+#: web/src/lib/features/yarns/YarnLibrary.svelte:204
 msgid "Search"
 msgstr "Search"
 
@@ -4284,11 +4293,11 @@ msgstr "Search everything"
 msgid "Search yarn"
 msgstr "Search yarn"
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:276
+#: web/src/lib/features/projects/ProjectLibrary.svelte:281
 msgid "Search your projects"
 msgstr "Search your projects"
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:193
+#: web/src/lib/features/yarns/YarnLibrary.svelte:203
 msgid "Search your yarn"
 msgstr "Search your yarn"
 
@@ -4380,7 +4389,7 @@ msgstr "Shared"
 msgid "Shared by {name}"
 msgstr "Shared by {name}"
 
-#: web/src/lib/components/OwnerFilterPills.svelte:43
+#: web/src/lib/components/OwnerFilterPills.svelte:45
 msgid "Shared with me"
 msgstr "Shared with me"
 
@@ -4499,12 +4508,12 @@ msgstr "Sign in to use the project timer."
 msgid "Sign in to view this yarn."
 msgstr "Sign in to view this yarn."
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:116
+#: web/src/lib/features/projects/ProjectLibrary.svelte:119
 msgid "Sign in to view your projects."
 msgstr "Sign in to view your projects."
 
 #: web/src/lib/features/yarns/YarnForm.svelte:238
-#: web/src/lib/features/yarns/YarnLibrary.svelte:68
+#: web/src/lib/features/yarns/YarnLibrary.svelte:72
 msgid "Sign in to view your yarn."
 msgstr "Sign in to view your yarn."
 
@@ -4637,7 +4646,7 @@ msgstr "Start something cosy"
 msgid "Start something new, or bring in a pattern you already have."
 msgstr "Start something new, or bring in a pattern you already have."
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:402
+#: web/src/lib/features/projects/ProjectLibrary.svelte:415
 msgid "Start with one project to keep its pattern and progress together."
 msgstr "Start with one project to keep its pattern and progress together."
 
@@ -5091,10 +5100,10 @@ msgstr "The email or password is incorrect."
 msgid "The error report setting could not be saved."
 msgstr "The error report setting could not be saved."
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:234
+#: web/src/lib/features/projects/ProjectLibrary.svelte:239
 #: web/src/lib/features/projects/ProjectReader.svelte:415
 #: web/src/lib/features/yarns/YarnDetail.svelte:320
-#: web/src/lib/features/yarns/YarnLibrary.svelte:151
+#: web/src/lib/features/yarns/YarnLibrary.svelte:161
 msgid "The favorite could not be updated."
 msgstr "The favorite could not be updated."
 
@@ -5239,7 +5248,7 @@ msgstr "The project could not be loaded."
 msgid "The project could not be saved."
 msgstr "The project could not be saved."
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:136
+#: web/src/lib/features/projects/ProjectLibrary.svelte:139
 msgid "The project list could not be loaded."
 msgstr "The project list could not be loaded."
 
@@ -5318,9 +5327,9 @@ msgstr "The server returned an unexpected import response."
 #: web/src/lib/features/auth/signup-api.ts:46
 #: web/src/lib/features/categories/category-api.ts:20
 #: web/src/lib/features/categories/category-api.ts:75
-#: web/src/lib/features/projects/project-api.ts:741
+#: web/src/lib/features/projects/project-api.ts:753
 #: web/src/lib/features/sharing/sharing-api.ts:71
-#: web/src/lib/features/yarns/yarn-api.ts:423
+#: web/src/lib/features/yarns/yarn-api.ts:434
 msgid "The server returned an unexpected response."
 msgstr "The server returned an unexpected response."
 
@@ -5418,7 +5427,7 @@ msgstr "The yarn could not be loaded."
 msgid "The yarn could not be saved."
 msgstr "The yarn could not be saved."
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:88
+#: web/src/lib/features/yarns/YarnLibrary.svelte:92
 msgid "The yarn list could not be loaded."
 msgstr "The yarn list could not be loaded."
 
@@ -5611,7 +5620,7 @@ msgstr ""
 "yarns, photos, attachments, favourites, your picture, and every app and "
 "device you connected. It cannot be undone."
 
-#: web/src/lib/features/yarns/yarn-api.ts:287
+#: web/src/lib/features/yarns/yarn-api.ts:297
 msgid "This photo is larger than the 25 MiB limit."
 msgstr "This photo is larger than the 25 MiB limit."
 
@@ -5679,7 +5688,7 @@ msgstr ""
 msgid "This text uses formatting the visual editor cannot show."
 msgstr "This text uses formatting the visual editor cannot show."
 
-#: web/src/lib/features/projects/project-api.ts:433
+#: web/src/lib/features/projects/project-api.ts:444
 msgid "This upload is larger than the 25 MiB limit."
 msgstr "This upload is larger than the 25 MiB limit."
 
@@ -5838,7 +5847,11 @@ msgstr "Transfer to {name}"
 msgid "Transferred to {name}"
 msgstr "Transferred to {name}"
 
-#: web/src/lib/features/projects/ProjectLibrary.svelte:395
+#: web/src/lib/components/OwnerFilterPills.svelte:69
+msgid "Trash"
+msgstr "Trash"
+
+#: web/src/lib/features/projects/ProjectLibrary.svelte:408
 msgid "Try a different name, category, or tag."
 msgstr "Try a different name, category, or tag."
 
@@ -5860,18 +5873,18 @@ msgstr "Try a different name, category, or tag."
 #: web/src/lib/features/home/HomeDashboard.svelte:203
 #: web/src/lib/features/home/HomeDashboard.svelte:272
 #: web/src/lib/features/media/ArchiveControl.svelte:513
-#: web/src/lib/features/projects/ProjectLibrary.svelte:377
+#: web/src/lib/features/projects/ProjectLibrary.svelte:390
 #: web/src/lib/features/projects/ProjectReader.svelte:835
 #: web/src/lib/features/sharing/PeoplePicker.svelte:119
 #: web/src/lib/features/sharing/ShareDialog.svelte:247
 #: web/src/lib/features/yarns/YarnDetail.svelte:385
 #: web/src/lib/features/yarns/YarnForm.svelte:745
-#: web/src/lib/features/yarns/YarnLibrary.svelte:239
+#: web/src/lib/features/yarns/YarnLibrary.svelte:260
 #: web/src/routes/+layout.svelte:262
 msgid "Try again"
 msgstr "Try again"
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:257
+#: web/src/lib/features/yarns/YarnLibrary.svelte:278
 msgid "Try another search or show all yarn."
 msgstr "Try another search or show all yarn."
 
@@ -6247,7 +6260,7 @@ msgstr "Yarn options could not be loaded."
 msgid "Yarn page URL"
 msgstr "Yarn page URL"
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:293
+#: web/src/lib/features/yarns/YarnLibrary.svelte:315
 msgid "Yarn pages"
 msgstr "Yarn pages"
 
@@ -6635,7 +6648,7 @@ msgstr "Your session has expired. Sign in again."
 msgid "Your sign-up session expired. Refresh and try again."
 msgstr "Your sign-up session expired. Refresh and try again."
 
-#: web/src/lib/features/yarns/YarnLibrary.svelte:262
+#: web/src/lib/features/yarns/YarnLibrary.svelte:283
 msgid "Your stash is empty"
 msgstr "Your stash is empty"
 

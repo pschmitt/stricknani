@@ -132,6 +132,7 @@ describe("project URL state and API DTOs", () => {
       favorite: true,
       status: "",
       owner: "",
+      trashed: "",
       page: 3,
     });
     expect(searchFromFilters(filters)).toBe(
@@ -185,6 +186,7 @@ describe("project URL state and API DTOs", () => {
       favorite: false,
       status: "",
       owner: "",
+      trashed: "",
       page: 1,
     });
   });

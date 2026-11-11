@@ -5,6 +5,12 @@ import { ownerField, type ResourceOwner } from "#lib/owner.ts";
 import type { LibraryScope } from "#lib/library-scope.svelte.ts";
 import { ownerChoiceFromParam, type OwnerChoice } from "#lib/owner-filter.ts";
 import {
+  trashChoiceFromParam,
+  trashField,
+  type TrashChoice,
+  type TrashFields,
+} from "#lib/trash-filter.ts";
+import {
   applyListScope,
   type ListScope,
   type YarnWrite,
@@ -25,7 +31,7 @@ export function isProjectStatus(value: unknown): value is ProjectStatus {
   );
 }
 
-export interface ProjectSummary {
+export interface ProjectSummary extends TrashFields {
   id: number;
   name: string;
   category: string | null;
@@ -159,6 +165,8 @@ export interface ProjectFilters {
   status: ProjectStatus | "";
   /** Whose projects: empty = everybody's, `me`, `shared` or an owner id (`?owner=` of the URL). */
   owner: OwnerChoice;
+  /** `only` lists the trash (`?trashed=only`); empty is the normal list. */
+  trashed: TrashChoice;
   page: number;
 }
 
@@ -179,6 +187,7 @@ const emptyFilters: ProjectFilters = {
   favorite: false,
   status: "",
   owner: "",
+  trashed: "",
   page: 1,
 };
 
@@ -192,6 +201,7 @@ export function filtersFromSearch(search: string): ProjectFilters {
     favorite: params.get("favorite") === "true",
     status: statusParam(params.get("status")),
     owner: ownerChoiceFromParam(params.get("owner")),
+    trashed: trashChoiceFromParam(params.get("trashed")),
     page:
       Number.isSafeInteger(requestedPage) && requestedPage > 0
         ? requestedPage
@@ -211,6 +221,7 @@ export function searchFromFilters(filters: ProjectFilters): string {
   if (filters.favorite) params.set("favorite", "true");
   if (filters.status) params.set("status", filters.status);
   if (filters.owner) params.set("owner", filters.owner);
+  if (filters.trashed) params.set("trashed", filters.trashed);
   if (filters.page > 1) params.set("page", String(filters.page));
   return params.toString();
 }
@@ -555,6 +566,7 @@ function parseProjectSummary(value: unknown): ProjectSummary {
     status: projectStatusField(value.status),
     updated_at: value.updated_at,
     preview_url: value.preview_url,
+    ...trashField(value),
     ...ownerField(value.owner),
     ...accessField(value.access),
   };

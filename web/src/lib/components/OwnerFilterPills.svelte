@@ -8,6 +8,8 @@
 
   interface Props {
     choice: OwnerChoice;
+    /** The Trash pill that follows the owners; absent for lists without one. */
+    trash?: { selected: boolean; ontoggle: () => void };
     owners: ResourceOwner[];
     locale: "en" | "de";
     /** `project` or `yarn`, for the test ids. */
@@ -15,7 +17,7 @@
     onselect: (choice: OwnerChoice) => void;
   }
 
-  let { choice, owners, locale, kind, onselect }: Props = $props();
+  let { choice, trash, owners, locale, kind, onselect }: Props = $props();
 
   function toggle(next: OwnerChoice) {
     onselect(choice === next ? "" : next);
@@ -55,6 +57,18 @@
     {owner.name}
   </button>
 {/each}
+{#if trash}
+  <button
+    class="filter-pill"
+    class:filter-pill--selected={trash.selected}
+    type="button"
+    aria-pressed={trash.selected}
+    data-testid={`${kind}-filter-trash`}
+    onclick={() => trash.ontoggle()}
+  >
+    {t("Trash", locale)}
+  </button>
+{/if}
 
 <style>
   .filter-pill {

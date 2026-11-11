@@ -5,6 +5,11 @@ import {
   ownerChoiceIsUser,
 } from "./owner-filter";
 import {
+  trashChoiceFromParam,
+  trashDaysLeft,
+  trashField,
+} from "./trash-filter";
+import {
   filtersFromSearch,
   searchFromFilters,
 } from "./features/projects/project-api";
@@ -61,5 +66,36 @@ describe("listOwners", () => {
     );
     expect(owners.map((owner) => owner.name)).toEqual(["Anika"]);
     expect(fetchMock.mock.calls[0][0]).toBe("/api/v2/yarns/owners?scope=all");
+  });
+});
+
+describe("trash filter", () => {
+  it("round-trips ?trashed=only through the project and yarn list URLs", () => {
+    expect(filtersFromSearch("?trashed=only&owner=3").trashed).toBe("only");
+    expect(searchFromFilters(filtersFromSearch("?trashed=only&owner=3"))).toBe(
+      "owner=3&trashed=only",
+    );
+    expect(yarnSearchFromFilters(yarnFiltersFromSearch("?trashed=only"))).toBe(
+      "trashed=only",
+    );
+    expect(filtersFromSearch("?trashed=all").trashed).toBe("");
+    expect(trashChoiceFromParam(null)).toBe("");
+  });
+
+  it("reads trash fields only when valid and counts whole days left", () => {
+    const now = Date.parse("2026-11-01T12:00:00Z");
+    expect(trashField({ trashed_at: "nope", purge_at: 5 })).toEqual({});
+    const fields = trashField({
+      trashed_at: "2026-10-30T00:00:00Z",
+      purge_at: "2026-11-04T00:00:00Z",
+    });
+    expect(trashDaysLeft(fields, now)).toBe(3);
+    expect(
+      trashDaysLeft({ ...fields, purge_at: "2026-11-01T12:30:00Z" }, now),
+    ).toBe(1);
+    expect(
+      trashDaysLeft({ ...fields, purge_at: "2026-10-01T00:00:00Z" }, now),
+    ).toBe(1);
+    expect(trashDaysLeft({}, now)).toBeNull();
   });
 });

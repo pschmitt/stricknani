@@ -87,6 +87,7 @@ describe("yarn browser API contract", () => {
       query: "blue wool",
       favorite: true,
       owner: "",
+      trashed: "",
       page: 4,
     });
     expect(yarnSearchFromFilters(filters)).toBe(

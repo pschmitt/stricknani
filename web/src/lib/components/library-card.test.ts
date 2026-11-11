@@ -67,4 +67,19 @@ describe("LibraryCard", () => {
       "project-status-badge",
     );
   });
+
+  it("shows how long a trashed item has left, in the singular too", () => {
+    const many = render(LibraryCard, {
+      props: { ...base, trashDaysLeft: 12 },
+    }).body;
+    expect(many).toContain("trash-badge");
+    expect(many).toContain("In trash · 12 days left");
+    const one = render(LibraryCard, {
+      props: { ...base, trashDaysLeft: 1 },
+    }).body;
+    expect(one).toContain("In trash · 1 day left");
+    expect(render(LibraryCard, { props: base }).body).not.toContain(
+      "trash-badge",
+    );
+  });
 });

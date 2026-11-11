@@ -14,6 +14,7 @@
   import { t } from "#lib/i18n.svelte.ts";
   import OwnerFilterPills from "#lib/components/OwnerFilterPills.svelte";
   import { listOwners } from "#lib/owner-filter.ts";
+  import { trashDaysLeft } from "#lib/trash-filter.ts";
   import type { ResourceOwner } from "#lib/owner.ts";
   import { foreignOwner } from "#lib/owner.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -54,7 +55,8 @@
       filters.tag ||
       filters.favorite ||
       filters.status ||
-      filters.owner,
+      filters.owner ||
+      filters.trashed,
     ),
   );
   const statusFilters = $derived([
@@ -74,7 +76,8 @@
       !filters.tag &&
       !filters.favorite &&
       !filters.status &&
-      !filters.owner,
+      !filters.owner &&
+      !filters.trashed,
   );
   const availableCategories = $derived(
     filters.category && !categories.includes(filters.category)
@@ -188,6 +191,7 @@
       favorite: false,
       status: "",
       owner: "",
+      trashed: "",
       page: 1,
     });
   }
@@ -200,6 +204,7 @@
       favorite: false,
       status: "",
       owner: "",
+      trashed: "",
     });
   }
 
@@ -327,6 +332,14 @@
       {owners}
       {locale}
       kind="project"
+      trash={{
+        selected: filters.trashed === "only",
+        ontoggle: () =>
+          applyFilters({
+            ...filters,
+            trashed: filters.trashed === "only" ? "" : "only",
+          }),
+      }}
       onselect={(owner) => applyFilters({ ...filters, owner })}
     />
     {#each availableCategories as category (category)}
@@ -419,6 +432,7 @@
           updated={`${t("Updated", locale)} ${formatDate(item.updated_at)}`}
           chips={item.tags}
           status={item.status}
+          trashDaysLeft={trashDaysLeft(item)}
           owner={foreignOwner(item.owner, userId)}
           favorite={item.is_favorite}
           favoriteBusy={favoriteBusyIds.includes(item.id)}

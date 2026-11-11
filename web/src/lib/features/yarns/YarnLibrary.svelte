@@ -13,6 +13,7 @@
   import { t } from "#lib/i18n.svelte.ts";
   import OwnerFilterPills from "#lib/components/OwnerFilterPills.svelte";
   import { listOwners } from "#lib/owner-filter.ts";
+  import { trashDaysLeft } from "#lib/trash-filter.ts";
   import type { ResourceOwner } from "#lib/owner.ts";
   import { foreignOwner } from "#lib/owner.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -35,6 +36,7 @@
     query: "",
     favorite: false,
     owner: "",
+    trashed: "",
     page: 1,
   });
   let searchText = $state("");
@@ -47,7 +49,9 @@
   const scope = $derived(session.data?.user?.is_admin ? "all" : "mine");
   let owners = $state<ResourceOwner[]>([]);
   const hasFilters = $derived(
-    Boolean(filters.query || filters.favorite || filters.owner),
+    Boolean(
+      filters.query || filters.favorite || filters.owner || filters.trashed,
+    ),
   );
 
   $effect(() => {
@@ -117,7 +121,13 @@
 
   function clearFilters() {
     searchText = "";
-    applyFilters({ query: "", favorite: false, owner: "", page: 1 });
+    applyFilters({
+      query: "",
+      favorite: false,
+      owner: "",
+      trashed: "",
+      page: 1,
+    });
   }
 
   function changePage(nextPage: number) {
@@ -205,11 +215,14 @@
   >
     <button
       class="filter-pill"
-      class:filter-pill--selected={!filters.favorite && !filters.owner}
+      class:filter-pill--selected={!filters.favorite &&
+        !filters.owner &&
+        !filters.trashed}
       type="button"
-      aria-pressed={!filters.favorite && !filters.owner}
+      aria-pressed={!filters.favorite && !filters.owner && !filters.trashed}
       data-testid="yarn-filter-all"
-      onclick={() => applyFilters({ ...filters, favorite: false, owner: "" })}
+      onclick={() =>
+        applyFilters({ ...filters, favorite: false, owner: "", trashed: "" })}
     >
       {t("All", locale)}
     </button>
@@ -228,6 +241,14 @@
       {owners}
       {locale}
       kind="yarn"
+      trash={{
+        selected: filters.trashed === "only",
+        ontoggle: () =>
+          applyFilters({
+            ...filters,
+            trashed: filters.trashed === "only" ? "" : "only",
+          }),
+      }}
       onselect={(owner) => applyFilters({ ...filters, owner })}
     />
   </div>
@@ -281,6 +302,7 @@
             t("Details to add", locale)}
           updated={`${t("Updated", locale)} ${formatDate(item.updated_at)}`}
           chips={item.weight_category ? [item.weight_category] : []}
+          trashDaysLeft={trashDaysLeft(item)}
           owner={foreignOwner(item.owner, userId)}
           favorite={item.is_favorite}
           favoriteBusy={favoriteBusyIds.includes(item.id)}
