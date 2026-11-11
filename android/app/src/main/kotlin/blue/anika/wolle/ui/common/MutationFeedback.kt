@@ -9,6 +9,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import blue.anika.wolle.R
 import blue.anika.wolle.data.repository.TrashRef
 import java.io.IOException
@@ -68,6 +69,7 @@ fun MutationFeedbackEffect(
 ) {
     val context = LocalContext.current
     val currentOnUndo by rememberUpdatedState(onUndo)
+    val undoLabel = stringResource(R.string.trash_undo)
     LaunchedEffect(feedback) {
         feedback.events.collect { event ->
             val message = context.localizedMutationMessage(event)
@@ -82,7 +84,7 @@ fun MutationFeedbackEffect(
                         snackbarHostState.showFeedback(
                             message = message,
                             kind = kind,
-                            actionLabel = context.getString(R.string.trash_undo),
+                            actionLabel = undoLabel,
                         )
                     if (result == SnackbarResult.ActionPerformed) currentOnUndo(undo)
                 }
