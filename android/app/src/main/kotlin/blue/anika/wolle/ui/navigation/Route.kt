@@ -113,15 +113,11 @@ sealed interface Route {
 /**
  * Destination that opens the projects list with [ownerId] preselected as owner filter (admin
  * users menu; the web equivalent is `/app/projects?owner=<id>`).
- *
- * PENDING the owner-filter work: `Route.Projects` has no owner argument yet, so this opens the
- * unfiltered list. When the list destination accepts an owner preselection, return it here (and
- * nowhere else).
  */
-@Suppress("UNUSED_PARAMETER") fun projectsOwnedByRoute(ownerId: Long): Route = Route.Projects
+fun projectsOwnedByRoute(ownerId: Long): Route = Route.ProjectsFiltered(owner = ownerId.toString())
 
 /** Like [projectsOwnedByRoute] for the yarns list (`/app/yarns?owner=<id>` on the web). */
-@Suppress("UNUSED_PARAMETER") fun yarnsOwnedByRoute(ownerId: Long): Route = Route.Yarns
+fun yarnsOwnedByRoute(ownerId: Long): Route = Route.YarnsByOwner(owner = ownerId.toString())
 
 /**
  * The customizable bottom-navigation destinations, in default display order (see android/TODO.md
