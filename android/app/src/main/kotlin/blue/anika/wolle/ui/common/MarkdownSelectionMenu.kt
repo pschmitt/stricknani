@@ -45,18 +45,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupPositionProvider
 import androidx.compose.ui.window.PopupProperties
-import kotlinx.coroutines.CompletableDeferred
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.awaitCancellation
 
 @Composable
 internal fun MarkdownSelectionMenu(content: @Composable () -> Unit) {
     val provider = remember { MarkdownTextContextMenuProvider() }
-    var coordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
+    val coordinates = remember { LayoutCoordinatesHolder() }
 
     CompositionLocalProvider(LocalTextContextMenuToolbarProvider provides provider) {
         DisposableEffect(provider) { onDispose(provider::cancel) }
-        androidx.compose.foundation.layout.Box(Modifier.onGloballyPositioned { coordinates = it }) {
+        androidx.compose.foundation.layout.Box(
+            Modifier.onGloballyPositioned { coordinates.current = it }
+        ) {
             content()
-            provider.Menu { coordinates }
+            provider.Menu(coordinates)
         }
     }
 }
@@ -76,18 +79,20 @@ private class MarkdownTextContextMenuProvider : TextContextMenuProvider {
         active?.close()
         active = menu
         try {
-            menu.closed.await()
+            // Keep the ToolbarRequester request alive after dismissing the popup. This coalesces
+            // layout-driven show requests until the text field hides or replaces the selection.
+            awaitCancellation()
         } finally {
             menu.close()
         }
     }
 
     @Composable
-    fun Menu(anchorCoordinates: () -> LayoutCoordinates?) {
+    fun Menu(coordinates: LayoutCoordinatesHolder) {
         BackHandler(enabled = active != null) { active?.close() }
         val menu = active ?: return
-        val coordinates = anchorCoordinates() ?: return
-        if (!coordinates.isAttached) return
+        val anchor = coordinates.current ?: return
+        if (!anchor.isAttached) return
         Popup(
             popupPositionProvider = MarkdownMenuPositionProvider(menu.dataProvider, coordinates),
             onDismissRequest = menu::close,
@@ -161,10 +166,10 @@ private class ActiveMenu(
     val dataProvider: TextContextMenuDataProvider,
     private val onClose: (ActiveMenu) -> Unit,
 ) : TextContextMenuSession {
-    val closed = CompletableDeferred<Unit>()
+    private val visible = AtomicBoolean(true)
 
     override fun close() {
-        if (closed.complete(Unit)) onClose(this)
+        if (visible.compareAndSet(true, false)) onClose(this)
     }
 
     fun onClick(item: TextContextMenuItem) {
@@ -178,7 +183,7 @@ private class ActiveMenu(
 
 private class MarkdownMenuPositionProvider(
     private val dataProvider: TextContextMenuDataProvider,
-    private val anchor: LayoutCoordinates,
+    private val coordinates: LayoutCoordinatesHolder,
 ) : PopupPositionProvider {
     override fun calculatePosition(
         anchorBounds: IntRect,
@@ -186,6 +191,7 @@ private class MarkdownMenuPositionProvider(
         layoutDirection: LayoutDirection,
         popupContentSize: IntSize,
     ): IntOffset {
+        val anchor = coordinates.current?.takeIf { it.isAttached } ?: return IntOffset.Zero
         val local = dataProvider.position(anchor)
         val window = anchor.localToWindow(local)
         val x =
@@ -200,4 +206,8 @@ private class MarkdownMenuPositionProvider(
             )
         return IntOffset(x, y)
     }
+}
+
+private class LayoutCoordinatesHolder {
+    var current: LayoutCoordinates? = null
 }

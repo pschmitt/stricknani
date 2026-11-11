@@ -41,6 +41,19 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-110: Formatting icons in the text-selection menu
+
+Status: in progress (2026-11-11, Codex)
+
+- [x] Use the same six Material glyphs as the Markdown editor toolbar.
+- [x] Preserve supplied text actions in a scoped touch-selection popup.
+- [x] Resolve Android theme icon attributes; retain editor focus and support Back/outside dismissal.
+- [x] Remote Kotlin compilation and formatter checks; signed APK build.
+- [ ] Collect the final unit-test and lint receipt.
+- [ ] Verify touch actions and dismissal on a phone; install on available test devices.
+
+Web parity: the six formatting actions already have icons in the web toolbar; this is Android's platform selection popup.
+
 ## SNA-109: Persistent notification while a project timer runs
 
 Android shows an ongoing, silent notification for every running project timer (channel "Running

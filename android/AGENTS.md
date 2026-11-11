@@ -41,6 +41,19 @@ See the shared doc for the `nix develop`/`git-hooks.nix` basics, run from within
 application; Android tooling (JDK, Android SDK, `just`, `ktfmt`) is deliberately a separate devShell
 scoped to this directory, not mixed into the root one.
 
+## Markdown selection menus
+
+- In the pinned Compose API, standard menu `leadingIcon` IDs can be Android theme
+  attributes. Resolve them through the active theme; app drawable IDs pass through.
+- Keep popup visibility separate from the touch toolbar request lifetime. Dismissal
+  hides the popup, while the request stays suspended until the field cancels it;
+  returning on dismiss lets layout updates reopen it immediately. Keep position
+  coordinates in a plain remembered holder to avoid layout/snapshot feedback.
+- After changing [MarkdownSelectionMenu.kt](app/src/main/kotlin/blue/anika/wolle/ui/common/MarkdownSelectionMenu.kt),
+  verify a touch selection on a device: icons, a formatting action, outside/Back
+  dismissal, and reopening with a new selection. Compilation and lint do not prove
+  these platform interactions.
+
 ## Builds
 
 - **Never run Gradle builds locally on this machine** - use an ad-hoc `rworker` (see the `rworker` skill) or a designated remote build host from
