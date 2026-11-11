@@ -890,6 +890,7 @@
     <string name="editor_photo_move_earlier">Move earlier</string>
     <string name="editor_photo_move_later">Move later</string>
     <string name="editor_photo_position">Photo %1$d of %2$d</string>
+    <string name="editor_photo_reorder_hint">Drag to reorder. The first photo is the cover.</string>
     <string name="project_editor_step_removed">Step removed</string>
     <string name="editor_photo_removed">Photo removed.</string>
     <string name="project_editor_tags_placeholder">Add tags…</string>

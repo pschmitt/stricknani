@@ -34,6 +34,7 @@ import blue.anika.wolle.data.timer.classifyProjectTimerLoadFailure
 import blue.anika.wolle.data.timer.isTimerStarter
 import blue.anika.wolle.data.timer.projectTimerReminderDeadline
 import blue.anika.wolle.sync.SyncScheduler
+import blue.anika.wolle.ui.common.DeleteConfirmation
 import blue.anika.wolle.ui.common.ErrorKind
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.ReadingTextSize
@@ -819,11 +820,17 @@ constructor(
         }
     }
 
-    fun delete() {
-        if (uiState.value !is ProjectDetailUiState.Loaded) return
+    /** Deletes the project, but only for a confirmation that was given for this exact project. */
+    fun delete(confirmedProjectId: Int) {
+        val target =
+            DeleteConfirmation.targetToDelete(
+                requestedId = confirmedProjectId,
+                currentId = projectId,
+                loaded = uiState.value is ProjectDetailUiState.Loaded,
+            ) ?: return
         viewModelScope.launch {
             try {
-                projectRepository.deleteProject(projectId)
+                projectRepository.deleteProject(target)
                 syncScheduler.replayThenSyncNow()
                 mutationFeedback.show(R.string.mutation_project_deleted_queued)
                 _deleted.value = true

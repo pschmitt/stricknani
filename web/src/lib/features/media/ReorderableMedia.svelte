@@ -84,6 +84,10 @@
 
   const locked = $derived(disabled || moving);
   const sortable = $derived(reorderable && items.length > 1);
+  // Reorder mode: the photos grow into a larger grid with visible drag handles
+  // until Done. The order itself is saved by every move, as outside the mode.
+  let reorderMode = $state(false);
+  const expanded = $derived(reorderMode && sortable);
 
   function fill(template: string, position: number): string {
     return t(template, locale)
@@ -311,8 +315,22 @@
 </script>
 
 <div class="reorderable">
+  {#if sortable}
+    <div class="reorder-toolbar">
+      <button
+        type="button"
+        class="reorder-toggle"
+        aria-pressed={reorderMode}
+        {disabled}
+        onclick={() => (reorderMode = !reorderMode)}
+      >
+        {reorderMode ? t("Done", locale) : t("Reorder photos", locale)}
+      </button>
+    </div>
+  {/if}
   <ul
     class="reorder-list"
+    class:expanded
     class:dragging={dragFrom !== null}
     bind:this={listElement}
     aria-label={label}
@@ -479,6 +497,46 @@
     margin: 0;
     padding: 0;
     list-style: none;
+  }
+
+  .reorder-toolbar {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .reorder-toggle {
+    min-height: 2.75rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-xs);
+    padding: 0 1rem;
+    color: var(--ink);
+    background: var(--surface-raised);
+    font: inherit;
+    font-weight: 650;
+    cursor: pointer;
+  }
+
+  .reorder-toggle[aria-pressed="true"] {
+    color: var(--accent-strong);
+    border-color: var(--accent-strong);
+  }
+
+  .reorder-toggle:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  /* Reorder mode: bigger thumbnails, three columns on a phone. */
+  .reorder-list.expanded {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 9.5rem), 1fr));
+    gap: 0.75rem;
+  }
+
+  .expanded .grip {
+    width: 2.75rem;
+    height: 2.75rem;
+    opacity: 1;
+    pointer-events: auto;
   }
 
   .reorder-item {

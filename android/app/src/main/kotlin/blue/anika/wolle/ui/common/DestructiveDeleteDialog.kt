@@ -7,10 +7,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import blue.anika.wolle.R
+import kotlinx.coroutines.delay
 
 const val DESTRUCTIVE_DELETE_ICON_TAG = "destructive-delete-icon"
 
@@ -33,6 +39,12 @@ fun DestructiveDeleteDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    // A tap in the first moments (a double tap on the menu entry) must not confirm the delete.
+    var armed by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        delay(DeleteConfirmation.ARM_DELAY_MILLIS)
+        armed = true
+    }
     AlertDialog(
         modifier = Modifier.testTag(DESTRUCTIVE_DELETE_DIALOG_TAG),
         onDismissRequest = onDismiss,
@@ -41,6 +53,7 @@ fun DestructiveDeleteDialog(
         confirmButton = {
             TextButton(
                 onClick = onConfirm,
+                enabled = armed,
                 colors =
                     ButtonDefaults.textButtonColors(
                         contentColor = androidx.compose.material3.MaterialTheme.colorScheme.error

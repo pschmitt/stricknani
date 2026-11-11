@@ -33,7 +33,27 @@ fun ProjectDto.titleImages(): List<ImageDto> =
         .sortedByDescending { it.isCover() }
 
 /** A project's images as the detail screen shows them: the cover first, then the server order. */
-fun ProjectDto.galleryImages(): List<ImageDto> = images.sortedByDescending { it.isCover() }
+fun ProjectDto.galleryImages(): List<ImageDto> =
+    images.sortedWith(
+        compareByDescending<ImageDto> { it.isCover() }
+            // The project's own images, then each step's; inside a group by saved position, so a
+            // just-saved order shows whatever order the payload listed the images in.
+            .thenBy { it.stepId != null }
+            .thenBy { it.stepId ?: 0 }
+            .thenBy { it.position ?: Int.MAX_VALUE }
+    )
+
+/**
+ * The full order the server expects for the project's own images: it reorders every image without a
+ * step, the stitch sample included, and rejects a list that misses one (422, silently dropped). The
+ * editor only lists the other photos, so the stitch sample ids follow them.
+ */
+fun ProjectDto.completeTitleOrder(visibleIds: List<Int>): List<Int> =
+    visibleIds +
+        images
+            .filter { it.stepId == null && it.isStitchSample && it.id !in visibleIds }
+            .sortedByPositionOrKeep()
+            .map { it.id }
 
 /** The server's canonical cover (`is_primary`); the legacy title flag only for older payloads. */
 fun ImageDto.isCover(): Boolean = isPrimary ?: isTitleImage
@@ -62,7 +82,7 @@ fun reorderedIdsOrNull(initial: List<Int>, current: List<Int>, removed: Set<Int>
 
 /** Applies a title-image order locally: cover flag and positions follow the new order. */
 internal fun ProjectDto.withTitleImageOrder(ids: List<Int>): ProjectDto =
-    withGroupOrder(ids, isCoverGroup = true) { it.stepId == null && !it.isStitchSample }
+    withGroupOrder(ids, isCoverGroup = true) { it.stepId == null }
 
 /** Applies one step's image order locally; the project cover stays as it was. */
 internal fun ProjectDto.withStepImageOrder(stepId: Int, ids: List<Int>): ProjectDto =

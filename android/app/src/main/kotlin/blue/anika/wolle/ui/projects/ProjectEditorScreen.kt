@@ -150,7 +150,8 @@ fun ProjectEditorScreen(
             projectImportNotes(context, preview.request.notes, preview.details)
         }
     }
-    var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+    // Not saved across recreation: a delete prompt must never reappear by itself.
+    var deleteRequestId by remember { mutableStateOf<Int?>(null) }
     // A new project's link: offer to import the pattern instead, once per link (as on the web).
     var importOfferUrl by rememberSaveable { mutableStateOf<String?>(null) }
     var declinedImportUrl by rememberSaveable { mutableStateOf<String?>(null) }
@@ -188,6 +189,14 @@ fun ProjectEditorScreen(
         if (projectId != null && original != null) {
             photoEdit =
                 Triple(PhotoEditTarget.ProjectImage(projectId, image.id), original, image.altText)
+        }
+    }
+    // A photo uploaded just now opens its editor at once.
+    val photoToEdit by viewModel.photoToEdit.collectAsStateWithLifecycle()
+    LaunchedEffect(photoToEdit) {
+        photoToEdit?.let {
+            editImage(it)
+            viewModel.photoEditShown()
         }
     }
     photoEdit?.let { (target, url, altText) ->
@@ -301,7 +310,7 @@ fun ProjectEditorScreen(
                         actions = {
                             if (viewModel.isEditing && canDelete) {
                                 IconButton(
-                                    onClick = { showDeleteDialog = true },
+                                    onClick = { deleteRequestId = viewModel.projectId },
                                     enabled = !isSaving,
                                 ) {
                                     DestructiveDeleteIcon(
@@ -869,15 +878,16 @@ fun ProjectEditorScreen(
         )
     }
 
-    if (showDeleteDialog) {
+    if (deleteRequestId != null) {
         DestructiveDeleteDialog(
             title = stringResource(R.string.project_editor_delete_dialog_title, form.name),
             text = stringResource(R.string.project_editor_delete_dialog_text),
             onConfirm = {
-                showDeleteDialog = false
-                viewModel.delete()
+                val requested = deleteRequestId
+                deleteRequestId = null
+                if (requested != null) viewModel.delete(requested)
             },
-            onDismiss = { showDeleteDialog = false },
+            onDismiss = { deleteRequestId = null },
         )
     }
 }

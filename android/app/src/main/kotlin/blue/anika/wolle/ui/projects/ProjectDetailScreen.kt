@@ -178,7 +178,8 @@ fun ProjectDetailScreen(
             initialValue = DetailCardOrder.defaults(DetailCardDomain.PROJECT)
         )
     val snackbarHostState = remember { SnackbarHostState() }
-    var showDeleteDialog by remember { mutableStateOf(false) }
+    // The project the user asked to delete; a confirmation is only valid for this exact id.
+    var deleteRequestId by remember { mutableStateOf<Int?>(null) }
     var attachmentToDelete by remember { mutableStateOf<AttachmentDto?>(null) }
     var showPrintDialog by remember { mutableStateOf(false) }
     var showTimerDialog by remember { mutableStateOf(false) }
@@ -417,7 +418,7 @@ fun ProjectDetailScreen(
                                         },
                                         onClick = {
                                             menuExpanded = false
-                                            showDeleteDialog = true
+                                            deleteRequestId = state.entity.id
                                         },
                                     )
                                 }
@@ -522,15 +523,16 @@ fun ProjectDetailScreen(
         )
     }
 
-    if (showDeleteDialog && state is ProjectDetailUiState.Loaded) {
+    if (deleteRequestId != null && state is ProjectDetailUiState.Loaded) {
         DestructiveDeleteDialog(
             title = stringResource(R.string.project_editor_delete_dialog_title, state.entity.name),
             text = stringResource(R.string.project_editor_delete_dialog_text),
             onConfirm = {
-                showDeleteDialog = false
-                viewModel.delete()
+                val requested = deleteRequestId
+                deleteRequestId = null
+                if (requested != null) viewModel.delete(requested)
             },
-            onDismiss = { showDeleteDialog = false },
+            onDismiss = { deleteRequestId = null },
         )
     }
 
