@@ -118,4 +118,29 @@ class TrashDtoTest {
         assertNull(old.state)
         assertNull(old.trash)
     }
+
+    @Test
+    fun `trashed project and yarn details read trashed_at and purge_at, live ones have none`() {
+        val trashed =
+            json.decodeFromString<blue.anika.wolle.data.api.v2.ProjectV2Dto>(
+                """
+                {"id":3,"name":"Socks","is_ai_enhanced":false,"is_favorite":false,
+                 "created_at":"2026-01-01T00:00:00Z","updated_at":"2026-11-01T00:00:00Z",
+                 "trashed_at":"2026-11-01T10:00:00Z","purge_at":"2027-01-30T10:00:00Z",
+                 "access":{"role":"owner","derived":false,"can_edit":false,"can_manage":false}}
+                """
+            )
+        assertEquals("2027-01-30T10:00:00Z", trashed.purgeAt)
+        assertFalse(trashed.access?.canEdit == true)
+
+        val live =
+            json.decodeFromString<blue.anika.wolle.data.api.v2.YarnV2Dto>(
+                """
+                {"id":4,"name":"Merino","is_ai_enhanced":false,"is_favorite":false,
+                 "created_at":"2026-01-01T00:00:00Z","updated_at":"2026-11-01T00:00:00Z"}
+                """
+            )
+        assertNull(live.trashedAt)
+        assertNull(live.purgeAt)
+    }
 }

@@ -1572,4 +1572,12 @@
     <string name="admin_action_step_restored">Schritt aus dem Papierkorb wiederhergestellt</string>
     <string name="admin_action_step_purged">Schritt endgültig gelöscht</string>
     <string name="error_trash_name_taken">Es gibt wieder eine Kategorie mit diesem Namen. Benenne zuerst eine der beiden um.</string>
+    <string name="trash_banner_project">Dieses Projekt ist im Papierkorb.</string>
+    <string name="trash_banner_yarn">Dieses Garn ist im Papierkorb.</string>
+    <string name="trash_banner_due">Es ist zum Löschen fällig.</string>
+    <plurals name="trash_banner_time">
+        <item quantity="one">Es wird in %1$d Tag endgültig gelöscht.</item>
+        <item quantity="other">Es wird in %1$d Tagen endgültig gelöscht.</item>
+    </plurals>
+    <string name="trash_banner_delete">Endgültig löschen</string>
 </resources>

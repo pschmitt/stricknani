@@ -76,6 +76,12 @@ sealed interface Route {
     /** The trash: deleted items wait here for 90 days - reachable from More. */
     @Serializable data object Trash : Route
 
+    /**
+     * A project or yarn in the trash, read-only and online-only (it is not in Room): [kind] is
+     * `project` or `yarn`. Opened from the Trash screen.
+     */
+    @Serializable data class TrashedItem(val kind: String, val id: Int) : Route
+
     /** Administrator account list (SNA-86) - reachable from Settings -> Admin. */
     @Serializable data object AdminAccounts : Route
 
@@ -161,6 +167,7 @@ enum class TopLevelDestination(
             Route.AdminAudit::class,
             Route.AdminAccounts::class,
             Route.Trash::class,
+            Route.TrashedItem::class,
         ),
     ),
 }

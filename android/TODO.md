@@ -2987,8 +2987,8 @@ web (`web/src/lib/features/trash`).
 - [ ] Undo of a project or yarn deleted while offline: the delete is still in the write queue, so
       Undo needs a connection and waits for the queue to reach the server (retries for a few seconds).
 - [x] Command palette: a "Trash" page entry.
-- [ ] Read-only detail of a trashed project or yarn (server: `GET /api/v2/projects|yarns/{id}` answers
-      200 for the owner and administrators with `trashed_at`/`purge_at`, not synced into Room): online-only
-      detail mode with the "in the trash, deleted permanently in N days" banner, Restore and Delete
-      permanently, and Trash rows of kind project/yarn linking to it. Not built yet: it needs a
-      non-Room read path in `ProjectDetail*`/`YarnDetail*`.
+- [x] Read-only detail of a trashed project or yarn (`ui/trash/TrashedItem*`, route `TrashedItem`):
+      online-only, fetched by id and not stored in Room, with the "in the trash, deleted permanently in
+      N days" banner, Restore (then sync and the normal detail) and Delete permanently. It shows the main
+      fields (pictures, category, tags, needles, description, notes, steps / yarn fields), not the full
+      live detail layout. Trash rows of kind project/yarn open it.

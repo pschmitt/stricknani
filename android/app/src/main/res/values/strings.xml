@@ -1575,4 +1575,12 @@
     <string name="admin_action_step_restored">Step restored from trash</string>
     <string name="admin_action_step_purged">Step deleted permanently</string>
     <string name="error_trash_name_taken">A category with this name exists again. Rename one of them first.</string>
+    <string name="trash_banner_project">This project is in the trash.</string>
+    <string name="trash_banner_yarn">This yarn is in the trash.</string>
+    <string name="trash_banner_due">It is due for deletion.</string>
+    <plurals name="trash_banner_time">
+        <item quantity="one">It will be deleted permanently in %1$d day.</item>
+        <item quantity="other">It will be deleted permanently in %1$d days.</item>
+    </plurals>
+    <string name="trash_banner_delete">Delete permanently</string>
 </resources>

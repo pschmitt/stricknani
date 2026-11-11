@@ -121,3 +121,16 @@ fun purgeFailureRes(failure: TrashFailure): Int =
         TrashFailure.Unsupported,
         TrashFailure.Other -> R.string.error_trash_purge_failed
     }
+
+/**
+ * Whole days until [purgeAt] (rounded up, never negative), or null when the timestamp is missing or
+ * unreadable. The banner of a trashed project or yarn reads "It will be deleted permanently in N
+ * days." and, at 0, "It is due for deletion.".
+ */
+fun daysUntilPurge(purgeAt: String?, nowMillis: Long): Int? {
+    val millis = trashDeletedMillis(purgeAt) ?: return null
+    val left = millis - nowMillis
+    if (left <= 0) return 0
+    val day = 24L * 60 * 60 * 1000
+    return ((left + day - 1) / day).toInt()
+}

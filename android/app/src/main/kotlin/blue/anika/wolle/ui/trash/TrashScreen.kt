@@ -2,6 +2,7 @@ package blue.anika.wolle.ui.trash
 
 import android.text.format.DateUtils
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -61,6 +63,7 @@ fun TrashScreen(
     onBack: () -> Unit,
     onOpenProject: (Int) -> Unit = {},
     onOpenYarn: (Int) -> Unit = {},
+    onOpenTrashed: (kind: String, id: Int) -> Unit = { _, _ -> },
     viewModel: TrashViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -120,6 +123,7 @@ fun TrashScreen(
                                     onPurge = { toPurge = it },
                                     onOpenProject,
                                     onOpenYarn,
+                                    onOpenTrashed,
                                 )
                             }
                         }
@@ -177,6 +181,7 @@ private fun TrashList(
     onPurge: (TrashItemDto) -> Unit,
     onOpenProject: (Int) -> Unit,
     onOpenYarn: (Int) -> Unit,
+    onOpenTrashed: (kind: String, id: Int) -> Unit,
 ) {
     val showOwner = state.scope == TrashScope.All
     LazyColumn(
@@ -204,6 +209,11 @@ private fun TrashList(
                 avatarUrl = viewModel.avatarUrl(item.owner?.avatarUrl),
                 onRestore = { viewModel.restore(item) },
                 onPurge = { onPurge(item) },
+                // A trashed project or yarn opens read-only; the other kinds have no page.
+                onOpen =
+                    if (item.kind == "project" || item.kind == "yarn") {
+                        { onOpenTrashed(item.kind, item.id.toInt()) }
+                    } else null,
             )
         }
     }
@@ -216,6 +226,7 @@ private fun TrashRow(
     avatarUrl: String?,
     onRestore: () -> Unit,
     onPurge: () -> Unit,
+    onOpen: (() -> Unit)?,
 ) {
     val kind = stringResource(row.kindLabelRes)
     val deletedAgo = trashDeletedAgo(row.deletedAt)
@@ -223,7 +234,14 @@ private fun TrashRow(
         shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.colorScheme.surfaceContainerLow,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        modifier = Modifier.fillMaxWidth().testTag("trash-row"),
+        modifier =
+            Modifier.fillMaxWidth()
+                .then(
+                    if (onOpen != null)
+                        Modifier.clip(MaterialTheme.shapes.medium).clickable(onClick = onOpen)
+                    else Modifier
+                )
+                .testTag("trash-row"),
     ) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(

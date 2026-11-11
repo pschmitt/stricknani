@@ -67,6 +67,9 @@ data class YarnListItemDto(
     @SerialName("is_favorite") val isFavorite: Boolean,
     @SerialName("updated_at") val updatedAt: String,
     @SerialName("preview_url") val previewUrl: String? = null,
+    /** Set only while the item sits in the trash (ISO strings). */
+    @SerialName("trashed_at") val trashedAt: String? = null,
+    @SerialName("purge_at") val purgeAt: String? = null,
 )
 
 /** `stricknani/routes/api/schemas.py`'s `YarnWriteRequest`. */

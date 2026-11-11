@@ -111,4 +111,15 @@ class TrashPresentationTest {
         assertEquals(R.string.error_trash_gone, purgeFailureRes(TrashFailure.NotFound))
         assertEquals(R.string.error_trash_purge_failed, purgeFailureRes(TrashFailure.Other))
     }
+
+    @Test
+    fun `days until purge rounds up and never goes negative`() {
+        val now = java.time.Instant.parse("2026-11-01T12:00:00Z").toEpochMilli()
+        assertEquals(5, daysUntilPurge("2026-11-06T12:00:00Z", now))
+        assertEquals(6, daysUntilPurge("2026-11-06T12:00:01Z", now))
+        assertEquals(1, daysUntilPurge("2026-11-01T12:00:05Z", now))
+        assertEquals(0, daysUntilPurge("2026-10-30T12:00:00Z", now))
+        assertNull(daysUntilPurge(null, now))
+        assertNull(daysUntilPurge("garbage", now))
+    }
 }
