@@ -873,7 +873,7 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
       )),
     "the project card did not use the seeded same-origin photo",
   );
-  let searchBox = page.getByRole("searchbox", { name: "Search your projects" });
+  let searchBox = page.getByRole("combobox", { name: "Search your projects" });
   check(
     (await searchBox.getAttribute("placeholder")) === "Search" &&
       (await searchBox.locator("xpath=..").innerText()).trim() === "",
@@ -939,7 +939,7 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
   );
   await expect(tagPill).toHaveAttribute("aria-pressed", "true");
   await page.locator(".project-card").waitFor({ state: "visible" });
-  searchBox = page.getByRole("searchbox", { name: "Search your projects" });
+  searchBox = page.getByRole("combobox", { name: "Search your projects" });
   markStage("checking the project no-match state");
   const [noMatchResponse] = await Promise.all([
     page.waitForResponse(

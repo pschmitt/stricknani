@@ -395,7 +395,7 @@ export async function runYarnJourney(
     });
     await yarnCard.waitFor({ state: "visible" });
     markStage("typing yarn search");
-    const yarnSearch = page.getByRole("searchbox", {
+    const yarnSearch = page.getByRole("combobox", {
       name: "Search your yarn",
     });
     check(
@@ -404,7 +404,7 @@ export async function runYarnJourney(
       "yarn search should show only the Search placeholder",
     );
     await page
-      .getByRole("searchbox", { name: "Search your yarn" })
+      .getByRole("combobox", { name: "Search your yarn" })
       .fill("Riverbend");
     markStage("waiting for debounced yarn query");
     await page.waitForURL(
@@ -1137,10 +1137,10 @@ export async function runYarnJourney(
     );
     await page.waitForURL("**/app/yarns");
     await page
-      .getByRole("searchbox", { name: "Search your yarn" })
+      .getByRole("combobox", { name: "Search your yarn" })
       .waitFor({ state: "visible" });
     await page
-      .getByRole("searchbox", { name: "Search your yarn" })
+      .getByRole("combobox", { name: "Search your yarn" })
       .fill("New browser yarn");
     await page.waitForURL("**/app/yarns?q=New+browser+yarn");
     await page

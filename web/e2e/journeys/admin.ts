@@ -657,6 +657,23 @@ async function deleteCrossOwnerResource(
   if (response.status() !== 204) {
     throw new AcceptanceFailure("owner could not delete the synthetic project");
   }
+  // Deleting moves the project to the trash; delete it permanently so that the audit event is
+  // the "Deleted permanently" one of a resource that is gone.
+  const purged = await page
+    .context()
+    .request.delete(`${origin}/api/v2/trash/projects/${projectId}`, {
+      headers: {
+        accept: "application/json",
+        origin,
+        "sec-fetch-site": "same-origin",
+        "x-csrf-token": csrfToken,
+      },
+    });
+  if (purged.status() !== 204) {
+    throw new AcceptanceFailure(
+      "owner could not delete the synthetic project permanently",
+    );
+  }
 }
 
 async function assertNoScopeFilter(page: Page, origin: string): Promise<void> {

@@ -245,6 +245,20 @@ async function shot(
   }
 }
 
+/**
+ * A newly uploaded photo opens its editor right away; close it again so the tiles stay reachable.
+ */
+async function dismissPhotoEditor(page: Page): Promise<void> {
+  const editor = page.locator("dialog.photo-editor[open]");
+  try {
+    await editor.waitFor({ state: "visible", timeout: 3_000 });
+  } catch {
+    return;
+  }
+  await editor.getByRole("button", { name: "Cancel" }).first().click();
+  await editor.waitFor({ state: "hidden" });
+}
+
 /** Action visibility (rest, hover, focus, touch) and tile geometry. */
 async function checkTile(
   page: Page,
@@ -601,6 +615,7 @@ export async function runMediaTilesJourney(
           .filter({ hasText: "Project media updated." })
           .first()
           .waitFor({ state: "visible", timeout: 20_000 });
+        await dismissPhotoEditor(page);
         guard += 1;
       }
       await stepList.first().waitFor({ state: "visible" });
@@ -657,6 +672,7 @@ export async function runMediaTilesJourney(
           .filter({ hasText: "Photo uploaded." })
           .first()
           .waitFor({ state: "visible", timeout: 20_000 });
+        await dismissPhotoEditor(page);
         guard += 1;
       }
       await yarnList.first().waitFor({ state: "visible" });

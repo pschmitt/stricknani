@@ -525,7 +525,7 @@ async function oneSample(
   }
 
   markStage(`sample ${sampleNumber}: search filter interaction`);
-  const search = page.getByRole("searchbox", { name: "Search your projects" });
+  const search = page.getByRole("combobox", { name: "Search your projects" });
   const searchBefore = await observerMetrics(page);
   const searchStart = performance.now();
   await search.pressSequentially("No such project");
