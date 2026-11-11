@@ -87,17 +87,17 @@ class FocusedAppSemanticsTest {
 
         composeRule.onNodeWithText("Projects").performClick()
         waitForText("Heirloom Baby Blanket", timeoutMillis = 120_000)
-        composeRule.onNodeWithContentDescription("Search your projects").performClick()
+        composeRule.onNodeWithContentDescription("Search").performClick()
         composeRule
-            .onNodeWithContentDescription("Search your projects")
+            .onNodeWithContentDescription("Search")
             .performTextInput("focused-no-project-match")
         waitForText("No projects match those filters.")
 
         composeRule.onNodeWithText("Yarns").performClick()
         waitForText("Riverbend Merino DK", timeoutMillis = 120_000)
-        composeRule.onNodeWithContentDescription("Search your yarn").performClick()
+        composeRule.onNodeWithContentDescription("Search").performClick()
         composeRule
-            .onNodeWithContentDescription("Search your yarn")
+            .onNodeWithContentDescription("Search")
             .performTextInput("focused-no-yarn-match")
         waitForText("No yarn matches those filters.")
 
