@@ -40,6 +40,7 @@ import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.uploads.PendingUpload
 import blue.anika.wolle.data.uploads.PendingUploadStore
 import blue.anika.wolle.sync.SyncScheduler
+import blue.anika.wolle.ui.common.DeleteConfirmation
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.OwnedKind
 import blue.anika.wolle.ui.common.OwnerBannerData
@@ -567,13 +568,50 @@ constructor(
         updateForm { it.copy(steps = moveProjectEditorStep(it.steps, index, direction)) }
     }
 
+    /** A photo that was just uploaded: the screen opens the photo editor on it, once. */
+    private val _photoToEdit = MutableStateFlow<ImageDto?>(null)
+    val photoToEdit: StateFlow<ImageDto?> = _photoToEdit.asStateFlow()
+
+    fun photoEditShown() {
+        _photoToEdit.value = null
+    }
+
+    /**
+     * On an existing project the photo is uploaded at once, so it is a saved image with Edit and
+     * its editor opens; without a connection (or for a new project) it waits in the queue as
+     * before.
+     */
     fun addTitleImage(uri: Uri) {
         viewModelScope.launch {
-            runCatching { pendingUploadStore.copy(uri) }
-                .onSuccess { upload ->
-                    updateForm { it.copy(titleImages = it.titleImages + upload) }
+            val upload =
+                try {
+                    pendingUploadStore.copy(uri)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    mutationFeedback.show(R.string.editor_image_select_failed)
+                    return@launch
                 }
-                .onFailure { mutationFeedback.show(R.string.editor_image_select_failed) }
+            val projectId = route.projectId
+            val saved =
+                if (projectId != null && _isLoaded.value) {
+                    try {
+                        projectRepository.uploadTitleImageNow(projectId, upload)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        null
+                    }
+                } else null
+            if (saved != null) {
+                fun ProjectEditorFormState.withImage() =
+                    copy(existingTitleImages = existingTitleImages + saved)
+                _form.value = _form.value.withImage()
+                _initialForm.value = _initialForm.value.withImage()
+                if (_photoToEdit.value == null) _photoToEdit.value = saved
+            } else {
+                updateForm { it.copy(titleImages = it.titleImages + upload) }
+            }
         }
     }
 
@@ -795,8 +833,14 @@ constructor(
         }
     }
 
-    fun delete() {
-        val id = route.projectId ?: return
+    /** Deletes the project, but only for a confirmation that was given for this exact project. */
+    fun delete(confirmedProjectId: Int) {
+        val id =
+            DeleteConfirmation.targetToDelete(
+                requestedId = confirmedProjectId,
+                currentId = route.projectId,
+                loaded = _isLoaded.value,
+            ) ?: return
         viewModelScope.launch {
             _isSaving.value = true
             try {

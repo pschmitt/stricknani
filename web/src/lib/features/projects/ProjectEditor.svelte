@@ -1233,12 +1233,18 @@
    * and by files dropped on the gallery or on a step.
    */
   async function addImages(files: File[], stepId?: number): Promise<void> {
+    const knownIds = new Set((project?.images ?? []).map((image) => image.id));
     await addFiles(
       files,
       (id, file, currentSession, signal) =>
         uploadProjectImage(id, file, "", currentSession, stepId, signal),
       "photo",
     );
+    // The new photo is a saved image with an Edit control: open its editor right away.
+    const uploaded = project?.images.find(
+      (image) => !knownIds.has(image.id) && image.step_id === (stepId ?? null),
+    );
+    if (uploaded) openPhotoEditor(uploaded);
   }
 
   async function addAttachments(files: File[]): Promise<void> {

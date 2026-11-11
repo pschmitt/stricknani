@@ -236,6 +236,25 @@ class MediaOrderingTest {
         // Payloads without is_primary fall back to the title flag.
         assertTrue(image(1, title = true).isCover())
     }
+
+    @Test
+    fun `the gallery follows the saved positions, not the order of the payload`() {
+        val detail =
+            project(listOf(image(3, position = 2), image(1, position = 0), image(2, position = 1)))
+
+        assertEquals(listOf(1, 2, 3), detail.galleryImages().map { it.id })
+    }
+
+    @Test
+    fun `a title order carries the stitch sample, which the server reorders too`() {
+        val stitch = image(9, position = 3).copy(isStitchSample = true)
+        val detail = project(listOf(image(1, position = 0), image(2, position = 1), stitch))
+
+        assertEquals(listOf(2, 1, 9), detail.completeTitleOrder(listOf(2, 1)))
+        val applied = detail.withTitleImageOrder(detail.completeTitleOrder(listOf(2, 1)))
+        assertEquals(listOf(2, 1, 9), applied.images.map { it.id })
+        assertTrue(applied.images.first().isCover())
+    }
 }
 
 private suspend inline fun <reified T : Throwable> assertFailsWith(block: suspend () -> Unit) {

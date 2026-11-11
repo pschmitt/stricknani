@@ -4,6 +4,7 @@ import androidx.room.withTransaction
 import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.ProjectsApi
 import blue.anika.wolle.data.api.SyncApi
+import blue.anika.wolle.data.api.dto.ImageDto
 import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.api.dto.StepDto
@@ -403,9 +404,9 @@ constructor(
         queueMediaOrder(
             projectId,
             MutationOperation.PROJECT_TITLE_IMAGE_ORDER,
-            PendingMediaOrder(ids),
+            { detail -> PendingMediaOrder(detail?.completeTitleOrder(ids) ?: ids) },
         ) {
-            it.withTitleImageOrder(ids)
+            it.withTitleImageOrder(it.completeTitleOrder(ids))
         }
     }
 
@@ -414,7 +415,7 @@ constructor(
         queueMediaOrder(
             projectId,
             MutationOperation.PROJECT_STEP_IMAGE_ORDER,
-            PendingMediaOrder(ids, stepId),
+            { PendingMediaOrder(ids, stepId) },
         ) {
             it.withStepImageOrder(stepId, ids)
         }
@@ -423,10 +424,16 @@ constructor(
     private suspend fun queueMediaOrder(
         projectId: Int,
         operation: String,
-        order: PendingMediaOrder,
+        orderFor: (ProjectDto?) -> PendingMediaOrder,
         apply: (ProjectDto) -> ProjectDto,
     ) {
         database.withTransaction {
+            val order =
+                orderFor(
+                    projectDao.getById(projectId)?.let {
+                        json.decodeFromString<ProjectDto>(it.detailJson)
+                    }
+                )
             projectDao.getById(projectId)?.let { existing ->
                 val current = json.decodeFromString<ProjectDto>(existing.detailJson)
                 val updated = apply(current)
@@ -622,6 +629,27 @@ constructor(
         } catch (e: HttpException) {
             if (e.code() != 404) throw e
         }
+    }
+
+    /**
+     * Uploads a project photo right away (the editor needs the saved image to offer Edit on it) and
+     * returns it. Throws when the server cannot be reached; the caller then queues the upload. The
+     * cached row is only refreshed when no local edit of it waits to be replayed.
+     */
+    suspend fun uploadTitleImageNow(id: Int, upload: PendingUpload): ImageDto {
+        val file = pendingUploadStore.multipart(upload)
+        val altText = upload.altText.toRequestBody("text/plain".toMediaType())
+        val image =
+            if (capabilities.useV2()) projectsV2Api.uploadTitleImage(id, file, altText).data
+            else projectsApi.uploadTitleImage(projectId = id, file = file, altText = altText)
+        pendingUploadStore.delete(upload)
+        if (
+            pendingMutationDao
+                .getReplayableLocalIds(MutationEntityType.PROJECT, listOf(id))
+                .isEmpty()
+        )
+            runCatching { refreshOne(id) }
+        return image
     }
 
     /** Called only by [blue.anika.wolle.sync.WriteReplayWorker]. */
