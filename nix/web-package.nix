@@ -12,7 +12,7 @@ buildNpmPackage rec {
   version = (lib.importTOML ../Cargo.toml).package.version;
   src = ../web;
   nodejs = nodejs_26;
-  npmDepsHash = "sha256-5tdqb84CIM67BmGTUey8pZGSLXpbfVdmz1OmLGdlWJc=";
+  npmDepsHash = "sha256-86JlnH3n0km/Csm5LAxmm5OChipVHdWBa0w/7ldc6x8=";
   npmBuildScript = "build";
   env = {
     STRICKNANI_GIT_REVISION = gitRevision;
