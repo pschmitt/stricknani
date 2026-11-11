@@ -24,6 +24,7 @@ use super::{
 pub(super) fn router() -> Router<ApiV2State> {
     Router::new()
         .route("/yarns", get(list_yarns).post(create_yarn))
+        .route("/yarns/owners", get(list_yarn_owners))
         .route(
             "/yarns/{yarn_id}",
             get(get_yarn).put(update_yarn).delete(delete_yarn),
@@ -44,6 +45,12 @@ struct YarnPageQuery {
     owner_id: Option<i64>,
     /// `only` lists the trashed yarns instead of the live ones.
     trashed: Option<String>,
+    owner: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct YarnOwnersQuery {
+    scope: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -265,6 +272,7 @@ async fn list_yarns(
                 Some("only") => true,
                 Some(_) => return validation_error("Invalid query", Some("trashed")),
             },
+            owner: query.owner,
         },
         crate::resource_access::Surface::V2,
     )
@@ -295,6 +303,26 @@ async fn list_yarns(
             })
             .into_response()
         }
+        Err(error) => yarn_error(error),
+    }
+}
+
+/// The owners (other than the caller) of the visible yarns: the owner filter's options.
+async fn list_yarn_owners(
+    State(state): State<ApiV2State>,
+    headers: HeaderMap,
+    query: Result<Query<YarnOwnersQuery>, QueryRejection>,
+) -> Response {
+    let user_id = match resource_user(&state.app, &headers).await {
+        Ok(user_id) => user_id,
+        Err(error) => return *error,
+    };
+    let Query(query) = match query {
+        Ok(query) => query,
+        Err(_) => return validation_error("Invalid query", None),
+    };
+    match yarn_service::owners_for_scope(&state.app, user_id, query.scope.as_deref()).await {
+        Ok(data) => Json(Envelope { data }).into_response(),
         Err(error) => yarn_error(error),
     }
 }

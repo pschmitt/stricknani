@@ -8,6 +8,7 @@ import androidx.navigation.toRoute
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.dto.ProjectDto
+import blue.anika.wolle.data.api.dto.ProjectStatus
 import blue.anika.wolle.data.api.v2.ProjectTimerDto
 import blue.anika.wolle.data.api.v2.ProjectTimerRequest
 import blue.anika.wolle.data.api.v2.ProjectsV2Api
@@ -817,6 +818,25 @@ constructor(
                 mutationFeedback.show(
                     if (e.isOfflineFailure()) R.string.mutation_favorite_offline
                     else R.string.error_favorite_failed
+                )
+            }
+        }
+    }
+
+    /** "Mark as done" / "Mark as in progress" from the detail menu (needs edit access). */
+    fun toggleStatus() {
+        val state = uiState.value
+        if (state !is ProjectDetailUiState.Loaded) return
+        val next =
+            if (state.entity.status == ProjectStatus.DONE) ProjectStatus.IN_PROGRESS
+            else ProjectStatus.DONE
+        viewModelScope.launch {
+            try {
+                projectRepository.setStatus(state.entity, next)
+            } catch (e: Exception) {
+                mutationFeedback.show(
+                    if (e.isOfflineFailure()) R.string.mutation_favorite_offline
+                    else R.string.error_status_failed
                 )
             }
         }

@@ -54,6 +54,10 @@ data class YarnDto(
     val owner: OwnerDto? = null,
     /** What the caller may do with it; null = the user's own (placeholders, older servers). */
     val access: AccessDto? = null,
+    /** Set while the item is in the trash (API v2, `trashed=only` lists); null otherwise. */
+    @SerialName("trashed_at") val trashedAt: String? = null,
+    /** When the trash is emptied for this item. */
+    @SerialName("purge_at") val purgeAt: String? = null,
 )
 
 /** `stricknani/routes/api/schemas.py`'s `YarnListItemResponse`. */

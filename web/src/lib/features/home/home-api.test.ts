@@ -3,6 +3,7 @@ import {
   HOME_PREVIEW_LIMIT,
   loadFavoriteProjects,
   loadFavoriteYarns,
+  loadOngoingProjects,
   loadRecentProjects,
 } from "./home-api";
 
@@ -19,6 +20,7 @@ describe("home dashboard API", () => {
       category: "Socks",
       tags: [],
       is_favorite: true,
+      status: "in_progress",
       updated_at: `2026-11-0${8 - index}T12:00:00Z`,
       preview_url: null,
     }));
@@ -71,5 +73,34 @@ describe("home dashboard API", () => {
       expect(init?.signal).toBe(controller.signal);
       expect(String(init?.body ?? "")).not.toContain("per_page");
     }
+  });
+
+  it("asks for the user's own in-progress projects and keeps at most six in server order", async () => {
+    const projects = Array.from({ length: 8 }, (_, index) => ({
+      id: index + 1,
+      name: `Project ${index + 1}`,
+      category: null,
+      tags: [],
+      is_favorite: false,
+      status: "in_progress",
+      updated_at: `2026-11-0${8 - index}T12:00:00Z`,
+      preview_url: null,
+    }));
+    const fetchMock = vi.fn((_input: RequestInfo | URL, _init?: RequestInit) =>
+      Promise.resolve(
+        Response.json({
+          data: projects,
+          meta: { page: 1, per_page: 50, has_more: true },
+        }),
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const ongoing = await loadOngoingProjects(new AbortController().signal);
+
+    expect(ongoing.map((item) => item.id)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      "/api/v2/projects?status=in_progress&owner=me",
+    );
   });
 });

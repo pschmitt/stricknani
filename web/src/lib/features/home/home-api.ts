@@ -30,3 +30,14 @@ export async function loadRecentProjects(
   const page = await listProjects("", signal, { scope });
   return page.data.slice(0, HOME_PREVIEW_LIMIT);
 }
+
+/** The user's own projects still in progress, most recently updated first (the server order). */
+export async function loadOngoingProjects(
+  signal: AbortSignal,
+  scope?: LibraryScope,
+): Promise<ProjectSummary[]> {
+  const page = await listProjects("status=in_progress&owner=me", signal, {
+    scope,
+  });
+  return page.data.slice(0, HOME_PREVIEW_LIMIT);
+}

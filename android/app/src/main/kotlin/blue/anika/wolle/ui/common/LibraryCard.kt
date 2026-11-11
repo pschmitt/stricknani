@@ -43,10 +43,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.dto.ProjectStatus
 import coil3.compose.AsyncImage
 import java.time.Instant
 import java.time.ZoneId
@@ -194,6 +197,10 @@ fun LibraryCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            data.trashDaysLeft?.let { TrashBadge(it, Modifier.padding(top = 2.dp)) }
+            if (data.status == ProjectStatus.DONE) {
+                ProjectStatusBadge(ProjectStatus.DONE, Modifier.padding(top = 2.dp))
+            }
             if (data.chips.isNotEmpty()) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -261,6 +268,10 @@ fun LibraryRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                 )
+                data.trashDaysLeft?.let { TrashBadge(it, Modifier.padding(top = 4.dp)) }
+                if (data.status == ProjectStatus.DONE) {
+                    ProjectStatusBadge(ProjectStatus.DONE, Modifier.padding(top = 4.dp))
+                }
             }
             FavoriteToggleButton(isFavorite = data.isFavorite, onClick = onFavoriteClick)
         }
@@ -336,3 +347,23 @@ private fun updatedLabel(millis: Long): String =
 internal fun formatUpdatedDate(millis: Long): String =
     DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
         .format(Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()))
+
+/** "In trash · 12 days left": the small badge of a trashed item in a library list. */
+@Composable
+private fun TrashBadge(daysLeft: Int, modifier: Modifier = Modifier) {
+    Text(
+        text = pluralStringResource(R.plurals.library_card_in_trash, daysLeft, daysLeft),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.error,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier =
+            modifier
+                .testTag("trash-badge")
+                .background(
+                    MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
+                    RoundedCornerShape(percent = 50),
+                )
+                .padding(horizontal = 10.dp, vertical = 2.dp),
+    )
+}

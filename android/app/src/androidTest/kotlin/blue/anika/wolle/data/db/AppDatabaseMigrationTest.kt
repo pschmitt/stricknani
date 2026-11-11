@@ -150,6 +150,26 @@ class AppDatabaseMigrationTest {
     }
 
     @Test
+    fun migrateFrom5_marksCachedProjectsInProgressAndKeepsTheQueue() {
+        helper.createDatabase(DB, 5).apply {
+            execSQL(
+                "INSERT INTO projects (id, name, category, tagsJson, isFavorite, updatedAt, " +
+                    "previewUrl, detailJson, accessDerived) " +
+                    "VALUES (5, 'Socks', NULL, '[]', 0, 1000, NULL, '{}', 0)"
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(DB, 6, true, MIGRATION_5_6)
+
+        db.query("SELECT name, status FROM projects").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("Socks", c.getString(0))
+            assertEquals("in_progress", c.getString(1))
+        }
+    }
+
+    @Test
     fun clearAllTables_removesSharedRowsToo_soAccountsNeverMix() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()

@@ -22,6 +22,11 @@ data class ProjectEntity(
      */
     val tagsJson: String,
     val isFavorite: Boolean,
+    /**
+     * `in_progress` or `done`, flattened out of [detailJson] so the status filter and the card
+     * badge need no JSON decode per row.
+     */
+    @ColumnInfo(defaultValue = "'in_progress'") val status: String = "in_progress",
     /** Epoch millis, parsed from the wire `updated_at` via `DateTimeUtils`. */
     val updatedAt: Long,
     val previewUrl: String?,

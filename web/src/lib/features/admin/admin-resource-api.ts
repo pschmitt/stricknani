@@ -1,4 +1,8 @@
 import { ApiError, apiRequest } from "#lib/api.ts";
+import {
+  projectStatusField,
+  type ProjectStatus,
+} from "#lib/features/projects/project-api.ts";
 
 export type AdminResourceKind = "project" | "yarn" | "category";
 
@@ -26,6 +30,7 @@ export interface AdminResourceProject {
   link_archive: string | null;
   is_ai_enhanced: boolean;
   is_favorite: boolean;
+  status: ProjectStatus;
   created_at: string;
   updated_at: string;
   yarn_ids: number[];
@@ -308,6 +313,7 @@ function parseProject(value: unknown, id: number): AdminResourceProject {
     link_archive: value.link_archive,
     is_ai_enhanced: value.is_ai_enhanced,
     is_favorite: value.is_favorite,
+    status: projectStatusField(value.status),
     created_at: value.created_at,
     updated_at: value.updated_at,
     yarn_ids: value.yarn_ids,

@@ -441,6 +441,31 @@ the distinct tags of the projects the caller owns or that are shared with them
 project; tags that differ only in case are one entry shown in its most common
 spelling. `tags` is a literal path segment, not a project id.
 
+### Project status
+
+Every project has a `status`: `in_progress` (the default, also for projects that
+existed before the field) or `done`. v2 project summaries and DTOs carry it; a
+v2 create or update may send it (absent keeps the current status, a create
+starts `in_progress`), and an unknown value is a `422` on `status`. API v1
+neither exposes nor accepts it. `GET /projects?status=in_progress|done` filters
+the list. `PUT /projects/{id}/status` with `{"status": "done"}` is the quick
+toggle for editors: it returns `{data: Project}`, bumps `updated_at` only when
+the status changes and is idempotent. Export and restore round-trip the field;
+an archive without it restores as `in_progress`.
+
+### Owner filter
+
+`GET /projects?owner=...` and `GET /yarns?owner=...` narrow what the caller
+already sees: `mine` (alias `me`), `shared` (everybody else's items) or a
+positive user id. The filter can never widen visibility, so asking for an owner
+whose items the caller cannot see returns an empty page. It combines with the
+other filters and is ignored by v1. `GET /projects/owners?scope=` and
+`GET /yarns/owners?scope=` list the filter options: the owners other than the
+caller of the visible items as `{data: [{id, name, email, avatar_url}]}`, by
+name. Share recipients get an empty `email`; administrators in the `all` scope
+see every other owner with their email. The web lists preselect the filter from
+`/app/projects?owner=` and `/app/yarns?owner=` (`me`, `shared` or a user id).
+
 The project DTO keeps v1 project field names and numeric IDs. It includes
 `id`, `name`, `category`, `yarn`, `needles`, `stitch_sample`, `description`,
 `notes`, `other_materials`, `tags`, `link`, `link_archive`,

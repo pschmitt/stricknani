@@ -605,3 +605,44 @@ async fn project_image_url_import_is_explicitly_not_implemented() {
         );
     }
 }
+
+#[tokio::test]
+async fn v1_projects_neither_expose_nor_accept_status() {
+    let (app, pool, owner_id, _) = app_and_users().await;
+    let created = app
+        .clone()
+        .oneshot(request(
+            "POST",
+            "/api/v1/projects",
+            OWNER_TOKEN,
+            Some(serde_json::json!({"name": "Socks", "status": "done"}).to_string()),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(created.status(), StatusCode::CREATED);
+    let body = json_body(created).await;
+    assert!(body.get("status").is_none(), "v1 payload stays unchanged");
+    let id = body["id"].as_i64().unwrap();
+    let stored: String =
+        sqlx::query_scalar("SELECT status FROM projects WHERE id = ? AND owner_id = ?")
+            .bind(id)
+            .bind(owner_id)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+    assert_eq!(stored, "in_progress", "v1 writes ignore status");
+    let listed = app
+        .clone()
+        .oneshot(request(
+            "GET",
+            "/api/v1/projects?status=done",
+            OWNER_TOKEN,
+            None,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(listed.status(), StatusCode::OK);
+    let listed = json_body(listed).await;
+    assert_eq!(listed["items"].as_array().unwrap().len(), 1);
+    assert!(listed["items"][0].get("status").is_none());
+}

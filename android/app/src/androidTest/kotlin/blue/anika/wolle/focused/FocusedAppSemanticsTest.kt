@@ -12,7 +12,6 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -109,10 +108,10 @@ class FocusedAppSemanticsTest {
     }
 
     @Test
-    fun homeCreateCardOpensTheCreateScreen() {
+    fun moreCreateRowOpensTheCreateScreen() {
         ensureConfigured()
-        composeRule.onNodeWithText("Home").performClick()
-        composeRule.onNodeWithTag("home-create-card").performScrollTo().performClick()
+        composeRule.onNodeWithText("More").performClick()
+        composeRule.onNodeWithText("Create").performClick()
         waitForText("Plan the next thing you want to knit.", timeoutMillis = 30_000)
     }
 

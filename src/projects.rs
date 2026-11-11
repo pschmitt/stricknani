@@ -41,6 +41,12 @@ pub(crate) struct ListQuery {
     pub(crate) category: Option<String>,
     pub(crate) tag: Option<String>,
     pub(crate) favorite: Option<bool>,
+    /// `in_progress` or `done`; API v2 only, v1 ignores it.
+    #[serde(default)]
+    pub(crate) status: Option<String>,
+    /// `mine` (alias `me`), `shared` or an owner id; API v2 only, v1 ignores it.
+    #[serde(default)]
+    pub(crate) owner: Option<String>,
     pub(crate) q: Option<String>,
     /// `mine` or `all`; administrators default to `all`, everyone else is always `mine`.
     #[serde(default)]
@@ -75,6 +81,9 @@ pub(crate) struct ProjectWriteRequest {
     pub(crate) link: Option<String>,
     #[serde(default)]
     pub(crate) is_ai_enhanced: bool,
+    /// API v2 only. Absent keeps the current status (`in_progress` on create).
+    #[serde(default)]
+    pub(crate) status: Option<String>,
     #[serde(default)]
     pub(crate) yarn_ids: Vec<i64>,
     /// Yarns to create together with the project and link to it (imports). Create only.
@@ -120,6 +129,9 @@ pub(crate) struct ProjectListItem {
     pub(crate) category: Option<String>,
     pub(crate) tags: Vec<String>,
     pub(crate) is_favorite: bool,
+    /// Set on API v2 only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) status: Option<String>,
     pub(crate) updated_at: String,
     pub(crate) preview_url: Option<String>,
     /// Set while the project is in the trash (API v2 `trashed=only` lists).
@@ -149,6 +161,9 @@ pub(crate) struct ProjectResponse {
     pub(crate) link_archive: Option<String>,
     pub(crate) is_ai_enhanced: bool,
     pub(crate) is_favorite: bool,
+    /// Set on API v2 only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) status: Option<String>,
     pub(crate) created_at: String,
     pub(crate) updated_at: String,
     /// Set while the project is in the trash: only its owner and administrators
@@ -204,6 +219,18 @@ impl TagPolicy {
     }
 }
 
+pub(crate) const STATUS_IN_PROGRESS: &str = "in_progress";
+pub(crate) const STATUS_DONE: &str = "done";
+
+/// Validate a requested status value; `None` when it is not a known status.
+pub(crate) fn parse_status(value: &str) -> Option<&'static str> {
+    match value {
+        STATUS_IN_PROGRESS => Some(STATUS_IN_PROGRESS),
+        STATUS_DONE => Some(STATUS_DONE),
+        _ => None,
+    }
+}
+
 async fn project_grant(
     state: &AppState,
     actor_id: i64,
@@ -255,6 +282,7 @@ struct ProjectRow {
     link: Option<String>,
     link_archive: Option<String>,
     is_ai_enhanced: bool,
+    status: String,
     created_at: String,
     updated_at: String,
     deleted_at: Option<String>,
@@ -268,6 +296,7 @@ struct ProjectListRow {
     category: Option<String>,
     tags: String,
     is_favorite: bool,
+    status: String,
     updated_at: String,
     share_role: Option<String>,
     deleted_at: Option<String>,
@@ -338,6 +367,23 @@ pub(crate) async fn list_for_owner_with_tag_policy(
         .filter(|value| !value.is_empty());
     let search_pattern = search.as_deref().map(literal_like_pattern);
     let favorite = query.favorite.map(i64::from);
+    let status = match (
+        tag_policy,
+        query.status.as_deref().filter(|v| !v.is_empty()),
+    ) {
+        (TagPolicy::PreserveLabels, Some(value)) => {
+            Some(parse_status(value).ok_or(ProjectError::Invalid("Invalid status"))?)
+        }
+        _ => None,
+    };
+    let owner_choice = match tag_policy {
+        TagPolicy::PreserveLabels => {
+            crate::resource_access::OwnerFilter::parse(query.owner.as_deref())
+                .map_err(|()| ProjectError::Invalid("Invalid owner"))?
+        }
+        TagPolicy::Legacy => None,
+    };
+    let (owner_eq, owner_ne) = crate::resource_access::OwnerFilter::binds(owner_choice, user_id);
     let requested_scope = match query.scope.as_deref() {
         None => None,
         Some(value) => Some(
@@ -362,7 +408,7 @@ pub(crate) async fn list_for_owner_with_tag_policy(
         "SELECT p.id, p.owner_id, p.name, c.name AS category, p.tags, \
                 EXISTS(SELECT 1 FROM user_favorites f \
                        WHERE f.user_id = ? AND f.project_id = p.id) AS is_favorite, \
-                p.updated_at, \
+                p.status, p.updated_at, \
                 (SELECT s.role FROM resource_shares s WHERE s.kind = 'project' \
                  AND s.resource_id = p.id AND s.user_id = ?) AS share_role, \
                 p.deleted_at \
@@ -379,6 +425,9 @@ pub(crate) async fn list_for_owner_with_tag_policy(
                 OR COALESCE(p.notes, '') LIKE ? ESCAPE '!') \
            AND (? IS NULL OR EXISTS(SELECT 1 FROM user_favorites f \
                                     WHERE f.user_id = ? AND f.project_id = p.id) = ?) \
+           AND (? IS NULL OR p.status = ?) \
+           AND (? IS NULL OR p.owner_id = ?) \
+           AND (? IS NULL OR p.owner_id != ?) \
          ORDER BY p.updated_at DESC, p.id DESC LIMIT ? OFFSET ?",
     )
     .bind(user_id)
@@ -401,6 +450,12 @@ pub(crate) async fn list_for_owner_with_tag_policy(
     .bind(favorite)
     .bind(user_id)
     .bind(favorite)
+    .bind(status)
+    .bind(status)
+    .bind(owner_eq)
+    .bind(owner_eq)
+    .bind(owner_ne)
+    .bind(owner_ne)
     .bind(PAGE_SIZE + 1)
     .bind((page - 1).saturating_mul(PAGE_SIZE))
     .fetch_all(&state.pool)
@@ -457,6 +512,7 @@ pub(crate) async fn list_for_owner_with_tag_policy(
             category: row.category,
             tags: decode_tags(&row.tags, tag_policy),
             is_favorite: row.is_favorite,
+            status: v2.then_some(row.status),
             updated_at: row.updated_at,
             preview_url: crate::media::project_preview(&images),
             access,
@@ -623,10 +679,12 @@ async fn create_project_with_yarn_ids(
     ));
     let now = timestamp(Utc::now());
     let tags = encode_tags(&payload.tags, tag_policy);
+    let requested_status = requested_status(&payload, tag_policy)?;
     let inserted = sqlx::query(
         "INSERT INTO projects (owner_id, category_id, name, needles, stitch_sample, \
-         description, notes, other_materials, tags, link, is_ai_enhanced, created_at, updated_at) \
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+         description, notes, other_materials, tags, link, is_ai_enhanced, status, \
+         created_at, updated_at) \
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(user_id)
     .bind(category_id)
@@ -639,6 +697,7 @@ async fn create_project_with_yarn_ids(
     .bind(tags)
     .bind(cleaned_optional(payload.link))
     .bind(payload.is_ai_enhanced)
+    .bind(requested_status.unwrap_or(STATUS_IN_PROGRESS))
     .bind(&now)
     .bind(&now)
     .execute(&mut *transaction)
@@ -823,10 +882,11 @@ pub(crate) async fn update_for_owner_with_tag_policy(
     let audit_changes = crate::audit::changes_from_items(audit_items.clone());
     let updated_at = next_timestamp(&current.updated_at).ok_or(ProjectError::Database)?;
     let tags = encode_tags(&payload.tags, tag_policy);
+    let requested_status = requested_status(&payload, tag_policy)?;
     let updated = sqlx::query(
         "UPDATE projects SET category_id = ?, name = ?, needles = ?, stitch_sample = ?, \
          description = ?, notes = ?, other_materials = ?, tags = ?, link = ?, \
-         is_ai_enhanced = ?, updated_at = ? \
+         is_ai_enhanced = ?, status = COALESCE(?, status), updated_at = ? \
          WHERE id = ? AND owner_id = ? AND updated_at = ?",
     )
     .bind(category_id)
@@ -839,6 +899,7 @@ pub(crate) async fn update_for_owner_with_tag_policy(
     .bind(tags)
     .bind(cleaned_optional(payload.link))
     .bind(payload.is_ai_enhanced)
+    .bind(requested_status)
     .bind(updated_at)
     .bind(project_id)
     .bind(user_id)
@@ -1210,6 +1271,58 @@ pub(crate) async fn set_favorite_for_owner(
         .await
 }
 
+/// Set a project's status (API v2). A no-op when the status already matches, so
+/// a repeated tap does not bump `updated_at`.
+pub(crate) async fn set_status_for_owner(
+    state: &AppState,
+    actor_id: i64,
+    project_id: i64,
+    status: &str,
+) -> Result<ProjectResponse, ProjectError> {
+    let status = parse_status(status).ok_or(ProjectError::Invalid("Invalid status"))?;
+    let tag_policy = TagPolicy::PreserveLabels;
+    let owner_id = project_grant(
+        state,
+        actor_id,
+        project_id,
+        tag_policy,
+        crate::resource_access::Need::Edit,
+    )
+    .await?
+    .owner_id;
+    let mut transaction = crate::db::begin_write(&state.pool)
+        .await
+        .map_err(|_| ProjectError::Database)?;
+    let current = sqlx::query_as::<_, (String, String)>(
+        "SELECT status, updated_at FROM projects WHERE id = ? AND owner_id = ?",
+    )
+    .bind(project_id)
+    .bind(owner_id)
+    .fetch_optional(&mut *transaction)
+    .await
+    .map_err(|_| ProjectError::Database)?
+    .ok_or(ProjectError::NotFound)?;
+    if current.0 != status {
+        let updated_at = next_timestamp(&current.1).ok_or(ProjectError::Database)?;
+        sqlx::query("UPDATE projects SET status = ?, updated_at = ? WHERE id = ? AND owner_id = ?")
+            .bind(status)
+            .bind(updated_at)
+            .bind(project_id)
+            .bind(owner_id)
+            .execute(&mut *transaction)
+            .await
+            .map_err(|_| ProjectError::Database)?;
+    }
+    transaction
+        .commit()
+        .await
+        .map_err(|_| ProjectError::Database)?;
+    load_project_with_tag_policy(state, actor_id, project_id, tag_policy)
+        .await
+        .map_err(|_| ProjectError::Database)?
+        .ok_or(ProjectError::NotFound)
+}
+
 pub(crate) async fn set_favorite_for_owner_with_tag_policy(
     state: &AppState,
     user_id: i64,
@@ -1291,7 +1404,7 @@ pub(crate) async fn load_project_with_tag_policy(
     let row = sqlx::query_as::<_, ProjectRow>(
         "SELECT p.id, p.name, c.name AS category, p.needles, p.stitch_sample, \
                 p.description, p.notes, p.other_materials, p.tags, p.link, \
-                p.link_archive, p.is_ai_enhanced, p.created_at, p.updated_at, p.deleted_at \
+                p.link_archive, p.is_ai_enhanced, p.status, p.created_at, p.updated_at, p.deleted_at \
          FROM projects p LEFT JOIN categories c ON c.id = p.category_id \
          WHERE p.id = ? AND p.owner_id = ?",
     )
@@ -1349,6 +1462,7 @@ pub(crate) async fn load_project_with_tag_policy(
         link_archive: row.link_archive,
         is_ai_enhanced: row.is_ai_enhanced,
         is_favorite,
+        status: matches!(tag_policy, TagPolicy::PreserveLabels).then_some(row.status),
         created_at: row.created_at,
         updated_at: row.updated_at,
         yarn_ids: yarns.into_iter().map(|(id, _)| id).collect(),
@@ -1579,6 +1693,19 @@ fn project_audit_changes(
         });
     }
     items
+}
+
+/// The status a v2 write asks for; v1 writes never carry one.
+fn requested_status(
+    payload: &ProjectWriteRequest,
+    tag_policy: TagPolicy,
+) -> Result<Option<&'static str>, ProjectError> {
+    match (tag_policy, payload.status.as_deref()) {
+        (TagPolicy::PreserveLabels, Some(value)) => parse_status(value)
+            .map(Some)
+            .ok_or(ProjectError::Invalid("Invalid status")),
+        _ => Ok(None),
+    }
 }
 
 async fn ensure_category(
@@ -1963,4 +2090,31 @@ fn database_error() -> Response {
 
 fn error_response(status: StatusCode, detail: Value) -> Response {
     (status, Json(ErrorResponse { detail })).into_response()
+}
+
+/// The owners, other than the caller, of the projects the caller sees (API v2).
+pub(crate) async fn owners_for_scope(
+    state: &AppState,
+    user_id: i64,
+    requested_scope: Option<&str>,
+) -> Result<Vec<crate::resource_access::OwnerInfo>, ProjectError> {
+    let requested = requested_scope
+        .map(|value| {
+            crate::resource_access::Scope::parse(value)
+                .ok_or(ProjectError::Invalid("Invalid scope"))
+        })
+        .transpose()?
+        .unwrap_or(crate::resource_access::Scope::Mine);
+    let scope = crate::resource_access::effective_scope(&state.pool, user_id, Some(requested))
+        .await
+        .map_err(|_| ProjectError::Database)?;
+    crate::resource_access::visible_owners(
+        &state.pool,
+        user_id,
+        crate::resource_access::ResourceKind::Project,
+        scope,
+        state.gravatar.enabled,
+    )
+    .await
+    .map_err(|_| ProjectError::Database)
 }

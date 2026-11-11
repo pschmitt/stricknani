@@ -11,6 +11,7 @@ import blue.anika.wolle.data.api.ApiGeneration
 import blue.anika.wolle.data.api.dto.ACCESS_EDITOR
 import blue.anika.wolle.data.api.dto.ImageDto
 import blue.anika.wolle.data.api.dto.ImportAssetDto
+import blue.anika.wolle.data.api.dto.ProjectStatus
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.api.dto.StepWriteRequest
 import blue.anika.wolle.data.api.dto.YarnCandidateDto
@@ -90,6 +91,8 @@ data class ProjectEditorFormState(
     val tagInput: String = "",
     val link: String = "",
     val isAiEnhanced: Boolean = false,
+    /** `in_progress` or `done`; a new project starts in progress. */
+    val status: String = ProjectStatus.IN_PROGRESS,
     val selectedYarnIds: Set<Int> = emptySet(),
     val steps: List<ProjectEditorStep> = emptyList(),
     val existingTitleImages: List<ImageDto> = emptyList(),
@@ -477,6 +480,7 @@ constructor(
                             tags = detail.tags,
                             link = detail.link ?: "",
                             isAiEnhanced = detail.isAiEnhanced,
+                            status = detail.status,
                             selectedYarnIds = detail.yarnIds.toSet(),
                             steps =
                                 detail.steps.map { step ->
@@ -753,6 +757,7 @@ constructor(
                         tags = current.committedTags(),
                         link = current.link.trim().ifBlank { null },
                         isAiEnhanced = current.isAiEnhanced,
+                        status = current.status,
                         yarnIds = (current.selectedYarnIds + importReview.linkedStashIds).toList(),
                         newYarns = importReview.newYarns(amountLabel),
                         steps =

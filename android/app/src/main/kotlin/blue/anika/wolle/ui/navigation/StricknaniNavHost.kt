@@ -46,6 +46,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import blue.anika.wolle.data.api.ImportAvailability
+import blue.anika.wolle.data.api.dto.ProjectStatus
 import blue.anika.wolle.data.api.v2.ImportJobDto
 import blue.anika.wolle.ui.admin.AdminAccountsScreen
 import blue.anika.wolle.ui.admin.AdminAuditScreen
@@ -386,7 +387,6 @@ fun StricknaniNavHost(
                         onSignIn = signInAgain,
                         onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
                         onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
-                        onCreateClick = { navController.navigate(Route.Create) },
                         onOpenSyncIssues = {
                             navController.navigate(
                                 Route.SettingsCategoryRoute(SettingsCategory.Sync.name)
@@ -394,6 +394,14 @@ fun StricknaniNavHost(
                         },
                         onSeeAllActivity = { navController.navigate(Route.Activity) },
                         onTrashClick = { navController.navigate(Route.Trash) },
+                        onSeeAllOngoing = {
+                            navController.navigate(
+                                Route.ProjectsFiltered(
+                                    owner = "me",
+                                    status = ProjectStatus.IN_PROGRESS,
+                                )
+                            )
+                        },
                         onOpenDraft = { navController.navigate(draftRoute(it)) },
                     )
                 }
@@ -412,6 +420,17 @@ fun StricknaniNavHost(
                         onOpenDraft = { navController.navigate(draftRoute(it)) },
                     )
                 }
+                screen<Route.ProjectsFiltered>(motion) { entry ->
+                    val route: Route.ProjectsFiltered = entry.toRoute()
+                    ProjectsListScreen(
+                        onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
+                        onAddProjectClick = { navController.navigate(Route.ProjectEditor()) },
+                        onOpenDraft = { navController.navigate(draftRoute(it)) },
+                        initialOwner = route.owner,
+                        initialStatus = route.status,
+                        initialTrashed = route.trashed,
+                    )
+                }
                 screen<Route.Categories>(motion) { CategoriesScreen() }
                 screen<Route.Yarns>(motion) {
                     val tabs by navBarViewModel.visibleDestinations.collectAsStateWithLifecycle()
@@ -419,6 +438,21 @@ fun StricknaniNavHost(
                         onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
                         onAddYarnClick = { navController.navigate(Route.YarnEditor()) },
                         onOpenDraft = { navController.navigate(draftRoute(it)) },
+                        // Without a Yarns tab the list is opened from Home, so offer a way back.
+                        onBack =
+                            if (TopLevelDestination.YARNS in tabs) null
+                            else ({ navController.popBackStack() }),
+                    )
+                }
+                screen<Route.YarnsByOwner>(motion) { entry ->
+                    val route: Route.YarnsByOwner = entry.toRoute()
+                    val tabs by navBarViewModel.visibleDestinations.collectAsStateWithLifecycle()
+                    YarnsListScreen(
+                        onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
+                        onAddYarnClick = { navController.navigate(Route.YarnEditor()) },
+                        onOpenDraft = { navController.navigate(draftRoute(it)) },
+                        initialOwner = route.owner,
+                        initialTrashed = route.trashed,
                         // Without a Yarns tab the list is opened from Home, so offer a way back.
                         onBack =
                             if (TopLevelDestination.YARNS in tabs) null

@@ -4,8 +4,15 @@ import { accessField, type ResourceAccess } from "#lib/access.ts";
 import { ownerField, type ResourceOwner } from "#lib/owner.ts";
 import type { LibraryScope } from "#lib/library-scope.svelte.ts";
 import { trashedFields } from "../trash/trash-state.ts";
+import { ownerChoiceFromParam, type OwnerChoice } from "#lib/owner-filter.ts";
+import {
+  trashChoiceFromParam,
+  trashField,
+  type TrashChoice,
+  type TrashFields,
+} from "#lib/trash-filter.ts";
 
-export interface YarnSummary {
+export interface YarnSummary extends TrashFields {
   id: number;
   name: string;
   brand: string | null;
@@ -87,6 +94,10 @@ export interface LinkedProject {
 export interface YarnFilters {
   query: string;
   favorite: boolean;
+  /** Whose yarns: empty = everybody's, `me`, `shared` or an owner id (`?owner=` of the URL). */
+  owner: OwnerChoice;
+  /** `only` lists the trash (`?trashed=only`); empty is the normal list. */
+  trashed: TrashChoice;
   page: number;
 }
 
@@ -105,6 +116,8 @@ export function yarnFiltersFromSearch(search: string): YarnFilters {
   return {
     query: params.get("q")?.trim() ?? "",
     favorite: params.get("favorite") === "true",
+    owner: ownerChoiceFromParam(params.get("owner")),
+    trashed: trashChoiceFromParam(params.get("trashed")),
     page: Number.isSafeInteger(page) && page > 0 ? page : 1,
   };
 }
@@ -113,6 +126,8 @@ export function yarnSearchFromFilters(filters: YarnFilters): string {
   const params = new URLSearchParams();
   if (filters.query) params.set("q", filters.query);
   if (filters.favorite) params.set("favorite", "true");
+  if (filters.owner) params.set("owner", filters.owner);
+  if (filters.trashed) params.set("trashed", filters.trashed);
   if (filters.page > 1) params.set("page", String(filters.page));
   return params.toString();
 }
@@ -335,6 +350,7 @@ export function parseYarnSummary(value: unknown): YarnSummary {
     ...ownerField(value.owner),
     ...accessField(value.access),
     ...trashedFields(value),
+    ...trashField(value),
   };
 }
 

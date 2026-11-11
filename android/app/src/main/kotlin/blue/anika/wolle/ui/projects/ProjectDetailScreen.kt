@@ -25,6 +25,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
@@ -85,6 +86,7 @@ import blue.anika.wolle.data.api.dto.ACCESS_OWNER
 import blue.anika.wolle.data.api.dto.AttachmentDto
 import blue.anika.wolle.data.api.dto.ImageDto
 import blue.anika.wolle.data.api.dto.ProjectDto
+import blue.anika.wolle.data.api.dto.ProjectStatus
 import blue.anika.wolle.data.repository.ItemAccess
 import blue.anika.wolle.data.repository.access
 import blue.anika.wolle.data.repository.galleryImages
@@ -112,6 +114,7 @@ import blue.anika.wolle.ui.common.NotesDisclosure
 import blue.anika.wolle.ui.common.OwnedKind
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.PhotoEditTarget
+import blue.anika.wolle.ui.common.ProjectStatusBadge
 import blue.anika.wolle.ui.common.ReadingTextScale
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.ReorderableDetailCard
@@ -337,6 +340,26 @@ fun ProjectDetailScreen(
                                         viewModel.toggleFavorite()
                                     },
                                 )
+                                if (access.canEdit) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                stringResource(
+                                                    if (state.entity.status == ProjectStatus.DONE)
+                                                        R.string.project_mark_in_progress
+                                                    else R.string.project_mark_done
+                                                )
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(Icons.Filled.Check, contentDescription = null)
+                                        },
+                                        onClick = {
+                                            menuExpanded = false
+                                            viewModel.toggleStatus()
+                                        },
+                                    )
+                                }
                                 if (timerAvailable && !timer.running) {
                                     DropdownMenuItem(
                                         text = {
@@ -630,6 +653,7 @@ private fun ProjectDetailContent(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
+                    ProjectStatusBadge(detail.status, Modifier.padding(vertical = 2.dp))
                     if (detail.tags.isNotEmpty()) {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             detail.tags.forEach { tag ->

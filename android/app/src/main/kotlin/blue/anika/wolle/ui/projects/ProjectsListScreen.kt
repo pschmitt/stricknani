@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -45,7 +46,7 @@ import blue.anika.wolle.ui.common.LibraryCardData
 import blue.anika.wolle.ui.common.LibraryCollection
 import blue.anika.wolle.ui.common.LibraryDomain
 import blue.anika.wolle.ui.common.LocalOwnerContext
-import blue.anika.wolle.ui.common.MineFilterChip
+import blue.anika.wolle.ui.common.PROJECT_STATUSES
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.RefreshFeedbackEffect
 import blue.anika.wolle.ui.common.SearchField
@@ -53,6 +54,8 @@ import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.isWideLibraryLayout
 import blue.anika.wolle.ui.common.libraryChips
 import blue.anika.wolle.ui.common.ownerBadge
+import blue.anika.wolle.ui.common.ownerFilterItems
+import blue.anika.wolle.ui.common.projectStatusLabel
 import blue.anika.wolle.ui.common.rememberEveryoneFilter
 import blue.anika.wolle.ui.imports.WaitingForReview
 
@@ -63,12 +66,31 @@ fun ProjectsListScreen(
     onAddProjectClick: () -> Unit,
     /** Opens the new-project editor on an import draft that waits for review. */
     onOpenDraft: (ImportJobDto) -> Unit = {},
+    /** Preselects the owner filter: `me`, `shared` or a user id (the `?owner=` of the web page). */
+    initialOwner: String? = null,
+    /** Preselects the status filter: `in_progress` or `done` (the `?status=` of the web page). */
+    initialStatus: String? = null,
+    /** Preselects the Trash filter: `only` (the `?trashed=only` of the web page). */
+    initialTrashed: String? = null,
     viewModel: ProjectsListViewModel = hiltViewModel(),
 ) {
     val projects by viewModel.projects.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     val tags by viewModel.tags.collectAsStateWithLifecycle()
     val favoritesOnly by viewModel.favoritesOnly.collectAsStateWithLifecycle()
+    val statusFilter by viewModel.statusFilter.collectAsStateWithLifecycle()
+    val ownerChoice by viewModel.ownerChoice.collectAsStateWithLifecycle()
+    val trashedOnly by viewModel.trashedOnly.collectAsStateWithLifecycle()
+    val owners by viewModel.owners.collectAsStateWithLifecycle()
+    val currentUserId = LocalOwnerContext.current.currentUserId
+    LaunchedEffect(currentUserId) { viewModel.setCurrentUserId(currentUserId) }
+    LaunchedEffect(initialOwner, initialStatus, initialTrashed) {
+        viewModel.applyInitialFilters(
+            owner = initialOwner,
+            status = initialStatus,
+            trashed = initialTrashed,
+        )
+    }
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
     val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
     val selectedTag by viewModel.selectedTag.collectAsStateWithLifecycle()
@@ -122,6 +144,9 @@ fun ProjectsListScreen(
                                 selectedCategory == null &&
                                     selectedTag == null &&
                                     !favoritesOnly &&
+                                    statusFilter == null &&
+                                    ownerChoice == null &&
+                                    !trashedOnly &&
                                     !everyoneFilter.mineSelected,
                             onClick = {
                                 viewModel.clearFilters()
@@ -136,9 +161,22 @@ fun ProjectsListScreen(
                             label = { Text(stringResource(R.string.yarns_list_favorites_only)) },
                         )
                     }
-                    if (everyoneFilter.available) {
-                        item(key = "mine-only") { MineFilterChip(everyoneFilter, selectEveryone) }
+                    items(PROJECT_STATUSES, key = { "status:$it" }) { status ->
+                        FilterChip(
+                            selected = statusFilter == status,
+                            onClick = { viewModel.onStatusSelected(status) },
+                            label = { Text(stringResource(projectStatusLabel(status))) },
+                            modifier = Modifier.testTag("projects-list-status-$status"),
+                        )
                     }
+                    ownerFilterItems(
+                        choice = ownerChoice,
+                        owners = owners,
+                        onSelect = viewModel::onOwnerSelected,
+                        testTagPrefix = "projects-list",
+                        trashedOnly = trashedOnly,
+                        onTrashToggle = { viewModel.onTrashedOnlyChange(!trashedOnly) },
+                    )
                     items(categories, key = { it.id }) { category ->
                         FilterChip(
                             selected = selectedCategory == category.name,
@@ -181,6 +219,9 @@ fun ProjectsListScreen(
                         selectedCategory != null ||
                         selectedTag != null ||
                         favoritesOnly ||
+                        statusFilter != null ||
+                        ownerChoice != null ||
+                        trashedOnly ||
                         (everyoneFilter.available && !everyoneFilter.enabled)
                 if (projects.isEmpty()) {
                     LazyColumn(
@@ -220,6 +261,8 @@ fun ProjectsListScreen(
                                     imageUrl = viewModel.previewUrl(project),
                                     isFavorite = project.isFavorite,
                                     chips = libraryChips(tags),
+                                    status = project.status,
+                                    trashDaysLeft = viewModel.trashDaysLeft(project),
                                     owner = project.ownerBadge(me),
                                 )
                             }

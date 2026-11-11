@@ -11,7 +11,10 @@
   import CreateFab from "#lib/components/CreateFab.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import { t } from "#lib/i18n.svelte.ts";
-  import { scopeFor, setScope } from "#lib/library-scope.svelte.ts";
+  import OwnerFilterPills from "#lib/components/OwnerFilterPills.svelte";
+  import { listOwners } from "#lib/owner-filter.ts";
+  import { trashDaysLeft } from "#lib/trash-filter.ts";
+  import type { ResourceOwner } from "#lib/owner.ts";
   import { foreignOwner } from "#lib/owner.ts";
   import { session } from "#lib/session.svelte.ts";
   import ImportDraftCards from "#lib/features/imports/ImportDraftCards.svelte";
@@ -29,24 +32,26 @@
   let loadState = $state<LoadState>("loading");
   let items = $state<YarnSummary[]>([]);
   let meta = $state({ page: 1, per_page: 50, has_more: false });
-  let filters = $state<YarnFilters>({ query: "", favorite: false, page: 1 });
+  let filters = $state<YarnFilters>({
+    query: "",
+    favorite: false,
+    owner: "",
+    trashed: "",
+    page: 1,
+  });
   let searchText = $state("");
   let errorMessage = $state("");
   let reload = $state(0);
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
-  const scope = $derived(scopeFor(session.data?.user));
-  const scopeUser = $derived(session.data?.user ?? null);
-  const scopeIsMine = $derived(
-    Boolean(scopeUser?.is_admin) && scope === "mine",
-  );
-
-  function resetScope() {
-    if (scopeUser) setScope(scopeUser, "all");
-  }
+  // Administrators always list everybody's yarn; the owner filter narrows it.
+  const scope = $derived(session.data?.user?.is_admin ? "all" : "mine");
+  let owners = $state<ResourceOwner[]>([]);
   const hasFilters = $derived(
-    Boolean(filters.query || filters.favorite || scopeIsMine),
+    Boolean(
+      filters.query || filters.favorite || filters.owner || filters.trashed,
+    ),
   );
 
   $effect(() => {
@@ -61,6 +66,7 @@
     reload;
     const controller = new AbortController();
     items = [];
+    owners = [];
     if (currentUserId === null) {
       loadState = "error";
       errorMessage = t("Sign in to view your yarn.", locale);
@@ -85,6 +91,14 @@
             ? error.message
             : t("The yarn list could not be loaded.", locale);
       });
+    void listOwners("yarns", controller.signal, currentScope)
+      .then((result) => {
+        if (controller.signal.aborted) return;
+        owners = result;
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) owners = [];
+      });
     return () => controller.abort();
   });
 
@@ -107,8 +121,13 @@
 
   function clearFilters() {
     searchText = "";
-    resetScope();
-    applyFilters({ query: "", favorite: false, page: 1 });
+    applyFilters({
+      query: "",
+      favorite: false,
+      owner: "",
+      trashed: "",
+      page: 1,
+    });
   }
 
   function changePage(nextPage: number) {
@@ -196,14 +215,14 @@
   >
     <button
       class="filter-pill"
-      class:filter-pill--selected={!filters.favorite && !scopeIsMine}
+      class:filter-pill--selected={!filters.favorite &&
+        !filters.owner &&
+        !filters.trashed}
       type="button"
-      aria-pressed={!filters.favorite && !scopeIsMine}
+      aria-pressed={!filters.favorite && !filters.owner && !filters.trashed}
       data-testid="yarn-filter-all"
-      onclick={() => {
-        applyFilters({ ...filters, favorite: false });
-        resetScope();
-      }}
+      onclick={() =>
+        applyFilters({ ...filters, favorite: false, owner: "", trashed: "" })}
     >
       {t("All", locale)}
     </button>
@@ -217,19 +236,21 @@
     >
       {t("Favorites only", locale)}
     </button>
-    {#if scopeUser?.is_admin}
-      <button
-        class="filter-pill"
-        class:filter-pill--selected={scopeIsMine}
-        type="button"
-        aria-pressed={scopeIsMine}
-        data-testid="yarn-filter-mine"
-        onclick={() =>
-          scopeUser && setScope(scopeUser, scopeIsMine ? "all" : "mine")}
-      >
-        {t("Mine", locale)}
-      </button>
-    {/if}
+    <OwnerFilterPills
+      choice={filters.owner}
+      {owners}
+      {locale}
+      kind="yarn"
+      trash={{
+        selected: filters.trashed === "only",
+        ontoggle: () =>
+          applyFilters({
+            ...filters,
+            trashed: filters.trashed === "only" ? "" : "only",
+          }),
+      }}
+      onselect={(owner) => applyFilters({ ...filters, owner })}
+    />
   </div>
 
   {#if errorMessage}
@@ -281,6 +302,7 @@
             t("Details to add", locale)}
           updated={`${t("Updated", locale)} ${formatDate(item.updated_at)}`}
           chips={item.weight_category ? [item.weight_category] : []}
+          trashDaysLeft={trashDaysLeft(item)}
           owner={foreignOwner(item.owner, userId)}
           favorite={item.is_favorite}
           favoriteBusy={favoriteBusyIds.includes(item.id)}

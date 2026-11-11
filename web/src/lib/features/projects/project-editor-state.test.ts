@@ -13,6 +13,7 @@ const project: ProjectDetail = {
   category: "Socks",
   tags: ["cables", "weekend"],
   is_favorite: false,
+  status: "done",
   updated_at: "2026-10-31T12:00:00.000000Z",
   preview_url: null,
   yarn: "Legacy wool note",
@@ -68,6 +69,15 @@ describe("project editor draft conversion", () => {
       [81, "Cuff"],
     ]);
     expect(new Set(draft.steps.map((step) => step.key)).size).toBe(2);
+  });
+
+  it("round-trips the status, starting a new project in progress", () => {
+    expect(blankProjectDraft().status).toBe("in_progress");
+    const draft = projectDraftFromDetail(project, () => 1);
+    expect(draft.status).toBe("done");
+    expect(projectWriteFromDraft(draft, false).status).toBe("done");
+    draft.status = "in_progress";
+    expect(projectWriteFromDraft(draft, false).status).toBe("in_progress");
   });
 
   it("keeps the list key of a saved step across a reload", () => {

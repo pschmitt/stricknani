@@ -35,6 +35,7 @@ describe("admin resource API", () => {
         link_archive: null,
         is_ai_enhanced: false,
         is_favorite: false,
+        status: "in_progress",
         created_at: "2026-11-01T12:00:00Z",
         updated_at: "2026-11-01T12:00:00Z",
         yarn_ids: [],

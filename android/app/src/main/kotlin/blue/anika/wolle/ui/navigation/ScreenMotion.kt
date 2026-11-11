@@ -59,6 +59,8 @@ private val ROUTE_CLASSES: List<KClass<out Route>> =
         Route.Projects::class,
         Route.Categories::class,
         Route.Yarns::class,
+        Route.ProjectsFiltered::class,
+        Route.YarnsByOwner::class,
         Route.Search::class,
         Route.Settings::class,
         Route.ProjectDetail::class,

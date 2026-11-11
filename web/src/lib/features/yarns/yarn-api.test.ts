@@ -84,7 +84,13 @@ describe("yarn browser API contract", () => {
     const filters = yarnFiltersFromSearch(
       "?q=blue%20wool&favorite=true&page=4",
     );
-    expect(filters).toEqual({ query: "blue wool", favorite: true, page: 4 });
+    expect(filters).toEqual({
+      query: "blue wool",
+      favorite: true,
+      owner: "",
+      trashed: "",
+      page: 4,
+    });
     expect(yarnSearchFromFilters(filters)).toBe(
       "q=blue+wool&favorite=true&page=4",
     );

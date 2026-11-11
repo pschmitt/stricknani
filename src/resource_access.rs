@@ -26,6 +26,82 @@ impl Scope {
     }
 }
 
+/// Owner filter of a v2 list request. It only narrows what the caller already
+/// sees, so it can never reveal an owner the caller has no access to.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum OwnerFilter {
+    /// The caller's own items.
+    Mine,
+    /// Items owned by somebody else (shared with the caller, or an administrator's view).
+    Shared,
+    /// One owner's items.
+    User(i64),
+}
+
+impl OwnerFilter {
+    /// `Ok(None)` is no filter (absent, empty or `all`); `Err` is an unknown value.
+    pub(crate) fn parse(value: Option<&str>) -> Result<Option<Self>, ()> {
+        match value.map(str::trim) {
+            None | Some("" | "all") => Ok(None),
+            Some("mine" | "me") => Ok(Some(Self::Mine)),
+            Some("shared") => Ok(Some(Self::Shared)),
+            Some(other) => other
+                .parse::<i64>()
+                .ok()
+                .filter(|id| *id > 0)
+                .map(|id| Some(Self::User(id)))
+                .ok_or(()),
+        }
+    }
+
+    /// Binds for `(?eq IS NULL OR owner_id = ?eq) AND (?ne IS NULL OR owner_id != ?ne)`.
+    pub(crate) fn binds(filter: Option<Self>, actor_id: i64) -> (Option<i64>, Option<i64>) {
+        match filter {
+            None => (None, None),
+            Some(Self::Mine) => (Some(actor_id), None),
+            Some(Self::Shared) => (None, Some(actor_id)),
+            Some(Self::User(id)) => (Some(id), None),
+        }
+    }
+}
+
+/// The owners, other than the caller, of the items the caller sees in `scope`:
+/// the options of the owner filter. Share recipients get names and avatars
+/// only, never emails (see [`owner_info`]).
+pub(crate) async fn visible_owners(
+    pool: &SqlitePool,
+    actor_id: i64,
+    kind: ResourceKind,
+    scope: Scope,
+    gravatar_enabled: bool,
+) -> Result<Vec<OwnerInfo>, sqlx::Error> {
+    let table = kind.table();
+    let sql = match scope {
+        Scope::All => format!("SELECT DISTINCT t.owner_id FROM {table} t WHERE t.owner_id != ?1"),
+        Scope::Mine => format!(
+            "SELECT DISTINCT t.owner_id FROM {table} t WHERE t.owner_id != ?1 AND {}",
+            visible_sql(kind, "t", 1)
+        ),
+    };
+    let ids: Vec<i64> = sqlx::query_scalar(sqlx::AssertSqlSafe(sql.as_str()))
+        .bind(actor_id)
+        .fetch_all(pool)
+        .await?;
+    let mut owners = Vec::with_capacity(ids.len());
+    for id in ids {
+        if let Some(owner) = owner_info(pool, actor_id, id, gravatar_enabled).await? {
+            owners.push(owner);
+        }
+    }
+    owners.sort_by(|a, b| {
+        a.name
+            .to_lowercase()
+            .cmp(&b.name.to_lowercase())
+            .then(a.id.cmp(&b.id))
+    });
+    Ok(owners)
+}
+
 /// Owner summary attached to every project and yarn resource.
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
 pub struct OwnerInfo {

@@ -45,11 +45,13 @@
   import { plainTextSummary } from "./facts-summary.ts";
   import { session } from "#lib/session.svelte.ts";
   import { textSize } from "#lib/text-size.svelte.ts";
+  import StatusBadge from "#lib/components/StatusBadge.svelte";
   import {
     deleteProject,
     getProject,
     getYarn,
     setProjectFavorite,
+    setProjectStatus,
     type ProjectDetail,
     type ProjectImage,
     type ProjectYarn,
@@ -82,6 +84,8 @@
   let favoriteError = $state("");
   let yarnWarning = $state(false);
   let favoriteBusy = $state(false);
+  let statusError = $state("");
+  let statusBusy = $state(false);
   let selectedImageId = $state<number | null>(null);
   let readerElement = $state<HTMLElement | null>(null);
   const needlesText = $derived(
@@ -103,6 +107,7 @@
   let reload = $state(0);
   let lastArchiveRefreshMarker: string | null = null;
   let favoriteGeneration = 0;
+  let statusGeneration = 0;
   let resourceGeneration = 0;
   let printGeneration = 0;
   let archiveRefreshGeneration = 0;
@@ -280,6 +285,9 @@
     favoriteGeneration += 1;
     favoriteBusy = false;
     favoriteError = "";
+    statusGeneration += 1;
+    statusBusy = false;
+    statusError = "";
     project = null;
     currentStepId = null;
     yarns = [];
@@ -419,6 +427,52 @@
             : t("The favorite could not be updated.", locale);
     } finally {
       if (generation === favoriteGeneration) favoriteBusy = false;
+    }
+  }
+
+  /** The quick "Mark as done" / "Mark as in progress" action of the project. */
+  async function toggleStatus() {
+    const currentProject = project;
+    const currentSession = session.data;
+    if (
+      adminData ||
+      !currentProject ||
+      !currentSession?.user ||
+      !canEdit ||
+      statusBusy
+    )
+      return;
+    const next = currentProject.status === "done" ? "in_progress" : "done";
+    const generation = ++statusGeneration;
+    statusBusy = true;
+    statusError = "";
+    try {
+      const updated = await setProjectStatus(
+        currentProject.id,
+        next,
+        currentSession,
+      );
+      if (generation === statusGeneration && project?.id === currentProject.id)
+        project = {
+          ...project,
+          status: updated.status,
+          updated_at: updated.updated_at,
+        };
+    } catch (error) {
+      if (generation !== statusGeneration || project?.id !== currentProject.id)
+        return;
+      if (isAccessLost(error)) {
+        void leaveForLostAccess();
+        return;
+      }
+      statusError =
+        error instanceof ApiError && error.status === 404
+          ? t("This project is no longer available.", locale)
+          : error instanceof Error
+            ? error.message
+            : t("The status could not be updated.", locale);
+    } finally {
+      if (generation === statusGeneration) statusBusy = false;
     }
   }
 
@@ -1081,6 +1135,7 @@
             >{t("Updated", locale)}
             {formatDate(currentProject.updated_at)}</span
           >
+          <StatusBadge status={currentProject.status} {locale} />
           {#if currentProject.tags.length}
             <ul class="reader-tags" aria-label={t("Project tags", locale)}>
               {#each currentProject.tags as tag, index (`${index}:${tag}`)}
@@ -1196,6 +1251,25 @@
                       >{currentProject.is_favorite
                         ? t("Remove from favorites", locale)
                         : t("Add to favorites", locale)}</span
+                    >
+                  </button>
+                {/if}
+                {#if !adminData && canEdit}
+                  <button
+                    class="action-overflow__item"
+                    role="menuitem"
+                    type="button"
+                    disabled={statusBusy}
+                    onclick={() => {
+                      close();
+                      void toggleStatus();
+                    }}
+                  >
+                    <NavIcon name="check" />
+                    <span
+                      >{currentProject.status === "done"
+                        ? t("Mark as in progress", locale)
+                        : t("Mark as done", locale)}</span
                     >
                   </button>
                 {/if}
@@ -1375,6 +1449,9 @@
 
     {#if favoriteError}
       <p class="inline-error" role="alert">{favoriteError}</p>
+    {/if}
+    {#if statusError}
+      <p class="inline-error" role="alert">{statusError}</p>
     {/if}
 
     <div class="reader-sections">

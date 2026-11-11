@@ -63,3 +63,21 @@ class MigrationStatements45Test {
         assertEquals(5, MIGRATION_4_5.endVersion)
     }
 }
+
+/** The 5 -> 6 migration (project status) only adds one column that defaults to in progress. */
+class MigrationStatements56Test {
+    @Test
+    fun `adds the status column to projects, defaulting to in progress, nothing else`() {
+        assertEquals(1, MIGRATION_5_6_STATEMENTS.size)
+        val statement = MIGRATION_5_6_STATEMENTS.single()
+        assertTrue(statement.startsWith("ALTER TABLE `projects` ADD COLUMN `status` "))
+        assertTrue(statement.contains("NOT NULL DEFAULT 'in_progress'"))
+        assertTrue(MIGRATION_5_6_STATEMENTS.none { it.contains("DROP") || it.contains("DELETE") })
+    }
+
+    @Test
+    fun `the migration is 5 to 6`() {
+        assertEquals(5, MIGRATION_5_6.startVersion)
+        assertEquals(6, MIGRATION_5_6.endVersion)
+    }
+}

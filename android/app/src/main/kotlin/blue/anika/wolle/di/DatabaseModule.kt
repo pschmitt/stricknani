@@ -5,6 +5,7 @@ import androidx.room.Room
 import blue.anika.wolle.data.db.AppDatabase
 import blue.anika.wolle.data.db.MIGRATION_3_4
 import blue.anika.wolle.data.db.MIGRATION_4_5
+import blue.anika.wolle.data.db.MIGRATION_5_6
 import blue.anika.wolle.data.db.dao.CategoryDao
 import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.db.dao.ProjectDao
@@ -27,7 +28,7 @@ object DatabaseModule {
         Room.databaseBuilder(context, AppDatabase::class.java, "stricknani.db")
             // 3 -> 4 keeps queued offline writes. Older versions only held a rebuildable server
             // cache (plus a few queued writes of long-gone builds), so they still wipe and resync.
-            .addMigrations(MIGRATION_3_4, MIGRATION_4_5)
+            .addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
             .fallbackToDestructiveMigration(dropAllTables = true)
             .build()
 

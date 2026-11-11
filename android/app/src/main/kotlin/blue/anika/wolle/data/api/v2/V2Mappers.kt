@@ -3,6 +3,7 @@ package blue.anika.wolle.data.api.v2
 import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.data.api.dto.ProjectListItemDto
 import blue.anika.wolle.data.api.dto.ProjectPageDto
+import blue.anika.wolle.data.api.dto.ProjectStatus
 import blue.anika.wolle.data.api.dto.StepDto
 import blue.anika.wolle.data.api.dto.YarnDto
 import blue.anika.wolle.data.api.dto.YarnListItemDto
@@ -37,6 +38,7 @@ fun ProjectV2Dto.toV1(): ProjectDto =
         linkArchive = linkArchive,
         isAiEnhanced = isAiEnhanced,
         isFavorite = isFavorite,
+        status = ProjectStatus.normalize(status),
         createdAt = createdAt,
         updatedAt = updatedAt,
         yarnIds = yarnIds,
