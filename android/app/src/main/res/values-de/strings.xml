@@ -514,6 +514,11 @@
     <string name="account_error_reports_toggle_help">Sendet technische Details zu Fehlern, nie deine Inhalte, an den Betreiber des Servers. Gilt für dieses Konto auf allen deinen Geräten.</string>
     <string name="account_error_reports_save_failed">Auf diesem Gerät umgestellt. Der Server konnte es nicht speichern, daher können deine anderen Geräte abweichen.</string>
     <string name="error_gravatar_save_failed">Die Gravatar-Einstellung konnte nicht gespeichert werden - versuche es erneut.</string>
+    <string name="account_strip_metadata_toggle">Standort- und Kameradaten aus neuen Fotos entfernen</string>
+    <string name="account_strip_metadata_toggle_help">Gilt für Fotos, die du ab jetzt hochlädst. Bereits hochgeladene Fotos werden nicht geändert.</string>
+    <string name="account_strip_metadata_on">Standort- und Kameradaten werden aus neuen Fotos entfernt.</string>
+    <string name="account_strip_metadata_off">Standort- und Kameradaten bleiben in neuen Fotos erhalten.</string>
+    <string name="error_strip_metadata_save_failed">Die Einstellung für den Foto-Datenschutz konnte nicht gespeichert werden.</string>
     <string name="account_password_label">Passwort</string>
     <string name="account_password_notice">Wenn du dein Passwort änderst, wirst du auf allen Geräten abgemeldet, auch auf diesem.</string>
     <string name="account_password_change">Passwort ändern</string>

@@ -66,6 +66,14 @@ class AccountSecurityViewModelTest {
             return toggle ?: AccountProfileResult.Failed(offline = false)
         }
 
+        var stripResult: AccountProfileResult? = null
+        val stripped = mutableListOf<Boolean>()
+
+        override suspend fun setStripPhotoMetadata(enabled: Boolean): AccountProfileResult {
+            stripped += enabled
+            return stripResult ?: AccountProfileResult.Failed(offline = false)
+        }
+
         override suspend fun loadTokens() = list
 
         override suspend fun createToken(name: String, currentPassword: String): CreateTokenResult {
@@ -468,5 +476,47 @@ class AccountSecurityViewModelTest {
             assertTrue(vm.state.value.useGravatar)
             assertFalse(vm.state.value.gravatarBusy)
             assertEquals(listOf(R.string.error_gravatar_save_failed), seen)
+        }
+
+    @Test
+    fun `the photo metadata setting is off until the server says otherwise`() {
+        assertFalse(viewModel().state.value.stripPhotoMetadata)
+
+        gateway.profile =
+            AccountProfileResult.Loaded(AccountDto(1, "me@example.org", stripPhotoMetadata = true))
+        assertTrue(viewModel().state.value.stripPhotoMetadata)
+    }
+
+    @Test
+    fun `the photo metadata toggle sends the choice and applies the answer`() =
+        runTest(UnconfinedTestDispatcher()) {
+            val seen = mutableListOf<Int>()
+            backgroundScope.launch { feedback.events.collect { seen += it.messageResId } }
+            gateway.stripResult =
+                AccountProfileResult.Loaded(
+                    AccountDto(1, "me@example.org", stripPhotoMetadata = true)
+                )
+            val vm = viewModel()
+
+            vm.setStripPhotoMetadata(true)
+
+            assertEquals(listOf(true), gateway.stripped)
+            assertTrue(vm.state.value.stripPhotoMetadata)
+            assertFalse(vm.state.value.stripPhotoMetadataBusy)
+            assertEquals(listOf(R.string.account_strip_metadata_on), seen)
+        }
+
+    @Test
+    fun `a failed photo metadata toggle keeps the old value and tells the user`() =
+        runTest(UnconfinedTestDispatcher()) {
+            val seen = mutableListOf<Int>()
+            backgroundScope.launch { feedback.events.collect { seen += it.messageResId } }
+            val vm = viewModel()
+
+            vm.setStripPhotoMetadata(true)
+
+            assertFalse(vm.state.value.stripPhotoMetadata)
+            assertFalse(vm.state.value.stripPhotoMetadataBusy)
+            assertEquals(listOf(R.string.error_strip_metadata_save_failed), seen)
         }
 }

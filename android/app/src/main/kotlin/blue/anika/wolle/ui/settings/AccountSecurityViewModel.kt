@@ -110,6 +110,9 @@ data class AccountSecurityState(
     /** The server offers Gravatar (`gravatar_enabled`); false hides the toggle. */
     val gravatarEnabled: Boolean = false,
     val gravatarBusy: Boolean = false,
+    /** Remove location and camera data from photos uploaded from now on. */
+    val stripPhotoMetadata: Boolean = false,
+    val stripPhotoMetadataBusy: Boolean = false,
     val confirmRemoveAvatar: Boolean = false,
     val passwordOpen: Boolean = false,
     val passwordBusy: Boolean = false,
@@ -222,7 +225,27 @@ constructor(
             avatarSource = account.avatarSource,
             useGravatar = account.useGravatar,
             gravatarEnabled = account.gravatarEnabled,
+            stripPhotoMetadata = account.stripPhotoMetadata,
         )
+    }
+
+    fun setStripPhotoMetadata(enabled: Boolean) {
+        if (_state.value.stripPhotoMetadataBusy) return
+        _state.update { it.copy(stripPhotoMetadataBusy = true) }
+        viewModelScope.launch {
+            val result = gateway.setStripPhotoMetadata(enabled)
+            _state.update { it.copy(stripPhotoMetadataBusy = false) }
+            when (result) {
+                is AccountProfileResult.Loaded -> {
+                    applyProfile(result.account)
+                    feedback.show(
+                        if (result.account.stripPhotoMetadata) R.string.account_strip_metadata_on
+                        else R.string.account_strip_metadata_off
+                    )
+                }
+                else -> feedback.show(R.string.error_strip_metadata_save_failed)
+            }
+        }
     }
 
     fun setUseGravatar(enabled: Boolean) {

@@ -92,6 +92,7 @@ async fn get_account(State(state): State<ApiV2State>, headers: HeaderMap) -> Res
 struct UpdateAccountRequest {
     use_gravatar: Option<bool>,
     error_reporting_enabled: Option<bool>,
+    strip_photo_metadata: Option<bool>,
     detail_card_order: Option<DetailCardOrderRequest>,
 }
 
@@ -125,6 +126,12 @@ async fn update_account(
     if let Some(enabled) = request.error_reporting_enabled
         && let Err(error) =
             account_service::set_error_reporting(&state.app.pool, user_id, enabled).await
+    {
+        return account_error(error);
+    }
+    if let Some(enabled) = request.strip_photo_metadata
+        && let Err(error) =
+            account_service::set_strip_photo_metadata(&state.app.pool, user_id, enabled).await
     {
         return account_error(error);
     }

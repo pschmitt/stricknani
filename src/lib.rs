@@ -21,6 +21,7 @@ pub mod frontend;
 pub mod gravatar;
 mod i18n;
 pub mod image_import;
+pub mod image_metadata;
 pub(crate) mod impersonation;
 pub mod import_document;
 pub mod import_drafts;

@@ -477,7 +477,7 @@ pub(crate) async fn create_for_owner(
     let prepared_images =
         if !payload.image_urls.is_empty() && state.external_imports && state.media_root.is_some() {
             let urls: Vec<String> = payload.image_urls.iter().take(6).cloned().collect();
-            crate::image_import::prepare_yarn_images(state, &name, &urls).await
+            crate::image_import::prepare_yarn_images(state, user_id, &name, &urls).await
         } else {
             Vec::new()
         };

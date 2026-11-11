@@ -39,6 +39,7 @@
     listApiTokens,
     revokeApiToken,
     setErrorReporting,
+    setStripPhotoMetadata,
     setUseGravatar,
     uploadAvatar,
     type AccountProfile,
@@ -53,6 +54,7 @@
     | "avatar-delete"
     | "gravatar"
     | "error-reporting"
+    | "strip-photo-metadata"
     | "password";
 
   let profile = $state<AccountProfile | null>(null);
@@ -680,6 +682,47 @@
     }
   }
 
+  let stripPhotoMetadataError = $state("");
+
+  async function changeStripPhotoMetadata(enabled: boolean) {
+    const activeSession = session.data;
+    const capturedUserId = activeSession?.user?.id;
+    if (
+      !accountActionsEnabled ||
+      !activeSession ||
+      capturedUserId === undefined ||
+      operation !== null
+    )
+      return;
+    stripPhotoMetadataError = "";
+    pageStatus = "";
+    operation = "strip-photo-metadata";
+    const mutationId = ++operationGeneration;
+    try {
+      const next = await setStripPhotoMetadata(enabled, activeSession);
+      if (
+        userId !== capturedUserId ||
+        mutationId !== operationGeneration ||
+        !profile
+      )
+        return;
+      profile = next;
+      pageStatus = next.strip_photo_metadata
+        ? t("Location and camera data will be removed from new photos.", locale)
+        : t("Location and camera data will be kept in new photos.", locale);
+    } catch (error) {
+      if (userId !== capturedUserId || mutationId !== operationGeneration)
+        return;
+      stripPhotoMetadataError = errorMessage(
+        error,
+        t("The photo privacy setting could not be saved.", locale),
+      );
+    } finally {
+      if (userId === capturedUserId && mutationId === operationGeneration)
+        operation = null;
+    }
+  }
+
   async function submitPassword(event: SubmitEvent) {
     event.preventDefault();
     const activeSession = session.data;
@@ -1191,6 +1234,40 @@
               disabled={operation !== null || !accountActionsEnabled}
               onchange={(event) =>
                 void changeErrorReporting(event.currentTarget.checked)}
+            />
+          </div>
+        </div>
+      {/if}
+      {#if profile}
+        <div class="row">
+          <div class="row__text">
+            <label class="row__label" for="pref-strip-photo-metadata"
+              >{t(
+                "Remove location and camera data from new photos",
+                locale,
+              )}</label
+            >
+            <p class="row__hint" id="pref-strip-photo-metadata-hint">
+              {t(
+                "Applies to photos you upload from now on. Photos already uploaded are not changed.",
+                locale,
+              )}
+            </p>
+            {#if stripPhotoMetadataError}<p class="field-error" role="alert">
+                {stripPhotoMetadataError}
+              </p>{/if}
+          </div>
+          <div class="row__control">
+            <input
+              id="pref-strip-photo-metadata"
+              type="checkbox"
+              role="switch"
+              class="switch"
+              aria-describedby="pref-strip-photo-metadata-hint"
+              checked={profile.strip_photo_metadata}
+              disabled={operation !== null || !accountActionsEnabled}
+              onchange={(event) =>
+                void changeStripPhotoMetadata(event.currentTarget.checked)}
             />
           </div>
         </div>

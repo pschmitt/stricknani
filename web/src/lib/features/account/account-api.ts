@@ -26,6 +26,11 @@ export interface AccountProfile {
   error_reporting_enabled: boolean;
   /** Whether the operator configured error reporting at all. */
   error_reporting_available: boolean;
+  /**
+   * Remove location and camera data from photos uploaded from now on (default
+   * false). Already stored photos are never changed.
+   */
+  strip_photo_metadata: boolean;
   /** Order of the reorderable project and yarn detail sections. */
   detail_card_order: DetailCardOrders;
 }
@@ -79,7 +84,8 @@ function parseProfile(value: unknown): AccountProfile {
     !optionalBoolean(value.use_gravatar) ||
     !optionalBoolean(value.gravatar_enabled) ||
     !optionalBoolean(value.error_reporting_enabled) ||
-    !optionalBoolean(value.error_reporting_available)
+    !optionalBoolean(value.error_reporting_available) ||
+    !optionalBoolean(value.strip_photo_metadata)
   )
     throw invalidResponse();
   return {
@@ -92,6 +98,7 @@ function parseProfile(value: unknown): AccountProfile {
     gravatar_enabled: value.gravatar_enabled ?? false,
     error_reporting_enabled: value.error_reporting_enabled ?? true,
     error_reporting_available: value.error_reporting_available ?? false,
+    strip_photo_metadata: value.strip_photo_metadata ?? false,
     detail_card_order: parseDetailOrders(value.detail_card_order),
   };
 }
@@ -217,6 +224,20 @@ export async function setErrorReporting(
     method: "PATCH",
     csrfToken: currentSession.csrf_token,
     body: { error_reporting_enabled: enabled },
+  });
+  if (!record(payload)) throw invalidResponse();
+  return parseProfile(payload.data);
+}
+
+/** Stores the per-user "remove location and camera data from new photos" choice. */
+export async function setStripPhotoMetadata(
+  enabled: boolean,
+  currentSession: SessionData,
+): Promise<AccountProfile> {
+  const payload: unknown = await apiRequest("/api/v2/account", {
+    method: "PATCH",
+    csrfToken: currentSession.csrf_token,
+    body: { strip_photo_metadata: enabled },
   });
   if (!record(payload)) throw invalidResponse();
   return parseProfile(payload.data);

@@ -108,6 +108,9 @@ interface AccountGateway {
     /** `PATCH /account {use_gravatar}`; remembers the resulting avatar path. */
     suspend fun setUseGravatar(enabled: Boolean): AccountProfileResult
 
+    /** `PATCH /account {strip_photo_metadata}`: remove location and camera data from new photos. */
+    suspend fun setStripPhotoMetadata(enabled: Boolean): AccountProfileResult
+
     suspend fun loadTokens(): TokenListResult
 
     suspend fun createToken(name: String, currentPassword: String): CreateTokenResult
@@ -179,6 +182,11 @@ internal constructor(
     override suspend fun setUseGravatar(enabled: Boolean): AccountProfileResult = profileCall {
         api.updateAccount(UpdateAccountRequest(enabled)).data
     }
+
+    override suspend fun setStripPhotoMetadata(enabled: Boolean): AccountProfileResult =
+        profileCall {
+            api.updateAccount(UpdateAccountRequest(stripPhotoMetadata = enabled)).data
+        }
 
     private suspend fun profileCall(call: suspend () -> AccountDto): AccountProfileResult =
         try {

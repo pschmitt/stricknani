@@ -152,6 +152,8 @@ data class AccountDto(
     @SerialName("use_gravatar") val useGravatar: Boolean = true,
     /** False when the server does not offer Gravatar (or predates it): hide the toggle. */
     @SerialName("gravatar_enabled") val gravatarEnabled: Boolean = false,
+    /** Remove location and camera data from new photos; off when an older server omits it. */
+    @SerialName("strip_photo_metadata") val stripPhotoMetadata: Boolean = false,
     /** The per-user section order shared with the web app; absent on older servers. */
     @SerialName("detail_card_order") val detailCardOrder: DetailCardOrderDto? = null,
 ) {
@@ -160,13 +162,14 @@ data class AccountDto(
 }
 
 /**
- * `{use_gravatar}` and/or `{detail_card_order}`: absent fields stay as they are (the client omits
- * nulls), so one `PATCH /account` can carry either setting.
+ * `{use_gravatar}`, `{detail_card_order}` and/or `{strip_photo_metadata}`: absent fields stay as
+ * they are (the client omits nulls), so one `PATCH /account` can carry either setting.
  */
 @Serializable
 data class UpdateAccountRequest(
     @SerialName("use_gravatar") val useGravatar: Boolean? = null,
     @SerialName("detail_card_order") val detailCardOrder: DetailCardOrderDto? = null,
+    @SerialName("strip_photo_metadata") val stripPhotoMetadata: Boolean? = null,
 )
 
 /**

@@ -643,6 +643,7 @@ async fn create_project_with_yarn_ids(
             tokio::join!(
                 crate::image_import::prepare_project_images(
                     state,
+                    user_id,
                     payload.name.trim(),
                     &payload.image_urls,
                     &step_image_urls,

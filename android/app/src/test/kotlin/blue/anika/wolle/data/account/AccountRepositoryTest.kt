@@ -371,6 +371,29 @@ class AccountRepositoryTest {
     }
 
     @Test
+    fun `the photo metadata setting defaults off, parses and is patched on its own`() = runTest {
+        val legacy =
+            json
+                .decodeFromString<V2Envelope<AccountDto>>("""{"data":{"id":1,"email":"a@b.c"}}""")
+                .data
+        assertFalse(legacy.stripPhotoMetadata)
+
+        api.update = {
+            V2Envelope(AccountDto(1, "a@b.c", stripPhotoMetadata = it.stripPhotoMetadata == true))
+        }
+        val on = repository.setStripPhotoMetadata(true) as AccountProfileResult.Loaded
+
+        assertEquals(UpdateAccountRequest(stripPhotoMetadata = true), api.lastUpdate)
+        assertTrue(on.account.stripPhotoMetadata)
+
+        api.update = { throw IOException("offline") }
+        assertEquals(
+            AccountProfileResult.Failed(offline = true),
+            repository.setStripPhotoMetadata(false),
+        )
+    }
+
+    @Test
     fun `account read failures map to unsupported or failed`() = runTest {
         for (status in listOf(401, 404, 405)) {
             api.account = { throw http(status) }
