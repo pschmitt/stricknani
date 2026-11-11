@@ -161,19 +161,21 @@ fun LibraryCard(
             data.owner?.let { owner ->
                 OwnerBadge(owner, modifier = Modifier.align(Alignment.TopStart).padding(10.dp))
             }
-            Box(
-                Modifier.align(Alignment.TopEnd)
-                    .padding(8.dp)
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                FavoriteToggleButton(
-                    isFavorite = data.isFavorite,
-                    onClick = onFavoriteClick,
-                    modifier = Modifier.size(44.dp),
-                )
+            if (data.favoriteToggleable) {
+                Box(
+                    Modifier.align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    FavoriteToggleButton(
+                        isFavorite = data.isFavorite,
+                        onClick = onFavoriteClick,
+                        modifier = Modifier.size(44.dp),
+                    )
+                }
             }
         }
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -273,7 +275,9 @@ fun LibraryRow(
                     ProjectStatusBadge(ProjectStatus.DONE, Modifier.padding(top = 4.dp))
                 }
             }
-            FavoriteToggleButton(isFavorite = data.isFavorite, onClick = onFavoriteClick)
+            if (data.favoriteToggleable) {
+                FavoriteToggleButton(isFavorite = data.isFavorite, onClick = onFavoriteClick)
+            }
         }
     }
 }

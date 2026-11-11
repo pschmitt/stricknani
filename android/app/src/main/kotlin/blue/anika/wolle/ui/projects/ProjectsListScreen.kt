@@ -54,10 +54,14 @@ import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.isWideLibraryLayout
 import blue.anika.wolle.ui.common.libraryChips
 import blue.anika.wolle.ui.common.ownerBadge
+import blue.anika.wolle.ui.common.ownerBadgeOf
 import blue.anika.wolle.ui.common.ownerFilterItems
 import blue.anika.wolle.ui.common.projectStatusLabel
 import blue.anika.wolle.ui.common.rememberEveryoneFilter
+import blue.anika.wolle.ui.common.trashDaysLeft
+import blue.anika.wolle.ui.common.trashedUpdatedAt
 import blue.anika.wolle.ui.imports.WaitingForReview
+import blue.anika.wolle.ui.trash.TrashedListBody
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -72,6 +76,8 @@ fun ProjectsListScreen(
     initialStatus: String? = null,
     /** Preselects the Trash filter: `only` (the `?trashed=only` of the web page). */
     initialTrashed: String? = null,
+    /** Opens a trashed project's read-only page (the Trash filter's cards). */
+    onTrashedProjectClick: (Int) -> Unit = {},
     viewModel: ProjectsListViewModel = hiltViewModel(),
 ) {
     val projects by viewModel.projects.collectAsStateWithLifecycle()
@@ -81,6 +87,7 @@ fun ProjectsListScreen(
     val statusFilter by viewModel.statusFilter.collectAsStateWithLifecycle()
     val ownerChoice by viewModel.ownerChoice.collectAsStateWithLifecycle()
     val trashedOnly by viewModel.trashedOnly.collectAsStateWithLifecycle()
+    val trashedProjects by viewModel.trashedProjects.collectAsStateWithLifecycle()
     val owners by viewModel.owners.collectAsStateWithLifecycle()
     val currentUserId = LocalOwnerContext.current.currentUserId
     LaunchedEffect(currentUserId) { viewModel.setCurrentUserId(currentUserId) }
@@ -223,7 +230,7 @@ fun ProjectsListScreen(
                         ownerChoice != null ||
                         trashedOnly ||
                         (everyoneFilter.available && !everyoneFilter.enabled)
-                if (projects.isEmpty()) {
+                val emptyList: @Composable () -> Unit = {
                     LazyColumn(
                         state = listState,
                         modifier = Modifier.fillMaxSize().testTag("e2e-projects-list"),
@@ -245,6 +252,59 @@ fun ProjectsListScreen(
                             )
                         }
                     }
+                }
+                if (trashedOnly) {
+                    TrashedListBody(
+                        state = trashedProjects,
+                        onRetry = viewModel::retryTrash,
+                        onLeave = { viewModel.onTrashedOnlyChange(false) },
+                    ) { trashed ->
+                        if (trashed.isEmpty()) {
+                            emptyList()
+                        } else {
+                            LibraryCollection(
+                                items = trashed,
+                                key = { it.id },
+                                toCard = { project ->
+                                    val me = LocalOwnerContext.current.currentUserId
+                                    remember(project, me) {
+                                        LibraryCardData(
+                                            domain = LibraryDomain.Project,
+                                            title = project.name,
+                                            meta = project.category,
+                                            updatedAt = trashedUpdatedAt(project.updatedAt),
+                                            imageUrl = viewModel.previewUrl(project),
+                                            isFavorite = project.isFavorite,
+                                            chips = libraryChips(project.tags),
+                                            status = project.status,
+                                            trashDaysLeft =
+                                                trashDaysLeft(
+                                                    project.trashedAt,
+                                                    project.purgeAt,
+                                                    System.currentTimeMillis(),
+                                                ),
+                                            owner =
+                                                ownerBadgeOf(
+                                                    project.owner?.id,
+                                                    project.owner?.name,
+                                                    project.owner?.avatarUrl,
+                                                    me,
+                                                ),
+                                            // Trashed items are read-only: no heart to toggle.
+                                            favoriteToggleable = false,
+                                        )
+                                    }
+                                },
+                                onClick = { onTrashedProjectClick(it.id) },
+                                onFavoriteClick = {},
+                                listState = listState,
+                                gridState = gridState,
+                                modifier = Modifier.testTag("e2e-projects-list"),
+                            )
+                        }
+                    }
+                } else if (projects.isEmpty()) {
+                    emptyList()
                 } else {
                     LibraryCollection(
                         items = projects,
@@ -262,7 +322,6 @@ fun ProjectsListScreen(
                                     isFavorite = project.isFavorite,
                                     chips = libraryChips(tags),
                                     status = project.status,
-                                    trashDaysLeft = viewModel.trashDaysLeft(project),
                                     owner = project.ownerBadge(me),
                                 )
                             }

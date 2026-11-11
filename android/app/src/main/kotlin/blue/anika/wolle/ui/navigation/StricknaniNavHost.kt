@@ -418,6 +418,9 @@ fun StricknaniNavHost(
                         onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
                         onAddProjectClick = { navController.navigate(Route.ProjectEditor()) },
                         onOpenDraft = { navController.navigate(draftRoute(it)) },
+                        onTrashedProjectClick = { id ->
+                            navController.navigate(Route.TrashedItem("project", id))
+                        },
                     )
                 }
                 screen<Route.ProjectsFiltered>(motion) { entry ->
@@ -426,6 +429,9 @@ fun StricknaniNavHost(
                         onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
                         onAddProjectClick = { navController.navigate(Route.ProjectEditor()) },
                         onOpenDraft = { navController.navigate(draftRoute(it)) },
+                        onTrashedProjectClick = { id ->
+                            navController.navigate(Route.TrashedItem("project", id))
+                        },
                         initialOwner = route.owner,
                         initialStatus = route.status,
                         initialTrashed = route.trashed,
@@ -438,6 +444,9 @@ fun StricknaniNavHost(
                         onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
                         onAddYarnClick = { navController.navigate(Route.YarnEditor()) },
                         onOpenDraft = { navController.navigate(draftRoute(it)) },
+                        onTrashedYarnClick = { id ->
+                            navController.navigate(Route.TrashedItem("yarn", id))
+                        },
                         // Without a Yarns tab the list is opened from Home, so offer a way back.
                         onBack =
                             if (TopLevelDestination.YARNS in tabs) null
@@ -451,6 +460,9 @@ fun StricknaniNavHost(
                         onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
                         onAddYarnClick = { navController.navigate(Route.YarnEditor()) },
                         onOpenDraft = { navController.navigate(draftRoute(it)) },
+                        onTrashedYarnClick = { id ->
+                            navController.navigate(Route.TrashedItem("yarn", id))
+                        },
                         initialOwner = route.owner,
                         initialTrashed = route.trashed,
                         // Without a Yarns tab the list is opened from Home, so offer a way back.

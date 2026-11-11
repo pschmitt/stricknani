@@ -42,4 +42,13 @@ data class LibraryCardData(
     val trashDaysLeft: Int? = null,
     /** Set for items owned by someone else (administrators): the owner's avatar badge. */
     val owner: OwnerBadgeData? = null,
+    /** False for a trashed item, which is read-only: the heart is not shown. */
+    val favoriteToggleable: Boolean = true,
 )
+
+/**
+ * The `updated_at` of a list item the server sent as text, in epoch milliseconds (0 if unreadable).
+ */
+fun trashedUpdatedAt(raw: String): Long =
+    runCatching { blue.anika.wolle.data.util.DateTimeUtils.parseToEpochMillis(raw) }
+        .getOrDefault(0L)

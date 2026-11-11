@@ -2995,3 +2995,8 @@ web (`web/src/lib/features/trash`).
       N days" banner, Restore (then sync and the normal detail) and Delete permanently. It shows the main
       fields (pictures, category, tags, needles, description, notes, steps / yarn fields), not the full
       live detail layout. Trash rows of kind project/yarn open it.
+- [x] The Trash chip of the project and yarn lists (like the web's Trash pill) fetches the trashed
+      items online from `GET /api/v2/projects|yarns?trashed=only` (trashed items are not synced into
+      Room, so a client-side filter would always be empty), with the owner chip (`owner=`) and status
+      pill sent to the server, the Trash screen's loading / offline / error panels, and a card tap that
+      opens the read-only trashed page. Search, category, tag and favourites narrow the fetched list.

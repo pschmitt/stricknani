@@ -3,12 +3,16 @@ package blue.anika.wolle.ui.projects
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.dto.ProjectListItemDto
 import blue.anika.wolle.data.api.dto.ProjectStatus
 import blue.anika.wolle.data.db.entity.CategoryEntity
 import blue.anika.wolle.data.db.entity.ProjectEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.CategoryRepository
+import blue.anika.wolle.data.repository.EveryoneScope
 import blue.anika.wolle.data.repository.ProjectRepository
+import blue.anika.wolle.data.repository.TrashRepository
+import blue.anika.wolle.data.repository.toTrashFailure
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.OwnerBadgeData
@@ -17,20 +21,24 @@ import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.RefreshTrigger
 import blue.anika.wolle.ui.common.TRASHED_ONLY
+import blue.anika.wolle.ui.common.TrashedList
+import blue.anika.wolle.ui.common.filterTrashedProjects
 import blue.anika.wolle.ui.common.isOfflineFailure
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
 import blue.anika.wolle.ui.common.ownerBadge
 import blue.anika.wolle.ui.common.ownerChoiceFromArg
 import blue.anika.wolle.ui.common.ownerChoiceMatches
 import blue.anika.wolle.ui.common.ownerOptions
-import blue.anika.wolle.ui.common.trashDaysLeft
+import blue.anika.wolle.ui.common.toArg
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -61,13 +69,9 @@ internal fun filterProjects(
     status: String? = null,
     owner: OwnerChoice? = null,
     currentUserId: Long? = null,
-    /** With the Trash filter on, whether a project is in the trash; unused (and free) otherwise. */
-    trashedOnly: Boolean = false,
-    isTrashed: (ProjectEntity) -> Boolean = { false },
 ): List<ProjectEntity> =
     entities
         .asSequence()
-        .filter { !trashedOnly || isTrashed(it) }
         .filter { !favoritesOnly || it.isFavorite }
         .filter { status == null || it.status == status }
         .filter { ownerChoiceMatches(owner, it.ownerId, currentUserId) }
@@ -89,6 +93,8 @@ constructor(
     private val mediaUrlResolver: MediaUrlResolver,
     private val mutationFeedback: MutationFeedback,
     private val settingsRepository: SettingsRepository,
+    private val trashRepository: TrashRepository,
+    private val everyoneScope: EveryoneScope,
 ) : ViewModel() {
 
     /**
@@ -122,7 +128,10 @@ constructor(
     private val _ownerChoice = MutableStateFlow<OwnerChoice?>(null)
     val ownerChoice: StateFlow<OwnerChoice?> = _ownerChoice.asStateFlow()
 
-    /** The Trash filter: only projects in the trash (`?trashed=only` of the web page). */
+    /**
+     * The Trash filter: only projects in the trash (`?trashed=only` of the web page). Trashed
+     * projects are not in Room, so [trashedProjects] fetches them online.
+     */
     private val _trashedOnly = MutableStateFlow(false)
     val trashedOnly: StateFlow<Boolean> = _trashedOnly.asStateFlow()
 
@@ -167,23 +176,21 @@ constructor(
                 emptyList(),
             )
 
-    /** The switch-like filters travel together so the five-flow `combine` overload fits. */
+    /** The switch-like filters travel together so one `combine` carries them. */
     private data class FlagFilters(
         val favoritesOnly: Boolean = false,
         val status: String? = null,
         val owner: OwnerChoice? = null,
         val currentUserId: Long? = null,
-        val trashedOnly: Boolean = false,
     )
 
     private val flagFilters: StateFlow<FlagFilters> =
-        combine(favoritesOnly, statusFilter, ownerChoice, _currentUserId, trashedOnly) {
+        combine(favoritesOnly, statusFilter, ownerChoice, _currentUserId) {
                 favorites,
                 status,
                 owner,
-                me,
-                trashed ->
-                FlagFilters(favorites, status, owner, me, trashed)
+                me ->
+                FlagFilters(favorites, status, owner, me)
             }
             .stateIn(
                 viewModelScope,
@@ -219,8 +226,6 @@ constructor(
                     flags.status,
                     flags.owner,
                     flags.currentUserId,
-                    flags.trashedOnly,
-                    ::isTrashed,
                 )
             }
             .stateIn(
@@ -229,11 +234,95 @@ constructor(
                 emptyList(),
             )
 
+    /** What one fetch of the trash asks the server for; [reload] makes a retry a new request. */
+    private data class TrashRequest(
+        val trashedOnly: Boolean,
+        val owner: String?,
+        val status: String?,
+        val scope: String,
+        val reload: Int,
+    )
+
+    private val trashReload = MutableStateFlow(0)
+    private val fetchedTrash = MutableStateFlow<TrashedList<ProjectListItemDto>>(TrashedList.Idle)
+
+    /**
+     * The trashed projects of the Trash filter, narrowed by search, category, tag and favourites.
+     */
+    val trashedProjects: StateFlow<TrashedList<ProjectListItemDto>> =
+        combine(fetchedTrash, debouncedSearchQuery, selectedCategory, selectedTag, favoritesOnly) {
+                fetched,
+                query,
+                category,
+                tag,
+                favorites ->
+                if (fetched is TrashedList.Ready) {
+                    TrashedList.Ready(
+                        filterTrashedProjects(fetched.items, query, category, tag, favorites)
+                    )
+                } else {
+                    fetched
+                }
+            }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                TrashedList.Idle,
+            )
+
     init {
         refresh(trigger = RefreshTrigger.Automatic)
+        viewModelScope.launch {
+            combine(
+                    trashedOnly,
+                    ownerChoice,
+                    statusFilter,
+                    everyoneScope.state.map { it.available && it.enabled }.distinctUntilChanged(),
+                    trashReload,
+                ) { trashed, owner, status, everyone, reload ->
+                    TrashRequest(
+                        trashed,
+                        owner.toArg(),
+                        status,
+                        if (everyone) "all" else "mine",
+                        reload,
+                    )
+                }
+                .distinctUntilChanged()
+                .collectLatest { request -> loadTrash(request) }
+        }
+    }
+
+    private suspend fun loadTrash(request: TrashRequest) {
+        if (!request.trashedOnly) {
+            fetchedTrash.value = TrashedList.Idle
+            return
+        }
+        fetchedTrash.value = TrashedList.Loading
+        fetchedTrash.value =
+            try {
+                TrashedList.Ready(
+                    trashRepository.listTrashedProjects(
+                        owner = request.owner,
+                        status = request.status,
+                        scope = request.scope,
+                    )
+                )
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (failure: Exception) {
+                TrashedList.Failed(failure.toTrashFailure())
+            }
+    }
+
+    /** Fetches the trash again (the retry of the Trash filter's error state). */
+    fun retryTrash() {
+        trashReload.value += 1
     }
 
     fun previewUrl(entity: ProjectEntity): String? = mediaUrlResolver.resolve(entity.previewUrl)
+
+    fun previewUrl(item: ProjectListItemDto): String? = mediaUrlResolver.resolve(item.previewUrl)
 
     fun tagsOf(entity: ProjectEntity): List<String> =
         runCatching { projectRepository.decodeTags(entity) }.getOrDefault(emptyList())
@@ -249,20 +338,6 @@ constructor(
     fun onFavoritesOnlyChange(favoritesOnly: Boolean) {
         _favoritesOnly.value = favoritesOnly
     }
-
-    /** Whether a cached project is in the trash (its detail carries `trashed_at`). */
-    private fun isTrashed(entity: ProjectEntity): Boolean =
-        runCatching { projectRepository.decodeDetail(entity).trashedAt != null }.getOrDefault(false)
-
-    /** Days left in the trash for the card badge; null outside the Trash filter. */
-    fun trashDaysLeft(entity: ProjectEntity): Int? =
-        if (!_trashedOnly.value) null
-        else
-            runCatching {
-                    val detail = projectRepository.decodeDetail(entity)
-                    trashDaysLeft(detail.trashedAt, detail.purgeAt, System.currentTimeMillis())
-                }
-                .getOrNull()
 
     fun onTrashedOnlyChange(trashedOnly: Boolean) {
         _trashedOnly.value = trashedOnly
@@ -318,6 +393,7 @@ constructor(
     }
 
     fun refresh(trigger: RefreshTrigger = RefreshTrigger.UserInitiated) {
+        if (trigger != RefreshTrigger.Automatic) retryTrash()
         refreshController.refresh(trigger = trigger) {
             categoryRepository.sync()
             projectRepository.sync()

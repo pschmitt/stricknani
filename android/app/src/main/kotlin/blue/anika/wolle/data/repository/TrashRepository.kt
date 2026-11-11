@@ -3,9 +3,14 @@ package blue.anika.wolle.data.repository
 import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.ApiGeneration
 import blue.anika.wolle.data.api.dto.ApiErrorEnvelopeDto
+import blue.anika.wolle.data.api.dto.ProjectListItemDto
 import blue.anika.wolle.data.api.dto.TrashItemDto
 import blue.anika.wolle.data.api.dto.TrashListDto
+import blue.anika.wolle.data.api.dto.YarnListItemDto
+import blue.anika.wolle.data.api.v2.ProjectsV2Api
 import blue.anika.wolle.data.api.v2.TrashV2Api
+import blue.anika.wolle.data.api.v2.V2ListEnvelope
+import blue.anika.wolle.data.api.v2.YarnsV2Api
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -104,16 +109,71 @@ fun Throwable.toTrashFailure(json: Json = TRASH_ERROR_JSON): TrashFailure {
     return TrashFailure.Other
 }
 
+private const val TRASHED_ONLY_PARAM = "only"
+
+/** The trash holds at most a few hundred items per owner; a runaway server cannot loop forever. */
+private const val MAX_TRASH_PAGES = 20
+
 /** The trash. Online-only: nothing is cached in Room; a restored item returns by a normal sync. */
 @Singleton
 class TrashRepository
 @Inject
-constructor(private val api: TrashV2Api, private val capabilities: ApiCapabilities) {
+constructor(
+    private val api: TrashV2Api,
+    private val projectsApi: ProjectsV2Api,
+    private val yarnsApi: YarnsV2Api,
+    private val capabilities: ApiCapabilities,
+) {
     suspend fun list(scope: String): TrashListDto = call {
         if (capabilities.resolve().generation != ApiGeneration.V2) {
             throw TrashException(TrashFailure.Unsupported)
         }
         api.list(scope)
+    }
+
+    /**
+     * The trashed projects (`GET /api/v2/projects?trashed=only`) for the Trash filter of the
+     * project list. Online-only, like everything here: trashed items are not in Room. [owner] is
+     * `me`, `shared` or a user id; [scope] is `mine` or `all`.
+     */
+    suspend fun listTrashedProjects(
+        owner: String?,
+        status: String?,
+        scope: String,
+    ): List<ProjectListItemDto> = allPages { page ->
+        projectsApi.listProjects(
+            page = page,
+            status = status,
+            owner = owner,
+            trashed = TRASHED_ONLY_PARAM,
+            scope = scope,
+        )
+    }
+
+    /** The trashed yarns (`GET /api/v2/yarns?trashed=only`); see [listTrashedProjects]. */
+    suspend fun listTrashedYarns(owner: String?, scope: String): List<YarnListItemDto> =
+        allPages { page ->
+            yarnsApi.listYarns(
+                page = page,
+                owner = owner,
+                trashed = TRASHED_ONLY_PARAM,
+                scope = scope,
+            )
+        }
+
+    private suspend fun <T> allPages(fetch: suspend (Int) -> V2ListEnvelope<T>): List<T> = call {
+        if (capabilities.resolve().generation != ApiGeneration.V2) {
+            throw TrashException(TrashFailure.Unsupported)
+        }
+        val items = mutableListOf<T>()
+        var page = 1
+        while (page <= MAX_TRASH_PAGES) {
+            val envelope = fetch(page)
+            items += envelope.data
+            if (!envelope.meta.hasMore) break
+            page++
+        }
+        items
     }
 
     suspend fun restore(ref: TrashRef) {

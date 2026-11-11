@@ -33,6 +33,12 @@ interface ProjectsV2Api {
         @Query("favorite") favorite: Boolean? = null,
         @Query("status") status: String? = null,
         @Query("q") query: String? = null,
+        /** `me`, `shared` or a user id; same values as the website's `?owner=`. */
+        @Query("owner") owner: String? = null,
+        /** `only` lists the trash instead of the live projects. */
+        @Query("trashed") trashed: String? = null,
+        /** `mine` or `all` (administrators); the server ignores `all` for everybody else. */
+        @Query("scope") scope: String? = null,
     ): V2ListEnvelope<ProjectListItemDto>
 
     @GET("api/v2/projects/{projectId}")

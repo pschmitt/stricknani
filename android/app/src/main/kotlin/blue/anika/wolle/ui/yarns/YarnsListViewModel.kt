@@ -3,9 +3,13 @@ package blue.anika.wolle.ui.yarns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.dto.YarnListItemDto
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.media.MediaUrlResolver
+import blue.anika.wolle.data.repository.EveryoneScope
+import blue.anika.wolle.data.repository.TrashRepository
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.data.repository.toTrashFailure
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.OwnerBadgeData
@@ -14,20 +18,24 @@ import blue.anika.wolle.ui.common.RefreshController
 import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.RefreshTrigger
 import blue.anika.wolle.ui.common.TRASHED_ONLY
+import blue.anika.wolle.ui.common.TrashedList
+import blue.anika.wolle.ui.common.filterTrashedYarns
 import blue.anika.wolle.ui.common.isOfflineFailure
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
 import blue.anika.wolle.ui.common.ownerBadge
 import blue.anika.wolle.ui.common.ownerChoiceFromArg
 import blue.anika.wolle.ui.common.ownerChoiceMatches
 import blue.anika.wolle.ui.common.ownerOptions
-import blue.anika.wolle.ui.common.trashDaysLeft
+import blue.anika.wolle.ui.common.toArg
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -44,6 +52,8 @@ constructor(
     private val mediaUrlResolver: MediaUrlResolver,
     private val mutationFeedback: MutationFeedback,
     private val settingsRepository: SettingsRepository,
+    private val trashRepository: TrashRepository,
+    private val everyoneScope: EveryoneScope,
 ) : ViewModel() {
 
     /**
@@ -66,7 +76,10 @@ constructor(
     private val _ownerChoice = MutableStateFlow<OwnerChoice?>(null)
     val ownerChoice: StateFlow<OwnerChoice?> = _ownerChoice.asStateFlow()
 
-    /** The Trash filter: only yarn in the trash (`?trashed=only` of the web page). */
+    /**
+     * The Trash filter: only yarn in the trash (`?trashed=only` of the web page). Trashed yarn is
+     * not in Room, so [trashedYarns] fetches it online.
+     */
     private val _trashedOnly = MutableStateFlow(false)
     val trashedOnly: StateFlow<Boolean> = _trashedOnly.asStateFlow()
 
@@ -111,17 +124,14 @@ constructor(
                 favoritesOnly,
                 ownerChoice,
                 _currentUserId,
-                trashedOnly,
             ) { values ->
                 @Suppress("UNCHECKED_CAST") val entities = values[0] as List<YarnEntity>
                 val query = values[1] as String
                 val favoritesOnly = values[2] as Boolean
                 val owner = values[3] as OwnerChoice?
                 val me = values[4] as Long?
-                val trashedOnly = values[5] as Boolean
                 entities
                     .asSequence()
-                    .filter { !trashedOnly || isTrashed(it) }
                     .filter { !favoritesOnly || it.isFavorite }
                     .filter { ownerChoiceMatches(owner, it.ownerId, me) }
                     .filter {
@@ -138,11 +148,77 @@ constructor(
                 emptyList(),
             )
 
+    /** What one fetch of the trash asks the server for; [reload] makes a retry a new request. */
+    private data class TrashRequest(
+        val trashedOnly: Boolean,
+        val owner: String?,
+        val scope: String,
+        val reload: Int,
+    )
+
+    private val trashReload = MutableStateFlow(0)
+    private val fetchedTrash = MutableStateFlow<TrashedList<YarnListItemDto>>(TrashedList.Idle)
+
+    /** The trashed yarn of the Trash filter, narrowed by search and favourites. */
+    val trashedYarns: StateFlow<TrashedList<YarnListItemDto>> =
+        combine(fetchedTrash, debouncedSearchQuery, favoritesOnly) { fetched, query, favorites ->
+                if (fetched is TrashedList.Ready) {
+                    TrashedList.Ready(filterTrashedYarns(fetched.items, query, favorites))
+                } else {
+                    fetched
+                }
+            }
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+                TrashedList.Idle,
+            )
+
     init {
         refresh(trigger = RefreshTrigger.Automatic)
+        viewModelScope.launch {
+            combine(
+                    trashedOnly,
+                    ownerChoice,
+                    everyoneScope.state.map { it.available && it.enabled }.distinctUntilChanged(),
+                    trashReload,
+                ) { trashed, owner, everyone, reload ->
+                    TrashRequest(trashed, owner.toArg(), if (everyone) "all" else "mine", reload)
+                }
+                .distinctUntilChanged()
+                .collectLatest { request -> loadTrash(request) }
+        }
+    }
+
+    private suspend fun loadTrash(request: TrashRequest) {
+        if (!request.trashedOnly) {
+            fetchedTrash.value = TrashedList.Idle
+            return
+        }
+        fetchedTrash.value = TrashedList.Loading
+        fetchedTrash.value =
+            try {
+                TrashedList.Ready(
+                    trashRepository.listTrashedYarns(
+                        owner = request.owner,
+                        scope = request.scope,
+                    )
+                )
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (failure: Exception) {
+                TrashedList.Failed(failure.toTrashFailure())
+            }
+    }
+
+    /** Fetches the trash again (the retry of the Trash filter's error state). */
+    fun retryTrash() {
+        trashReload.value += 1
     }
 
     fun previewUrl(entity: YarnEntity): String? = mediaUrlResolver.resolve(entity.previewUrl)
+
+    fun previewUrl(item: YarnListItemDto): String? = mediaUrlResolver.resolve(item.previewUrl)
 
     fun onSearchQueryChange(query: String) {
         _searchQuery.value = query
@@ -154,20 +230,6 @@ constructor(
         _ownerChoice.value = null
         _trashedOnly.value = false
     }
-
-    /** Whether a cached yarn is in the trash (its detail carries `trashed_at`). */
-    private fun isTrashed(entity: YarnEntity): Boolean =
-        runCatching { yarnRepository.decodeDetail(entity).trashedAt != null }.getOrDefault(false)
-
-    /** Days left in the trash for the card badge; null outside the Trash filter. */
-    fun trashDaysLeft(entity: YarnEntity): Int? =
-        if (!_trashedOnly.value) null
-        else
-            runCatching {
-                    val detail = yarnRepository.decodeDetail(entity)
-                    trashDaysLeft(detail.trashedAt, detail.purgeAt, System.currentTimeMillis())
-                }
-                .getOrNull()
 
     fun onTrashedOnlyChange(trashedOnly: Boolean) {
         _trashedOnly.value = trashedOnly
@@ -198,6 +260,7 @@ constructor(
     }
 
     fun refresh(trigger: RefreshTrigger = RefreshTrigger.UserInitiated) {
+        if (trigger != RefreshTrigger.Automatic) retryTrash()
         refreshController.refresh(trigger = trigger) { yarnRepository.sync() }
     }
 

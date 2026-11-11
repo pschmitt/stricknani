@@ -21,6 +21,12 @@ interface YarnsV2Api {
         @Query("page") page: Int = 1,
         @Query("favorite") favorite: Boolean? = null,
         @Query("q") query: String? = null,
+        /** `me`, `shared` or a user id; same values as the website's `?owner=`. */
+        @Query("owner") owner: String? = null,
+        /** `only` lists the trash instead of the live yarns. */
+        @Query("trashed") trashed: String? = null,
+        /** `mine` or `all` (administrators); the server ignores `all` for everybody else. */
+        @Query("scope") scope: String? = null,
     ): V2ListEnvelope<YarnListItemDto>
 
     @GET("api/v2/yarns/{yarnId}")

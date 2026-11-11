@@ -165,7 +165,7 @@ fun TrashScreen(
 }
 
 /** The panel of a failed load: the shared admin panels cover offline, forbidden and the rest. */
-private fun TrashFailure.asAdminFailure(): AdminFailure =
+internal fun TrashFailure.asAdminFailure(): AdminFailure =
     when (this) {
         TrashFailure.Offline -> AdminFailure.Offline
         TrashFailure.NotAllowed -> AdminFailure.NotAllowed

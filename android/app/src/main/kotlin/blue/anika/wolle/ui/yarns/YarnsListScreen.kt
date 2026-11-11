@@ -52,11 +52,15 @@ import blue.anika.wolle.ui.common.SearchField
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.isWideLibraryLayout
 import blue.anika.wolle.ui.common.ownerBadge
+import blue.anika.wolle.ui.common.ownerBadgeOf
 import blue.anika.wolle.ui.common.ownerFilterItems
 import blue.anika.wolle.ui.common.rememberEveryoneFilter
+import blue.anika.wolle.ui.common.trashDaysLeft
+import blue.anika.wolle.ui.common.trashedUpdatedAt
 import blue.anika.wolle.ui.common.yarnChips
 import blue.anika.wolle.ui.common.yarnMetaLine
 import blue.anika.wolle.ui.imports.WaitingForReview
+import blue.anika.wolle.ui.trash.TrashedListBody
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,6 +75,8 @@ fun YarnsListScreen(
     initialOwner: String? = null,
     /** Preselects the Trash filter: `only` (the `?trashed=only` of the web page). */
     initialTrashed: String? = null,
+    /** Opens a trashed yarn's read-only page (the Trash filter's cards). */
+    onTrashedYarnClick: (Int) -> Unit = {},
     viewModel: YarnsListViewModel = hiltViewModel(),
 ) {
     val yarns by viewModel.yarns.collectAsStateWithLifecycle()
@@ -78,6 +84,7 @@ fun YarnsListScreen(
     val favoritesOnly by viewModel.favoritesOnly.collectAsStateWithLifecycle()
     val ownerChoice by viewModel.ownerChoice.collectAsStateWithLifecycle()
     val trashedOnly by viewModel.trashedOnly.collectAsStateWithLifecycle()
+    val trashedYarns by viewModel.trashedYarns.collectAsStateWithLifecycle()
     val owners by viewModel.owners.collectAsStateWithLifecycle()
     val currentUserId = LocalOwnerContext.current.currentUserId
     LaunchedEffect(currentUserId) { viewModel.setCurrentUserId(currentUserId) }
@@ -184,7 +191,7 @@ fun YarnsListScreen(
                         ownerChoice != null ||
                         trashedOnly ||
                         (everyoneFilter.available && !everyoneFilter.enabled)
-                if (yarns.isEmpty()) {
+                val emptyList: @Composable () -> Unit = {
                     LazyColumn(
                         state = listState,
                         modifier = Modifier.fillMaxSize().testTag("e2e-yarns-list"),
@@ -206,8 +213,65 @@ fun YarnsListScreen(
                             )
                         }
                     }
+                }
+                val detailsToAdd = stringResource(R.string.library_card_details_to_add)
+                if (trashedOnly) {
+                    TrashedListBody(
+                        state = trashedYarns,
+                        onRetry = viewModel::retryTrash,
+                        onLeave = { viewModel.onTrashedOnlyChange(false) },
+                    ) { trashed ->
+                        if (trashed.isEmpty()) {
+                            emptyList()
+                        } else {
+                            LibraryCollection(
+                                items = trashed,
+                                key = { it.id },
+                                toCard = { yarn ->
+                                    val me = LocalOwnerContext.current.currentUserId
+                                    remember(yarn, detailsToAdd, me) {
+                                        LibraryCardData(
+                                            domain = LibraryDomain.Yarn,
+                                            title = yarn.name,
+                                            meta =
+                                                yarnMetaLine(
+                                                    yarn.brand,
+                                                    yarn.colorway,
+                                                    detailsToAdd,
+                                                ),
+                                            updatedAt = trashedUpdatedAt(yarn.updatedAt),
+                                            imageUrl = viewModel.previewUrl(yarn),
+                                            isFavorite = yarn.isFavorite,
+                                            chips = yarnChips(yarn.weightCategory),
+                                            trashDaysLeft =
+                                                trashDaysLeft(
+                                                    yarn.trashedAt,
+                                                    yarn.purgeAt,
+                                                    System.currentTimeMillis(),
+                                                ),
+                                            owner =
+                                                ownerBadgeOf(
+                                                    yarn.owner?.id,
+                                                    yarn.owner?.name,
+                                                    yarn.owner?.avatarUrl,
+                                                    me,
+                                                ),
+                                            // Trashed items are read-only: no heart to toggle.
+                                            favoriteToggleable = false,
+                                        )
+                                    }
+                                },
+                                onClick = { onTrashedYarnClick(it.id) },
+                                onFavoriteClick = {},
+                                listState = listState,
+                                gridState = gridState,
+                                modifier = Modifier.testTag("e2e-yarns-list"),
+                            )
+                        }
+                    }
+                } else if (yarns.isEmpty()) {
+                    emptyList()
                 } else {
-                    val detailsToAdd = stringResource(R.string.library_card_details_to_add)
                     LibraryCollection(
                         items = yarns,
                         key = { it.id },
@@ -222,7 +286,6 @@ fun YarnsListScreen(
                                     imageUrl = viewModel.previewUrl(yarn),
                                     isFavorite = yarn.isFavorite,
                                     chips = yarnChips(yarn.weightCategory),
-                                    trashDaysLeft = viewModel.trashDaysLeft(yarn),
                                     owner = yarn.ownerBadge(me),
                                 )
                             }

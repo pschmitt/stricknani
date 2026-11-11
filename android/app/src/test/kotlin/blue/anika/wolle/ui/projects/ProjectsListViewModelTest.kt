@@ -116,26 +116,6 @@ class ProjectsListViewModelTest {
         assertEquals(listOf(2, 4), ids(OwnerChoice.Shared, status = "done"))
     }
 
-    @Test
-    fun `the Trash filter keeps only trashed projects and costs nothing when off`() {
-        val all = listOf(project(1, "Socks", emptyList()), project(2, "Hats", emptyList()))
-        val trashed = setOf(2)
-        fun ids(trashedOnly: Boolean) =
-            filterProjects(
-                    entities = all,
-                    query = "",
-                    category = null,
-                    tag = null,
-                    decodeTags = { emptyList() },
-                    trashedOnly = trashedOnly,
-                    isTrashed = { it.id in trashed },
-                )
-                .map { it.id }
-
-        assertEquals(listOf(1, 2), ids(trashedOnly = false))
-        assertEquals(listOf(2), ids(trashedOnly = true))
-    }
-
     private companion object {
         fun project(
             id: Int,
