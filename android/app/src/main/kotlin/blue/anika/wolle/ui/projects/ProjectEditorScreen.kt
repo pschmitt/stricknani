@@ -105,8 +105,10 @@ import blue.anika.wolle.ui.common.urlHostOrNull
 import blue.anika.wolle.ui.imports.EditorImportState
 import blue.anika.wolle.ui.imports.ImportLinkCard
 import blue.anika.wolle.ui.imports.readPickedImportFile
+import blue.anika.wolle.ui.trash.UnsavedStatus
 import blue.anika.wolle.ui.trash.saveBarState
 import blue.anika.wolle.ui.trash.stagedRemovals
+import blue.anika.wolle.ui.trash.unsavedStatus
 import java.io.File
 import kotlinx.coroutines.launch
 
@@ -341,6 +343,13 @@ fun ProjectEditorScreen(
                     isSaving = isSaving,
                     onSave = { viewModel.save(amountLabel) },
                     allSaved = saveBarState(viewModel.isEditing, isDirty, isSaving).allSaved,
+                    statusText =
+                        when (unsavedStatus(isDirty, isSaving, form.removedImageIds.size)) {
+                            UnsavedStatus.Plain -> stringResource(R.string.editor_unsaved_changes)
+                            UnsavedStatus.WithRemovals ->
+                                stringResource(R.string.editor_unsaved_changes_removals)
+                            null -> null
+                        },
                 )
             },
         ) { innerPadding ->

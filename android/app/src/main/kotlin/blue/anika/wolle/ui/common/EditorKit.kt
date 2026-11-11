@@ -666,6 +666,8 @@ fun EditorSaveBar(
     modifier: Modifier = Modifier,
     /** An existing record with nothing pending: the button is disabled and says so. */
     allSaved: Boolean = false,
+    /** The dirty-state line above the button ("Unsaved changes ..."); null shows none. */
+    statusText: String? = null,
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainer,
@@ -673,11 +675,19 @@ fun EditorSaveBar(
         shadowElevation = 6.dp,
         modifier = modifier.fillMaxWidth(),
     ) {
-        Row(
+        Column(
             modifier =
                 Modifier.windowInsetsPadding(WindowInsets.navigationBars.union(WindowInsets.ime))
                     .padding(horizontal = 16.dp, vertical = 10.dp)
         ) {
+            if (statusText != null) {
+                Text(
+                    statusText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 6.dp),
+                )
+            }
             Button(
                 onClick = onSave,
                 enabled = !isSaving && !allSaved,

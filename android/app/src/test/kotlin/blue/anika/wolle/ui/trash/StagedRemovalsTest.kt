@@ -73,4 +73,18 @@ class StagedRemovalsTest {
         assertFalse(saving.allSaved)
         assertFalse(saveBarState(isEditing = true, isDirty = false, isSaving = true).allSaved)
     }
+
+    @Test
+    fun `the unsaved line mirrors the web save bar`() {
+        assertEquals(null, unsavedStatus(isDirty = false, isSaving = false, stagedCount = 2))
+        assertEquals(null, unsavedStatus(isDirty = true, isSaving = true, stagedCount = 2))
+        assertEquals(
+            UnsavedStatus.Plain,
+            unsavedStatus(isDirty = true, isSaving = false, stagedCount = 0),
+        )
+        assertEquals(
+            UnsavedStatus.WithRemovals,
+            unsavedStatus(isDirty = true, isSaving = false, stagedCount = 1),
+        )
+    }
 }

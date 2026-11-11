@@ -34,6 +34,22 @@ fun <T> restoredInOrder(current: List<T>, initial: List<T>, id: Int, idOf: (T) -
  */
 data class SaveBarState(val allSaved: Boolean, val enabled: Boolean)
 
+/**
+ * The dirty-state line of the editor save bar, the same as on the web: nothing while saving or when
+ * nothing changed; "Unsaved changes", or the longer line when photos wait for the trash.
+ */
+fun unsavedStatus(isDirty: Boolean, isSaving: Boolean, stagedCount: Int): UnsavedStatus? =
+    when {
+        !isDirty || isSaving -> null
+        stagedCount > 0 -> UnsavedStatus.WithRemovals
+        else -> UnsavedStatus.Plain
+    }
+
+enum class UnsavedStatus {
+    Plain,
+    WithRemovals,
+}
+
 fun saveBarState(isEditing: Boolean, isDirty: Boolean, isSaving: Boolean): SaveBarState {
     val allSaved = isEditing && !isDirty && !isSaving
     return SaveBarState(allSaved = allSaved, enabled = !isSaving && !allSaved)

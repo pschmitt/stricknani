@@ -907,6 +907,8 @@
     <string name="editor_staged_hint">Was du entfernst, bleibt 90 Tage im Papierkorb.</string>
     <string name="editor_staged_photo_label">Foto %1$d</string>
     <string name="editor_all_saved">Alle Änderungen gespeichert</string>
+    <string name="editor_unsaved_changes">Ungespeicherte Änderungen</string>
+    <string name="editor_unsaved_changes_removals">Ungespeicherte Änderungen. Entferntes landet beim Speichern im Papierkorb.</string>
     <string name="trash_owner">Besitzer: %1$s</string>
     <string name="trash_cannot_restore">Nur der Besitzer oder ein Administrator kann das wiederherstellen.</string>
     <string name="project_editor_tags_placeholder">Schlagwörter hinzufügen…</string>

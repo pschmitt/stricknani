@@ -77,8 +77,10 @@ import blue.anika.wolle.ui.common.stagedPhotoLabel
 import blue.anika.wolle.ui.imports.EditorImportState
 import blue.anika.wolle.ui.imports.ImportLinkCard
 import blue.anika.wolle.ui.projects.yarnImportNotes
+import blue.anika.wolle.ui.trash.UnsavedStatus
 import blue.anika.wolle.ui.trash.saveBarState
 import blue.anika.wolle.ui.trash.stagedRemovals
+import blue.anika.wolle.ui.trash.unsavedStatus
 import java.io.File
 
 /**
@@ -248,6 +250,13 @@ fun YarnEditorScreen(
                     isSaving = isSaving,
                     onSave = viewModel::save,
                     allSaved = saveBarState(viewModel.isEditing, isDirty, isSaving).allSaved,
+                    statusText =
+                        when (unsavedStatus(isDirty, isSaving, form.removedPhotoIds.size)) {
+                            UnsavedStatus.Plain -> stringResource(R.string.editor_unsaved_changes)
+                            UnsavedStatus.WithRemovals ->
+                                stringResource(R.string.editor_unsaved_changes_removals)
+                            null -> null
+                        },
                 )
             },
         ) { innerPadding ->

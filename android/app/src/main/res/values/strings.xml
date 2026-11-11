@@ -908,6 +908,8 @@
     <string name="editor_staged_hint">What you remove stays in the trash for 90 days.</string>
     <string name="editor_staged_photo_label">Photo %1$d</string>
     <string name="editor_all_saved">All changes saved</string>
+    <string name="editor_unsaved_changes">Unsaved changes</string>
+    <string name="editor_unsaved_changes_removals">Unsaved changes. Removed items go to the trash when you save.</string>
     <string name="trash_owner">Owner: %1$s</string>
     <string name="trash_cannot_restore">Only the owner or an administrator can restore this.</string>
     <string name="project_editor_tags_placeholder">Add tags…</string>
