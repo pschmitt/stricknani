@@ -158,6 +158,18 @@ pub(crate) fn days_remaining(deleted_at: DateTime<Utc>, now: DateTime<Utc>) -> i
     }
 }
 
+/// When a trashed item was deleted and when the server destroys it, as the
+/// `trashed_at` and `purge_at` fields of project and yarn payloads.
+pub(crate) fn trash_times(deleted_at: Option<&str>) -> (Option<String>, Option<String>) {
+    match deleted_at.and_then(parse) {
+        Some(trashed) => (
+            Some(stamp(trashed)),
+            Some(stamp(trashed + Duration::days(RETENTION_DAYS))),
+        ),
+        None => (None, None),
+    }
+}
+
 struct ListRow {
     kind: &'static str,
     id: i64,
@@ -279,9 +291,7 @@ pub(crate) async fn list(
             detail: None,
         });
     }
-    rows.sort_by(|a, b| {
-        (&b.deleted_at, a.kind, b.id).cmp(&(&a.deleted_at, b.kind, a.id))
-    });
+    rows.sort_by(|a, b| (&b.deleted_at, a.kind, b.id).cmp(&(&a.deleted_at, b.kind, a.id)));
     rows.truncate(LIST_LIMIT as usize);
     let now = Utc::now();
     let mut owners = std::collections::HashMap::new();
@@ -511,8 +521,7 @@ async fn purge_in(
             Ok(true)
         }
         TrashKind::Image | TrashKind::Attachment | TrashKind::Photo => {
-            let Some(media) =
-                crate::media::find_trashed_media(tx, kind.namespace(), id).await?
+            let Some(media) = crate::media::find_trashed_media(tx, kind.namespace(), id).await?
             else {
                 return Ok(false);
             };
@@ -669,11 +678,12 @@ async fn restore_step(state: &AppState, actor_id: i64, id: i64) -> Result<(), Tr
     .bind(number)
     .execute(&mut *tx)
     .await?;
-    let images =
-        sqlx::query_scalar::<_, i64>("SELECT id FROM trashed_media WHERE step_id = ? AND with_step = 1")
-            .bind(id)
-            .fetch_all(&mut *tx)
-            .await?;
+    let images = sqlx::query_scalar::<_, i64>(
+        "SELECT id FROM trashed_media WHERE step_id = ? AND with_step = 1",
+    )
+    .bind(id)
+    .fetch_all(&mut *tx)
+    .await?;
     for image in images {
         crate::media::restore_trashed_media_row(&mut tx, image, false).await?;
     }
@@ -706,13 +716,18 @@ async fn restore_media(
     kind: TrashKind,
     public_id: i64,
 ) -> Result<(), TrashError> {
+    // Authorize before the write transaction opens: a pool with a single
+    // connection would otherwise wait for itself.
+    let owner_id = owner_of(&state.pool, kind, public_id)
+        .await?
+        .ok_or(TrashError::NotFound)?;
+    if !may_manage(&state.pool, actor_id, owner_id).await? {
+        return Err(TrashError::NotFound);
+    }
     let mut tx = crate::db::begin_write(&state.pool).await?;
     let media = crate::media::find_trashed_media(&mut tx, kind.namespace(), public_id)
         .await?
         .ok_or(TrashError::NotFound)?;
-    if !may_manage(&state.pool, actor_id, media.owner_id).await? {
-        return Err(TrashError::NotFound);
-    }
     crate::media::restore_trashed_media_row(&mut tx, media.id, true).await?;
     crate::media::bump_parent_after_trash_change(
         &mut tx,

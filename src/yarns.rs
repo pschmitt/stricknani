@@ -77,6 +77,9 @@ pub(crate) struct ListQuery {
     /// Administrator-only restriction to one owner's yarns.
     #[serde(default)]
     pub(crate) owner_id: Option<i64>,
+    /// List only trashed yarns (API v2 `trashed=only`). Never set by API v1.
+    #[serde(skip)]
+    pub(crate) trashed_only: bool,
 }
 
 #[derive(Debug, FromRow)]
@@ -99,6 +102,7 @@ struct YarnRow {
     is_ai_enhanced: bool,
     created_at: String,
     updated_at: String,
+    deleted_at: Option<String>,
 }
 
 #[derive(Debug, FromRow)]
@@ -129,6 +133,12 @@ pub(crate) struct YarnResponse {
     pub(crate) is_favorite: bool,
     pub(crate) created_at: String,
     pub(crate) updated_at: String,
+    /// Set while the yarn is in the trash (API v2: read-only for its owner and
+    /// administrators).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) trashed_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) purge_at: Option<String>,
     pub(crate) project_ids: Vec<i64>,
     pub(crate) photos: Vec<serde_json::Value>,
     pub(crate) owner: Option<crate::resource_access::OwnerInfo>,
@@ -147,6 +157,11 @@ pub(crate) struct YarnListItemResponse {
     pub(crate) is_favorite: bool,
     pub(crate) updated_at: String,
     pub(crate) preview_url: Option<String>,
+    /// Set while the yarn is in the trash (`trashed=only` lists).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) trashed_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) purge_at: Option<String>,
     pub(crate) owner: Option<crate::resource_access::OwnerInfo>,
     /// The caller's role; set on API v2 only.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -275,7 +290,10 @@ pub(crate) async fn list_for_owner(
     let v2 = surface == crate::resource_access::Surface::V2;
     // API v2 lists what is shared with the caller, directly or through a
     // shared project, next to their own yarns.
-    let share_user = (v2 && scope == crate::resource_access::Scope::Mine).then_some(user_id);
+    // The trash is the owner's and the administrators': never through a share.
+    let trashed_only = query.trashed_only;
+    let share_user =
+        (v2 && scope == crate::resource_access::Scope::Mine && !trashed_only).then_some(user_id);
     let derived = crate::resource_access::derived_yarn_sql("yarns", 1);
     let list_sql = format!(
         "SELECT yarns.*, \
@@ -283,7 +301,8 @@ pub(crate) async fn list_for_owner(
                  AND s.resource_id = yarns.id AND s.user_id = ?1) AS share_role, \
                 {derived} AS is_derived \
          FROM yarns \
-         WHERE yarns.deleted_at IS NULL \
+         WHERE ((?8 = 0 AND yarns.deleted_at IS NULL) \
+                OR (?8 = 1 AND yarns.deleted_at IS NOT NULL)) \
            AND ((?2 IS NULL OR owner_id = ?2) OR (?3 IS NOT NULL AND (EXISTS( \
                 SELECT 1 FROM resource_shares s WHERE s.kind = 'yarn' \
                 AND s.resource_id = yarns.id AND s.user_id = ?3) OR {derived}))) \
@@ -308,6 +327,7 @@ pub(crate) async fn list_for_owner(
         .bind(search_pattern.as_deref())
         .bind(PAGE_SIZE + 1)
         .bind((page - 1).saturating_mul(PAGE_SIZE))
+        .bind(i64::from(trashed_only))
         .fetch_all(&state.pool)
         .await
         .map_err(|_| YarnError::Database)?;
@@ -352,7 +372,17 @@ pub(crate) async fn list_for_owner(
                 .map_err(|_| YarnError::Database)?,
             );
         }
+        let (trashed_at, purge_at) = crate::trash::trash_times(yarn.deleted_at.as_deref());
+        let access = access.map(|access| {
+            if trashed_at.is_some() {
+                crate::resource_access::AccessInfo::read_only_trashed(access.role)
+            } else {
+                access
+            }
+        });
         items.push(YarnListItemResponse {
+            trashed_at,
+            purge_at,
             owner: owners.get(&yarn.owner_id).cloned().flatten(),
             id: yarn.id,
             name: yarn.name,
@@ -999,15 +1029,25 @@ async fn get_yarn_response(
     gravatar_enabled: bool,
     surface: crate::resource_access::Surface,
 ) -> Result<Option<YarnResponse>, sqlx::Error> {
-    let Some(grant) = crate::resource_access::grant(
+    let mut grant = crate::resource_access::grant(
         pool,
         actor_id,
         crate::resource_access::ResourceKind::Yarn,
         yarn_id,
         surface,
     )
-    .await?
-    else {
+    .await?;
+    if grant.is_none() && surface == crate::resource_access::Surface::V2 {
+        // A trashed yarn opens read-only for its owner and administrators.
+        grant = crate::resource_access::grant_including_trashed(
+            pool,
+            actor_id,
+            crate::resource_access::ResourceKind::Yarn,
+            yarn_id,
+        )
+        .await?;
+    }
+    let Some(grant) = grant else {
         return Ok(None);
     };
     let owner_id = grant.owner_id;
@@ -1017,9 +1057,19 @@ async fn get_yarn_response(
     let favorite = is_favorite(pool, actor_id, yarn_id).await?;
     let owner =
         crate::resource_access::owner_info(pool, actor_id, owner_id, gravatar_enabled).await?;
+    let (trashed_at, purge_at) = crate::trash::trash_times(yarn.deleted_at.as_deref());
     let mut response = yarn_response(pool, actor_id, grant, yarn, favorite, surface).await?;
     response.owner = owner;
-    response.access = (surface == crate::resource_access::Surface::V2).then(|| grant.into());
+    response.access = (surface == crate::resource_access::Surface::V2).then(|| {
+        let access = crate::resource_access::AccessInfo::from(grant);
+        if trashed_at.is_some() {
+            crate::resource_access::AccessInfo::read_only_trashed(access.role)
+        } else {
+            access
+        }
+    });
+    response.trashed_at = trashed_at;
+    response.purge_at = purge_at;
     Ok(Some(response))
 }
 
@@ -1103,6 +1153,8 @@ async fn yarn_response(
         is_favorite,
         created_at: yarn.created_at,
         updated_at: yarn.updated_at,
+        trashed_at: None,
+        purge_at: None,
         project_ids,
         photos,
         owner: None,

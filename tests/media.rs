@@ -532,9 +532,9 @@ async fn attachments_download_safely_and_yarn_photos_promote_primary() {
             .map(str::to_owned)
             .collect::<Vec<_>>()
     );
+    // The deleted attachment sits in the trash: its file stays on disk.
     assert!(
-        !root
-            .path()
+        root.path()
             .join("projects")
             .join(harness.project_id.to_string())
             .join(attachment_filename)

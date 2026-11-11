@@ -204,6 +204,19 @@ impl AccessInfo {
     };
 }
 
+impl AccessInfo {
+    /// A trashed project or yarn opens read-only: nothing to edit, share or
+    /// time; the page offers restore and delete forever instead.
+    pub const fn read_only_trashed(role: &'static str) -> Self {
+        Self {
+            role,
+            derived: false,
+            can_edit: false,
+            can_manage: false,
+        }
+    }
+}
+
 impl From<Grant> for AccessInfo {
     fn from(grant: Grant) -> Self {
         Self {

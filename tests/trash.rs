@@ -110,11 +110,13 @@ async fn fx() -> Fx {
         .execute(&pool)
         .await
         .unwrap();
-    sqlx::query("INSERT INTO project_steps (project_id, title, step_number) VALUES (?, 'Cast on', 1)")
-        .bind(p1)
-        .execute(&pool)
-        .await
-        .unwrap();
+    sqlx::query(
+        "INSERT INTO project_steps (project_id, title, step_number) VALUES (?, 'Cast on', 1)",
+    )
+    .bind(p1)
+    .execute(&pool)
+    .await
+    .unwrap();
     media(&pool, anika, Some(p1), None, 101).await;
     media(&pool, anika, None, Some(y1), 102).await;
     sqlx::query(
@@ -181,7 +183,11 @@ async fn call_body(
 }
 
 async fn count(pool: &SqlitePool, sql: &'static str, id: i64) -> i64 {
-    sqlx::query_scalar(sql).bind(id).fetch_one(pool).await.unwrap()
+    sqlx::query_scalar(sql)
+        .bind(id)
+        .fetch_one(pool)
+        .await
+        .unwrap()
 }
 
 fn ids(value: &Value, field: &str) -> Vec<i64> {
@@ -217,17 +223,35 @@ fn list_ids(body: &Value) -> Vec<(String, i64)> {
 async fn deleting_a_project_moves_it_to_the_trash_and_keeps_everything() {
     let f = fx().await;
     let p = f.p1;
-    let (status, _) = call(&f, "DELETE", &format!("/api/v2/projects/{p}"), Some("anika")).await;
+    let (status, _) = call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}"),
+        Some("anika"),
+    )
+    .await;
     assert_eq!(status, StatusCode::NO_CONTENT);
 
     // Hidden from its owner, the share recipient, lists, search and sharing.
     for who in ["anika", "vera", "admin"] {
-        let (status, _) = call(&f, "GET", &format!("/api/v2/projects/{p}"), Some(who)).await;
-        assert_eq!(status, StatusCode::NOT_FOUND, "{who}");
+        // Only the owner and administrators can still open it, read-only.
+        let (status, detail) = call(&f, "GET", &format!("/api/v2/projects/{p}"), Some(who)).await;
+        if who == "vera" {
+            assert_eq!(status, StatusCode::NOT_FOUND, "{who}");
+        } else {
+            assert_eq!(status, StatusCode::OK, "{who}");
+            assert!(detail["data"]["trashed_at"].is_string());
+        }
         let (_, list) = call(&f, "GET", "/api/v2/projects?q=Shawl", Some(who)).await;
         assert!(list["data"].as_array().unwrap().is_empty(), "{who}");
     }
-    let (status, _) = call(&f, "GET", &format!("/api/v2/projects/{p}/shares"), Some("anika")).await;
+    let (status, _) = call(
+        &f,
+        "GET",
+        &format!("/api/v2/projects/{p}/shares"),
+        Some("anika"),
+    )
+    .await;
     assert_eq!(status, StatusCode::NOT_FOUND);
     let (status, _) = call_body(
         &f,
@@ -243,12 +267,44 @@ async fn deleting_a_project_moves_it_to_the_trash_and_keeps_everything() {
     assert_eq!(yarn["data"]["project_ids"], json!([]));
 
     // Nothing was destroyed: rows, links, shares, media and no file garbage.
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM projects WHERE id = ?", p).await, 1);
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM project_steps WHERE project_id = ?", p).await, 1);
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM media_files WHERE project_id = ?", p).await, 1);
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM project_yarns WHERE project_id = ?", p).await, 1);
     assert_eq!(
-        count(&f.pool, "SELECT count(*) FROM resource_shares WHERE kind='project' AND resource_id = ?", p).await,
+        count(&f.pool, "SELECT count(*) FROM projects WHERE id = ?", p).await,
+        1
+    );
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM project_steps WHERE project_id = ?",
+            p
+        )
+        .await,
+        1
+    );
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM media_files WHERE project_id = ?",
+            p
+        )
+        .await,
+        1
+    );
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM project_yarns WHERE project_id = ?",
+            p
+        )
+        .await,
+        1
+    );
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM resource_shares WHERE kind='project' AND resource_id = ?",
+            p
+        )
+        .await,
         1
     );
     let queued: i64 = sqlx::query_scalar("SELECT count(*) FROM media_gc")
@@ -278,13 +334,31 @@ async fn deleting_a_project_moves_it_to_the_trash_and_keeps_everything() {
 #[tokio::test]
 async fn api_v1_delete_also_moves_to_the_trash() {
     let f = fx().await;
-    let (status, _) = call(&f, "DELETE", &format!("/api/v1/projects/{}", f.p1), Some("anika")).await;
+    let (status, _) = call(
+        &f,
+        "DELETE",
+        &format!("/api/v1/projects/{}", f.p1),
+        Some("anika"),
+    )
+    .await;
     assert_eq!(status, StatusCode::NO_CONTENT);
-    let (status, _) = call(&f, "GET", &format!("/api/v1/projects/{}", f.p1), Some("anika")).await;
+    let (status, _) = call(
+        &f,
+        "GET",
+        &format!("/api/v1/projects/{}", f.p1),
+        Some("anika"),
+    )
+    .await;
     assert_eq!(status, StatusCode::NOT_FOUND);
     let (_, trash) = call(&f, "GET", "/api/v2/trash", Some("anika")).await;
     assert_eq!(list_ids(&trash), vec![("project".to_owned(), f.p1)]);
-    let (status, _) = call(&f, "DELETE", &format!("/api/v1/yarns/{}", f.y1), Some("anika")).await;
+    let (status, _) = call(
+        &f,
+        "DELETE",
+        &format!("/api/v1/yarns/{}", f.y1),
+        Some("anika"),
+    )
+    .await;
     assert_eq!(status, StatusCode::NO_CONTENT);
     let (_, trash) = call(&f, "GET", "/api/v2/trash", Some("anika")).await;
     assert_eq!(trash["data"].as_array().unwrap().len(), 2);
@@ -294,12 +368,21 @@ async fn api_v1_delete_also_moves_to_the_trash() {
 async fn trash_authorization_owner_other_account_recipient_and_administrator() {
     let f = fx().await;
     let p = f.p1;
-    call(&f, "DELETE", &format!("/api/v2/projects/{p}"), Some("anika")).await;
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}"),
+        Some("anika"),
+    )
+    .await;
     let restore = format!("/api/v2/trash/projects/{p}/restore");
     let forever = format!("/api/v2/trash/projects/{p}");
 
     // Anonymous.
-    assert_eq!(call(&f, "GET", "/api/v2/trash", None).await.0, StatusCode::UNAUTHORIZED);
+    assert_eq!(
+        call(&f, "GET", "/api/v2/trash", None).await.0,
+        StatusCode::UNAUTHORIZED
+    );
     for status in [
         call(&f, "POST", &restore, None).await.0,
         call(&f, "DELETE", &forever, None).await.0,
@@ -313,8 +396,16 @@ async fn trash_authorization_owner_other_account_recipient_and_administrator() {
     for who in ["ben", "vera"] {
         let (_, list) = call(&f, "GET", "/api/v2/trash", Some(who)).await;
         assert!(list["data"].as_array().unwrap().is_empty(), "{who}");
-        assert_eq!(call(&f, "POST", &restore, Some(who)).await.0, StatusCode::NOT_FOUND, "{who}");
-        assert_eq!(call(&f, "DELETE", &forever, Some(who)).await.0, StatusCode::NOT_FOUND, "{who}");
+        assert_eq!(
+            call(&f, "POST", &restore, Some(who)).await.0,
+            StatusCode::NOT_FOUND,
+            "{who}"
+        );
+        assert_eq!(
+            call(&f, "DELETE", &forever, Some(who)).await.0,
+            StatusCode::NOT_FOUND,
+            "{who}"
+        );
     }
     // Only an administrator widens the listing to every account.
     let (_, list) = call(&f, "GET", "/api/v2/trash?scope=all", Some("ben")).await;
@@ -326,26 +417,49 @@ async fn trash_authorization_owner_other_account_recipient_and_administrator() {
     assert_eq!(list_ids(&list), vec![("project".to_owned(), p)]);
     assert_eq!(list["data"][0]["owner"]["id"], f.anika);
     assert_eq!(
-        call(&f, "GET", "/api/v2/trash?scope=bogus", Some("anika")).await.0,
+        call(&f, "GET", "/api/v2/trash?scope=bogus", Some("anika"))
+            .await
+            .0,
         StatusCode::UNPROCESSABLE_ENTITY
     );
     // Unknown kinds and ids.
     assert_eq!(
-        call(&f, "POST", "/api/v2/trash/things/1/restore", Some("anika")).await.0,
+        call(&f, "POST", "/api/v2/trash/things/1/restore", Some("anika"))
+            .await
+            .0,
         StatusCode::NOT_FOUND
     );
     assert_eq!(
-        call(&f, "POST", "/api/v2/trash/projects/999999/restore", Some("anika")).await.0,
+        call(
+            &f,
+            "POST",
+            "/api/v2/trash/projects/999999/restore",
+            Some("anika")
+        )
+        .await
+        .0,
         StatusCode::NOT_FOUND
     );
     // An administrator may restore someone else's item.
-    assert_eq!(call(&f, "POST", &restore, Some("admin")).await.0, StatusCode::NO_CONTENT);
+    assert_eq!(
+        call(&f, "POST", &restore, Some("admin")).await.0,
+        StatusCode::NO_CONTENT
+    );
     let (status, _) = call(&f, "GET", &format!("/api/v2/projects/{p}"), Some("anika")).await;
     assert_eq!(status, StatusCode::OK);
     // A live item is not in the trash: restore and purge both answer 404.
-    assert_eq!(call(&f, "POST", &restore, Some("anika")).await.0, StatusCode::NOT_FOUND);
-    assert_eq!(call(&f, "DELETE", &forever, Some("anika")).await.0, StatusCode::NOT_FOUND);
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM projects WHERE id = ?", p).await, 1);
+    assert_eq!(
+        call(&f, "POST", &restore, Some("anika")).await.0,
+        StatusCode::NOT_FOUND
+    );
+    assert_eq!(
+        call(&f, "DELETE", &forever, Some("anika")).await.0,
+        StatusCode::NOT_FOUND
+    );
+    assert_eq!(
+        count(&f.pool, "SELECT count(*) FROM projects WHERE id = ?", p).await,
+        1
+    );
 }
 
 #[tokio::test]
@@ -358,10 +472,19 @@ async fn restore_brings_back_shares_links_and_sync_clients_refetch() {
     let since_before = before["data"]["server_time"].as_str().unwrap().to_owned();
     let (_, vera_before) = call(&f, "GET", "/api/v2/sync/projects?limit=50", Some("vera")).await;
     assert_eq!(ids(&vera_before, "updated"), vec![p]);
-    let vera_since = vera_before["data"]["server_time"].as_str().unwrap().to_owned();
+    let vera_since = vera_before["data"]["server_time"]
+        .as_str()
+        .unwrap()
+        .to_owned();
 
     tick().await;
-    call(&f, "DELETE", &format!("/api/v2/projects/{p}"), Some("anika")).await;
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}"),
+        Some("anika"),
+    )
+    .await;
     tick().await;
     // The deletion reaches the owner's and the recipient's clients as a tombstone.
     let (_, owner_delta) = call(
@@ -373,7 +496,10 @@ async fn restore_brings_back_shares_links_and_sync_clients_refetch() {
     .await;
     assert_eq!(ids(&owner_delta, "deleted_ids"), vec![p]);
     assert!(ids(&owner_delta, "updated").is_empty());
-    let after_delete = owner_delta["data"]["server_time"].as_str().unwrap().to_owned();
+    let after_delete = owner_delta["data"]["server_time"]
+        .as_str()
+        .unwrap()
+        .to_owned();
     let (_, vera_delta) = call(
         &f,
         "GET",
@@ -436,7 +562,15 @@ async fn restore_brings_back_shares_links_and_sync_clients_refetch() {
     let (_, detail) = call(&f, "GET", &format!("/api/v2/projects/{p}"), Some("anika")).await;
     assert_eq!(detail["data"]["yarn_ids"], json!([f.y1]));
     assert_eq!(detail["data"]["steps"].as_array().unwrap().len(), 1);
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM deletion_events WHERE entity_id = ?", p).await, 0);
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM deletion_events WHERE entity_id = ?",
+            p
+        )
+        .await,
+        0
+    );
     let (trash_list, _): (i64, i64) = (
         call(&f, "GET", "/api/v2/trash", Some("anika")).await.1["data"]
             .as_array()
@@ -465,39 +599,94 @@ async fn trashed_yarns_vanish_from_projects_and_derived_access_and_come_back() {
     call(&f, "DELETE", &format!("/api/v2/yarns/{y}"), Some("anika")).await;
     for who in ["anika", "vera"] {
         let (status, _) = call(&f, "GET", &format!("/api/v2/yarns/{y}"), Some(who)).await;
-        assert_eq!(status, StatusCode::NOT_FOUND, "{who}");
+        assert_eq!(
+            status,
+            if who == "anika" {
+                StatusCode::OK
+            } else {
+                StatusCode::NOT_FOUND
+            },
+            "{who}"
+        );
         let (_, list) = call(&f, "GET", "/api/v2/yarns", Some(who)).await;
         assert!(list["data"].as_array().unwrap().is_empty(), "{who}");
     }
-    let (_, project) = call(&f, "GET", &format!("/api/v2/projects/{}", f.p1), Some("anika")).await;
+    let (_, project) = call(
+        &f,
+        "GET",
+        &format!("/api/v2/projects/{}", f.p1),
+        Some("anika"),
+    )
+    .await;
     assert_eq!(project["data"]["yarn_ids"], json!([]));
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM media_files WHERE yarn_id = ?", y).await, 1);
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM media_files WHERE yarn_id = ?",
+            y
+        )
+        .await,
+        1
+    );
     let (_, trash) = call(&f, "GET", "/api/v2/trash", Some("anika")).await;
     assert_eq!(list_ids(&trash), vec![("yarn".to_owned(), y)]);
     assert_eq!(
-        call(&f, "POST", &format!("/api/v2/trash/yarns/{y}/restore"), Some("ben")).await.0,
+        call(
+            &f,
+            "POST",
+            &format!("/api/v2/trash/yarns/{y}/restore"),
+            Some("ben")
+        )
+        .await
+        .0,
         StatusCode::NOT_FOUND
     );
     assert_eq!(
-        call(&f, "POST", &format!("/api/v2/trash/yarns/{y}/restore"), Some("anika")).await.0,
+        call(
+            &f,
+            "POST",
+            &format!("/api/v2/trash/yarns/{y}/restore"),
+            Some("anika")
+        )
+        .await
+        .0,
         StatusCode::NO_CONTENT
     );
     let (status, yarn) = call(&f, "GET", &format!("/api/v2/yarns/{y}"), Some("vera")).await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(yarn["data"]["project_ids"], json!([f.p1]));
-    let (_, project) = call(&f, "GET", &format!("/api/v2/projects/{}", f.p1), Some("anika")).await;
+    let (_, project) = call(
+        &f,
+        "GET",
+        &format!("/api/v2/projects/{}", f.p1),
+        Some("anika"),
+    )
+    .await;
     assert_eq!(project["data"]["yarn_ids"], json!([y]));
 }
 
 #[tokio::test]
 async fn trashing_a_project_ends_derived_yarn_access_until_restore() {
     let f = fx().await;
+    // Vera sees the yarn of the shared project through it.
     let (_, mine) = call(&f, "GET", "/api/v2/yarns", Some("vera")).await;
-    assert!(mine["data"].as_array().unwrap().is_empty());
-    call(&f, "DELETE", &format!("/api/v2/projects/{}", f.p1), Some("anika")).await;
+    assert_eq!(mine["data"].as_array().unwrap().len(), 1);
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{}", f.p1),
+        Some("anika"),
+    )
+    .await;
     let (status, _) = call(&f, "GET", &format!("/api/v2/yarns/{}", f.y1), Some("vera")).await;
     assert_eq!(status, StatusCode::NOT_FOUND);
-    call(&f, "POST", &format!("/api/v2/trash/projects/{}/restore", f.p1), Some("anika")).await;
+    call(
+        &f,
+        "POST",
+        &format!("/api/v2/trash/projects/{}/restore", f.p1),
+        Some("anika"),
+    )
+    .await;
     let (status, _) = call(&f, "GET", &format!("/api/v2/yarns/{}", f.y1), Some("vera")).await;
     assert_eq!(status, StatusCode::OK);
 }
@@ -506,16 +695,53 @@ async fn trashing_a_project_ends_derived_yarn_access_until_restore() {
 async fn delete_forever_destroys_the_item_and_queues_its_files() {
     let f = fx().await;
     let p = f.p1;
-    call(&f, "DELETE", &format!("/api/v2/projects/{p}"), Some("anika")).await;
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}"),
+        Some("anika"),
+    )
+    .await;
     assert_eq!(
-        call(&f, "DELETE", &format!("/api/v2/trash/projects/{p}"), Some("anika")).await.0,
+        call(
+            &f,
+            "DELETE",
+            &format!("/api/v2/trash/projects/{p}"),
+            Some("anika")
+        )
+        .await
+        .0,
         StatusCode::NO_CONTENT
     );
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM projects WHERE id = ?", p).await, 0);
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM project_steps WHERE project_id = ?", p).await, 0);
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM media_files WHERE project_id = ?", p).await, 0);
     assert_eq!(
-        count(&f.pool, "SELECT count(*) FROM resource_shares WHERE kind='project' AND resource_id = ?", p).await,
+        count(&f.pool, "SELECT count(*) FROM projects WHERE id = ?", p).await,
+        0
+    );
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM project_steps WHERE project_id = ?",
+            p
+        )
+        .await,
+        0
+    );
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM media_files WHERE project_id = ?",
+            p
+        )
+        .await,
+        0
+    );
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM resource_shares WHERE kind='project' AND resource_id = ?",
+            p
+        )
+        .await,
         0
     );
     // The media sweeper removes the file later, as for any hard delete.
@@ -536,21 +762,46 @@ async fn delete_forever_destroys_the_item_and_queues_its_files() {
     .unwrap();
     assert_eq!((action.as_str(), actor), ("purged", Some(f.anika)));
     // The yarn is untouched and its link is gone with the project.
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM yarns WHERE id = ?", f.y1).await, 1);
-    // Purging a yarn works the same way.
-    call(&f, "DELETE", &format!("/api/v2/yarns/{}", f.y1), Some("anika")).await;
     assert_eq!(
-        call(&f, "DELETE", &format!("/api/v2/trash/yarns/{}", f.y1), Some("admin")).await.0,
+        count(&f.pool, "SELECT count(*) FROM yarns WHERE id = ?", f.y1).await,
+        1
+    );
+    // Purging a yarn works the same way.
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/yarns/{}", f.y1),
+        Some("anika"),
+    )
+    .await;
+    assert_eq!(
+        call(
+            &f,
+            "DELETE",
+            &format!("/api/v2/trash/yarns/{}", f.y1),
+            Some("admin")
+        )
+        .await
+        .0,
         StatusCode::NO_CONTENT
     );
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM yarns WHERE id = ?", f.y1).await, 0);
+    assert_eq!(
+        count(&f.pool, "SELECT count(*) FROM yarns WHERE id = ?", f.y1).await,
+        0
+    );
 }
 
 #[tokio::test]
 async fn items_are_purged_after_ninety_days_by_the_system() {
     let f = fx().await;
     let (p, y) = (f.p1, f.y1);
-    call(&f, "DELETE", &format!("/api/v2/projects/{p}"), Some("anika")).await;
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}"),
+        Some("anika"),
+    )
+    .await;
     call(&f, "DELETE", &format!("/api/v2/yarns/{y}"), Some("anika")).await;
     let live: i64 = sqlx::query_scalar(
         "INSERT INTO projects (owner_id,name,tags,created_at,updated_at) \
@@ -586,15 +837,29 @@ async fn items_are_purged_after_ninety_days_by_the_system() {
         .as_array()
         .unwrap()
         .iter()
-        .map(|i| (i["kind"].as_str().unwrap().to_owned(), i["days_remaining"].as_i64().unwrap()))
+        .map(|i| {
+            (
+                i["kind"].as_str().unwrap().to_owned(),
+                i["days_remaining"].as_i64().unwrap(),
+            )
+        })
         .collect();
     assert!(days.contains(&("project".to_owned(), 1)), "{days:?}");
     assert!(days.contains(&("yarn".to_owned(), 0)), "{days:?}");
 
     assert_eq!(trash::purge_expired(&f.pool, Utc::now()).await.unwrap(), 1);
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM yarns WHERE id = ?", y).await, 0);
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM projects WHERE id = ?", p).await, 1);
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM projects WHERE id = ?", live).await, 1);
+    assert_eq!(
+        count(&f.pool, "SELECT count(*) FROM yarns WHERE id = ?", y).await,
+        0
+    );
+    assert_eq!(
+        count(&f.pool, "SELECT count(*) FROM projects WHERE id = ?", p).await,
+        1
+    );
+    assert_eq!(
+        count(&f.pool, "SELECT count(*) FROM projects WHERE id = ?", live).await,
+        1
+    );
     let actor: Option<i64> = sqlx::query_scalar(
         "SELECT actor_user_id FROM audit_events WHERE entity_type='yarn' AND entity_id=? AND action='purged'",
     )
@@ -611,7 +876,10 @@ async fn items_are_purged_after_ninety_days_by_the_system() {
         .await
         .unwrap();
     assert_eq!(trash::purge_expired(&f.pool, Utc::now()).await.unwrap(), 1);
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM projects WHERE id = ?", p).await, 0);
+    assert_eq!(
+        count(&f.pool, "SELECT count(*) FROM projects WHERE id = ?", p).await,
+        0
+    );
     assert_eq!(trash::purge_expired(&f.pool, Utc::now()).await.unwrap(), 0);
     let _ = f.vera;
 }
@@ -624,7 +892,10 @@ async fn migration_adds_nullable_trash_columns_and_keeps_existing_rows() {
         .connect("sqlite::memory:")
         .await
         .unwrap();
-    sqlx::query("PRAGMA foreign_keys = ON").execute(&pool).await.unwrap();
+    sqlx::query("PRAGMA foreign_keys = ON")
+        .execute(&pool)
+        .await
+        .unwrap();
     let dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("migrations");
     let mut files: Vec<_> = std::fs::read_dir(dir)
         .unwrap()
@@ -655,17 +926,21 @@ async fn migration_adds_nullable_trash_columns_and_keeps_existing_rows() {
         .execute(&pool)
         .await
         .unwrap();
-    sqlx::query("INSERT INTO yarns (owner_id, name, created_at, updated_at) VALUES (?, 'Old', ?, ?)")
-        .bind(user)
-        .bind(OLD)
-        .bind(OLD)
-        .execute(&pool)
-        .await
-        .unwrap();
-    sqlx::raw_sql(sqlx::AssertSqlSafe(std::fs::read_to_string(&files[trash_migration]).unwrap()))
-        .execute(&pool)
-        .await
-        .unwrap();
+    sqlx::query(
+        "INSERT INTO yarns (owner_id, name, created_at, updated_at) VALUES (?, 'Old', ?, ?)",
+    )
+    .bind(user)
+    .bind(OLD)
+    .bind(OLD)
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::raw_sql(sqlx::AssertSqlSafe(
+        std::fs::read_to_string(&files[trash_migration]).unwrap(),
+    ))
+    .execute(&pool)
+    .await
+    .unwrap();
     for table in ["projects", "yarns"] {
         let columns: Vec<(String, String)> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
             "SELECT name, type FROM pragma_table_info('{table}') WHERE name IN ('deleted_at','deleted_by')"
@@ -681,10 +956,11 @@ async fn migration_adds_nullable_trash_columns_and_keeps_existing_rows() {
         .await
         .unwrap();
         assert_eq!(trashed, 0, "existing rows are not trashed in {table}");
-        let live: i64 = sqlx::query_scalar(sqlx::AssertSqlSafe(format!("SELECT count(*) FROM {table}")))
-            .fetch_one(&pool)
-            .await
-            .unwrap();
+        let live: i64 =
+            sqlx::query_scalar(sqlx::AssertSqlSafe(format!("SELECT count(*) FROM {table}")))
+                .fetch_one(&pool)
+                .await
+                .unwrap();
         assert_eq!(live, 1);
         let index: i64 = sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
             "SELECT count(*) FROM pragma_index_list('{table}') WHERE name = '{table}_trash'"
@@ -744,7 +1020,10 @@ async fn admin_audit(f: &Fx) -> Vec<Value> {
         .clone()
         .oneshot(
             Request::get("/api/v2/admin/audit")
-                .header("cookie", format!("__Host-stricknani_session={ADMIN_SESSION}"))
+                .header(
+                    "cookie",
+                    format!("__Host-stricknani_session={ADMIN_SESSION}"),
+                )
                 .body(Body::empty())
                 .unwrap(),
         )
@@ -770,13 +1049,32 @@ fn events_of<'a>(events: &'a [Value], id: i64, kind: &str) -> Vec<&'a Value> {
 async fn audit_log_records_and_describes_every_lifecycle_step() {
     let f = fx().await;
     let p = f.p1;
-    call(&f, "DELETE", &format!("/api/v2/projects/{p}"), Some("anika")).await;
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}"),
+        Some("anika"),
+    )
+    .await;
     // An administrator restores the owner's project, the owner trashes it again.
     assert_eq!(
-        call(&f, "POST", &format!("/api/v2/trash/projects/{p}/restore"), Some("admin")).await.0,
+        call(
+            &f,
+            "POST",
+            &format!("/api/v2/trash/projects/{p}/restore"),
+            Some("admin")
+        )
+        .await
+        .0,
         StatusCode::NO_CONTENT
     );
-    call(&f, "DELETE", &format!("/api/v2/projects/{p}"), Some("anika")).await;
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}"),
+        Some("anika"),
+    )
+    .await;
     // A hard delete written before the trash existed.
     sqlx::query(
         "INSERT INTO audit_events (actor_user_id, entity_type, entity_id, action, created_at, resource_name_snapshot) \
@@ -798,7 +1096,10 @@ async fn audit_log_records_and_describes_every_lifecycle_step() {
         assert_eq!(event["resource"]["exists"], false);
         assert_eq!(event["resource"]["trash"]["days_remaining"], 90);
         assert_eq!(event["resource"]["trash"]["can_restore"], true);
-        assert!(event["resource"]["href"].is_null() || event["resource"]["href"] != json!(format!("/app/projects/{p}")));
+        assert!(
+            event["resource"]["href"].is_null()
+                || event["resource"]["href"] != json!(format!("/app/projects/{p}"))
+        );
         assert!(event.get("system").is_none());
     }
     // Owner acted: no subject. Administrator acted: the owner is the subject.
@@ -817,7 +1118,13 @@ async fn audit_log_records_and_describes_every_lifecycle_step() {
     assert!(legacy[0]["resource"].get("trash").is_none());
 
     // Restored: state back to active everywhere.
-    call(&f, "POST", &format!("/api/v2/trash/projects/{p}/restore"), Some("anika")).await;
+    call(
+        &f,
+        "POST",
+        &format!("/api/v2/trash/projects/{p}/restore"),
+        Some("anika"),
+    )
+    .await;
     let events = admin_audit(&f).await;
     let log = events_of(&events, p, "project");
     assert_eq!(log.last().unwrap()["action"], "restored");
@@ -825,7 +1132,13 @@ async fn audit_log_records_and_describes_every_lifecycle_step() {
     assert!(log.iter().all(|e| e["resource"]["state"] == "active"));
 
     // The automatic purge is a system event without actor; the manual one names its actor.
-    call(&f, "DELETE", &format!("/api/v2/projects/{p}"), Some("anika")).await;
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}"),
+        Some("anika"),
+    )
+    .await;
     sqlx::query("UPDATE projects SET deleted_at = ? WHERE id = ?")
         .bind((Utc::now() - Duration::days(100)).to_rfc3339_opts(SecondsFormat::Micros, true))
         .bind(p)
@@ -833,8 +1146,20 @@ async fn audit_log_records_and_describes_every_lifecycle_step() {
         .await
         .unwrap();
     assert_eq!(trash::purge_expired(&f.pool, Utc::now()).await.unwrap(), 1);
-    call(&f, "DELETE", &format!("/api/v2/yarns/{}", f.y1), Some("anika")).await;
-    call(&f, "DELETE", &format!("/api/v2/trash/yarns/{}", f.y1), Some("admin")).await;
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/yarns/{}", f.y1),
+        Some("anika"),
+    )
+    .await;
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/trash/yarns/{}", f.y1),
+        Some("admin"),
+    )
+    .await;
     let events = admin_audit(&f).await;
     let log = events_of(&events, p, "project");
     let purged = log.last().unwrap();
@@ -846,7 +1171,10 @@ async fn audit_log_records_and_describes_every_lifecycle_step() {
     assert_eq!(purged["resource"]["state"], "gone");
     assert!(log.iter().all(|e| e["resource"]["state"] == "gone"));
     let yarn_log = events_of(&events, f.y1, "yarn");
-    let yarn_actions: Vec<&str> = yarn_log.iter().map(|e| e["action"].as_str().unwrap()).collect();
+    let yarn_actions: Vec<&str> = yarn_log
+        .iter()
+        .map(|e| e["action"].as_str().unwrap())
+        .collect();
     assert_eq!(yarn_actions, vec!["trashed", "purged"]);
     let manual = yarn_log.last().unwrap();
     assert!(manual.get("system").is_none());
@@ -858,7 +1186,13 @@ async fn audit_log_records_and_describes_every_lifecycle_step() {
 #[tokio::test]
 async fn owner_activity_feed_marks_trashed_items_and_offers_restore_to_the_owner_only() {
     let f = fx().await;
-    call(&f, "DELETE", &format!("/api/v2/projects/{}", f.p1), Some("anika")).await;
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{}", f.p1),
+        Some("anika"),
+    )
+    .await;
     let (status, feed) = call(&f, "GET", "/api/v2/activity", Some("anika")).await;
     assert_eq!(status, StatusCode::OK, "{feed}");
     let item = feed["data"]
@@ -902,11 +1236,37 @@ async fn gc_count(f: &Fx) -> i64 {
 async fn deleting_media_trashes_it_and_keeps_the_file() {
     let f = fx().await;
     let p = f.p1;
-    let (status, _) = call(&f, "DELETE", &format!("/api/v2/projects/{p}/images/101"), Some("anika")).await;
+    let (status, _) = call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}/images/101"),
+        Some("anika"),
+    )
+    .await;
     assert_eq!(status, StatusCode::NO_CONTENT);
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM media_files WHERE public_id = ? AND kind = 'title'", 101).await, 0);
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM trashed_media WHERE public_id = ?", 101).await, 1);
-    assert_eq!(gc_count(&f).await, 0, "the file stays on disk while trashed");
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM media_files WHERE public_id = ? AND kind = 'title'",
+            101
+        )
+        .await,
+        0
+    );
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM trashed_media WHERE public_id = ?",
+            101
+        )
+        .await,
+        1
+    );
+    assert_eq!(
+        gc_count(&f).await,
+        0,
+        "the file stays on disk while trashed"
+    );
     let (_, trash) = call(&f, "GET", "/api/v2/trash", Some("anika")).await;
     assert_eq!(list_ids(&trash), vec![("image".to_owned(), 101)]);
     assert_eq!(trash["data"][0]["parent"]["kind"], "project");
@@ -920,22 +1280,69 @@ async fn deleting_media_trashes_it_and_keeps_the_file() {
     .fetch_one(&f.pool)
     .await
     .unwrap();
-    assert_eq!((action.as_str(), media_kind.as_str(), public_id), ("trashed", "image", 101));
+    assert_eq!(
+        (action.as_str(), media_kind.as_str(), public_id),
+        ("trashed", "image", 101)
+    );
 
     // Not for strangers.
     let restore = "/api/v2/trash/images/101/restore";
-    assert_eq!(call(&f, "POST", restore, Some("ben")).await.0, StatusCode::NOT_FOUND);
-    assert_eq!(call(&f, "POST", restore, Some("vera")).await.0, StatusCode::NOT_FOUND);
-    assert_eq!(call(&f, "DELETE", "/api/v2/trash/images/101", Some("ben")).await.0, StatusCode::NOT_FOUND);
-    assert_eq!(call(&f, "POST", restore, Some("anika")).await.0, StatusCode::NO_CONTENT);
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM media_files WHERE public_id = ? AND kind = 'title'", 101).await, 1);
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM trashed_media WHERE public_id = ?", 101).await, 0);
+    assert_eq!(
+        call(&f, "POST", restore, Some("ben")).await.0,
+        StatusCode::NOT_FOUND
+    );
+    assert_eq!(
+        call(&f, "POST", restore, Some("vera")).await.0,
+        StatusCode::NOT_FOUND
+    );
+    assert_eq!(
+        call(&f, "DELETE", "/api/v2/trash/images/101", Some("ben"))
+            .await
+            .0,
+        StatusCode::NOT_FOUND
+    );
+    assert_eq!(
+        call(&f, "POST", restore, Some("anika")).await.0,
+        StatusCode::NO_CONTENT
+    );
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM media_files WHERE public_id = ? AND kind = 'title'",
+            101
+        )
+        .await,
+        1
+    );
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM trashed_media WHERE public_id = ?",
+            101
+        )
+        .await,
+        0
+    );
     assert_eq!(gc_count(&f).await, 0, "restoring must not queue the file");
-    assert_eq!(call(&f, "POST", restore, Some("anika")).await.0, StatusCode::NOT_FOUND);
+    assert_eq!(
+        call(&f, "POST", restore, Some("anika")).await.0,
+        StatusCode::NOT_FOUND
+    );
 
     // Deleting forever queues the file for the sweeper.
-    call(&f, "DELETE", &format!("/api/v2/projects/{p}/images/101"), Some("anika")).await;
-    assert_eq!(call(&f, "DELETE", "/api/v2/trash/images/101", Some("admin")).await.0, StatusCode::NO_CONTENT);
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}/images/101"),
+        Some("anika"),
+    )
+    .await;
+    assert_eq!(
+        call(&f, "DELETE", "/api/v2/trash/images/101", Some("admin"))
+            .await
+            .0,
+        StatusCode::NO_CONTENT
+    );
     assert_eq!(gc_count(&f).await, 1);
     let actions: Vec<String> = sqlx::query_scalar(
         "SELECT action FROM audit_events WHERE entity_type='project' AND entity_id=? AND media_public_id=101 ORDER BY id",
@@ -949,17 +1356,39 @@ async fn deleting_media_trashes_it_and_keeps_the_file() {
     // A yarn photo.
     let y = f.y1;
     assert_eq!(
-        call(&f, "DELETE", &format!("/api/v2/yarns/{y}/photos/102"), Some("anika")).await.0,
+        call(
+            &f,
+            "DELETE",
+            &format!("/api/v2/yarns/{y}/photos/102"),
+            Some("anika")
+        )
+        .await
+        .0,
         StatusCode::NO_CONTENT
     );
     let (_, trash) = call(&f, "GET", "/api/v2/trash", Some("anika")).await;
     assert_eq!(list_ids(&trash), vec![("photo".to_owned(), 102)]);
     assert_eq!(trash["data"][0]["parent"]["kind"], "yarn");
     assert_eq!(
-        call(&f, "POST", "/api/v2/trash/photos/102/restore", Some("anika")).await.0,
+        call(
+            &f,
+            "POST",
+            "/api/v2/trash/photos/102/restore",
+            Some("anika")
+        )
+        .await
+        .0,
         StatusCode::NO_CONTENT
     );
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM media_files WHERE yarn_id = ?", y).await, 1);
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM media_files WHERE yarn_id = ?",
+            y
+        )
+        .await,
+        1
+    );
     // The restored photo is the only one, so it may be primary again.
     let primary: bool = sqlx::query_scalar("SELECT is_primary FROM media_files WHERE yarn_id = ?")
         .bind(y)
@@ -973,19 +1402,50 @@ async fn deleting_media_trashes_it_and_keeps_the_file() {
 async fn a_child_cannot_be_restored_while_its_parent_is_in_the_trash() {
     let f = fx().await;
     let p = f.p1;
-    call(&f, "DELETE", &format!("/api/v2/projects/{p}/images/101"), Some("anika")).await;
-    call(&f, "DELETE", &format!("/api/v2/projects/{p}"), Some("anika")).await;
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}/images/101"),
+        Some("anika"),
+    )
+    .await;
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}"),
+        Some("anika"),
+    )
+    .await;
     // Only the parent is listed; the child waits behind it.
     let (_, trash) = call(&f, "GET", "/api/v2/trash", Some("anika")).await;
     assert_eq!(list_ids(&trash), vec![("project".to_owned(), p)]);
-    let (status, body) = call(&f, "POST", "/api/v2/trash/images/101/restore", Some("anika")).await;
+    let (status, body) = call(
+        &f,
+        "POST",
+        "/api/v2/trash/images/101/restore",
+        Some("anika"),
+    )
+    .await;
     assert_eq!(status, StatusCode::CONFLICT);
     assert_eq!(body["error"]["code"], "parent_in_trash");
-    call(&f, "POST", &format!("/api/v2/trash/projects/{p}/restore"), Some("anika")).await;
+    call(
+        &f,
+        "POST",
+        &format!("/api/v2/trash/projects/{p}/restore"),
+        Some("anika"),
+    )
+    .await;
     let (_, trash) = call(&f, "GET", "/api/v2/trash", Some("anika")).await;
     assert_eq!(list_ids(&trash), vec![("image".to_owned(), 101)]);
     assert_eq!(
-        call(&f, "POST", "/api/v2/trash/images/101/restore", Some("anika")).await.0,
+        call(
+            &f,
+            "POST",
+            "/api/v2/trash/images/101/restore",
+            Some("anika")
+        )
+        .await
+        .0,
         StatusCode::NO_CONTENT
     );
 }
@@ -994,15 +1454,53 @@ async fn a_child_cannot_be_restored_while_its_parent_is_in_the_trash() {
 async fn a_trashed_project_brings_back_its_children_and_a_purged_one_queues_all_files() {
     let f = fx().await;
     let p = f.p1;
-    call(&f, "DELETE", &format!("/api/v2/projects/{p}"), Some("anika")).await;
-    call(&f, "POST", &format!("/api/v2/trash/projects/{p}/restore"), Some("anika")).await;
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}"),
+        Some("anika"),
+    )
+    .await;
+    call(
+        &f,
+        "POST",
+        &format!("/api/v2/trash/projects/{p}/restore"),
+        Some("anika"),
+    )
+    .await;
     let (_, detail) = call(&f, "GET", &format!("/api/v2/projects/{p}"), Some("anika")).await;
     assert_eq!(detail["data"]["images"].as_array().unwrap().len(), 1);
     // A child trashed on its own earlier is purged together with its project.
-    call(&f, "DELETE", &format!("/api/v2/projects/{p}/images/101"), Some("anika")).await;
-    call(&f, "DELETE", &format!("/api/v2/projects/{p}"), Some("anika")).await;
-    call(&f, "DELETE", &format!("/api/v2/trash/projects/{p}"), Some("anika")).await;
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM trashed_media WHERE project_id = ?", p).await, 0);
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}/images/101"),
+        Some("anika"),
+    )
+    .await;
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}"),
+        Some("anika"),
+    )
+    .await;
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/trash/projects/{p}"),
+        Some("anika"),
+    )
+    .await;
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM trashed_media WHERE project_id = ?",
+            p
+        )
+        .await,
+        0
+    );
     assert_eq!(gc_count(&f).await, 1);
 }
 
@@ -1025,9 +1523,33 @@ async fn removing_a_step_trashes_it_with_its_images_and_restore_brings_both_back
     )
     .await;
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM project_steps WHERE project_id = ?", p).await, 0);
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM trashed_steps WHERE project_id = ?", p).await, 1);
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM trashed_media WHERE step_id = ? AND with_step = 1", step).await, 1);
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM project_steps WHERE project_id = ?",
+            p
+        )
+        .await,
+        0
+    );
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM trashed_steps WHERE project_id = ?",
+            p
+        )
+        .await,
+        1
+    );
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM trashed_media WHERE step_id = ? AND with_step = 1",
+            step
+        )
+        .await,
+        1
+    );
     assert_eq!(gc_count(&f).await, 0);
     // The step is listed, its image is not (it comes back with the step).
     let (_, trash) = call(&f, "GET", "/api/v2/trash", Some("anika")).await;
@@ -1035,16 +1557,54 @@ async fn removing_a_step_trashes_it_with_its_images_and_restore_brings_both_back
     assert_eq!(trash["data"][0]["name"], "Cast on");
     assert_eq!(trash["data"][0]["parent"]["id"], p);
     assert_eq!(
-        call(&f, "POST", &format!("/api/v2/trash/steps/{step}/restore"), Some("ben")).await.0,
+        call(
+            &f,
+            "POST",
+            &format!("/api/v2/trash/steps/{step}/restore"),
+            Some("ben")
+        )
+        .await
+        .0,
         StatusCode::NOT_FOUND
     );
     assert_eq!(
-        call(&f, "POST", &format!("/api/v2/trash/steps/{step}/restore"), Some("anika")).await.0,
+        call(
+            &f,
+            "POST",
+            &format!("/api/v2/trash/steps/{step}/restore"),
+            Some("anika")
+        )
+        .await
+        .0,
         StatusCode::NO_CONTENT
     );
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM project_steps WHERE id = ?", step).await, 1);
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM media_files WHERE step_id = ?", step).await, 1);
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM trashed_media WHERE step_id = ?", step).await, 0);
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM project_steps WHERE id = ?",
+            step
+        )
+        .await,
+        1
+    );
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM media_files WHERE step_id = ?",
+            step
+        )
+        .await,
+        1
+    );
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM trashed_media WHERE step_id = ?",
+            step
+        )
+        .await,
+        0
+    );
     assert_eq!(gc_count(&f).await, 0);
     let (action, name): (String, String) = sqlx::query_as(
         "SELECT action, resource_name_snapshot FROM audit_events WHERE action LIKE 'step_%' \
@@ -1053,7 +1613,10 @@ async fn removing_a_step_trashes_it_with_its_images_and_restore_brings_both_back
     .fetch_one(&f.pool)
     .await
     .unwrap();
-    assert_eq!((action.as_str(), name.as_str()), ("step_restored", "Shawl \u{203a} Cast on"));
+    assert_eq!(
+        (action.as_str(), name.as_str()),
+        ("step_restored", "Shawl \u{203a} Cast on")
+    );
     // Remove it again and delete it forever: the step image's file is queued.
     call_body(
         &f,
@@ -1064,11 +1627,34 @@ async fn removing_a_step_trashes_it_with_its_images_and_restore_brings_both_back
     )
     .await;
     assert_eq!(
-        call(&f, "DELETE", &format!("/api/v2/trash/steps/{step}"), Some("anika")).await.0,
+        call(
+            &f,
+            "DELETE",
+            &format!("/api/v2/trash/steps/{step}"),
+            Some("anika")
+        )
+        .await
+        .0,
         StatusCode::NO_CONTENT
     );
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM trashed_steps WHERE id = ?", step).await, 0);
-    assert_eq!(count(&f.pool, "SELECT count(*) FROM trashed_media WHERE step_id = ?", step).await, 0);
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM trashed_steps WHERE id = ?",
+            step
+        )
+        .await,
+        0
+    );
+    assert_eq!(
+        count(
+            &f.pool,
+            "SELECT count(*) FROM trashed_media WHERE step_id = ?",
+            step
+        )
+        .await,
+        0
+    );
     assert_eq!(gc_count(&f).await, 1);
 }
 
@@ -1095,7 +1681,14 @@ async fn deleting_a_category_trashes_it_and_restore_relinks_its_projects() {
     let since = before["data"]["server_time"].as_str().unwrap().to_owned();
     tick().await;
     assert_eq!(
-        call(&f, "DELETE", &format!("/api/v2/categories/{category}"), Some("anika")).await.0,
+        call(
+            &f,
+            "DELETE",
+            &format!("/api/v2/categories/{category}"),
+            Some("anika")
+        )
+        .await
+        .0,
         StatusCode::NO_CONTENT
     );
     tick().await;
@@ -1107,22 +1700,48 @@ async fn deleting_a_category_trashes_it_and_restore_relinks_its_projects() {
     )
     .await;
     assert_eq!(ids(&delta, "deleted_ids"), vec![category]);
-    let (_, project) = call(&f, "GET", &format!("/api/v2/projects/{}", f.p1), Some("anika")).await;
+    let (_, project) = call(
+        &f,
+        "GET",
+        &format!("/api/v2/projects/{}", f.p1),
+        Some("anika"),
+    )
+    .await;
     assert!(project["data"]["category"].is_null());
     let (_, trash) = call(&f, "GET", "/api/v2/trash", Some("anika")).await;
     assert_eq!(list_ids(&trash), vec![("category".to_owned(), category)]);
     assert_eq!(trash["data"][0]["name"], "Shawls");
     assert_eq!(
-        call(&f, "POST", &format!("/api/v2/trash/categories/{category}/restore"), Some("ben")).await.0,
+        call(
+            &f,
+            "POST",
+            &format!("/api/v2/trash/categories/{category}/restore"),
+            Some("ben")
+        )
+        .await
+        .0,
         StatusCode::NOT_FOUND
     );
     let after_delete = delta["data"]["server_time"].as_str().unwrap().to_owned();
     tick().await;
     assert_eq!(
-        call(&f, "POST", &format!("/api/v2/trash/categories/{category}/restore"), Some("anika")).await.0,
+        call(
+            &f,
+            "POST",
+            &format!("/api/v2/trash/categories/{category}/restore"),
+            Some("anika")
+        )
+        .await
+        .0,
         StatusCode::NO_CONTENT
     );
-    let (_, project) = call(&f, "GET", &format!("/api/v2/projects/{}", f.p1), Some("anika")).await;
+    let (_, project) = call(
+        &f,
+        "GET",
+        &format!("/api/v2/projects/{}", f.p1),
+        Some("anika"),
+    )
+    .await;
     assert_eq!(project["data"]["category"], "Shawls");
     let (_, delta) = call(
         &f,
@@ -1137,13 +1756,39 @@ async fn deleting_a_category_trashes_it_and_restore_relinks_its_projects() {
     assert!(ids(&full, "deleted_ids").is_empty());
 
     // The name may be used again meanwhile: then the restore is refused.
-    call(&f, "DELETE", &format!("/api/v2/categories/{category}"), Some("anika")).await;
-    call_body(&f, "POST", "/api/v2/categories", Some("anika"), Some(json!({"name": "shawls"}))).await;
-    let (status, body) = call(&f, "POST", &format!("/api/v2/trash/categories/{category}/restore"), Some("anika")).await;
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/categories/{category}"),
+        Some("anika"),
+    )
+    .await;
+    call_body(
+        &f,
+        "POST",
+        "/api/v2/categories",
+        Some("anika"),
+        Some(json!({"name": "shawls"})),
+    )
+    .await;
+    let (status, body) = call(
+        &f,
+        "POST",
+        &format!("/api/v2/trash/categories/{category}/restore"),
+        Some("anika"),
+    )
+    .await;
     assert_eq!(status, StatusCode::CONFLICT);
     assert_eq!(body["error"]["code"], "name_taken");
     assert_eq!(
-        call(&f, "DELETE", &format!("/api/v2/trash/categories/{category}"), Some("anika")).await.0,
+        call(
+            &f,
+            "DELETE",
+            &format!("/api/v2/trash/categories/{category}"),
+            Some("anika")
+        )
+        .await
+        .0,
         StatusCode::NO_CONTENT
     );
     let actions: Vec<String> = sqlx::query_scalar(
@@ -1153,43 +1798,73 @@ async fn deleting_a_category_trashes_it_and_restore_relinks_its_projects() {
     .fetch_all(&f.pool)
     .await
     .unwrap();
-    assert_eq!(actions, vec!["created", "trashed", "restored", "trashed", "purged"]);
+    assert_eq!(
+        actions,
+        vec!["created", "trashed", "restored", "trashed", "purged"]
+    );
 }
 
 #[tokio::test]
 async fn children_and_categories_are_purged_after_ninety_days_too() {
     let f = fx().await;
-    call(&f, "DELETE", &format!("/api/v2/projects/{}/images/101", f.p1), Some("anika")).await;
-    call(&f, "DELETE", &format!("/api/v2/yarns/{}/photos/102", f.y1), Some("anika")).await;
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{}/images/101", f.p1),
+        Some("anika"),
+    )
+    .await;
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/yarns/{}/photos/102", f.y1),
+        Some("anika"),
+    )
+    .await;
     let step: i64 = sqlx::query_scalar("SELECT id FROM project_steps WHERE project_id = ?")
         .bind(f.p1)
         .fetch_one(&f.pool)
         .await
         .unwrap();
-    call_body(&f, "PUT", &format!("/api/v2/projects/{}", f.p1), Some("anika"), Some(json!({"name":"Shawl","steps":[]}))).await;
-    let category: i64 = sqlx::query_scalar(
-        "INSERT INTO categories (user_id, name) VALUES (?, 'Old') RETURNING id",
+    call_body(
+        &f,
+        "PUT",
+        &format!("/api/v2/projects/{}", f.p1),
+        Some("anika"),
+        Some(json!({"name":"Shawl","steps":[]})),
     )
-    .bind(f.anika)
-    .fetch_one(&f.pool)
-    .await
-    .unwrap();
-    call(&f, "DELETE", &format!("/api/v2/categories/{category}"), Some("anika")).await;
-    assert_eq!(trash::purge_expired(&f.pool, Utc::now()).await.unwrap(), 0);
-    let old = (Utc::now() - Duration::days(91)).to_rfc3339_opts(SecondsFormat::Micros, true);
-    for table in ["trashed_media", "trashed_steps", "trashed_categories"] {
-        sqlx::query(sqlx::AssertSqlSafe(format!("UPDATE {table} SET deleted_at = ?")))
-            .bind(&old)
-            .execute(&f.pool)
-            .await
-            .unwrap();
-    }
-    assert_eq!(trash::purge_expired(&f.pool, Utc::now()).await.unwrap(), 4);
-    for table in ["trashed_media", "trashed_steps", "trashed_categories"] {
-        let left: i64 = sqlx::query_scalar(sqlx::AssertSqlSafe(format!("SELECT count(*) FROM {table}")))
+    .await;
+    let category: i64 =
+        sqlx::query_scalar("INSERT INTO categories (user_id, name) VALUES (?, 'Old') RETURNING id")
+            .bind(f.anika)
             .fetch_one(&f.pool)
             .await
             .unwrap();
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/categories/{category}"),
+        Some("anika"),
+    )
+    .await;
+    assert_eq!(trash::purge_expired(&f.pool, Utc::now()).await.unwrap(), 0);
+    let old = (Utc::now() - Duration::days(91)).to_rfc3339_opts(SecondsFormat::Micros, true);
+    for table in ["trashed_media", "trashed_steps", "trashed_categories"] {
+        sqlx::query(sqlx::AssertSqlSafe(format!(
+            "UPDATE {table} SET deleted_at = ?"
+        )))
+        .bind(&old)
+        .execute(&f.pool)
+        .await
+        .unwrap();
+    }
+    assert_eq!(trash::purge_expired(&f.pool, Utc::now()).await.unwrap(), 4);
+    for table in ["trashed_media", "trashed_steps", "trashed_categories"] {
+        let left: i64 =
+            sqlx::query_scalar(sqlx::AssertSqlSafe(format!("SELECT count(*) FROM {table}")))
+                .fetch_one(&f.pool)
+                .await
+                .unwrap();
         assert_eq!(left, 0, "{table}");
     }
     assert_eq!(gc_count(&f).await, 2);
@@ -1222,4 +1897,227 @@ async fn the_trash_tables_keep_every_media_column() {
             "add `{column}` to trashed_media and media::TRASHED_MEDIA_COLUMNS"
         );
     }
+}
+
+// --- trashed lists and read-only detail ----------------------------------------
+
+#[tokio::test]
+async fn lists_exclude_the_trash_by_default_and_show_it_with_trashed_only() {
+    let f = fx().await;
+    let (p, y) = (f.p1, f.y1);
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}"),
+        Some("anika"),
+    )
+    .await;
+    call(&f, "DELETE", &format!("/api/v2/yarns/{y}"), Some("anika")).await;
+    let live: i64 = sqlx::query_scalar(
+        "INSERT INTO projects (owner_id,name,tags,created_at,updated_at) \
+         VALUES (?,'Live','[]',?,?) RETURNING id",
+    )
+    .bind(f.anika)
+    .bind(OLD)
+    .bind(OLD)
+    .fetch_one(&f.pool)
+    .await
+    .unwrap();
+
+    for kind in ["projects", "yarns"] {
+        let id = if kind == "projects" { p } else { y };
+        let (_, list) = call(&f, "GET", &format!("/api/v2/{kind}"), Some("anika")).await;
+        assert!(
+            list["data"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .all(|i| i["id"] != id),
+            "{kind}"
+        );
+        let (status, only) = call(
+            &f,
+            "GET",
+            &format!("/api/v2/{kind}?trashed=only"),
+            Some("anika"),
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{only}");
+        let items = only["data"].as_array().unwrap();
+        assert_eq!(items.len(), 1, "{kind}");
+        assert_eq!(items[0]["id"], id);
+        assert!(items[0]["trashed_at"].is_string());
+        assert!(items[0]["purge_at"].is_string());
+        assert_eq!(items[0]["access"]["can_edit"], false);
+        assert_eq!(items[0]["access"]["can_manage"], false);
+        // Others never see the trash, not even a share recipient.
+        for who in ["ben", "vera"] {
+            let (_, only) = call(
+                &f,
+                "GET",
+                &format!("/api/v2/{kind}?trashed=only"),
+                Some(who),
+            )
+            .await;
+            assert!(only["data"].as_array().unwrap().is_empty(), "{kind} {who}");
+        }
+        // Administrators see every account's trash and may narrow it by owner.
+        let (_, only) = call(
+            &f,
+            "GET",
+            &format!("/api/v2/{kind}?trashed=only"),
+            Some("admin"),
+        )
+        .await;
+        assert_eq!(only["data"].as_array().unwrap().len(), 1, "{kind}");
+        let (_, only) = call(
+            &f,
+            "GET",
+            &format!("/api/v2/{kind}?trashed=only&owner_id={}", f.anika),
+            Some("admin"),
+        )
+        .await;
+        assert_eq!(only["data"].as_array().unwrap().len(), 1, "{kind}");
+        let (_, only) = call(
+            &f,
+            "GET",
+            &format!("/api/v2/{kind}?trashed=only&owner_id={}", f.vera),
+            Some("admin"),
+        )
+        .await;
+        assert!(only["data"].as_array().unwrap().is_empty(), "{kind}");
+        assert_eq!(
+            call(
+                &f,
+                "GET",
+                &format!("/api/v2/{kind}?trashed=maybe"),
+                Some("anika")
+            )
+            .await
+            .0,
+            StatusCode::UNPROCESSABLE_ENTITY
+        );
+    }
+    // Live items never show up in the trashed list.
+    let (_, only) = call(&f, "GET", "/api/v2/projects?trashed=only", Some("anika")).await;
+    assert!(
+        only["data"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|i| i["id"] != live)
+    );
+    // A live item has no trash timestamps.
+    let (_, list) = call(&f, "GET", "/api/v2/projects", Some("anika")).await;
+    assert_eq!(list["data"][0]["id"], live);
+    assert!(list["data"][0].get("trashed_at").is_none_or(Value::is_null));
+}
+
+#[tokio::test]
+async fn a_trashed_project_or_yarn_opens_read_only_for_its_owner_and_administrators() {
+    let f = fx().await;
+    let (p, y) = (f.p1, f.y1);
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{p}"),
+        Some("anika"),
+    )
+    .await;
+    call(&f, "DELETE", &format!("/api/v2/yarns/{y}"), Some("anika")).await;
+    for (kind, id) in [("projects", p), ("yarns", y)] {
+        for who in ["anika", "admin"] {
+            let (status, detail) =
+                call(&f, "GET", &format!("/api/v2/{kind}/{id}"), Some(who)).await;
+            assert_eq!(status, StatusCode::OK, "{kind} {who}: {detail}");
+            assert!(detail["data"]["trashed_at"].is_string());
+            assert!(detail["data"]["purge_at"].is_string());
+            assert_eq!(detail["data"]["access"]["can_edit"], false);
+            assert_eq!(detail["data"]["access"]["can_manage"], false);
+        }
+        for who in ["ben", "vera"] {
+            let (status, _) = call(&f, "GET", &format!("/api/v2/{kind}/{id}"), Some(who)).await;
+            assert_eq!(status, StatusCode::NOT_FOUND, "{kind} {who}");
+        }
+        // Nothing can be changed while it is trashed.
+        for (method, path, body) in [
+            (
+                "PUT",
+                format!("/api/v2/{kind}/{id}"),
+                Some(json!({"name": "X"})),
+            ),
+            ("DELETE", format!("/api/v2/{kind}/{id}"), None),
+            (
+                "POST",
+                format!("/api/v2/{kind}/{id}/shares"),
+                Some(json!({"user_id": f.vera, "role": "viewer"})),
+            ),
+        ] {
+            let (status, _) = call_body(&f, method, &path, Some("anika"), body).await;
+            assert_eq!(status, StatusCode::NOT_FOUND, "{method} {path}");
+        }
+    }
+    // The trashed project still shows its content.
+    let (_, detail) = call(&f, "GET", &format!("/api/v2/projects/{p}"), Some("anika")).await;
+    assert_eq!(detail["data"]["name"], "Shawl");
+    assert_eq!(detail["data"]["steps"].as_array().unwrap().len(), 1);
+    // Restoring makes it a normal item again.
+    call(
+        &f,
+        "POST",
+        &format!("/api/v2/trash/projects/{p}/restore"),
+        Some("anika"),
+    )
+    .await;
+    let (_, detail) = call(&f, "GET", &format!("/api/v2/projects/{p}"), Some("anika")).await;
+    assert!(detail["data"]["trashed_at"].is_null());
+    assert_eq!(detail["data"]["access"]["can_edit"], true);
+}
+
+#[tokio::test]
+async fn audit_state_covers_categories_and_hides_restore_for_child_events() {
+    let f = fx().await;
+    let category: i64 = sqlx::query_scalar(
+        "INSERT INTO categories (user_id, name) VALUES (?, 'Hats') RETURNING id",
+    )
+    .bind(f.anika)
+    .fetch_one(&f.pool)
+    .await
+    .unwrap();
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/categories/{category}"),
+        Some("anika"),
+    )
+    .await;
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{}/images/101", f.p1),
+        Some("anika"),
+    )
+    .await;
+    call(
+        &f,
+        "DELETE",
+        &format!("/api/v2/projects/{}", f.p1),
+        Some("anika"),
+    )
+    .await;
+    let events = admin_audit(&f).await;
+    let cat = events_of(&events, category, "category");
+    let last = cat.last().unwrap();
+    assert_eq!(last["action"], "trashed");
+    assert_eq!(last["resource"]["name"], "Hats");
+    assert_eq!(last["resource"]["state"], "in_trash");
+    assert_eq!(last["resource"]["trash"]["can_restore"], true);
+    // The image event is about a file: the project is in the trash now, but the
+    // event offers no restore (the Trash page lists the project).
+    let image = events_of(&events, f.p1, "project")
+        .into_iter()
+        .find(|event| event["media"]["id"] == 101)
+        .expect("image event");
+    assert_eq!(image["resource"]["state"], "in_trash");
+    assert!(image["resource"].get("trash").is_none());
 }

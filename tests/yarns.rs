@@ -421,8 +421,9 @@ async fn yarn_project_ids_rename_timestamps_and_delete_tombstone_stay_in_sync() 
             .bind(yarn_id)
             .fetch_one(&pool)
             .await
-            .expect("yarn links should be removed by cascade");
-    assert_eq!(remaining_links, 0);
+            .expect("yarn links should stay with the trashed yarn");
+    // The trashed yarn keeps its links until it is purged.
+    assert_eq!(remaining_links, 2);
     let other_project_time_after_delete: String =
         sqlx::query_scalar("SELECT updated_at FROM projects WHERE id = ?")
             .bind(other_project_id)

@@ -42,6 +42,8 @@ struct YarnPageQuery {
     q: Option<String>,
     scope: Option<String>,
     owner_id: Option<i64>,
+    /// `only` lists the trashed yarns instead of the live ones.
+    trashed: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -80,6 +82,9 @@ pub(super) struct YarnDto {
     is_favorite: bool,
     created_at: String,
     updated_at: String,
+    /// Set while the yarn is in the trash (then it is read-only).
+    trashed_at: Option<String>,
+    purge_at: Option<String>,
     project_ids: Vec<i64>,
     photos: Vec<serde_json::Value>,
     preview_url: Option<String>,
@@ -111,6 +116,8 @@ impl From<YarnResponse> for YarnDto {
             is_favorite: yarn.is_favorite,
             created_at: yarn.created_at,
             updated_at: yarn.updated_at,
+            trashed_at: yarn.trashed_at,
+            purge_at: yarn.purge_at,
             project_ids: yarn.project_ids,
             photos: yarn.photos,
             preview_url: None,
@@ -253,6 +260,11 @@ async fn list_yarns(
             q: query.q,
             scope: query.scope,
             owner_id: query.owner_id,
+            trashed_only: match query.trashed.as_deref() {
+                None => false,
+                Some("only") => true,
+                Some(_) => return validation_error("Invalid query", Some("trashed")),
+            },
         },
         crate::resource_access::Surface::V2,
     )

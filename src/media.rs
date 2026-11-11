@@ -2857,7 +2857,21 @@ async fn serve_registered(
         .await
         {
             Ok(Some(_)) => {}
-            Ok(None) => return StatusCode::FORBIDDEN.into_response(),
+            Ok(None) => {
+                // Administrators open trashed items read-only, pictures included.
+                match crate::resource_access::grant_including_trashed(
+                    &state.pool,
+                    user_id,
+                    kind,
+                    parent_id,
+                )
+                .await
+                {
+                    Ok(Some(_)) => {}
+                    Ok(None) => return StatusCode::FORBIDDEN.into_response(),
+                    Err(_) => return database_error(),
+                }
+            }
             Err(_) => return database_error(),
         }
     }
@@ -4821,9 +4835,19 @@ pub(crate) async fn find_trashed_media(
         "SELECT id, owner_id, project_id, yarn_id, public_id, kind, filename, original_filename \
          FROM trashed_media WHERE public_id = ? AND kind IN {kinds}"
     );
-    sqlx::query_as::<_, (i64, i64, Option<i64>, Option<i64>, i64, String, String, String)>(
-        sqlx::AssertSqlSafe(sql.as_str()),
-    )
+    sqlx::query_as::<
+        _,
+        (
+            i64,
+            i64,
+            Option<i64>,
+            Option<i64>,
+            i64,
+            String,
+            String,
+            String,
+        ),
+    >(sqlx::AssertSqlSafe(sql.as_str()))
     .bind(public_id)
     .fetch_optional(conn)
     .await
@@ -4855,7 +4879,15 @@ pub(crate) async fn restore_trashed_media_row(
 ) -> Result<(), MediaRestoreError> {
     let (owner_id, project_id, yarn_id, step_id, kind, was_primary, was_cover) = sqlx::query_as::<
         _,
-        (i64, Option<i64>, Option<i64>, Option<i64>, String, bool, bool),
+        (
+            i64,
+            Option<i64>,
+            Option<i64>,
+            Option<i64>,
+            String,
+            bool,
+            bool,
+        ),
     >(
         "SELECT owner_id, project_id, yarn_id, step_id, kind, is_primary, is_project_cover \
          FROM trashed_media WHERE id = ?",

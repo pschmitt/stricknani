@@ -20,8 +20,9 @@ use serde::{Deserialize, Serialize};
 use crate::trash::{self, TrashError, TrashItem, TrashKind};
 
 use super::{
-    ApiV2State, api_error,
+    ApiV2State,
     access::{resource_mutation_user, resource_user},
+    api_error,
 };
 
 pub(super) fn router() -> Router<ApiV2State> {
@@ -55,9 +56,11 @@ fn trash_error(error: TrashError) -> Response {
             "not_found",
             "Item not found in the trash",
         ),
-        TrashError::Invalid(message) => {
-            api_error(StatusCode::UNPROCESSABLE_ENTITY, "validation_error", message)
-        }
+        TrashError::Invalid(message) => api_error(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "validation_error",
+            message,
+        ),
         TrashError::ParentInTrash => api_error(
             StatusCode::CONFLICT,
             "parent_in_trash",

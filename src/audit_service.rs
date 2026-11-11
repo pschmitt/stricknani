@@ -274,11 +274,17 @@ macro_rules! resource_event_columns {
         (e.details IS NOT NULL) AS legacy_details_present, \
         CASE e.entity_type WHEN 'project' THEN (SELECT name FROM projects WHERE id=e.entity_id) \
           WHEN 'yarn' THEN (SELECT name FROM yarns WHERE id=e.entity_id) \
-          WHEN 'category' THEN (SELECT name FROM categories WHERE id=e.entity_id) END AS current_name, \
+          WHEN 'category' THEN COALESCE((SELECT name FROM categories WHERE id=e.entity_id), \
+            (SELECT name FROM trashed_categories WHERE id=e.entity_id)) END AS current_name, \
         CASE e.entity_type WHEN 'project' THEN (SELECT deleted_at FROM projects WHERE id=e.entity_id) \
-          WHEN 'yarn' THEN (SELECT deleted_at FROM yarns WHERE id=e.entity_id) END AS current_deleted_at, \
+          WHEN 'yarn' THEN (SELECT deleted_at FROM yarns WHERE id=e.entity_id) \
+          WHEN 'category' THEN (SELECT deleted_at FROM trashed_categories WHERE id=e.entity_id) \
+          END AS current_deleted_at, \
         CASE e.entity_type WHEN 'project' THEN (SELECT owner_id FROM projects WHERE id=e.entity_id) \
-          WHEN 'yarn' THEN (SELECT owner_id FROM yarns WHERE id=e.entity_id) END AS current_owner_id, \
+          WHEN 'yarn' THEN (SELECT owner_id FROM yarns WHERE id=e.entity_id) \
+          WHEN 'category' THEN COALESCE((SELECT user_id FROM categories WHERE id=e.entity_id), \
+            (SELECT user_id FROM trashed_categories WHERE id=e.entity_id)) \
+          END AS current_owner_id, \
         CASE e.entity_type \
           WHEN 'project' THEN (SELECT m.public_id FROM media_files AS m \
             JOIN projects AS p ON p.id = m.project_id AND p.owner_id = m.owner_id \
@@ -1108,9 +1114,13 @@ fn make_event(
     } else {
         "gone"
     };
+    // A restore button belongs to events about the item itself. File and step
+    // events are about a child: they link to the Trash page only.
+    let about_the_item = row.get::<Option<String>, _>("media_kind").is_none()
+        && !row.get::<String, _>("action").starts_with("step_");
     let trash = deleted_at
         .as_deref()
-        .filter(|_| in_trash)
+        .filter(|_| in_trash && about_the_item)
         .and_then(|value| chrono::DateTime::parse_from_rfc3339(value).ok())
         .map(|trashed| {
             let trashed = trashed.with_timezone(&chrono::Utc);
@@ -1121,8 +1131,7 @@ fn make_event(
                 }
             };
             AuditTrash {
-                deleted_at: trashed
-                    .to_rfc3339_opts(chrono::SecondsFormat::Micros, true),
+                deleted_at: trashed.to_rfc3339_opts(chrono::SecondsFormat::Micros, true),
                 purge_at: (trashed + chrono::Duration::days(crate::trash::RETENTION_DAYS))
                     .to_rfc3339_opts(chrono::SecondsFormat::Micros, true),
                 days_remaining: crate::trash::days_remaining(trashed, chrono::Utc::now()),

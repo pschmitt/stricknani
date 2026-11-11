@@ -46,6 +46,8 @@ struct ProjectPageQuery {
     q: Option<String>,
     scope: Option<String>,
     owner_id: Option<i64>,
+    /// `only` lists the trashed projects instead of the live ones.
+    trashed: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -89,6 +91,9 @@ pub(super) struct ProjectDto {
     is_favorite: bool,
     created_at: String,
     updated_at: String,
+    /// Set while the project is in the trash (then it is read-only).
+    trashed_at: Option<String>,
+    purge_at: Option<String>,
     preview_url: Option<String>,
     yarn_ids: Vec<i64>,
     steps: Vec<StepDto>,
@@ -137,6 +142,8 @@ impl From<ProjectResponse> for ProjectDto {
             is_favorite: project.is_favorite,
             created_at: project.created_at,
             updated_at: project.updated_at,
+            trashed_at: project.trashed_at,
+            purge_at: project.purge_at,
             preview_url: None,
             yarn_ids: project.yarn_ids,
             steps: project
@@ -302,6 +309,11 @@ async fn list_projects(
             q: query.q,
             scope: query.scope,
             owner_id: query.owner_id,
+            trashed_only: match query.trashed.as_deref() {
+                None => false,
+                Some("only") => true,
+                Some(_) => return validation_error("Invalid query", Some("trashed")),
+            },
         },
         TagPolicy::PreserveLabels,
     )

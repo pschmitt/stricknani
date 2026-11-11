@@ -48,6 +48,10 @@ pub(crate) struct ListQuery {
     /// Administrator-only restriction to one owner's projects.
     #[serde(default)]
     pub(crate) owner_id: Option<i64>,
+    /// List only trashed projects (API v2 `trashed=only`): the caller's own,
+    /// or any account's for administrators. Never set by API v1.
+    #[serde(skip)]
+    pub(crate) trashed_only: bool,
 }
 
 #[derive(Debug, Deserialize)]
@@ -118,6 +122,11 @@ pub(crate) struct ProjectListItem {
     pub(crate) is_favorite: bool,
     pub(crate) updated_at: String,
     pub(crate) preview_url: Option<String>,
+    /// Set while the project is in the trash (API v2 `trashed=only` lists).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) trashed_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) purge_at: Option<String>,
     pub(crate) owner: Option<crate::resource_access::OwnerInfo>,
     /// The caller's role; set on API v2 only.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -142,6 +151,12 @@ pub(crate) struct ProjectResponse {
     pub(crate) is_favorite: bool,
     pub(crate) created_at: String,
     pub(crate) updated_at: String,
+    /// Set while the project is in the trash: only its owner and administrators
+    /// can open it then, read-only (API v2).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) trashed_at: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) purge_at: Option<String>,
     pub(crate) yarn_ids: Vec<i64>,
     pub(crate) steps: Vec<StepResponse>,
     // Media upload/import routes land in a later slice; this DTO returns empty arrays meanwhile.
@@ -242,6 +257,7 @@ struct ProjectRow {
     is_ai_enhanced: bool,
     created_at: String,
     updated_at: String,
+    deleted_at: Option<String>,
 }
 
 #[derive(Debug, FromRow)]
@@ -254,6 +270,7 @@ struct ProjectListRow {
     is_favorite: bool,
     updated_at: String,
     share_role: Option<String>,
+    deleted_at: Option<String>,
 }
 
 #[derive(Debug, FromRow)]
@@ -337,16 +354,20 @@ pub(crate) async fn list_for_owner_with_tag_policy(
     };
     let v2 = matches!(tag_policy, TagPolicy::PreserveLabels);
     // API v2 lists what is shared with the caller next to their own projects.
-    let share_user = (v2 && scope == crate::resource_access::Scope::Mine).then_some(user_id);
+    // The trash is the owner's and the administrators': never through a share.
+    let trashed_only = query.trashed_only;
+    let share_user =
+        (v2 && scope == crate::resource_access::Scope::Mine && !trashed_only).then_some(user_id);
     let rows = sqlx::query_as::<_, ProjectListRow>(
         "SELECT p.id, p.owner_id, p.name, c.name AS category, p.tags, \
                 EXISTS(SELECT 1 FROM user_favorites f \
                        WHERE f.user_id = ? AND f.project_id = p.id) AS is_favorite, \
                 p.updated_at, \
                 (SELECT s.role FROM resource_shares s WHERE s.kind = 'project' \
-                 AND s.resource_id = p.id AND s.user_id = ?) AS share_role \
+                 AND s.resource_id = p.id AND s.user_id = ?) AS share_role, \
+                p.deleted_at \
          FROM projects p LEFT JOIN categories c ON c.id = p.category_id \
-         WHERE p.deleted_at IS NULL \
+         WHERE ((? = 0 AND p.deleted_at IS NULL) OR (? = 1 AND p.deleted_at IS NOT NULL)) \
            AND ((? IS NULL OR p.owner_id = ?) OR (? IS NOT NULL AND EXISTS( \
                 SELECT 1 FROM resource_shares s WHERE s.kind = 'project' \
                 AND s.resource_id = p.id AND s.user_id = ?))) \
@@ -362,6 +383,8 @@ pub(crate) async fn list_for_owner_with_tag_policy(
     )
     .bind(user_id)
     .bind(user_id)
+    .bind(i64::from(trashed_only))
+    .bind(i64::from(trashed_only))
     .bind(owner_filter)
     .bind(owner_filter)
     .bind(share_user)
@@ -417,7 +440,17 @@ pub(crate) async fn list_for_owner_with_tag_policy(
                 .map_err(|_| ProjectError::Database)?,
             );
         }
+        let (trashed_at, purge_at) = crate::trash::trash_times(row.deleted_at.as_deref());
+        let access = access.map(|access| {
+            if trashed_at.is_some() {
+                crate::resource_access::AccessInfo::read_only_trashed(access.role)
+            } else {
+                access
+            }
+        });
         items.push(ProjectListItem {
+            trashed_at,
+            purge_at,
             owner: owners.get(&row.owner_id).cloned().flatten(),
             id: row.id,
             name: row.name,
@@ -1233,22 +1266,32 @@ pub(crate) async fn load_project_with_tag_policy(
     tag_policy: TagPolicy,
 ) -> Result<Option<ProjectResponse>, sqlx::Error> {
     let actor_id = user_id;
-    let Some(grant) = crate::resource_access::grant(
+    let mut grant = crate::resource_access::grant(
         &state.pool,
         actor_id,
         crate::resource_access::ResourceKind::Project,
         project_id,
         tag_policy.surface(),
     )
-    .await?
-    else {
+    .await?;
+    if grant.is_none() && matches!(tag_policy, TagPolicy::PreserveLabels) {
+        // A trashed project opens read-only for its owner and administrators.
+        grant = crate::resource_access::grant_including_trashed(
+            &state.pool,
+            actor_id,
+            crate::resource_access::ResourceKind::Project,
+            project_id,
+        )
+        .await?;
+    }
+    let Some(grant) = grant else {
         return Ok(None);
     };
     let user_id = grant.owner_id;
     let row = sqlx::query_as::<_, ProjectRow>(
         "SELECT p.id, p.name, c.name AS category, p.needles, p.stitch_sample, \
                 p.description, p.notes, p.other_materials, p.tags, p.link, \
-                p.link_archive, p.is_ai_enhanced, p.created_at, p.updated_at \
+                p.link_archive, p.is_ai_enhanced, p.created_at, p.updated_at, p.deleted_at \
          FROM projects p LEFT JOIN categories c ON c.id = p.category_id \
          WHERE p.id = ? AND p.owner_id = ?",
     )
@@ -1288,7 +1331,10 @@ pub(crate) async fn load_project_with_tag_policy(
     let (images, attachments) =
         crate::media::project_media(&state.pool, user_id, project_id).await?;
     let yarn = yarns.first().map(|(_, name)| name.clone());
+    let (trashed_at, purge_at) = crate::trash::trash_times(row.deleted_at.as_deref());
     Ok(Some(ProjectResponse {
+        trashed_at: trashed_at.clone(),
+        purge_at,
         id: row.id,
         name: row.name,
         category: row.category,
@@ -1318,7 +1364,14 @@ pub(crate) async fn load_project_with_tag_policy(
         images,
         attachments,
         owner,
-        access: matches!(tag_policy, TagPolicy::PreserveLabels).then(|| grant.into()),
+        access: matches!(tag_policy, TagPolicy::PreserveLabels).then(|| {
+            let access = crate::resource_access::AccessInfo::from(grant);
+            if trashed_at.is_some() {
+                crate::resource_access::AccessInfo::read_only_trashed(access.role)
+            } else {
+                access
+            }
+        }),
     }))
 }
 

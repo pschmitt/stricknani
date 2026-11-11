@@ -245,7 +245,8 @@ async fn projects_crud_conflict_favorites_and_sanitized_html_share_owner_operati
         .fetch_one(&pool)
         .await
         .unwrap(),
-        3
+        // created, updated, the step the update left out (step_trashed), trashed
+        4
     );
 }
 
