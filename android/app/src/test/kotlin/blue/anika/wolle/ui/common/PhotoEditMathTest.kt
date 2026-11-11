@@ -15,6 +15,51 @@ class PhotoEditMathTest {
     private val minW = 0.1f
     private val minH = 0.1f
 
+    private fun assertBox(expected: CropBox, actual: CropBox) {
+        val eps = 1e-5f
+        assertEquals(expected.left, actual.left, eps)
+        assertEquals(expected.top, actual.top, eps)
+        assertEquals(expected.right, actual.right, eps)
+        assertEquals(expected.bottom, actual.bottom, eps)
+    }
+
+    // (x, y, w, h) = (0.1, 0.2, 0.3, 0.4)
+    private val sample = CropBox(0.1f, 0.2f, 0.4f, 0.6f)
+
+    @Test
+    fun rotateCropClockwise() {
+        // (0.4, 0.1, 0.4, 0.3)
+        assertBox(CropBox(0.4f, 0.1f, 0.8f, 0.4f), PhotoEditMath.rotateCrop(sample, 1))
+    }
+
+    @Test
+    fun rotateCropCounterClockwise() {
+        // (0.2, 0.6, 0.4, 0.3)
+        assertBox(CropBox(0.2f, 0.6f, 0.6f, 0.9f), PhotoEditMath.rotateCrop(sample, -1))
+    }
+
+    @Test
+    fun rotateCropHalfTurn() {
+        // (0.6, 0.4, 0.3, 0.4)
+        assertBox(CropBox(0.6f, 0.4f, 0.9f, 0.8f), PhotoEditMath.rotateCrop(sample, 2))
+    }
+
+    @Test
+    fun rotateCropFourTurnsReturnsTheOriginal() {
+        assertBox(sample, PhotoEditMath.rotateCrop(sample, 4))
+        var turned = sample
+        repeat(4) { turned = PhotoEditMath.rotateCrop(turned, 1) }
+        assertBox(sample, turned)
+        assertBox(sample, PhotoEditMath.rotateCrop(PhotoEditMath.rotateCrop(sample, 1), -1))
+    }
+
+    @Test
+    fun rotateCropKeepsAWholeBoxWholeAndClamps() {
+        assertBox(CropBox.Whole, PhotoEditMath.rotateCrop(CropBox.Whole, 1))
+        val out = PhotoEditMath.rotateCrop(CropBox(0.8f, 0.8f, 1.2f, 1.2f), 1)
+        assertTrue(out.left >= 0f && out.top >= 0f && out.right <= 1f && out.bottom <= 1f)
+    }
+
     @Test
     fun rotationFoldsIntoQuarterTurns() {
         assertEquals(270, PhotoEditMath.rotateBy(0, -1))

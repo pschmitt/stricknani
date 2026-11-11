@@ -273,7 +273,7 @@ fun PhotoEditorDialog(
                         modifier = Modifier.weight(1f),
                     ) {
                         rotation = PhotoEditMath.rotateBy(rotation, -1)
-                        crop = CropBox.Whole
+                        crop = PhotoEditMath.rotateCrop(crop, -1)
                     }
                     ToolButton(
                         Icons.AutoMirrored.Filled.RotateRight,
@@ -282,7 +282,7 @@ fun PhotoEditorDialog(
                         modifier = Modifier.weight(1f),
                     ) {
                         rotation = PhotoEditMath.rotateBy(rotation, 1)
-                        crop = CropBox.Whole
+                        crop = PhotoEditMath.rotateCrop(crop, 1)
                     }
                     ToolButton(
                         Icons.Filled.Restore,

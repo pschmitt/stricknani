@@ -47,6 +47,27 @@ export function rotateBy(rotation: Rotation, quarterTurns: number): Rotation {
   return normalizeRotation(rotation + quarterTurns * 90);
 }
 
+/**
+ * Carry a crop box through a quarter-turn rotation of the image, so it frames the same picture
+ * content afterwards. Positive is clockwise: (x, y, w, h) becomes (1 - y - h, x, h, w); a
+ * counter-clockwise turn is (y, 1 - x - w, h, w). The result is clamped to the image.
+ */
+export function rotateCrop(crop: CropBox, quarterTurns: number): CropBox {
+  const turns = ((Math.round(quarterTurns) % 4) + 4) % 4;
+  let { x, y, width, height } = crop;
+  for (let i = 0; i < turns; i++) {
+    [x, y, width, height] = [1 - y - height, x, height, width];
+  }
+  width = clamp(width, 0, 1);
+  height = clamp(height, 0, 1);
+  return {
+    x: clamp(x, 0, 1 - width),
+    y: clamp(y, 0, 1 - height),
+    width,
+    height,
+  };
+}
+
 /** Size of the image after the rotation is applied. */
 export function rotatedSize(natural: Size, rotation: Rotation): Size {
   return rotation === 90 || rotation === 270

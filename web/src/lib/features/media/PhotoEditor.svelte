@@ -20,6 +20,7 @@
     pointToFraction,
     resizeCrop,
     rotateBy,
+    rotateCrop,
     rotatedSize,
     type CropBox,
     type CropHandle,
@@ -162,8 +163,8 @@
   function turn(quarterTurns: number): void {
     if (saving) return;
     rotation = rotateBy(rotation, quarterTurns);
-    // The box was drawn on the previous orientation; start over on the new one.
-    crop = fullCrop();
+    // Carry the box along so it keeps framing the same part of the picture.
+    crop = clampCrop(rotateCrop(crop, quarterTurns), minCrop);
     errorMessage = "";
   }
 

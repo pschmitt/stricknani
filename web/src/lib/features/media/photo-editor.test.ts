@@ -19,12 +19,58 @@ import {
   projectImageEditPath,
   resizeCrop,
   rotateBy,
+  rotateCrop,
   rotatedSize,
   updateAltText,
   yarnPhotoEditPath,
 } from "./photo-editor";
 
 const min = { width: 0.1, height: 0.1 };
+
+describe("rotateCrop", () => {
+  const box = { x: 0.1, y: 0.2, width: 0.3, height: 0.4 };
+  const close = (a: typeof box, b: typeof box): void => {
+    expect(a.x).toBeCloseTo(b.x, 9);
+    expect(a.y).toBeCloseTo(b.y, 9);
+    expect(a.width).toBeCloseTo(b.width, 9);
+    expect(a.height).toBeCloseTo(b.height, 9);
+  };
+
+  it("maps a clockwise quarter turn", () => {
+    close(rotateCrop(box, 1), { x: 0.4, y: 0.1, width: 0.4, height: 0.3 });
+  });
+
+  it("maps a counter-clockwise quarter turn", () => {
+    close(rotateCrop(box, -1), { x: 0.2, y: 0.6, width: 0.4, height: 0.3 });
+  });
+
+  it("maps a half turn", () => {
+    close(rotateCrop(box, 2), { x: 0.6, y: 0.4, width: 0.3, height: 0.4 });
+  });
+
+  it("returns the original after four quarter turns", () => {
+    close(rotateCrop(box, 4), box);
+    let turned = box;
+    for (let i = 0; i < 4; i++) turned = rotateCrop(turned, 1);
+    close(turned, box);
+  });
+
+  it("undoes a turn with the opposite turn", () => {
+    close(rotateCrop(rotateCrop(box, 1), -1), box);
+  });
+
+  it("keeps a full crop full", () => {
+    close(rotateCrop(fullCrop(), 1), fullCrop());
+  });
+
+  it("clamps to the image", () => {
+    const out = rotateCrop({ x: 0.8, y: 0.8, width: 0.4, height: 0.4 }, 1);
+    expect(out.x).toBeGreaterThanOrEqual(0);
+    expect(out.y).toBeGreaterThanOrEqual(0);
+    expect(out.x + out.width).toBeLessThanOrEqual(1);
+    expect(out.y + out.height).toBeLessThanOrEqual(1);
+  });
+});
 
 describe("rotation", () => {
   it("normalizes to quarter turns", () => {
