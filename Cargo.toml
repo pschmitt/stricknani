@@ -56,7 +56,7 @@ jni = "0.22"
 [dev-dependencies]
 sentry = { version = "0.49", default-features = false, features = ["test"] }
 http-body-util = "0.1"
-rsa = { version = "=0.9.10", features = ["pem"] }
+rsa = "=0.10.0"
 
 # age encryption and decryption run scrypt (hundreds of MiB, ~1s in release): keep
 # debug test builds usable.
