@@ -787,6 +787,24 @@
                       <span>{t("Linked logins", locale)}</span>
                     </button>
                   {/if}
+                  <a
+                    class="action-overflow__item"
+                    role="menuitem"
+                    href={`/app/projects?owner=${user.id}`}
+                    onclick={() => close()}
+                  >
+                    <NavIcon name="projects" />
+                    <span>{t("Projects", locale)}</span>
+                  </a>
+                  <a
+                    class="action-overflow__item"
+                    role="menuitem"
+                    href={`/app/yarns?owner=${user.id}`}
+                    onclick={() => close()}
+                  >
+                    <NavIcon name="yarns" />
+                    <span>{t("Yarns", locale)}</span>
+                  </a>
                   <button
                     class="action-overflow__item"
                     role="menuitem"
@@ -1145,7 +1163,7 @@
     display: grid;
     /* Fixed tracks (no content-sized ones): every row is its own grid, so any auto or
        max-content track would differ per row and misalign the columns. */
-    grid-template-columns: minmax(0, 1fr) 9rem 6.5rem 24rem;
+    grid-template-columns: minmax(0, 1fr) 9rem 6.5rem 10.5rem;
     align-items: center;
     gap: 0.8rem;
     padding: 0.6rem 0.75rem 0.6rem 1rem;
@@ -1227,7 +1245,7 @@
     /* Disable/Enable with its label, then the overflow menu with the other actions. */
     grid-template-columns: 7.25rem 44px;
     align-items: center;
-    justify-content: start;
+    justify-content: end;
     gap: 0.35rem;
   }
   .action-slot {

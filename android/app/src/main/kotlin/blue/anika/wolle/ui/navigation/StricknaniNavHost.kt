@@ -463,7 +463,13 @@ fun StricknaniNavHost(
                     )
                 }
                 screen<Route.AdminAccounts>(motion) {
-                    AdminAccountsScreen(onBack = { navController.navigateUp() })
+                    AdminAccountsScreen(
+                        onBack = { navController.navigateUp() },
+                        onOpenUserProjects = { id ->
+                            navController.navigate(projectsOwnedByRoute(id))
+                        },
+                        onOpenUserYarns = { id -> navController.navigate(yarnsOwnedByRoute(id)) },
+                    )
                 }
                 screen<Route.Libraries>(motion) {
                     LibrariesScreen(onBack = { navController.navigateUp() })
