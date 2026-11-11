@@ -123,6 +123,7 @@ describe("yarn browser API contract", () => {
       id: 8,
       name: "Lake socks",
       category: "Socks",
+      preview_url: "/media/thumbnails/projects/8/current-cover.jpg",
       images: [
         {
           id: 2,
@@ -143,6 +144,14 @@ describe("yarn browser API contract", () => {
         Response.json({
           data: {
             ...project,
+            preview_url: "/media/thumbnails/projects/9/other.jpg",
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          data: {
+            ...project,
             images: [
               {
                 ...project.images[0],
@@ -157,9 +166,12 @@ describe("yarn browser API contract", () => {
       id: 8,
       name: "Lake socks",
       category: "Socks",
-      preview_url: "/media/thumbnails/projects/8/title.jpg",
+      preview_url: "/media/thumbnails/projects/8/current-cover.jpg",
     });
     expect(fetchMock.mock.calls[0]?.[0]).toBe("/api/v2/projects/8");
+    await expect(getLinkedProject(8)).rejects.toMatchObject({
+      code: "invalid_response",
+    });
     await expect(getLinkedProject(8)).rejects.toMatchObject({
       code: "invalid_response",
     });

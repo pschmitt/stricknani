@@ -183,10 +183,13 @@ export async function getLinkedProject(
     projectId !== id ||
     typeof project.name !== "string" ||
     !nullableString(project.category) ||
+    !nullableString(project.preview_url) ||
+    (project.preview_url !== null &&
+      !ownerProjectThumbnailUrl(project.preview_url, projectId)) ||
     !Array.isArray(project.images)
   )
     throw invalidResponse();
-  const images = project.images.map((value: unknown) => {
+  project.images.forEach((value: unknown) => {
     if (
       !record(value) ||
       !positiveInteger(value.id) ||
@@ -194,19 +197,12 @@ export async function getLinkedProject(
       !ownerProjectThumbnailUrl(value.thumbnail_url, projectId)
     )
       throw invalidResponse();
-    return {
-      is_title_image: value.is_title_image,
-      thumbnail_url: value.thumbnail_url,
-    };
   });
   return {
     id: projectId,
     name: project.name,
     category: project.category,
-    preview_url:
-      images.find((image) => image.is_title_image)?.thumbnail_url ??
-      images[0]?.thumbnail_url ??
-      null,
+    preview_url: project.preview_url,
   };
 }
 
