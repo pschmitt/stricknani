@@ -26,6 +26,7 @@ pub(super) fn router() -> Router<ApiV2State> {
     Router::new()
         .route("/projects", get(list_projects).post(create_project))
         .route("/projects/tags", get(list_project_tags))
+        .route("/projects/owners", get(list_project_owners))
         .route(
             "/projects/{project_id}",
             get(get_project).put(update_project).delete(delete_project),
@@ -48,6 +49,7 @@ struct ProjectPageQuery {
     tag: Option<String>,
     favorite: Option<bool>,
     status: Option<String>,
+    owner: Option<String>,
     q: Option<String>,
     scope: Option<String>,
     owner_id: Option<i64>,
@@ -309,6 +311,7 @@ async fn list_projects(
             tag: query.tag,
             favorite: query.favorite,
             status: query.status,
+            owner: query.owner,
             q: query.q,
             scope: query.scope,
             owner_id: query.owner_id,
@@ -360,6 +363,26 @@ async fn list_project_tags(
         Err(_) => return validation_error("Invalid query", None),
     };
     match project_service::tag_counts_for_scope(&state.app, user_id, query.scope.as_deref()).await {
+        Ok(data) => Json(Envelope { data }).into_response(),
+        Err(error) => project_error(error),
+    }
+}
+
+/// The owners (other than the caller) of the visible projects: the owner filter's options.
+async fn list_project_owners(
+    State(state): State<ApiV2State>,
+    headers: HeaderMap,
+    query: Result<Query<ProjectTagQuery>, QueryRejection>,
+) -> Response {
+    let user_id = match resource_user(&state.app, &headers).await {
+        Ok(user_id) => user_id,
+        Err(response) => return *response,
+    };
+    let Query(query) = match query {
+        Ok(query) => query,
+        Err(_) => return validation_error("Invalid query", None),
+    };
+    match project_service::owners_for_scope(&state.app, user_id, query.scope.as_deref()).await {
         Ok(data) => Json(Envelope { data }).into_response(),
         Err(error) => project_error(error),
     }

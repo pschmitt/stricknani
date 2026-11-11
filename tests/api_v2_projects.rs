@@ -749,24 +749,27 @@ async fn project_create_links_a_stash_yarn_creates_a_new_one_or_links_none() {
 #[tokio::test]
 async fn project_status_defaults_writes_filters_and_toggles() {
     let (app, pool) = fixture().await;
-    db::create_user(&pool, "status@example.test", "status-password-long".to_owned())
-        .await
-        .unwrap();
-    db::create_user(&pool, "other@example.test", "other-password-long".to_owned())
-        .await
-        .unwrap();
+    db::create_user(
+        &pool,
+        "status@example.test",
+        "status-password-long".to_owned(),
+    )
+    .await
+    .unwrap();
+    db::create_user(
+        &pool,
+        "other@example.test",
+        "other-password-long".to_owned(),
+    )
+    .await
+    .unwrap();
     let (session, csrf) = signed_in(&app, "status@example.test", "status-password-long").await;
     let (other_session, other_csrf) =
         signed_in(&app, "other@example.test", "other-password-long").await;
 
     // Default and explicit status on create.
-    let (code, first) = create_project_json(
-        &app,
-        &session,
-        &csrf,
-        serde_json::json!({"name": "Socks"}),
-    )
-    .await;
+    let (code, first) =
+        create_project_json(&app, &session, &csrf, serde_json::json!({"name": "Socks"})).await;
     assert_eq!(code, StatusCode::CREATED);
     assert_eq!(first["data"]["status"], "in_progress");
     let first_id = first["data"]["id"].as_i64().unwrap();
@@ -843,7 +846,11 @@ async fn project_status_defaults_writes_filters_and_toggles() {
         names.sort();
         assert_eq!(names, expected, "filter {query}");
         for item in body["data"].as_array().unwrap() {
-            let want = if item["name"] == "Hat" { "done" } else { "in_progress" };
+            let want = if item["name"] == "Hat" {
+                "done"
+            } else {
+                "in_progress"
+            };
             assert_eq!(item["status"], want);
         }
     }

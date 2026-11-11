@@ -77,6 +77,9 @@ pub(crate) struct ListQuery {
     /// Administrator-only restriction to one owner's yarns.
     #[serde(default)]
     pub(crate) owner_id: Option<i64>,
+    /// `mine` (alias `me`), `shared` or an owner id; API v2 only, v1 ignores it.
+    #[serde(default)]
+    pub(crate) owner: Option<String>,
 }
 
 #[derive(Debug, FromRow)]
@@ -273,6 +276,13 @@ pub(crate) async fn list_for_owner(
     };
 
     let v2 = surface == crate::resource_access::Surface::V2;
+    let owner_choice = if v2 {
+        crate::resource_access::OwnerFilter::parse(query.owner.as_deref())
+            .map_err(|()| YarnError::Invalid("Invalid owner"))?
+    } else {
+        None
+    };
+    let (owner_eq, owner_ne) = crate::resource_access::OwnerFilter::binds(owner_choice, user_id);
     // API v2 lists what is shared with the caller, directly or through a
     // shared project, next to their own yarns.
     let share_user = (v2 && scope == crate::resource_access::Scope::Mine).then_some(user_id);
@@ -293,6 +303,8 @@ pub(crate) async fn list_for_owner(
                 OR COALESCE(yarns.colorway, '') LIKE ?5 ESCAPE '!' \
                 OR COALESCE(yarns.fiber_content, '') LIKE ?5 ESCAPE '!' \
                 OR COALESCE(yarns.notes, '') LIKE ?5 ESCAPE '!') \
+           AND (?8 IS NULL OR yarns.owner_id = ?8) \
+           AND (?9 IS NULL OR yarns.owner_id != ?9) \
          ORDER BY updated_at DESC, id DESC LIMIT ?6 OFFSET ?7"
     );
     let rows = sqlx::query_as::<_, YarnListRow>(sqlx::AssertSqlSafe(list_sql.as_str()))
@@ -307,6 +319,8 @@ pub(crate) async fn list_for_owner(
         .bind(search_pattern.as_deref())
         .bind(PAGE_SIZE + 1)
         .bind((page - 1).saturating_mul(PAGE_SIZE))
+        .bind(owner_eq)
+        .bind(owner_ne)
         .fetch_all(&state.pool)
         .await
         .map_err(|_| YarnError::Database)?;
@@ -1231,4 +1245,30 @@ fn yarn_not_found() -> Response {
 
 fn database_error() -> Response {
     error_response(StatusCode::INTERNAL_SERVER_ERROR, json!("database error"))
+}
+
+/// The owners, other than the caller, of the yarns the caller sees (API v2).
+pub(crate) async fn owners_for_scope(
+    state: &AppState,
+    user_id: i64,
+    requested_scope: Option<&str>,
+) -> Result<Vec<crate::resource_access::OwnerInfo>, YarnError> {
+    let requested = requested_scope
+        .map(|value| {
+            crate::resource_access::Scope::parse(value).ok_or(YarnError::Invalid("Invalid scope"))
+        })
+        .transpose()?
+        .unwrap_or(crate::resource_access::Scope::Mine);
+    let scope = crate::resource_access::effective_scope(&state.pool, user_id, Some(requested))
+        .await
+        .map_err(|_| YarnError::Database)?;
+    crate::resource_access::visible_owners(
+        &state.pool,
+        user_id,
+        crate::resource_access::ResourceKind::Yarn,
+        scope,
+        state.gravatar.enabled,
+    )
+    .await
+    .map_err(|_| YarnError::Database)
 }

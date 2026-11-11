@@ -2305,3 +2305,160 @@ async fn recipients_cannot_reshare_a_yarn_through_a_link() {
     .await;
     assert_eq!(status, StatusCode::NOT_FOUND);
 }
+
+fn owner_names(list: &Value) -> Vec<String> {
+    list["data"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|owner| owner["name"].as_str().unwrap().to_owned())
+        .collect()
+}
+
+#[tokio::test]
+async fn owner_filter_narrows_lists_and_options_never_reveal_unseen_owners() {
+    let f = fx().await;
+    let vp = project(&f.pool, f.vera, "Vera's own").await;
+    let bp = project(&f.pool, f.ben, "Ben's shared").await;
+    let hidden = project(&f.pool, f.ben, "Ben's private").await;
+    insert_share(&f.pool, "project", bp, f.vera, "viewer", f.ben).await;
+
+    // Vera: her own project, Anika's shared shawl, Ben's shared project.
+    let list = |query: String, who: &'static str| {
+        let app = f.app.clone();
+        async move {
+            let (status, body) = call(
+                &app,
+                "GET",
+                &format!("/api/v2/projects{query}"),
+                Some(who),
+                None,
+            )
+            .await;
+            assert_eq!(status, StatusCode::OK, "{query}");
+            body
+        }
+    };
+    assert_eq!(ids(&list("".to_owned(), "vera").await), vec![f.p1, vp, bp]);
+    assert_eq!(
+        ids(&list("?owner=all".to_owned(), "vera").await),
+        vec![f.p1, vp, bp]
+    );
+    assert_eq!(ids(&list("?owner=mine".to_owned(), "vera").await), vec![vp]);
+    assert_eq!(
+        ids(&list("?owner=shared".to_owned(), "vera").await),
+        vec![f.p1, bp]
+    );
+    let anika = format!("?owner={}", f.anika);
+    assert_eq!(ids(&list(anika, "vera").await), vec![f.p1]);
+    // An owner the caller cannot see items of yields an empty list, never their items.
+    let ben = format!("?owner={}&status=in_progress", f.ben);
+    let ben_list = list(ben, "eddie").await;
+    assert!(ids(&ben_list).is_empty());
+    let ben = format!("?owner={}", f.ben);
+    assert!(!ids(&list(ben, "eddie").await).contains(&hidden));
+    // Combines with the status filter.
+    sqlx::query("UPDATE projects SET status = 'done' WHERE id = ?")
+        .bind(bp)
+        .execute(&f.pool)
+        .await
+        .unwrap();
+    assert_eq!(
+        ids(&list("?owner=shared&status=done".to_owned(), "vera").await),
+        vec![bp]
+    );
+    // Bad values are rejected.
+    for bad in ["?owner=nobody", "?owner=-3", "?owner=0"] {
+        let (status, _) = call(
+            &f.app,
+            "GET",
+            &format!("/api/v2/projects{bad}"),
+            Some("vera"),
+            None,
+        )
+        .await;
+        assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{bad}");
+    }
+
+    // Options: names only (no email), never the caller, never owners of unseen items.
+    let (_, owners) = call(&f.app, "GET", "/api/v2/projects/owners", Some("vera"), None).await;
+    assert_eq!(owner_names(&owners), vec!["Anika", "Ben"]);
+    assert!(
+        owners["data"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|owner| owner["email"] == "")
+    );
+    let (_, owners) = call(
+        &f.app,
+        "GET",
+        "/api/v2/projects/owners",
+        Some("eddie"),
+        None,
+    )
+    .await;
+    assert_eq!(owner_names(&owners), vec!["Anika"]);
+    let (_, owners) = call(&f.app, "GET", "/api/v2/projects/owners", Some("nora"), None).await;
+    assert!(owner_names(&owners).is_empty());
+    // A member asking for scope=all still only sees their own visible set.
+    let (_, owners) = call(
+        &f.app,
+        "GET",
+        "/api/v2/projects/owners?scope=all",
+        Some("eddie"),
+        None,
+    )
+    .await;
+    assert_eq!(owner_names(&owners), vec!["Anika"]);
+    // An administrator sees every other owner, with emails.
+    let (_, owners) = call(
+        &f.app,
+        "GET",
+        "/api/v2/projects/owners?scope=all",
+        Some("admin"),
+        None,
+    )
+    .await;
+    assert_eq!(owner_names(&owners), vec!["Anika", "Ben", "Vera"]);
+    assert_eq!(owners["data"][0]["email"], "anika@example.test");
+
+    // Yarns: yvonne sees Anika's shared alpaca only.
+    let (_, owners) = call(&f.app, "GET", "/api/v2/yarns/owners", Some("yvonne"), None).await;
+    assert_eq!(owner_names(&owners), vec!["Anika"]);
+    let (_, shared) = call(
+        &f.app,
+        "GET",
+        "/api/v2/yarns?owner=shared",
+        Some("yvonne"),
+        None,
+    )
+    .await;
+    assert_eq!(ids(&shared), vec![f.y2]);
+    let (_, mine) = call(
+        &f.app,
+        "GET",
+        "/api/v2/yarns?owner=mine",
+        Some("yvonne"),
+        None,
+    )
+    .await;
+    assert!(ids(&mine).is_empty());
+    let (_, owners) = call(&f.app, "GET", "/api/v2/yarns/owners", Some("nick"), None).await;
+    assert!(owner_names(&owners).is_empty());
+    let (status, _) = call(&f.app, "GET", "/api/v2/yarns?owner=x", Some("yvonne"), None).await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+    let (status, _) = call(&f.app, "GET", "/api/v2/yarns/owners", None, None).await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+
+    // API v1 ignores the parameter.
+    let (_, v1) = call(
+        &f.app,
+        "GET",
+        "/api/v1/projects?owner=shared",
+        Some("vera"),
+        None,
+    )
+    .await;
+    assert_eq!(v1["items"].as_array().unwrap().len(), 1);
+}

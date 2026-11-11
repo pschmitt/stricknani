@@ -633,7 +633,12 @@ async fn v1_projects_neither_expose_nor_accept_status() {
     assert_eq!(stored, "in_progress", "v1 writes ignore status");
     let listed = app
         .clone()
-        .oneshot(request("GET", "/api/v1/projects?status=done", OWNER_TOKEN, None))
+        .oneshot(request(
+            "GET",
+            "/api/v1/projects?status=done",
+            OWNER_TOKEN,
+            None,
+        ))
         .await
         .unwrap();
     assert_eq!(listed.status(), StatusCode::OK);

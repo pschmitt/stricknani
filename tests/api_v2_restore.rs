@@ -1516,13 +1516,12 @@ async fn restore_keeps_project_status_and_defaults_missing_or_unknown_to_in_prog
          "yarn_ids": [], "images": [], "attachments": []},
     ]);
     restore_ok(&f, "dora", archive(projects, Vec::new())).await;
-    let rows: Vec<(String, String)> = sqlx::query_as(
-        "SELECT name, status FROM projects WHERE owner_id = ? ORDER BY name",
-    )
-    .bind(f.dora)
-    .fetch_all(&f.pool)
-    .await
-    .unwrap();
+    let rows: Vec<(String, String)> =
+        sqlx::query_as("SELECT name, status FROM projects WHERE owner_id = ? ORDER BY name")
+            .bind(f.dora)
+            .fetch_all(&f.pool)
+            .await
+            .unwrap();
     assert_eq!(
         rows,
         vec![

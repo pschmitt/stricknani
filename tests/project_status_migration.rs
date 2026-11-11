@@ -14,8 +14,10 @@ async fn migration_0032_marks_existing_projects_in_progress_and_checks_values() 
         .unwrap();
 
     // Everything before 0032: the database as deployed before project status.
-    let dir =
-        std::env::temp_dir().join(format!("stricknani-status-migration-{}", std::process::id()));
+    let dir = std::env::temp_dir().join(format!(
+        "stricknani-status-migration-{}",
+        std::process::id()
+    ));
     std::fs::create_dir_all(&dir).unwrap();
     for entry in std::fs::read_dir(concat!(env!("CARGO_MANIFEST_DIR"), "/migrations")).unwrap() {
         let path = entry.unwrap().path();
@@ -37,11 +39,12 @@ async fn migration_0032_marks_existing_projects_in_progress_and_checks_values() 
         .unwrap();
     std::fs::remove_dir_all(&dir).unwrap();
 
-    let user_id = sqlx::query("INSERT INTO users (email, password_hash) VALUES ('a@example.invalid', 'x')")
-        .execute(&pool)
-        .await
-        .unwrap()
-        .last_insert_rowid();
+    let user_id =
+        sqlx::query("INSERT INTO users (email, password_hash) VALUES ('a@example.invalid', 'x')")
+            .execute(&pool)
+            .await
+            .unwrap()
+            .last_insert_rowid();
     let project_id = sqlx::query(
         "INSERT INTO projects (owner_id, name, created_at, updated_at) \
          VALUES (?, 'Old cardigan', '2020-01-01T00:00:00Z', '2020-01-01T00:00:00Z')",

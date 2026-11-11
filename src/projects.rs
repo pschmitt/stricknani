@@ -44,6 +44,9 @@ pub(crate) struct ListQuery {
     /// `in_progress` or `done`; API v2 only, v1 ignores it.
     #[serde(default)]
     pub(crate) status: Option<String>,
+    /// `mine` (alias `me`), `shared` or an owner id; API v2 only, v1 ignores it.
+    #[serde(default)]
+    pub(crate) owner: Option<String>,
     pub(crate) q: Option<String>,
     /// `mine` or `all`; administrators default to `all`, everyone else is always `mine`.
     #[serde(default)]
@@ -347,12 +350,23 @@ pub(crate) async fn list_for_owner_with_tag_policy(
         .filter(|value| !value.is_empty());
     let search_pattern = search.as_deref().map(literal_like_pattern);
     let favorite = query.favorite.map(i64::from);
-    let status = match (tag_policy, query.status.as_deref().filter(|v| !v.is_empty())) {
+    let status = match (
+        tag_policy,
+        query.status.as_deref().filter(|v| !v.is_empty()),
+    ) {
         (TagPolicy::PreserveLabels, Some(value)) => {
             Some(parse_status(value).ok_or(ProjectError::Invalid("Invalid status"))?)
         }
         _ => None,
     };
+    let owner_choice = match tag_policy {
+        TagPolicy::PreserveLabels => {
+            crate::resource_access::OwnerFilter::parse(query.owner.as_deref())
+                .map_err(|()| ProjectError::Invalid("Invalid owner"))?
+        }
+        TagPolicy::Legacy => None,
+    };
+    let (owner_eq, owner_ne) = crate::resource_access::OwnerFilter::binds(owner_choice, user_id);
     let requested_scope = match query.scope.as_deref() {
         None => None,
         Some(value) => Some(
@@ -390,6 +404,8 @@ pub(crate) async fn list_for_owner_with_tag_policy(
            AND (? IS NULL OR EXISTS(SELECT 1 FROM user_favorites f \
                                     WHERE f.user_id = ? AND f.project_id = p.id) = ?) \
            AND (? IS NULL OR p.status = ?) \
+           AND (? IS NULL OR p.owner_id = ?) \
+           AND (? IS NULL OR p.owner_id != ?) \
          ORDER BY p.updated_at DESC, p.id DESC LIMIT ? OFFSET ?",
     )
     .bind(user_id)
@@ -412,6 +428,10 @@ pub(crate) async fn list_for_owner_with_tag_policy(
     .bind(favorite)
     .bind(status)
     .bind(status)
+    .bind(owner_eq)
+    .bind(owner_eq)
+    .bind(owner_ne)
+    .bind(owner_ne)
     .bind(PAGE_SIZE + 1)
     .bind((page - 1).saturating_mul(PAGE_SIZE))
     .fetch_all(&state.pool)
@@ -1913,4 +1933,31 @@ fn database_error() -> Response {
 
 fn error_response(status: StatusCode, detail: Value) -> Response {
     (status, Json(ErrorResponse { detail })).into_response()
+}
+
+/// The owners, other than the caller, of the projects the caller sees (API v2).
+pub(crate) async fn owners_for_scope(
+    state: &AppState,
+    user_id: i64,
+    requested_scope: Option<&str>,
+) -> Result<Vec<crate::resource_access::OwnerInfo>, ProjectError> {
+    let requested = requested_scope
+        .map(|value| {
+            crate::resource_access::Scope::parse(value)
+                .ok_or(ProjectError::Invalid("Invalid scope"))
+        })
+        .transpose()?
+        .unwrap_or(crate::resource_access::Scope::Mine);
+    let scope = crate::resource_access::effective_scope(&state.pool, user_id, Some(requested))
+        .await
+        .map_err(|_| ProjectError::Database)?;
+    crate::resource_access::visible_owners(
+        &state.pool,
+        user_id,
+        crate::resource_access::ResourceKind::Project,
+        scope,
+        state.gravatar.enabled,
+    )
+    .await
+    .map_err(|_| ProjectError::Database)
 }
