@@ -183,6 +183,9 @@ struct ProjectIn {
     is_ai_enhanced: bool,
     #[serde(default, deserialize_with = "null_default")]
     is_favorite: bool,
+    /// Absent in archives from before project status; unknown values restore as in progress.
+    #[serde(default)]
+    status: Option<String>,
     created_at: Option<String>,
     #[serde(default, deserialize_with = "null_default")]
     yarn_ids: Vec<i64>,
@@ -1054,8 +1057,8 @@ async fn insert_all(
         let id = sqlx::query_scalar::<_, i64>(
             "INSERT INTO projects (owner_id, category_id, name, needles, stitch_sample, \
              description, notes, other_materials, tags, link, link_archive, is_ai_enhanced, \
-             created_at, updated_at) \
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+             status, created_at, updated_at) \
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
         )
         .bind(user_id)
         .bind(category)
@@ -1069,6 +1072,13 @@ async fn insert_all(
         .bind(clean(project.link.as_deref()))
         .bind(clean(project.link_archive.as_deref()))
         .bind(project.is_ai_enhanced)
+        .bind(
+            project
+                .status
+                .as_deref()
+                .and_then(crate::projects::parse_status)
+                .unwrap_or(crate::projects::STATUS_IN_PROGRESS),
+        )
         .bind(created_at(project.created_at.as_deref(), now))
         .bind(&updated)
         .fetch_one(&mut *tx)

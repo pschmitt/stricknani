@@ -745,3 +745,223 @@ async fn project_create_links_a_stash_yarn_creates_a_new_one_or_links_none() {
     assert!(status.is_client_error());
     assert_eq!(yarn_count(&pool, owner_id).await, before);
 }
+
+#[tokio::test]
+async fn project_status_defaults_writes_filters_and_toggles() {
+    let (app, pool) = fixture().await;
+    db::create_user(&pool, "status@example.test", "status-password-long".to_owned())
+        .await
+        .unwrap();
+    db::create_user(&pool, "other@example.test", "other-password-long".to_owned())
+        .await
+        .unwrap();
+    let (session, csrf) = signed_in(&app, "status@example.test", "status-password-long").await;
+    let (other_session, other_csrf) =
+        signed_in(&app, "other@example.test", "other-password-long").await;
+
+    // Default and explicit status on create.
+    let (code, first) = create_project_json(
+        &app,
+        &session,
+        &csrf,
+        serde_json::json!({"name": "Socks"}),
+    )
+    .await;
+    assert_eq!(code, StatusCode::CREATED);
+    assert_eq!(first["data"]["status"], "in_progress");
+    let first_id = first["data"]["id"].as_i64().unwrap();
+    let (_, second) = create_project_json(
+        &app,
+        &session,
+        &csrf,
+        serde_json::json!({"name": "Hat", "status": "done"}),
+    )
+    .await;
+    assert_eq!(second["data"]["status"], "done");
+    let second_id = second["data"]["id"].as_i64().unwrap();
+
+    // Invalid values are rejected on create, update, toggle and filter.
+    let (code, rejected) = create_project_json(
+        &app,
+        &session,
+        &csrf,
+        serde_json::json!({"name": "Bad", "status": "archived"}),
+    )
+    .await;
+    assert_eq!(code, StatusCode::UNPROCESSABLE_ENTITY);
+    assert_eq!(rejected["error"]["fields"]["status"], "Invalid value");
+    let bad_toggle = app
+        .clone()
+        .oneshot(browser_request(
+            "PUT",
+            &format!("/projects/{first_id}/status"),
+            &session,
+            Some(&csrf),
+            Some(serde_json::json!({"status": "paused"}).to_string()),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(bad_toggle.status(), StatusCode::UNPROCESSABLE_ENTITY);
+    let bad_filter = app
+        .clone()
+        .oneshot(browser_request(
+            "GET",
+            "/projects?status=paused",
+            &session,
+            None,
+            None,
+        ))
+        .await
+        .unwrap();
+    assert_eq!(bad_filter.status(), StatusCode::UNPROCESSABLE_ENTITY);
+
+    // Filtering, in the list payload too.
+    for (query, expected) in [
+        ("", vec!["Hat", "Socks"]),
+        ("?status=in_progress", vec!["Socks"]),
+        ("?status=done", vec!["Hat"]),
+    ] {
+        let response = app
+            .clone()
+            .oneshot(browser_request(
+                "GET",
+                &format!("/projects{query}"),
+                &session,
+                None,
+                None,
+            ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = json(response).await;
+        let mut names: Vec<_> = body["data"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|item| item["name"].as_str().unwrap().to_owned())
+            .collect();
+        names.sort();
+        assert_eq!(names, expected, "filter {query}");
+        for item in body["data"].as_array().unwrap() {
+            let want = if item["name"] == "Hat" { "done" } else { "in_progress" };
+            assert_eq!(item["status"], want);
+        }
+    }
+
+    // A full update without a status keeps it; with one it changes it.
+    let current = json(
+        app.clone()
+            .oneshot(browser_request(
+                "GET",
+                &format!("/projects/{second_id}"),
+                &session,
+                None,
+                None,
+            ))
+            .await
+            .unwrap(),
+    )
+    .await;
+    let updated = app
+        .clone()
+        .oneshot(browser_request(
+            "PUT",
+            &format!("/projects/{second_id}"),
+            &session,
+            Some(&csrf),
+            Some(
+                serde_json::json!({
+                    "name": "Hat",
+                    "expected_updated_at": current["data"]["updated_at"],
+                })
+                .to_string(),
+            ),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(updated.status(), StatusCode::OK);
+    let updated = json(updated).await;
+    assert_eq!(updated["data"]["status"], "done");
+    let reopened = app
+        .clone()
+        .oneshot(browser_request(
+            "PUT",
+            &format!("/projects/{second_id}"),
+            &session,
+            Some(&csrf),
+            Some(
+                serde_json::json!({
+                    "name": "Hat",
+                    "status": "in_progress",
+                    "expected_updated_at": updated["data"]["updated_at"],
+                })
+                .to_string(),
+            ),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(json(reopened).await["data"]["status"], "in_progress");
+
+    // The quick toggle changes the status, bumps updated_at only on a change,
+    // and a repeated request is a no-op.
+    let before = json(
+        app.clone()
+            .oneshot(browser_request(
+                "GET",
+                &format!("/projects/{first_id}"),
+                &session,
+                None,
+                None,
+            ))
+            .await
+            .unwrap(),
+    )
+    .await["data"]["updated_at"]
+        .clone();
+    let mut stamps = Vec::new();
+    for _ in 0..2 {
+        let response = app
+            .clone()
+            .oneshot(browser_request(
+                "PUT",
+                &format!("/projects/{first_id}/status"),
+                &session,
+                Some(&csrf),
+                Some(serde_json::json!({"status": "done"}).to_string()),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = json(response).await;
+        assert_eq!(body["data"]["status"], "done");
+        stamps.push(body["data"]["updated_at"].clone());
+    }
+    assert_ne!(stamps[0], before);
+    assert_eq!(stamps[0], stamps[1]);
+
+    // Needs CSRF and write access.
+    let no_csrf = app
+        .clone()
+        .oneshot(browser_request(
+            "PUT",
+            &format!("/projects/{first_id}/status"),
+            &session,
+            None,
+            Some(serde_json::json!({"status": "in_progress"}).to_string()),
+        ))
+        .await
+        .unwrap();
+    assert!(no_csrf.status().is_client_error());
+    let foreign = app
+        .clone()
+        .oneshot(browser_request(
+            "PUT",
+            &format!("/projects/{first_id}/status"),
+            &other_session,
+            Some(&other_csrf),
+            Some(serde_json::json!({"status": "in_progress"}).to_string()),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(foreign.status(), StatusCode::NOT_FOUND);
+}

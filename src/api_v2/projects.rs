@@ -34,6 +34,10 @@ pub(super) fn router() -> Router<ApiV2State> {
             "/projects/{project_id}/favorite",
             axum::routing::put(favorite_project).delete(unfavorite_project),
         )
+        .route(
+            "/projects/{project_id}/status",
+            axum::routing::put(set_project_status),
+        )
         .layer(DefaultBodyLimit::max(2 * 1024 * 1024))
 }
 
@@ -43,6 +47,7 @@ struct ProjectPageQuery {
     category: Option<String>,
     tag: Option<String>,
     favorite: Option<bool>,
+    status: Option<String>,
     q: Option<String>,
     scope: Option<String>,
     owner_id: Option<i64>,
@@ -87,6 +92,7 @@ pub(super) struct ProjectDto {
     link_archive: Option<String>,
     is_ai_enhanced: bool,
     is_favorite: bool,
+    status: String,
     created_at: String,
     updated_at: String,
     preview_url: Option<String>,
@@ -135,6 +141,9 @@ impl From<ProjectResponse> for ProjectDto {
             link_archive: project.link_archive,
             is_ai_enhanced: project.is_ai_enhanced,
             is_favorite: project.is_favorite,
+            status: project
+                .status
+                .unwrap_or_else(|| project_service::STATUS_IN_PROGRESS.to_owned()),
             created_at: project.created_at,
             updated_at: project.updated_at,
             preview_url: None,
@@ -299,6 +308,7 @@ async fn list_projects(
             category: query.category,
             tag: query.tag,
             favorite: query.favorite,
+            status: query.status,
             q: query.q,
             scope: query.scope,
             owner_id: query.owner_id,
@@ -493,6 +503,39 @@ async fn unfavorite_project(
     set_favorite(state, headers, project_id, false).await
 }
 
+#[derive(Deserialize)]
+struct StatusRequest {
+    status: String,
+}
+
+async fn set_project_status(
+    State(state): State<ApiV2State>,
+    headers: HeaderMap,
+    Path(project_id): Path<i64>,
+    payload: Result<Json<StatusRequest>, JsonRejection>,
+) -> Response {
+    let user_id = match resource_mutation_user(&state.app, &headers).await {
+        Ok(user_id) => user_id,
+        Err(response) => return *response,
+    };
+    let Json(payload) = match payload {
+        Ok(payload) => payload,
+        Err(rejection) => return json_rejection(rejection),
+    };
+    if project_service::parse_status(&payload.status).is_none() {
+        return validation_error("Project fields are invalid", Some("status"));
+    }
+    match project_service::set_status_for_owner(&state.app, user_id, project_id, &payload.status)
+        .await
+    {
+        Ok(project) => match project_dto_v2(&state, user_id, project).await {
+            Ok(project) => Json(Envelope { data: project }).into_response(),
+            Err(_) => project_error(ProjectError::Database),
+        },
+        Err(error) => project_error(error),
+    }
+}
+
 async fn set_favorite(
     state: ApiV2State,
     headers: HeaderMap,
@@ -524,6 +567,13 @@ fn validate_project(payload: &ProjectWriteRequest) -> Option<Response> {
     let name = payload.name.trim();
     if name.is_empty() || name.len() > 256 {
         return validation_error("Project fields are invalid", Some("name")).into();
+    }
+    if payload
+        .status
+        .as_deref()
+        .is_some_and(|value| project_service::parse_status(value).is_none())
+    {
+        return validation_error("Project fields are invalid", Some("status")).into();
     }
     if payload
         .expected_updated_at

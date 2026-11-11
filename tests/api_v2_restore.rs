@@ -1503,3 +1503,32 @@ async fn only_one_restore_per_user_runs_at_a_time() {
     // The slot is free again.
     restore_ok(&f, "cara", valid()).await;
 }
+
+#[tokio::test]
+async fn restore_keeps_project_status_and_defaults_missing_or_unknown_to_in_progress() {
+    let f = fixture().await;
+    let projects = json!([
+        {"id": 1, "name": "Finished", "status": "done", "tags": [], "steps": [],
+         "yarn_ids": [], "images": [], "attachments": []},
+        {"id": 2, "name": "Old export", "tags": [], "steps": [],
+         "yarn_ids": [], "images": [], "attachments": []},
+        {"id": 3, "name": "Odd", "status": "paused", "tags": [], "steps": [],
+         "yarn_ids": [], "images": [], "attachments": []},
+    ]);
+    restore_ok(&f, "dora", archive(projects, Vec::new())).await;
+    let rows: Vec<(String, String)> = sqlx::query_as(
+        "SELECT name, status FROM projects WHERE owner_id = ? ORDER BY name",
+    )
+    .bind(f.dora)
+    .fetch_all(&f.pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        rows,
+        vec![
+            ("Finished".to_owned(), "done".to_owned()),
+            ("Odd".to_owned(), "in_progress".to_owned()),
+            ("Old export".to_owned(), "in_progress".to_owned()),
+        ]
+    );
+}
