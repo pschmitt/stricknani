@@ -416,7 +416,7 @@ pub fn match_stash(yarns: &[YarnImportDraft], stash: &[StashYarn]) -> Vec<StashM
 /// All of the user's own yarns for matching (bounded).
 pub async fn load_stash(pool: &SqlitePool, owner_id: i64) -> Vec<StashYarn> {
     sqlx::query_as::<_, (i64, String, Option<String>)>(
-        "SELECT id, name, brand FROM yarns WHERE owner_id = ? ORDER BY id LIMIT 5000",
+        "SELECT id, name, brand FROM yarns WHERE owner_id = ? AND deleted_at IS NULL ORDER BY id LIMIT 5000",
     )
     .bind(owner_id)
     .fetch_all(pool)

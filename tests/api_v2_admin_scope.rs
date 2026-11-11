@@ -390,7 +390,7 @@ async fn admin_reads_edits_favourites_and_deletes_foreign_project_through_v2() {
     assert_eq!(tombstone, f.anika_id);
     let deleted_actor: i64 = sqlx::query_scalar(
         "SELECT actor_user_id FROM audit_events WHERE entity_type='project' AND entity_id=? \
-         AND action='deleted'",
+         AND action='trashed'",
     )
     .bind(id)
     .fetch_one(&f.pool)
@@ -616,7 +616,7 @@ async fn admin_media_on_foreign_items_is_stored_under_the_owner_and_audited_to_t
     .await;
     assert_eq!(status, StatusCode::NO_CONTENT);
     let removed: i64 = sqlx::query_scalar(
-        "SELECT actor_user_id FROM audit_events WHERE action='removed' AND entity_type='yarn'",
+        "SELECT actor_user_id FROM audit_events WHERE action='trashed' AND entity_type='yarn'",
     )
     .fetch_one(&f.pool)
     .await

@@ -259,10 +259,13 @@ pub(crate) fn visible_sql(kind: ResourceKind, alias: &str, param: usize) -> Stri
          AND s.resource_id = {alias}.id AND s.user_id = ?{param})",
         kind = kind.as_str()
     );
+    // Trashed rows are visible to nobody until they are restored.
     match kind {
-        ResourceKind::Project => format!("({alias}.owner_id = ?{param} OR {direct})"),
+        ResourceKind::Project => {
+            format!("({alias}.deleted_at IS NULL AND ({alias}.owner_id = ?{param} OR {direct}))")
+        }
         ResourceKind::Yarn => format!(
-            "({alias}.owner_id = ?{param} OR {direct} OR {derived})",
+            "({alias}.deleted_at IS NULL AND ({alias}.owner_id = ?{param} OR {direct} OR {derived}))",
             derived = derived_yarn_sql(alias, param)
         ),
     }
@@ -273,7 +276,8 @@ pub(crate) fn visible_sql(kind: ResourceKind, alias: &str, param: usize) -> Stri
 pub(crate) fn derived_yarn_sql(alias: &str, param: usize) -> String {
     format!(
         "EXISTS(SELECT 1 FROM project_yarns py JOIN projects dp ON dp.id = py.project_id \
-         WHERE py.yarn_id = {alias}.id AND (dp.owner_id = ?{param} OR EXISTS( \
+         WHERE py.yarn_id = {alias}.id AND dp.deleted_at IS NULL \
+         AND (dp.owner_id = ?{param} OR EXISTS( \
          SELECT 1 FROM resource_shares ds WHERE ds.kind = 'project' \
          AND ds.resource_id = dp.id AND ds.user_id = ?{param})))"
     )
@@ -293,6 +297,29 @@ pub(crate) async fn grant(
     resource_id: i64,
     surface: Surface,
 ) -> Result<Option<Grant>, sqlx::Error> {
+    grant_in(pool, actor_id, kind, resource_id, surface, false).await
+}
+
+/// [`grant`] for the trash: also resolves rows that were moved to the trash.
+/// Only the owner and administrators get a grant on a trashed row; shares
+/// and derived access are suspended while it is trashed.
+pub(crate) async fn grant_including_trashed(
+    pool: &SqlitePool,
+    actor_id: i64,
+    kind: ResourceKind,
+    resource_id: i64,
+) -> Result<Option<Grant>, sqlx::Error> {
+    grant_in(pool, actor_id, kind, resource_id, Surface::V2, true).await
+}
+
+async fn grant_in(
+    pool: &SqlitePool,
+    actor_id: i64,
+    kind: ResourceKind,
+    resource_id: i64,
+    surface: Surface,
+    include_trashed: bool,
+) -> Result<Option<Grant>, sqlx::Error> {
     let derived = match kind {
         ResourceKind::Project => "0".to_owned(),
         ResourceKind::Yarn => derived_yarn_sql("r", 1),
@@ -304,9 +331,14 @@ pub(crate) async fn grant(
                 (SELECT s.role FROM resource_shares s WHERE s.kind = '{kind}' \
                     AND s.resource_id = r.id AND s.user_id = ?1), \
                 {derived} \
-         FROM {table} r WHERE r.id = ?2",
+         FROM {table} r WHERE r.id = ?2{trashed}",
         kind = kind.as_str(),
         table = kind.table(),
+        trashed = if include_trashed {
+            ""
+        } else {
+            " AND r.deleted_at IS NULL"
+        },
     );
     let row = sqlx::query_as::<_, (i64, bool, bool, Option<String>, bool)>(sqlx::AssertSqlSafe(
         sql.as_str(),
@@ -318,6 +350,9 @@ pub(crate) async fn grant(
     let Some((owner_id, admin, active, role, derived)) = row else {
         return Ok(None);
     };
+    if include_trashed && owner_id != actor_id && !admin {
+        return Ok(None);
+    }
     if owner_id == actor_id {
         return Ok(Some(Grant {
             owner_id,

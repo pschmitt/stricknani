@@ -283,7 +283,8 @@ pub(crate) async fn list_for_owner(
                  AND s.resource_id = yarns.id AND s.user_id = ?1) AS share_role, \
                 {derived} AS is_derived \
          FROM yarns \
-         WHERE ((?2 IS NULL OR owner_id = ?2) OR (?3 IS NOT NULL AND (EXISTS( \
+         WHERE yarns.deleted_at IS NULL \
+           AND ((?2 IS NULL OR owner_id = ?2) OR (?3 IS NOT NULL AND (EXISTS( \
                 SELECT 1 FROM resource_shares s WHERE s.kind = 'yarn' \
                 AND s.resource_id = yarns.id AND s.user_id = ?3) OR {derived}))) \
            AND (?4 IS NULL OR EXISTS (SELECT 1 FROM user_favorite_yarns f \
@@ -738,7 +739,7 @@ pub(crate) async fn delete_for_owner(
     )
     .bind(user_id)
     .bind(yarn_id)
-    .bind(deleted_at)
+    .bind(&deleted_at)
     .execute(&mut *tx)
     .await
     .is_err()
@@ -746,11 +747,18 @@ pub(crate) async fn delete_for_owner(
         let _ = tx.rollback().await;
         return Err(YarnError::Database);
     }
-    let deleted = sqlx::query("DELETE FROM yarns WHERE id = ? AND owner_id = ?")
-        .bind(yarn_id)
-        .bind(user_id)
-        .execute(&mut *tx)
-        .await;
+    // Soft delete: the row, its photos, links and shares stay in the trash
+    // until it is restored or purged.
+    let deleted = sqlx::query(
+        "UPDATE yarns SET deleted_at = ?, deleted_by = ? \
+         WHERE id = ? AND owner_id = ? AND deleted_at IS NULL",
+    )
+    .bind(&deleted_at)
+    .bind(actor_id)
+    .bind(yarn_id)
+    .bind(user_id)
+    .execute(&mut *tx)
+    .await;
     match deleted {
         Ok(result) if result.rows_affected() == 1 => {}
         Ok(_) => {
@@ -769,13 +777,14 @@ pub(crate) async fn delete_for_owner(
         let _ = tx.rollback().await;
         return Err(YarnError::Database);
     }
-    if audit::record_with_data(
+    if audit::record_lifecycle(
         &mut tx,
-        actor_id,
+        Some(actor_id),
+        user_id,
         Entity::Yarn,
         yarn_id,
-        Action::Deleted,
-        Some(&old_name),
+        Action::Trashed,
+        &old_name,
         None,
     )
     .await
@@ -784,6 +793,87 @@ pub(crate) async fn delete_for_owner(
         let _ = tx.rollback().await;
         return Err(YarnError::Database);
     }
+    tx.commit().await.map_err(|_| YarnError::Database)
+}
+
+/// Take a yarn out of the trash. Only its owner or an administrator may.
+///
+/// Like a restored project, the yarn reappears for everyone who could see it
+/// (shares and links to projects were kept) and sync clients fetch it again.
+pub(crate) async fn restore_for_actor(
+    state: &AppState,
+    actor_id: i64,
+    yarn_id: i64,
+) -> Result<(), YarnError> {
+    use crate::resource_access::{Need, ResourceKind};
+    let grant = crate::resource_access::grant_including_trashed(
+        &state.pool,
+        actor_id,
+        ResourceKind::Yarn,
+        yarn_id,
+    )
+    .await
+    .map_err(|_| YarnError::Database)?
+    .ok_or(YarnError::NotFound)?;
+    if !Need::Manage.allows(grant.access) {
+        return Err(YarnError::Forbidden);
+    }
+    let owner_id = grant.owner_id;
+    let mut tx = crate::db::begin_write(&state.pool)
+        .await
+        .map_err(|_| YarnError::Database)?;
+    let (name, previous, deleted_at) = sqlx::query_as::<_, (String, String, Option<String>)>(
+        "SELECT name, updated_at, deleted_at FROM yarns WHERE id = ? AND owner_id = ?",
+    )
+    .bind(yarn_id)
+    .bind(owner_id)
+    .fetch_optional(&mut *tx)
+    .await
+    .map_err(|_| YarnError::Database)?
+    .ok_or(YarnError::NotFound)?;
+    if deleted_at.is_none() {
+        return Err(YarnError::NotFound);
+    }
+    let candidates = crate::sharing::yarn_candidates(&mut tx, yarn_id, owner_id)
+        .await
+        .map_err(|_| YarnError::Database)?;
+    let watch = crate::sharing::watch(&mut tx, candidates)
+        .await
+        .map_err(|_| YarnError::Database)?;
+    let updated_at = newer_timestamp(&previous);
+    sqlx::query(
+        "UPDATE yarns SET deleted_at = NULL, deleted_by = NULL, updated_at = ? \
+         WHERE id = ? AND owner_id = ?",
+    )
+    .bind(updated_at)
+    .bind(yarn_id)
+    .bind(owner_id)
+    .execute(&mut *tx)
+    .await
+    .map_err(|_| YarnError::Database)?;
+    sqlx::query("DELETE FROM deletion_events WHERE entity_type = 'yarn' AND entity_id = ?")
+        .bind(yarn_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|_| YarnError::Database)?;
+    bump_linked_project_timestamps(&mut tx, owner_id, yarn_id)
+        .await
+        .map_err(|_| YarnError::Database)?;
+    crate::sharing::settle(&mut tx, watch, false)
+        .await
+        .map_err(|_| YarnError::Database)?;
+    audit::record_lifecycle(
+        &mut tx,
+        Some(actor_id),
+        owner_id,
+        Entity::Yarn,
+        yarn_id,
+        Action::Restored,
+        &name,
+        None,
+    )
+    .await
+    .map_err(|_| YarnError::Database)?;
     tx.commit().await.map_err(|_| YarnError::Database)
 }
 
@@ -982,7 +1072,7 @@ async fn yarn_response(
     let project_sql = format!(
         "SELECT p.id FROM projects p \
          JOIN project_yarns py ON py.project_id = p.id \
-         WHERE py.yarn_id = ?1 AND ((?3 AND p.owner_id = ?2) OR (?4 AND {})) ORDER BY p.id",
+         WHERE py.yarn_id = ?1 AND p.deleted_at IS NULL AND ((?3 AND p.owner_id = ?2) OR (?4 AND {})) ORDER BY p.id",
         crate::resource_access::visible_sql(crate::resource_access::ResourceKind::Project, "p", 5)
     );
     let project_ids = sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(project_sql.as_str()))

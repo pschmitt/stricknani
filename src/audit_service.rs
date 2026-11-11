@@ -119,7 +119,23 @@ pub(crate) struct AuditResource {
     pub(crate) name_source: &'static str,
     pub(crate) href: Option<String>,
     pub(crate) preview_url: Option<String>,
+    /// False while the resource is in the trash and once it is gone.
     pub(crate) exists: bool,
+    /// `active`, `in_trash` or `gone` (purged, or hard-deleted before the trash existed).
+    pub(crate) state: &'static str,
+    /// Present while the resource is in the trash.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) trash: Option<AuditTrash>,
+}
+
+/// Where a trashed resource stands: when it goes, and whether this viewer may restore it.
+#[derive(Clone, Debug, Serialize)]
+pub(crate) struct AuditTrash {
+    pub(crate) deleted_at: String,
+    pub(crate) purge_at: String,
+    pub(crate) days_remaining: i64,
+    /// Only the owner and administrators may restore; the Trash page lists the item.
+    pub(crate) can_restore: bool,
 }
 
 /// URLs of a current picture that a change label refers to.
@@ -174,6 +190,9 @@ pub(crate) struct AuditEvent {
     /// The administrator who made this change while acting as the actor.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) impersonated_by: Option<AuditImpersonator>,
+    /// No account caused this event: the automatic purge of the trash.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub(crate) system: bool,
 }
 
 /// An administrator who acted as another account. The email is only given to
@@ -256,6 +275,10 @@ macro_rules! resource_event_columns {
         CASE e.entity_type WHEN 'project' THEN (SELECT name FROM projects WHERE id=e.entity_id) \
           WHEN 'yarn' THEN (SELECT name FROM yarns WHERE id=e.entity_id) \
           WHEN 'category' THEN (SELECT name FROM categories WHERE id=e.entity_id) END AS current_name, \
+        CASE e.entity_type WHEN 'project' THEN (SELECT deleted_at FROM projects WHERE id=e.entity_id) \
+          WHEN 'yarn' THEN (SELECT deleted_at FROM yarns WHERE id=e.entity_id) END AS current_deleted_at, \
+        CASE e.entity_type WHEN 'project' THEN (SELECT owner_id FROM projects WHERE id=e.entity_id) \
+          WHEN 'yarn' THEN (SELECT owner_id FROM yarns WHERE id=e.entity_id) END AS current_owner_id, \
         CASE e.entity_type \
           WHEN 'project' THEN (SELECT m.public_id FROM media_files AS m \
             JOIN projects AS p ON p.id = m.project_id AND p.owner_id = m.owner_id \
@@ -588,6 +611,10 @@ pub(crate) struct ActivityItem {
     pub(crate) entity_id: i64,
     pub(crate) entity_name: Option<String>,
     pub(crate) exists: bool,
+    /// `active`, `in_trash` or `gone`, as on audit resources.
+    pub(crate) state: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) trash: Option<AuditTrash>,
     pub(crate) href: Option<String>,
     pub(crate) thumbnail_url: Option<String>,
     pub(crate) actor: ActivityActor,
@@ -656,6 +683,8 @@ fn activity_item(
         entity_id: event.entity_id,
         entity_name: current.or(snapshot),
         exists: event.resource.exists,
+        state: event.resource.state,
+        trash: event.resource.trash,
         href: event.resource.href,
         thumbnail_url: event.resource.preview_url,
         actor: ActivityActor {
@@ -677,7 +706,10 @@ impl ActivityItem {
             || self.entity_id != older.entity_id
             || self.action != older.action
             || self.actor_user_id != older.actor_user_id
-            || matches!(self.action.as_str(), "created" | "deleted")
+            || matches!(
+                self.action.as_str(),
+                "created" | "deleted" | "trashed" | "restored" | "purged"
+            )
         {
             return false;
         }
@@ -1065,7 +1097,41 @@ fn make_event(
         (None, "unavailable")
     };
     let kind = Entity::parse(&entity_type);
-    let exists = current_name_present(row);
+    let present = current_name_present(row);
+    let deleted_at = row.get::<Option<String>, _>("current_deleted_at");
+    let in_trash = present && deleted_at.is_some();
+    let exists = present && !in_trash;
+    let state = if exists {
+        "active"
+    } else if in_trash {
+        "in_trash"
+    } else {
+        "gone"
+    };
+    let trash = deleted_at
+        .as_deref()
+        .filter(|_| in_trash)
+        .and_then(|value| chrono::DateTime::parse_from_rfc3339(value).ok())
+        .map(|trashed| {
+            let trashed = trashed.with_timezone(&chrono::Utc);
+            let can_restore = match audience {
+                AuditAudience::Administrator => true,
+                AuditAudience::Owner { viewer_id, .. } => {
+                    row.get::<Option<i64>, _>("current_owner_id") == Some(viewer_id)
+                }
+            };
+            AuditTrash {
+                deleted_at: trashed
+                    .to_rfc3339_opts(chrono::SecondsFormat::Micros, true),
+                purge_at: (trashed + chrono::Duration::days(crate::trash::RETENTION_DAYS))
+                    .to_rfc3339_opts(chrono::SecondsFormat::Micros, true),
+                days_remaining: crate::trash::days_remaining(trashed, chrono::Utc::now()),
+                can_restore,
+            }
+        });
+    // Administrators still read a trashed item's pictures; owners do not (the
+    // media routes hide it until it is restored).
+    let show_preview = exists || (in_trash && matches!(audience, AuditAudience::Administrator));
     let preview_media_id = row.get::<Option<i64>, _>("current_preview_media_id");
     let resource = AuditResource {
         kind,
@@ -1095,7 +1161,7 @@ fn make_event(
             },
             AuditAudience::Owner { .. } => None,
         }),
-        preview_url: if exists {
+        preview_url: if show_preview {
             kind.and_then(|kind| {
                 let media_kind = match kind {
                     Entity::Project => "image",
@@ -1132,6 +1198,8 @@ fn make_event(
             None
         },
         exists,
+        state,
+        trash,
     };
     let media = make_media(row, kind, entity_id, audience);
     let has_changes = row.get::<bool, _>("safe_changes_present")
@@ -1192,6 +1260,9 @@ fn make_event(
             }
         },
         legacy_actor_user_id: row.get("legacy_actor_user_id"),
+        system: row.get::<Option<i64>, _>("actor_user_id").is_none()
+            && row.get::<Option<i64>, _>("legacy_actor_user_id").is_none()
+            && row.get::<String, _>("action") == "purged",
         entity_type,
         entity_id,
         action: row.get("action"),

@@ -42,9 +42,7 @@ impl Entity {
 pub(crate) enum Action {
     Created,
     Updated,
-    Deleted,
     Uploaded,
-    Removed,
     /// A project or yarn was shared with another account.
     Shared,
     ShareRoleChanged,
@@ -58,6 +56,16 @@ pub(crate) enum Action {
     TimerStopped,
     /// The accumulated timer total was edited by hand.
     TimerTotalChanged,
+    /// A project or yarn was moved to the trash.
+    Trashed,
+    /// A project or yarn was taken out of the trash.
+    Restored,
+    /// A trashed project or yarn was destroyed, by hand or after the retention period.
+    Purged,
+    /// The same three steps for one step of a project (the event is on the project).
+    StepTrashed,
+    StepRestored,
+    StepPurged,
 }
 
 impl Action {
@@ -65,9 +73,7 @@ impl Action {
         match self {
             Self::Created => "created",
             Self::Updated => "updated",
-            Self::Deleted => "deleted",
             Self::Uploaded => "uploaded",
-            Self::Removed => "removed",
             Self::Shared => "shared",
             Self::ShareRoleChanged => "share_role_changed",
             Self::ShareRevoked => "share_revoked",
@@ -76,6 +82,12 @@ impl Action {
             Self::TimerStarted => "timer_started",
             Self::TimerStopped => "timer_stopped",
             Self::TimerTotalChanged => "timer_total_changed",
+            Self::Trashed => "trashed",
+            Self::Restored => "restored",
+            Self::Purged => "purged",
+            Self::StepTrashed => "step_trashed",
+            Self::StepRestored => "step_restored",
+            Self::StepPurged => "step_purged",
         }
     }
 }
@@ -560,7 +572,7 @@ pub(crate) async fn record_with_media(
 ) -> Result<(), sqlx::Error> {
     record_event(
         tx,
-        actor_id,
+        Some(actor_id),
         entity,
         target_id,
         action,
@@ -628,7 +640,7 @@ pub(crate) async fn record_with_data(
 ) -> Result<(), sqlx::Error> {
     record_event(
         tx,
-        actor_id,
+        Some(actor_id),
         entity,
         target_id,
         action,
@@ -639,10 +651,44 @@ pub(crate) async fn record_with_data(
     .await
 }
 
+/// Record a trash lifecycle step (`trashed`, `restored`, `purged`). The owner
+/// is the event's subject whenever somebody else (an administrator) or no
+/// account (the automatic purge) acted, so the log reads "restored X's project".
+#[allow(clippy::too_many_arguments)]
+pub(crate) async fn record_lifecycle(
+    tx: &mut Transaction<'_, Sqlite>,
+    actor_id: Option<i64>,
+    owner_id: i64,
+    entity: Entity,
+    target_id: i64,
+    action: Action,
+    resource_name: &str,
+    media: Option<&MediaRef>,
+) -> Result<(), sqlx::Error> {
+    record_event(
+        tx,
+        actor_id,
+        entity,
+        target_id,
+        action,
+        Some(resource_name),
+        None,
+        media,
+    )
+    .await?;
+    if actor_id != Some(owner_id) {
+        sqlx::query("UPDATE audit_events SET subject_user_id = ? WHERE id = last_insert_rowid()")
+            .bind(owner_id)
+            .execute(&mut **tx)
+            .await?;
+    }
+    Ok(())
+}
+
 #[allow(clippy::too_many_arguments)]
 async fn record_event(
     tx: &mut Transaction<'_, Sqlite>,
-    actor_id: i64,
+    actor_id: Option<i64>,
     entity: Entity,
     target_id: i64,
     action: Action,

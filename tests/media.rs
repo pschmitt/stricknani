@@ -416,7 +416,7 @@ async fn project_image_upload_serving_authorization_and_gc_are_safe() {
     .expect("media audit events should be queryable");
     assert_eq!(
         media_audit_actions,
-        vec!["uploaded", "uploaded", "uploaded", "removed"]
+        vec!["uploaded", "uploaded", "uploaded", "trashed"]
             .into_iter()
             .map(str::to_owned)
             .collect::<Vec<_>>()
@@ -527,7 +527,7 @@ async fn attachments_download_safely_and_yarn_photos_promote_primary() {
     .expect("attachment audit events should be queryable");
     assert_eq!(
         attachment_audit,
-        vec!["uploaded", "removed"]
+        vec!["uploaded", "trashed"]
             .into_iter()
             .map(str::to_owned)
             .collect::<Vec<_>>()
@@ -599,7 +599,7 @@ async fn attachments_download_safely_and_yarn_photos_promote_primary() {
     assert_eq!(second_delete.status(), StatusCode::NO_CONTENT);
     let yarn_remove_events: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM audit_events WHERE actor_user_id = ? AND entity_type = 'yarn' \
-         AND entity_id = ? AND action = 'removed'",
+         AND entity_id = ? AND action = 'trashed'",
     )
     .bind(harness.owner_id)
     .bind(harness.yarn_id)

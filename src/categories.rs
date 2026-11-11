@@ -363,6 +363,14 @@ pub(crate) async fn delete_for_owner(
             .await
             .map_err(|_| CategoryError::Database)?
             .ok_or(CategoryError::NotFound)?;
+    // Move it to the trash first (it remembers the projects that use it),
+    // then remove the live row; the sync triggers emit the tombstone.
+    if crate::trash::trash_category(&mut tx, user_id, user_id, category_id, &old_name)
+        .await
+        .is_err()
+    {
+        return Err(CategoryError::Database);
+    }
     if bump_category_projects(&mut tx, user_id, category_id)
         .await
         .is_err()
@@ -376,26 +384,20 @@ pub(crate) async fn delete_for_owner(
         .await;
     match result {
         Ok(result) if result.rows_affected() == 1 => {
-            if audit::record_with_data(
-                &mut tx,
-                user_id,
-                Entity::Category,
-                category_id,
-                Action::Deleted,
-                Some(&old_name),
-                None,
-            )
-            .await
-            .is_err()
-            {
-                let _ = tx.rollback().await;
-                return Err(CategoryError::Database);
-            }
             tx.commit().await.map_err(|_| CategoryError::Database)
         }
         Ok(_) => Err(CategoryError::NotFound),
         Err(_) => Err(CategoryError::Database),
     }
+}
+
+/// [`bump_category_projects`] for the trash's restore.
+pub(crate) async fn bump_projects_in(
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    user_id: i64,
+    category_id: i64,
+) -> Result<(), sqlx::Error> {
+    bump_category_projects(tx, user_id, category_id).await
 }
 
 async fn bump_category_projects(

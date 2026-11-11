@@ -325,6 +325,26 @@ async fn serve() -> Result<(), &'static str> {
             tokio::time::sleep(std::time::Duration::from_secs(30)).await;
         }
     });
+    // Trashed projects and yarns are destroyed after the retention period
+    // (see stricknani_server::trash).
+    let trash_pool = state.pool.clone();
+    let trash_purge = tokio::spawn(async move {
+        loop {
+            match stricknani_server::trash::purge_expired(&trash_pool, chrono::Utc::now()).await {
+                Ok(0) => {}
+                Ok(purged) => {
+                    tracing::info!(component = "trash", purged, "trash.purged");
+                    // More may be due: sweep again without waiting.
+                    continue;
+                }
+                Err(_) => {
+                    sentry::capture_message("trash.purge.failed", sentry::Level::Error);
+                    tracing::warn!(component = "trash", "trash.purge.failed");
+                }
+            }
+            tokio::time::sleep(std::time::Duration::from_secs(60 * 60)).await;
+        }
+    });
     // Imports that were running when the server stopped never finish: mark them failed.
     if stricknani_server::import_drafts::fail_interrupted(
         &state.pool,
@@ -418,6 +438,7 @@ async fn serve() -> Result<(), &'static str> {
     )
     .with_graceful_shutdown(shutdown_signal())
     .await;
+    trash_purge.abort();
     cleanup.abort();
     push_worker.abort();
     if let Some(worker) = archive_worker {

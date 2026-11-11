@@ -580,7 +580,7 @@ async fn project_media_events_name_the_file_and_reorders_record_the_new_order() 
     assert_eq!(status, StatusCode::NO_CONTENT);
     let events = recorded(&fixture.pool, "project", id).await;
     let removed = events.last().unwrap();
-    assert_eq!(removed.action, "removed");
+    assert_eq!(removed.action, "trashed");
     assert_eq!(removed.media_kind.as_deref(), Some("attachment"));
     assert_eq!(removed.media_name.as_deref(), Some("chart.png"));
 }
@@ -725,7 +725,7 @@ async fn android_edit_sequence_leaves_only_events_with_renderable_details() {
     assert_eq!(
         actions,
         [
-            "created", "updated", "uploaded", "uploaded", "removed", "removed", "updated",
+            "created", "updated", "uploaded", "uploaded", "trashed", "trashed", "updated",
             "uploaded"
         ]
     );
@@ -738,7 +738,7 @@ async fn android_edit_sequence_leaves_only_events_with_renderable_details() {
             "event {event} has nothing to render"
         );
         if event["media"]["id"] != live_id
-            && (event["action"] == "uploaded" || event["action"] == "removed")
+            && (event["action"] == "uploaded" || event["action"] == "trashed")
         {
             assert!(has_media);
             // Both pictures were removed afterwards: say so instead of linking.
