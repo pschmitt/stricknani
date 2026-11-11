@@ -86,7 +86,9 @@ private class MarkdownTextContextMenuProvider : TextContextMenuProvider {
         Popup(
             popupPositionProvider = MarkdownMenuPositionProvider(menu.dataProvider, coordinates),
             onDismissRequest = menu::close,
-            properties = PopupProperties(focusable = true),
+            // Keep text-field focus so opening the menu does not hide the keyboard or clear
+            // selection. The provider still closes it when the selection session ends.
+            properties = PopupProperties(focusable = false),
         ) {
             Column(
                 Modifier.background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp))
