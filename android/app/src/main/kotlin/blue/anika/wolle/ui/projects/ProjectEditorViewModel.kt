@@ -858,8 +858,8 @@ constructor(
 
     /** Deletes the project, but only for a confirmation that was given for this exact project. */
     fun delete(confirmedProjectId: Int) {
-        val id =
-            DeleteConfirmation.targetToDelete(
+        val confirmed =
+            DeleteConfirmation.confirm(
                 requestedId = confirmedProjectId,
                 currentId = route.projectId,
                 loaded = _isLoaded.value,
@@ -867,11 +867,11 @@ constructor(
         viewModelScope.launch {
             _isSaving.value = true
             try {
-                projectRepository.deleteProject(id)
+                projectRepository.deleteProject(confirmed)
                 syncScheduler.replayThenSyncNow()
                 mutationFeedback.showTrashed(
                     R.string.mutation_moved_to_trash,
-                    TrashRef(TrashKind.Project, id),
+                    TrashRef(TrashKind.Project, confirmed.id),
                 )
                 _deleted.value = true
             } catch (e: Exception) {

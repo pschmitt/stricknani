@@ -1,5 +1,6 @@
 package blue.anika.wolle.data.repository
 
+import android.util.Log
 import androidx.room.withTransaction
 import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.ProjectsApi
@@ -32,6 +33,7 @@ import blue.anika.wolle.data.uploads.PendingMediaOrder
 import blue.anika.wolle.data.uploads.PendingUpload
 import blue.anika.wolle.data.uploads.PendingUploadStore
 import blue.anika.wolle.data.util.DateTimeUtils
+import blue.anika.wolle.ui.common.DeleteConfirmation
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import javax.inject.Inject
@@ -310,7 +312,13 @@ constructor(
     }
 
     /** Removes the local row immediately and queues a [MutationOperation.DELETE]. */
-    suspend fun deleteProject(id: Int) {
+    suspend fun deleteProject(confirmed: DeleteConfirmation.Confirmed) {
+        val id = confirmed.id
+        // Traceable afterwards: only a confirmed delete dialog may get here.
+        Log.w(
+            DeleteAudit.TAG,
+            DeleteAudit.queued(MutationEntityType.PROJECT, id, Throwable().stackTrace),
+        )
         database.withTransaction {
             // Kept with the queued delete so that Undo can put the row back before it is sent.
             val snapshot = projectDao.getById(id)?.let { json.encodeToString(it) }
@@ -661,7 +669,16 @@ constructor(
      * server-side (SNA-33) - exactly the caller's goal - so it's treated as success, not a failure
      * worth retrying.
      */
-    suspend fun replayDelete(id: Int) {
+    suspend fun replayDelete(id: Int, queuedAtMillis: Long = System.currentTimeMillis()) {
+        Log.w(
+            DeleteAudit.TAG,
+            DeleteAudit.sending(
+                MutationEntityType.PROJECT,
+                id,
+                queuedAtMillis,
+                System.currentTimeMillis(),
+            ),
+        )
         try {
             if (capabilities.useV2()) projectsV2Api.deleteProject(id)
             else projectsApi.deleteProject(id)

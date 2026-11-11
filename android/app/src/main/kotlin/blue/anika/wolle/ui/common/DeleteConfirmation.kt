@@ -19,6 +19,24 @@ object DeleteConfirmation {
             loaded && currentId != null && it == currentId
         }
 
+    /**
+     * Proof that the user confirmed deleting [id]. Only [confirm] makes one (and [forTesting] for
+     * tests), so no automatic code path - an import draft, a sync, a back handler - can call
+     * `ProjectRepository.deleteProject`: it does not compile without a confirmation.
+     */
+    class Confirmed private constructor(val id: Int) {
+        companion object {
+            internal fun create(id: Int) = Confirmed(id)
+
+            /** For tests that need a delete without a screen. */
+            fun forTesting(id: Int) = Confirmed(id)
+        }
+    }
+
+    /** Like [targetToDelete], as a [Confirmed] that the repository accepts. */
+    fun confirm(requestedId: Int?, currentId: Int?, loaded: Boolean): Confirmed? =
+        targetToDelete(requestedId, currentId, loaded)?.let(Confirmed::create)
+
     /** True once a confirmation shown at [shownAtMillis] may be confirmed at [nowMillis]. */
     fun isArmed(shownAtMillis: Long, nowMillis: Long): Boolean =
         nowMillis - shownAtMillis >= ARM_DELAY_MILLIS

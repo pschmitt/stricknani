@@ -37,4 +37,12 @@ class DeleteConfirmationTest {
         assertFalse(DeleteConfirmation.isArmed(shownAtMillis = 1_000, nowMillis = 1_050))
         assertTrue(DeleteConfirmation.isArmed(shownAtMillis = 1_000, nowMillis = 1_000 + 700))
     }
+
+    @Test
+    fun `only a matching confirmation yields a Confirmed delete`() {
+        assertEquals(19, DeleteConfirmation.confirm(19, 19, loaded = true)?.id)
+        assertNull(DeleteConfirmation.confirm(null, 19, loaded = true))
+        assertNull(DeleteConfirmation.confirm(7, 19, loaded = true))
+        assertNull(DeleteConfirmation.confirm(19, 19, loaded = false))
+    }
 }

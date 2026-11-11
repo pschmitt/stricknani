@@ -748,7 +748,17 @@ async fn an_import_draft_runs_in_the_background_and_waits_for_review() {
         .unwrap();
     assert_eq!(owned, 0);
 
-    // Dismissing (or saving in the editor) deletes it.
+    // Dismissing (or saving in the editor) deletes the draft, and nothing else: a dismissed import
+    // never takes a project (or a trashed one) with it.
+    let project_owner: i64 = sqlx::query_scalar("SELECT id FROM users LIMIT 1")
+        .fetch_one(&fixture.pool)
+        .await
+        .unwrap();
+    sqlx::query("INSERT INTO projects (name, owner_id, created_at, updated_at) VALUES ('Kept after dismiss', ?, '2026-01-01 00:00:00', '2026-01-01 00:00:00')")
+        .bind(project_owner)
+        .execute(&fixture.pool)
+        .await
+        .unwrap();
     let dismissed = fixture
         .app
         .clone()
@@ -762,6 +772,13 @@ async fn an_import_draft_runs_in_the_background_and_waits_for_review() {
         .await
         .unwrap();
     assert_eq!(dismissed.status(), StatusCode::NO_CONTENT);
+    let kept: i64 = sqlx::query_scalar(
+        "SELECT COUNT(*) FROM projects WHERE name = 'Kept after dismiss' AND deleted_at IS NULL",
+    )
+    .fetch_one(&fixture.pool)
+    .await
+    .unwrap();
+    assert_eq!(kept, 1, "dismissing a draft must not delete a project");
     let gone = fixture
         .app
         .clone()

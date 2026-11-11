@@ -845,7 +845,7 @@ constructor(
     /** Deletes the project, but only for a confirmation that was given for this exact project. */
     fun delete(confirmedProjectId: Int) {
         val target =
-            DeleteConfirmation.targetToDelete(
+            DeleteConfirmation.confirm(
                 requestedId = confirmedProjectId,
                 currentId = projectId,
                 loaded = uiState.value is ProjectDetailUiState.Loaded,

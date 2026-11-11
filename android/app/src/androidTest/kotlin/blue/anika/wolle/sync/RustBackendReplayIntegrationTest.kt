@@ -21,6 +21,7 @@ import blue.anika.wolle.data.db.entity.MutationEntityType
 import blue.anika.wolle.data.db.entity.SyncStateEntity
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.ui.common.DeleteConfirmation
 import dagger.hilt.android.EntryPointAccessors
 import java.io.File
 import java.util.UUID
@@ -197,7 +198,7 @@ class RustBackendReplayIntegrationTest {
             assertEquals(WorkInfo.State.SUCCEEDED, runReplay(context))
             assertEquals(remoteName, graph.projectsApi().getProject(conflictProject.id).name)
 
-            projectRepository.deleteProject(project.id)
+            projectRepository.deleteProject(DeleteConfirmation.Confirmed.forTesting(project.id))
             yarnRepository.deleteYarn(yarn.id)
             assertNull(projectDao.getById(project.id))
             assertNull(yarnDao.getById(yarn.id))
