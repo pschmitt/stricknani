@@ -111,8 +111,8 @@ sealed interface Route {
 }
 
 /**
- * Destination that opens the projects list with [ownerId] preselected as owner filter (admin
- * users menu; the web equivalent is `/app/projects?owner=<id>`).
+ * Destination that opens the projects list with [ownerId] preselected as owner filter (admin users
+ * menu; the web equivalent is `/app/projects?owner=<id>`).
  */
 fun projectsOwnedByRoute(ownerId: Long): Route = Route.ProjectsFiltered(owner = ownerId.toString())
 

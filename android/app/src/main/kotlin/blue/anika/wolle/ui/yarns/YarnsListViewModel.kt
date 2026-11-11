@@ -22,8 +22,8 @@ import blue.anika.wolle.ui.common.SuggestionAction
 import blue.anika.wolle.ui.common.SuggestionKind
 import blue.anika.wolle.ui.common.TRASHED_ONLY
 import blue.anika.wolle.ui.common.TrashedList
-import blue.anika.wolle.ui.common.filterTrashedYarns
 import blue.anika.wolle.ui.common.applying
+import blue.anika.wolle.ui.common.filterTrashedYarns
 import blue.anika.wolle.ui.common.isOfflineFailure
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
 import blue.anika.wolle.ui.common.ownerBadge
@@ -179,12 +179,18 @@ constructor(
                 TrashedList.Idle,
             )
 
-    /** The owners the search suggestions offer: the live ones, or the trash's while that filter is on. */
+    /**
+     * The owners the search suggestions offer: the live ones, or the trash's while that filter is
+     * on.
+     */
     val suggestionOwners: StateFlow<List<OwnerBadgeData>> =
-        combine(trashedOnly, fetchedTrash, owners, _currentUserId) { trashedOnly, trashed, live, me ->
+        combine(trashedOnly, fetchedTrash, owners, _currentUserId) { trashedOnly, trashed, live, me
+                ->
                 if (trashedOnly) {
                     trashedOwnerOptions(
-                        (trashed as? TrashedList.Ready)?.items.orEmpty().asSequence().map { it.owner },
+                        (trashed as? TrashedList.Ready)?.items.orEmpty().asSequence().map {
+                            it.owner
+                        },
                         me,
                     )
                 } else {

@@ -64,8 +64,8 @@ data class SuggestionPool(
 )
 
 /**
- * The other owners of trashed items, as owner options: while the Trash filter is on the
- * suggestions come from the trashed set, like the server's `trashed=only`.
+ * The other owners of trashed items, as owner options: while the Trash filter is on the suggestions
+ * come from the trashed set, like the server's `trashed=only`.
  */
 fun trashedOwnerOptions(
     owners: Sequence<blue.anika.wolle.data.api.dto.OwnerDto?>,

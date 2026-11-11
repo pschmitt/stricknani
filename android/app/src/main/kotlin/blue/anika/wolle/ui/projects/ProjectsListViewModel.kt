@@ -22,12 +22,12 @@ import blue.anika.wolle.ui.common.RefreshState
 import blue.anika.wolle.ui.common.RefreshTrigger
 import blue.anika.wolle.ui.common.SuggestedFilters
 import blue.anika.wolle.ui.common.SuggestionAction
-import blue.anika.wolle.ui.common.SuggestionPool
 import blue.anika.wolle.ui.common.SuggestionKind
+import blue.anika.wolle.ui.common.SuggestionPool
 import blue.anika.wolle.ui.common.TRASHED_ONLY
 import blue.anika.wolle.ui.common.TrashedList
-import blue.anika.wolle.ui.common.filterTrashedProjects
 import blue.anika.wolle.ui.common.applying
+import blue.anika.wolle.ui.common.filterTrashedProjects
 import blue.anika.wolle.ui.common.isOfflineFailure
 import blue.anika.wolle.ui.common.isUserInitiatedRefresh
 import blue.anika.wolle.ui.common.ownerBadge
@@ -278,19 +278,23 @@ constructor(
      */
     val suggestionPool: StateFlow<SuggestionPool> =
         combine(trashedOnly, fetchedTrash, tags, categories, owners, _currentUserId) { values ->
-                @Suppress("UNCHECKED_CAST") val trashed = values[1] as TrashedList<ProjectListItemDto>
+                @Suppress("UNCHECKED_CAST")
+                val trashed = values[1] as TrashedList<ProjectListItemDto>
                 val ready = (trashed as? TrashedList.Ready)?.items
                 if (values[0] as Boolean) {
                     SuggestionPool(
-                        tags =
-                            tagCounts(ready.orEmpty().map { it.tags }).map { it.tag },
+                        tags = tagCounts(ready.orEmpty().map { it.tags }).map { it.tag },
                         categories =
                             ready
                                 .orEmpty()
                                 .mapNotNull { it.category }
                                 .distinctBy { it.lowercase() }
                                 .sortedWith(String.CASE_INSENSITIVE_ORDER),
-                        owners = trashedOwnerOptions(ready.orEmpty().asSequence().map { it.owner }, values[5] as Long?),
+                        owners =
+                            trashedOwnerOptions(
+                                ready.orEmpty().asSequence().map { it.owner },
+                                values[5] as Long?,
+                            ),
                     )
                 } else {
                     @Suppress("UNCHECKED_CAST")

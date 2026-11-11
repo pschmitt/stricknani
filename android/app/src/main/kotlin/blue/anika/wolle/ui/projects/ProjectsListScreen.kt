@@ -60,10 +60,10 @@ import blue.anika.wolle.ui.common.ownerBadgeOf
 import blue.anika.wolle.ui.common.ownerFilterItems
 import blue.anika.wolle.ui.common.projectStatusLabel
 import blue.anika.wolle.ui.common.rememberEveryoneFilter
-import blue.anika.wolle.ui.common.trashDaysLeft
-import blue.anika.wolle.ui.common.trashedUpdatedAt
 import blue.anika.wolle.ui.common.rememberFixedFilterLabels
 import blue.anika.wolle.ui.common.rememberIsAdmin
+import blue.anika.wolle.ui.common.trashDaysLeft
+import blue.anika.wolle.ui.common.trashedUpdatedAt
 import blue.anika.wolle.ui.imports.WaitingForReview
 import blue.anika.wolle.ui.trash.TrashedListBody
 

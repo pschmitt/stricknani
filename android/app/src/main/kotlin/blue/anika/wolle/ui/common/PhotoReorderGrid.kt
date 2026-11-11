@@ -322,19 +322,19 @@ internal fun PhotoReorderGrid(
                                 // The handle drags at once; the rest of the tile needs a long press
                                 // so scrolling the editor past the grid still works.
                                 Box(
-                                    Modifier.align(Alignment.BottomEnd)
-                                        .size(48.dp)
-                                        .pointerInput(photo.key) {
-                                            detectDragGestures(
-                                                onDragStart = { startDrag(photo.key) },
-                                                onDrag = { change, amount ->
-                                                    change.consume()
-                                                    drag(amount)
-                                                },
-                                                onDragEnd = { heldKey = null },
-                                                onDragCancel = { heldKey = null },
-                                            )
-                                        },
+                                    Modifier.align(Alignment.BottomEnd).size(48.dp).pointerInput(
+                                        photo.key
+                                    ) {
+                                        detectDragGestures(
+                                            onDragStart = { startDrag(photo.key) },
+                                            onDrag = { change, amount ->
+                                                change.consume()
+                                                drag(amount)
+                                            },
+                                            onDragEnd = { heldKey = null },
+                                            onDragCancel = { heldKey = null },
+                                        )
+                                    },
                                     contentAlignment = Alignment.Center,
                                 ) {
                                     Surface(
@@ -379,8 +379,7 @@ private fun GridBadgeButton(
                     else -> DeleteRedLight
                 },
             contentColor = Color.White,
-            modifier =
-                Modifier.size(30.dp).semantics { contentDescription = description },
+            modifier = Modifier.size(30.dp).semantics { contentDescription = description },
         ) {
             Box(contentAlignment = Alignment.Center) { content() }
         }
