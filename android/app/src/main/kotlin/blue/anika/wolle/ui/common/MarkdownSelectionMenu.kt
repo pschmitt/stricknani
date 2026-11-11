@@ -1,5 +1,7 @@
 package blue.anika.wolle.ui.common
 
+import android.content.Context
+import android.content.res.Resources
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -32,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
@@ -95,22 +98,7 @@ private class MarkdownTextContextMenuProvider : TextContextMenuProvider {
             ) {
                 menu.dataProvider.data().components.forEachIndexed { index, component ->
                     when (component) {
-                        is TextContextMenuItem ->
-                            DropdownMenuItem(
-                                text = { Text(component.label) },
-                                leadingIcon =
-                                    if (component.leadingIcon != 0) {
-                                        {
-                                            Icon(
-                                                painter = painterResource(component.leadingIcon),
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp),
-                                                tint = MaterialTheme.colorScheme.onSurface,
-                                            )
-                                        }
-                                    } else null,
-                                onClick = { menu.onClick(component) },
-                            )
+                        is TextContextMenuItem -> MarkdownSelectionMenuItem(component, menu)
                         TextContextMenuSeparator -> if (index > 0) HorizontalDivider()
                         else -> Unit
                     }
@@ -118,6 +106,48 @@ private class MarkdownTextContextMenuProvider : TextContextMenuProvider {
             }
         }
     }
+}
+
+@Composable
+private fun MarkdownSelectionMenuItem(item: TextContextMenuItem, menu: ActiveMenu) {
+    val context = LocalContext.current
+    val iconResource =
+        remember(context, item.leadingIcon) {
+            resolveIconResource(context, item.leadingIcon)
+        }
+    DropdownMenuItem(
+        text = { Text(item.label) },
+        leadingIcon =
+            iconResource?.let { resource ->
+                {
+                    Icon(
+                        painter = painterResource(resource),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            },
+        onClick = { menu.onClick(item) },
+    )
+}
+
+/** Handles both app drawable IDs and Android theme attributes such as actionModeCopyDrawable. */
+private fun resolveIconResource(context: Context, resourceId: Int): Int? {
+    if (resourceId == Resources.ID_NULL) return null
+    val type = context.resources.getResourceTypeName(resourceId)
+    if (type == "drawable" || type == "mipmap") return resourceId
+
+    // Compose's platform dropdown resolves menu icon attributes this way before painterResource.
+    if (type == "attr") {
+        val attributes = context.obtainStyledAttributes(intArrayOf(resourceId))
+        return try {
+            attributes.getResourceId(0, Resources.ID_NULL).takeIf { it != Resources.ID_NULL }
+        } finally {
+            attributes.recycle()
+        }
+    }
+    return null
 }
 
 private class ActiveMenu(val dataProvider: TextContextMenuDataProvider) : TextContextMenuSession {
