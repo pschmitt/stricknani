@@ -169,8 +169,8 @@ consume that quota.
 
 | Method and path                   | Request                                 | Result                                                                           |
 | --------------------------------- | --------------------------------------- | -------------------------------------------------------------------------------- |
-| `GET /account`                    | —                                       | `{data: {id, email, is_admin, avatar_url, avatar_source, use_gravatar, gravatar_enabled, error_reporting_enabled, error_reporting_available, detail_card_order}}` |
-| `PATCH /account`                  | JSON `{use_gravatar?: boolean, error_reporting_enabled?: boolean, detail_card_order?: {project?: string[], yarn?: string[]}}` (unknown fields rejected) | `200 {data: <same as GET /account>}`                              |
+| `GET /account`                    | —                                       | `{data: {id, email, is_admin, avatar_url, avatar_source, use_gravatar, gravatar_enabled, error_reporting_enabled, error_reporting_available, strip_photo_metadata, detail_card_order}}` |
+| `PATCH /account`                  | JSON `{use_gravatar?: boolean, error_reporting_enabled?: boolean, strip_photo_metadata?: boolean, detail_card_order?: {project?: string[], yarn?: string[]}}` (unknown fields rejected) | `200 {data: <same as GET /account>}`                              |
 | `GET /account/api-tokens`         | —                                       | `{data: [{id, name, created_at, expires_at, last_used_at}]}`; `last_used_at` is RFC 3339 or `null` for a token never used |
 | `POST /account/api-tokens`        | JSON `{name?, expires_at?, current_password?}` | `201 {data: {id, name, created_at, expires_at, token}}`                   |
 | `PATCH /account/api-tokens/current` | JSON `{name}` (1 to 100 characters after trimming) | bearer PAT only: `200 {data: {id, name, created_at, expires_at, last_used_at}}`; renames the calling token. A cookie session gets `403 forbidden`; an empty, blank or over-long name gets `422 validation_error` with `error.fields.name`; an invalid or revoked PAT gets `401 session_expired`. Not audit-logged: the auth audit has a closed action set and no fitting event |
@@ -351,6 +351,19 @@ All seven routes above accept a bearer PAT with these rules (T121.8):
   revoke and the cookie clear on password change) are unchanged. Servers
   without these changes answer a bearer call on these routes with `401`; Android
   hides the account features then.
+
+## Photo metadata setting
+
+`GET /account` returns `strip_photo_metadata` (default `false`) and
+`PATCH /account {strip_photo_metadata}` stores the choice (`users.strip_photo_metadata`,
+migration `0034`). When it is on, every image the account uploads from then on (project
+title and step images, yarn photos, avatar, and images imported from URLs by the account)
+is cleaned before it is stored: EXIF (GPS, camera make/model/serial, dates, maker notes,
+thumbnails), XMP, IPTC, comments, text chunks and trailing data are removed at container
+level, without re-encoding. The ICC profile and the EXIF Orientation tag are kept (the
+Orientation is rewritten into a minimal EXIF block; pixels are not rotated). A TIFF upload
+is re-encoded as PNG with the orientation applied. A file that cannot be cleaned is
+rejected as an invalid image. Photos stored earlier are never changed.
 
 ## Gauge tool
 

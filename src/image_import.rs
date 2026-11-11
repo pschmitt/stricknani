@@ -63,10 +63,18 @@ pub(crate) struct PreparedCandidate {
 /// Download and decode bounded gallery and per-step candidates before any database transaction.
 pub(crate) async fn prepare_project_images(
     state: &AppState,
+    user_id: i64,
     project_name: &str,
     gallery_urls: &[String],
     step_urls: &[Vec<String>],
 ) -> Vec<PreparedCandidate> {
+    // Imported images follow the importing user's metadata setting; if it cannot be read, nothing
+    // is imported rather than storing metadata the user may have asked to remove.
+    let Ok(strip_metadata) =
+        crate::account_service::strip_photo_metadata_enabled(&state.pool, user_id).await
+    else {
+        return Vec::new();
+    };
     let deadline = tokio::time::Instant::now() + TOTAL_DEADLINE;
     let mut attempts = 0;
     let mut raw_bytes = 0;
@@ -119,7 +127,7 @@ pub(crate) async fn prepare_project_images(
             }
             let image = match tokio::time::timeout_at(
                 deadline,
-                media::prepare_imported_image(fetched.bytes),
+                media::prepare_imported_image(fetched.bytes, strip_metadata),
             )
             .await
             {
@@ -317,10 +325,11 @@ pub(crate) async fn persist_project_attachments(
 /// Download and decode bounded yarn photo candidates before the yarn exists.
 pub(crate) async fn prepare_yarn_images(
     state: &AppState,
+    user_id: i64,
     yarn_name: &str,
     urls: &[String],
 ) -> Vec<PreparedCandidate> {
-    prepare_project_images(state, yarn_name, urls, &[]).await
+    prepare_project_images(state, user_id, yarn_name, urls, &[]).await
 }
 
 /// Store prepared images as yarn photos; the first becomes the primary photo.

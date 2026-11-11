@@ -365,7 +365,10 @@ pub(crate) async fn save_avatar(
     user_id: i64,
     upload: media::AvatarUpload,
 ) -> Result<String, AccountError> {
-    let image = media::prepare_avatar(upload.bytes)
+    let strip = strip_photo_metadata_enabled(pool, user_id)
+        .await
+        .map_err(|_| AccountError::Database)?;
+    let image = media::prepare_avatar(upload.bytes, strip)
         .await
         .map_err(AccountError::InvalidAvatar)?;
     let filename = media::save_avatar(root, user_id, &image)
@@ -446,7 +449,7 @@ pub(crate) async fn account_dto(
     use sqlx::Row;
     let row = sqlx::query(
         "SELECT users.id, users.email, users.is_admin, users.use_gravatar, \
-         users.error_reporting, users.detail_order_project, users.detail_order_yarn, \
+         users.error_reporting, users.strip_photo_metadata, users.detail_order_project, users.detail_order_yarn, \
          user_avatars.filename \
          FROM users LEFT JOIN user_avatars ON user_avatars.user_id = users.id \
          WHERE users.id = ? AND users.active = 1",
@@ -469,6 +472,7 @@ pub(crate) async fn account_dto(
         gravatar_enabled,
         error_reporting_enabled: row.get::<i64, _>("error_reporting") != 0,
         error_reporting_available,
+        strip_photo_metadata: row.get::<i64, _>("strip_photo_metadata") != 0,
         detail_card_order: crate::detail_order::DetailCardOrders::from_stored(
             row.get::<Option<String>, _>("detail_order_project")
                 .as_deref(),
@@ -547,6 +551,42 @@ pub(crate) async fn set_error_reporting(
     }
 }
 
+/// Store the per-user "remove location and camera data from new photos" preference.
+pub(crate) async fn set_strip_photo_metadata(
+    pool: &SqlitePool,
+    user_id: i64,
+    enabled: bool,
+) -> Result<(), AccountError> {
+    let result =
+        sqlx::query("UPDATE users SET strip_photo_metadata = ? WHERE id = ? AND active = 1")
+            .bind(i64::from(enabled))
+            .bind(user_id)
+            .execute(pool)
+            .await
+            .map_err(|_| AccountError::Database)?;
+    if result.rows_affected() == 1 {
+        Ok(())
+    } else {
+        Err(AccountError::TokenNotFound)
+    }
+}
+
+/// Whether uploads of this user must be stripped of metadata. A database error is an `Err` so the
+/// caller can refuse the upload instead of storing metadata the user asked to remove; an unknown
+/// or disabled user is "off".
+pub(crate) async fn strip_photo_metadata_enabled(
+    pool: &SqlitePool,
+    user_id: i64,
+) -> Result<bool, sqlx::Error> {
+    Ok(sqlx::query_scalar::<_, i64>(
+        "SELECT strip_photo_metadata FROM users WHERE id = ? AND active = 1",
+    )
+    .bind(user_id)
+    .fetch_optional(pool)
+    .await?
+    .is_some_and(|value| value != 0))
+}
+
 /// The user's error-reporting preference; the default for unknown users.
 pub(crate) async fn error_reporting_enabled(pool: &SqlitePool, user_id: i64) -> bool {
     sqlx::query_scalar::<_, i64>("SELECT error_reporting FROM users WHERE id = ? AND active = 1")
@@ -577,6 +617,9 @@ pub(crate) struct AccountDto {
     pub(crate) error_reporting_enabled: bool,
     /// Whether the operator configured error reporting for this instance.
     pub(crate) error_reporting_available: bool,
+    /// Remove location and camera metadata from photos the user uploads from now on (default
+    /// false). Already stored photos are never changed.
+    pub(crate) strip_photo_metadata: bool,
     /// The order of the reorderable detail-page sections (defaults when never set).
     pub(crate) detail_card_order: crate::detail_order::DetailCardOrders,
 }

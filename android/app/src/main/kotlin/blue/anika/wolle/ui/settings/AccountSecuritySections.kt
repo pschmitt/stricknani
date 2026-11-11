@@ -226,6 +226,32 @@ internal fun GravatarToggleRow(checked: Boolean, enabled: Boolean, onChange: (Bo
 }
 
 /**
+ * "Remove location and camera data from new photos": the whole row toggles. The server removes the
+ * EXIF/XMP metadata of photos the account uploads from now on; stored photos are never changed.
+ */
+@Composable
+internal fun StripPhotoMetadataToggleRow(
+    checked: Boolean,
+    enabled: Boolean,
+    onChange: (Boolean) -> Unit,
+) {
+    SettingsListItem(
+        modifier =
+            Modifier.fillMaxWidth()
+                .testTag("strip-photo-metadata-toggle")
+                .toggleable(
+                    value = checked,
+                    enabled = enabled,
+                    role = Role.Switch,
+                    onValueChange = onChange,
+                ),
+        headlineContent = { Text(stringResource(R.string.account_strip_metadata_toggle)) },
+        supportingContent = { Text(stringResource(R.string.account_strip_metadata_toggle_help)) },
+        trailingContent = { Switch(checked = checked, enabled = enabled, onCheckedChange = null) },
+    )
+}
+
+/**
  * "Send error reports": the whole row toggles. Shown only when the server offers error reporting in
  * a build that includes it; the supporting line says what is (not) sent.
  */

@@ -8,6 +8,7 @@ import {
   revokeApiToken,
   setDetailCardOrder,
   setErrorReporting,
+  setStripPhotoMetadata,
   setUseGravatar,
   uploadAvatar,
 } from "./account-api";
@@ -46,6 +47,7 @@ const account = {
   gravatar_enabled: true,
   error_reporting_enabled: true,
   error_reporting_available: true,
+  strip_photo_metadata: false,
   detail_card_order: {
     project: ["details", "materials", "description", "steps"],
     yarn: ["details", "description", "notes", "used_in"],
@@ -181,6 +183,44 @@ describe("account v2 API contract", () => {
     expect(new Headers(init.headers).get("x-csrf-token")).toBe("account-csrf");
     expect(JSON.parse(String(init.body))).toEqual({
       error_reporting_enabled: false,
+    });
+  });
+
+  it("reads the photo metadata setting (off when absent) and saves it", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({
+          data: {
+            id: 17,
+            email: "knitter@example.test",
+            is_admin: false,
+            avatar_url: null,
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({ data: { ...account, strip_photo_metadata: true } }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({ data: { ...account, strip_photo_metadata: "yes" } }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(getAccount()).resolves.toMatchObject({
+      strip_photo_metadata: false,
+    });
+    await expect(setStripPhotoMetadata(true, session)).resolves.toMatchObject({
+      strip_photo_metadata: true,
+    });
+    const [url, init] = fetchMock.mock.calls[1] as [string, RequestInit];
+    expect(url).toBe("/api/v2/account");
+    expect(init.method).toBe("PATCH");
+    expect(new Headers(init.headers).get("x-csrf-token")).toBe("account-csrf");
+    expect(JSON.parse(String(init.body))).toEqual({
+      strip_photo_metadata: true,
+    });
+    await expect(setStripPhotoMetadata(false, session)).rejects.toMatchObject({
+      code: "invalid_response",
     });
   });
 

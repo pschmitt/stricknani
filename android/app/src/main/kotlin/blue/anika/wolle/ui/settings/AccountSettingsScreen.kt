@@ -242,6 +242,14 @@ internal fun AccountSettingsScreen(
                             onChange = errorReportingModel::set,
                         )
                     }
+                    if (security.available) {
+                        HorizontalDivider(Modifier.padding(horizontal = 16.dp))
+                        StripPhotoMetadataToggleRow(
+                            checked = security.stripPhotoMetadata,
+                            enabled = !security.stripPhotoMetadataBusy,
+                            onChange = securityModel::setStripPhotoMetadata,
+                        )
+                    }
                 }
             }
             // Only when the server lists a sign-in provider (OIDC); hidden otherwise.

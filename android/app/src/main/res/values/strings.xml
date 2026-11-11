@@ -515,6 +515,11 @@
     <string name="account_error_reports_toggle_help">Sends technical details of errors, never your content, to the server operator. Applies to this account on all your devices.</string>
     <string name="account_error_reports_save_failed">Switched on or off on this device. The server could not record it, so your other devices may differ.</string>
     <string name="error_gravatar_save_failed">Couldn\'t save the Gravatar setting - try again.</string>
+    <string name="account_strip_metadata_toggle">Remove location and camera data from new photos</string>
+    <string name="account_strip_metadata_toggle_help">Applies to photos you upload from now on. Photos already uploaded are not changed.</string>
+    <string name="account_strip_metadata_on">Location and camera data will be removed from new photos.</string>
+    <string name="account_strip_metadata_off">Location and camera data will be kept in new photos.</string>
+    <string name="error_strip_metadata_save_failed">The photo privacy setting could not be saved.</string>
     <string name="account_password_label">Password</string>
     <string name="account_password_notice">Changing your password signs you out on every device, including this one.</string>
     <string name="account_password_change">Change password</string>

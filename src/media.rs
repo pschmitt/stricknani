@@ -1312,7 +1312,14 @@ pub(crate) async fn upload_project_image(
         Ok(upload) => upload,
         Err(error) => return Err(MediaOperationError::Upload(error)),
     };
-    let prepared = match process_image(upload.bytes).await {
+    // The uploading user's privacy setting decides; a failed lookup refuses the upload instead of
+    // storing metadata the user may have asked to remove.
+    let strip_metadata =
+        match crate::account_service::strip_photo_metadata_enabled(&state.pool, actor_id).await {
+            Ok(enabled) => enabled,
+            Err(_) => return Err(MediaOperationError::Database),
+        };
+    let prepared = match process_image_with(upload.bytes, strip_metadata).await {
         Ok(image) => image,
         Err(error) => return Err(MediaOperationError::Upload(error)),
     };
@@ -1487,8 +1494,13 @@ pub(crate) async fn upload_project_image(
 }
 
 /// Decode imported content with the bounded uploader decoder and import's minimum dimensions.
-pub(crate) async fn prepare_imported_image(bytes: Vec<u8>) -> Result<PreparedImage, ()> {
-    let image = process_image(bytes).await.map_err(|_| ())?;
+pub(crate) async fn prepare_imported_image(
+    bytes: Vec<u8>,
+    strip_metadata: bool,
+) -> Result<PreparedImage, ()> {
+    let image = process_image_with(bytes, strip_metadata)
+        .await
+        .map_err(|_| ())?;
     if image.width < 64 || image.height < 64 {
         return Err(());
     }
@@ -2004,7 +2016,14 @@ pub(crate) async fn upload_yarn_photo_for_owner(
         Ok(upload) => upload,
         Err(error) => return Err(MediaOperationError::Upload(error)),
     };
-    let prepared = match process_image(upload.bytes).await {
+    // The uploading user's privacy setting decides; a failed lookup refuses the upload instead of
+    // storing metadata the user may have asked to remove.
+    let strip_metadata =
+        match crate::account_service::strip_photo_metadata_enabled(&state.pool, actor_id).await {
+            Ok(enabled) => enabled,
+            Err(_) => return Err(MediaOperationError::Database),
+        };
+    let prepared = match process_image_with(upload.bytes, strip_metadata).await {
         Ok(image) => image,
         Err(error) => return Err(MediaOperationError::Upload(error)),
     };
@@ -3452,6 +3471,16 @@ fn map_multipart_error(error: axum::extract::multipart::MultipartError) -> Uploa
 }
 
 pub(crate) async fn process_image(bytes: Vec<u8>) -> Result<PreparedImage, UploadError> {
+    process_image_with(bytes, false).await
+}
+
+/// Like [`process_image`]; with `strip_metadata` the stored bytes have their EXIF/XMP/IPTC and
+/// other personal metadata removed (see `image_metadata`). A file that cannot be cleaned is
+/// rejected as an invalid image rather than stored with its metadata.
+pub(crate) async fn process_image_with(
+    bytes: Vec<u8>,
+    strip_metadata: bool,
+) -> Result<PreparedImage, UploadError> {
     let permit = IMAGE_PROCESSING
         .clone()
         .acquire_owned()
@@ -3459,7 +3488,7 @@ pub(crate) async fn process_image(bytes: Vec<u8>) -> Result<PreparedImage, Uploa
         .map_err(|_| UploadError::InvalidImage)?;
     tokio::task::spawn_blocking(move || {
         let _permit = permit;
-        decode_image(bytes)
+        decode_image(bytes, strip_metadata)
     })
     .await
     .map_err(|_| UploadError::InvalidImage)?
@@ -3500,8 +3529,11 @@ pub(crate) async fn read_avatar_upload(
 }
 
 /// Decode an avatar under the same bounded decoder used for project and yarn images.
-pub(crate) async fn prepare_avatar(bytes: Vec<u8>) -> Result<PreparedImage, UploadError> {
-    process_image(bytes).await
+pub(crate) async fn prepare_avatar(
+    bytes: Vec<u8>,
+    strip_metadata: bool,
+) -> Result<PreparedImage, UploadError> {
+    process_image_with(bytes, strip_metadata).await
 }
 
 /// Save an opaque original and JPEG thumbnail beneath the user avatar directories.
@@ -3540,7 +3572,7 @@ pub(crate) fn admin_avatar_thumbnail_url(user_id: i64, filename: &str) -> Option
     ))
 }
 
-fn decode_image(bytes: Vec<u8>) -> Result<PreparedImage, UploadError> {
+fn decode_image(bytes: Vec<u8>, strip_metadata: bool) -> Result<PreparedImage, UploadError> {
     let mut reader = ImageReader::new(Cursor::new(bytes.as_slice()))
         .with_guessed_format()
         .map_err(|_| UploadError::InvalidImage)?;
@@ -3561,17 +3593,35 @@ fn decode_image(bytes: Vec<u8>) -> Result<PreparedImage, UploadError> {
     limits.max_image_height = Some(MAX_IMAGE_DIMENSION);
     limits.max_alloc = Some(MAX_IMAGE_ALLOCATION);
     reader.limits(limits);
-    let image = decode_oriented(reader)?;
+    let (image, orientation) = decode_oriented_with_tag(reader)?;
     let width = image.width();
     let height = image.height();
     if width == 0 || height == 0 || u64::from(width) * u64::from(height) > MAX_IMAGE_PIXELS {
         return Err(UploadError::InvalidImage);
     }
-    let (content_type, extension) = image_format_mime(format);
+    let (mut content_type, mut extension) = image_format_mime(format);
     let thumbnail = encode_jpeg(&image.thumbnail(300, 300))?;
+    // Keep the validated source bytes intact (unless the uploader asked for metadata removal) so
+    // animated GIF/WebP assets are not silently flattened during storage.
+    let bytes = if strip_metadata {
+        if format == ImageFormat::Tiff {
+            // TIFF has no container-level filter: re-encode as PNG with the orientation baked in.
+            (content_type, extension) = image_format_mime(ImageFormat::Png);
+            let mut png = Cursor::new(Vec::new());
+            image
+                .write_to(&mut png, ImageFormat::Png)
+                .map_err(|_| UploadError::InvalidImage)?;
+            png.into_inner()
+        } else {
+            let stripped = crate::image_metadata::strip(&bytes, format, orientation)
+                .map_err(|_| UploadError::InvalidImage)?;
+            verify_stripped(&stripped, format, width, height, orientation)?;
+            stripped
+        }
+    } else {
+        bytes
+    };
     Ok(PreparedImage {
-        // Keep the validated source bytes intact so animated GIF/WebP assets
-        // are not silently flattened during storage.
         bytes,
         thumbnail,
         width,
@@ -3584,6 +3634,13 @@ fn decode_image(bytes: Vec<u8>) -> Result<PreparedImage, UploadError> {
 /// Decode and apply the EXIF orientation, so thumbnails, dimensions and edits are upright like the
 /// browser shows the original. The stored original keeps its bytes (and its orientation tag).
 fn decode_oriented(reader: ImageReader<Cursor<&[u8]>>) -> Result<DynamicImage, UploadError> {
+    decode_oriented_with_tag(reader).map(|(image, _)| image)
+}
+
+/// [`decode_oriented`] that also returns the orientation tag it applied.
+fn decode_oriented_with_tag(
+    reader: ImageReader<Cursor<&[u8]>>,
+) -> Result<(DynamicImage, image::metadata::Orientation), UploadError> {
     let mut decoder = reader
         .into_decoder()
         .map_err(|_| UploadError::InvalidImage)?;
@@ -3592,7 +3649,41 @@ fn decode_oriented(reader: ImageReader<Cursor<&[u8]>>) -> Result<DynamicImage, U
         .unwrap_or(image::metadata::Orientation::NoTransforms);
     let mut image = DynamicImage::from_decoder(decoder).map_err(|_| UploadError::InvalidImage)?;
     image.apply_orientation(orientation);
-    Ok(image)
+    Ok((image, orientation))
+}
+
+/// A cheap guard against a filter bug: the cleaned file must still be the same format with the
+/// same upright dimensions and orientation as the original.
+fn verify_stripped(
+    stripped: &[u8],
+    format: ImageFormat,
+    width: u32,
+    height: u32,
+    orientation: image::metadata::Orientation,
+) -> Result<(), UploadError> {
+    let mut reader = ImageReader::new(Cursor::new(stripped))
+        .with_guessed_format()
+        .map_err(|_| UploadError::InvalidImage)?;
+    if reader.format() != Some(format) {
+        return Err(UploadError::InvalidImage);
+    }
+    let mut limits = Limits::default();
+    limits.max_image_width = Some(MAX_IMAGE_DIMENSION);
+    limits.max_image_height = Some(MAX_IMAGE_DIMENSION);
+    limits.max_alloc = Some(MAX_IMAGE_ALLOCATION);
+    reader.limits(limits);
+    let mut decoder = reader
+        .into_decoder()
+        .map_err(|_| UploadError::InvalidImage)?;
+    let kept = decoder
+        .orientation()
+        .unwrap_or(image::metadata::Orientation::NoTransforms);
+    let (w, h) = image::ImageDecoder::dimensions(&decoder);
+    let (w, h) = if kept.to_exif() > 4 { (h, w) } else { (w, h) };
+    if kept != orientation || (w, h) != (width, height) {
+        return Err(UploadError::InvalidImage);
+    }
+    Ok(())
 }
 
 fn image_format_mime(format: ImageFormat) -> (&'static str, &'static str) {
