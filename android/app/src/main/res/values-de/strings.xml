@@ -907,6 +907,7 @@
     <string name="editor_staged_hint">Was du entfernst, bleibt 90 Tage im Papierkorb.</string>
     <string name="editor_staged_photo_label">Foto %1$d</string>
     <string name="editor_all_saved">Alle Änderungen gespeichert</string>
+    <string name="editor_yarn_edits_stay">Deine Änderungen bleiben erhalten, falls das Speichern fehlschlägt.</string>
     <string name="editor_unsaved_changes">Ungespeicherte Änderungen</string>
     <string name="editor_unsaved_changes_removals">Ungespeicherte Änderungen. Entferntes landet beim Speichern im Papierkorb.</string>
     <string name="trash_owner">Besitzer: %1$s</string>

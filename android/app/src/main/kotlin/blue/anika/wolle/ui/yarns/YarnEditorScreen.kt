@@ -252,7 +252,7 @@ fun YarnEditorScreen(
                     allSaved = saveBarState(viewModel.isEditing, isDirty, isSaving).allSaved,
                     statusText =
                         when (unsavedStatus(isDirty, isSaving, form.removedPhotoIds.size)) {
-                            UnsavedStatus.Plain -> stringResource(R.string.editor_unsaved_changes)
+                            UnsavedStatus.Plain -> stringResource(R.string.editor_yarn_edits_stay)
                             UnsavedStatus.WithRemovals ->
                                 stringResource(R.string.editor_unsaved_changes_removals)
                             null -> null
