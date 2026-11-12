@@ -209,8 +209,9 @@
             rust-build = stricknaniRust;
             inherit pre-commit-check playwright-pin;
           }
-          # VM test of the pre-upgrade backup, with a stub server package (no Rust build).
-          // pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+          # The backup VM test needs KVM, available on the x86_64 build lane.
+          # GitHub's native aarch64 runners build packages and Rust checks without KVM.
+          // pkgs.lib.optionalAttrs (system == "x86_64-linux") {
             predeploy-backup = import ./nix/tests/predeploy-backup.nix {
               inherit pkgs;
               module = ./nix/module.nix;
