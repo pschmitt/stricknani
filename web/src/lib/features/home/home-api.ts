@@ -2,6 +2,7 @@ import {
   listProjects,
   type ProjectSummary,
 } from "#lib/features/projects/project-api.ts";
+import { continueProjects } from "./continue-carousel";
 import type { LibraryScope } from "#lib/library-scope.svelte.ts";
 import { listYarns, type YarnSummary } from "#lib/features/yarns/yarn-api.ts";
 
@@ -31,7 +32,10 @@ export async function loadRecentProjects(
   return page.data.slice(0, HOME_PREVIEW_LIMIT);
 }
 
-/** The user's own projects still in progress, most recently updated first (the server order). */
+/**
+ * The user's own projects still in progress for "Continue knitting": most recently updated first,
+ * at most [CONTINUE_LIMIT].
+ */
 export async function loadOngoingProjects(
   signal: AbortSignal,
   scope?: LibraryScope,
@@ -39,5 +43,5 @@ export async function loadOngoingProjects(
   const page = await listProjects("status=in_progress&owner=me", signal, {
     scope,
   });
-  return page.data.slice(0, HOME_PREVIEW_LIMIT);
+  return continueProjects(page.data);
 }

@@ -529,7 +529,7 @@ compileDebugAndroidTestKotlin assembleDebug` passed; checked on the user's phone
 - [x] Bundled variable fonts (SIL OFL, licence texts in `assets/licenses`): Fraunces with its soft
       and "wonky" axes for headings, Nunito for body text and labels. Rounder shapes throughout.
 - [x] Home: the yarn-ball mascot greets by time of day ("What are we knitting today?"), a
-      "Continue knitting" card with a stitched border for the most recent project, a shelf of
+      "Continue knitting" row of stitched-border cards, one per project in progress, a shelf of
       tinted tiles for the rest, and a cozy empty state. Motion respects the system's animation
       setting.
 - [x] Plain-language copy for sync, offline, import and stuck-change messages in English and

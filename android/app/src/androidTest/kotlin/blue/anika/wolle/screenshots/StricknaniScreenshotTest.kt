@@ -64,11 +64,11 @@ class StricknaniScreenshotTest {
         capture("onboarding")
 
         connectToFixture()
-        // Home: greeting, mascot, Continue card. Let the greeting settle and the activity feed
+        // Home: greeting, mascot, Continue knitting. Let the greeting settle and the activity feed
         // load.
-        // The first sync fills Home asynchronously; wait for the Continue card, then let the
-        // greeting and the activity feed settle.
-        composeRule.waitUntil(180_000) { hasTag("home-continue-card") }
+        // The first sync fills Home asynchronously; wait for the Continue knitting section, then
+        // let the greeting and the activity feed settle.
+        composeRule.waitUntil(180_000) { hasTag("home-continue") }
         Thread.sleep(15_000)
         capture("home")
 

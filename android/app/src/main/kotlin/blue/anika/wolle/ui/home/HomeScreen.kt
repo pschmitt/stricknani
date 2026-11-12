@@ -31,10 +31,14 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.Button
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -76,6 +80,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -124,6 +129,10 @@ fun HomeScreen(
     onTrashClick: () -> Unit = {},
     /** Opens the project list filtered to the user's projects in progress. */
     onSeeAllOngoing: () -> Unit = {},
+    /** Opens the editor on a new project (the empty "Continue knitting"). */
+    onNewProject: () -> Unit = {},
+    /** Opens the project list (the empty "Continue knitting"). */
+    onBrowseProjects: () -> Unit = {},
     /** Opens the editor on an import draft that waits for review. */
     onOpenDraft: (ImportJobDto) -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel(),
@@ -133,9 +142,12 @@ fun HomeScreen(
     val favoriteYarns by viewModel.favoriteYarns.collectAsStateWithLifecycle()
     val recentProjects by viewModel.recentProjects.collectAsStateWithLifecycle()
     val allOngoing by viewModel.ongoingProjects.collectAsStateWithLifecycle()
-    // The user's own projects in progress, most recently updated first.
-    val ongoingProjects =
-        remember(allOngoing, currentUserId) { ongoingOwnProjects(allOngoing, currentUserId) }
+    // "Continue knitting": the user's own projects in progress, most recently updated first; null
+    // until the local database has answered.
+    val continueList =
+        remember(allOngoing, currentUserId) {
+            allOngoing?.let { continueProjects(it, currentUserId) }
+        }
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
     val refreshState by viewModel.refreshState.collectAsStateWithLifecycle()
     val pendingChangesCount by viewModel.pendingChangesCount.collectAsStateWithLifecycle()
@@ -156,10 +168,7 @@ fun HomeScreen(
         viewModel::dismissRefreshFeedback,
         problemsShownInline = true,
     )
-    // The project touched last gets the big card; the row below shows the others.
-    val current = recentProjects.firstOrNull()
-    val otherRecent = recentProjects.drop(1)
-    val isEmpty = favoriteProjects.isEmpty() && favoriteYarns.isEmpty() && current == null
+    val isEmpty = favoriteProjects.isEmpty() && favoriteYarns.isEmpty() && recentProjects.isEmpty()
 
     // The greeting and the mascot report on a refresh (see HomeSyncFeedback); only a failure adds
     // a card. The feedback effect consumes finished states at once, so the outcome and the problem
@@ -342,14 +351,15 @@ fun HomeScreen(
                             )
                         }
                     }
-                    current?.let { project ->
+                    continueList?.let { projects ->
                         spacedItem {
-                            ContinueKnittingCard(
-                                project = project,
-                                previewUrl = viewModel.previewUrl(project.previewUrl),
-                                owner = project.ownerBadge(currentUserId),
-                                onClick = { onProjectClick(project.id) },
-                                modifier = Modifier.padding(horizontal = 16.dp),
+                            ContinueKnittingSection(
+                                projects = projects,
+                                previewUrl = viewModel::previewUrl,
+                                onProjectClick = onProjectClick,
+                                onSeeAll = onSeeAllOngoing,
+                                onNewProject = onNewProject,
+                                onBrowseProjects = onBrowseProjects,
                             )
                         }
                     }
@@ -360,29 +370,6 @@ fun HomeScreen(
                                 onOpen = onOpenDraft,
                                 modifier = Modifier.padding(horizontal = 16.dp),
                             )
-                        }
-                    }
-                    if (ongoingProjects.isNotEmpty()) {
-                        spacedItem {
-                            HomeShelf(
-                                title = stringResource(R.string.home_ongoing_projects_title),
-                                icon = PhosphorIcons.Hoodie,
-                                accent = MaterialTheme.colorScheme.primary,
-                                onSeeAll = onSeeAllOngoing,
-                            ) {
-                                itemsIndexed(ongoingProjects, key = { _, it -> "op-${it.id}" }) {
-                                    index,
-                                    project ->
-                                    ShelfTile(
-                                        title = project.name,
-                                        previewUrl = viewModel.previewUrl(project.previewUrl),
-                                        fallbackIcon = PhosphorIcons.Hoodie,
-                                        tint = tileTint(index),
-                                        owner = project.ownerBadge(currentUserId),
-                                        onClick = { onProjectClick(project.id) },
-                                    )
-                                }
-                            }
                         }
                     }
                     if (favoriteProjects.isNotEmpty()) {
@@ -429,14 +416,14 @@ fun HomeScreen(
                             }
                         }
                     }
-                    if (otherRecent.isNotEmpty()) {
+                    if (recentProjects.isNotEmpty()) {
                         spacedItem {
                             HomeShelf(
                                 title = stringResource(R.string.home_recent_projects_title),
                                 icon = PhosphorIcons.ClockCounterClockwise,
                                 accent = MaterialTheme.colorScheme.tertiary,
                             ) {
-                                itemsIndexed(otherRecent, key = { _, it -> "rp-${it.id}" }) {
+                                itemsIndexed(recentProjects, key = { _, it -> "rp-${it.id}" }) {
                                     index,
                                     project ->
                                     ShelfTile(
@@ -633,8 +620,76 @@ private fun BoxScope.CollapsedBar(progress: () -> Float, onClick: () -> Unit) {
 }
 
 /**
- * The one big card: the project worked on last, like a patch sewn onto the page - stitched edge,
- * its photo pinned slightly askew - with a soft press-down.
+ * "Continue knitting": the user's projects in progress as big cards in a row that snaps card by
+ * card, with a peek of the next one so swiping is discoverable and a "1 / 4" counter. Nothing in
+ * progress shows the empty card with a way to start or pick a project.
+ */
+@Composable
+private fun ContinueKnittingSection(
+    projects: List<ProjectEntity>,
+    previewUrl: (String?) -> String?,
+    onProjectClick: (Int) -> Unit,
+    onSeeAll: () -> Unit,
+    onNewProject: () -> Unit,
+    onBrowseProjects: () -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val pagerState = rememberPagerState { projects.size }
+    Column(Modifier.testTag("home-continue")) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 10.dp),
+        ) {
+            SectionTitle(
+                title = stringResource(R.string.home_continue_title),
+                icon = Icons.Filled.Schedule,
+                accent = colors.primary,
+                modifier = Modifier.weight(1f),
+            )
+            if (projects.size > 1) {
+                Text(
+                    "${pagerState.currentPage + 1} / ${projects.size}",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = colors.onSurfaceVariant,
+                    modifier = Modifier.testTag("home-continue-count"),
+                )
+            }
+            if (projects.isNotEmpty()) {
+                TextButton(onClick = onSeeAll, modifier = Modifier.testTag("home-see-all")) {
+                    Text(stringResource(R.string.home_see_all))
+                }
+            }
+        }
+        if (projects.isEmpty()) {
+            ContinueEmptyCard(
+                onNewProject = onNewProject,
+                onBrowseProjects = onBrowseProjects,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+        } else {
+            HorizontalPager(
+                state = pagerState,
+                // The next card sticks out by a few dp; a single card gets the full width.
+                contentPadding =
+                    PaddingValues(start = 16.dp, end = if (projects.size > 1) 48.dp else 16.dp),
+                pageSpacing = 12.dp,
+                verticalAlignment = Alignment.Top,
+                key = { projects[it].id },
+            ) { page ->
+                val project = projects[page]
+                ContinueKnittingCard(
+                    project = project,
+                    previewUrl = previewUrl(project.previewUrl),
+                    onClick = { onProjectClick(project.id) },
+                )
+            }
+        }
+    }
+}
+
+/**
+ * One big card: a project in progress, like a patch sewn onto the page - stitched edge, its photo
+ * pinned slightly askew - with a soft press-down.
  */
 @Composable
 private fun ContinueKnittingCard(
@@ -642,7 +697,6 @@ private fun ContinueKnittingCard(
     previewUrl: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    owner: OwnerBadgeData? = null,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
@@ -654,89 +708,145 @@ private fun ContinueKnittingCard(
             label = "continue-press",
         )
     val colors = MaterialTheme.colorScheme
-    Column(modifier) {
-        SectionTitle(
-            title = stringResource(R.string.home_continue_title),
-            icon = Icons.Filled.Schedule,
-            accent = colors.primary,
-            modifier = Modifier.padding(bottom = 10.dp),
-        )
-        Surface(
-            shape = RoundedCornerShape(28.dp),
-            color = colors.primaryContainer,
-            contentColor = colors.onPrimaryContainer,
-            modifier =
-                Modifier.fillMaxWidth()
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                    }
-                    .clip(RoundedCornerShape(28.dp))
-                    .clickable(
-                        interactionSource = interaction,
-                        indication = null,
-                        onClick = onClick,
-                    )
-                    .stitchedBorder(colors.onPrimaryContainer.copy(alpha = 0.35f))
-                    .testTag("home-continue-card"),
-        ) {
-            Row(
-                modifier = Modifier.padding(20.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(18.dp),
-            ) {
-                Box(
-                    modifier =
-                        Modifier.size(112.dp)
-                            .graphicsLayer { rotationZ = -4f }
-                            .clip(RoundedCornerShape(18.dp))
-                            .background(colors.surfaceContainerLowest),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    if (previewUrl != null) {
-                        AsyncImage(
-                            model = previewUrl,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize(),
-                        )
-                    } else {
-                        Mascot(size = 96.dp, reactive = false)
-                    }
+    Surface(
+        shape = RoundedCornerShape(28.dp),
+        color = colors.primaryContainer,
+        contentColor = colors.onPrimaryContainer,
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
                 }
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text(
-                        project.name,
-                        style = MaterialTheme.typography.headlineSmall,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
+                .clip(RoundedCornerShape(28.dp))
+                .clickable(
+                    interactionSource = interaction,
+                    indication = null,
+                    role = Role.Button,
+                    onClick = onClick,
+                )
+                .stitchedBorder(colors.onPrimaryContainer.copy(alpha = 0.35f))
+                .testTag("home-continue-card"),
+    ) {
+        Row(
+            modifier = Modifier.padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            Box(
+                modifier =
+                    Modifier.size(112.dp)
+                        .graphicsLayer { rotationZ = -4f }
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(colors.surfaceContainerLowest),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (previewUrl != null) {
+                    AsyncImage(
+                        model = previewUrl,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
                     )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        project.category?.let { Pill(it) }
-                        Pill(relativeDay(project.updatedAt))
-                    }
-                    owner?.let { OwnerBadge(it, size = 24.dp) }
+                } else {
+                    Mascot(size = 96.dp, reactive = false)
+                }
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    project.name,
+                    style = MaterialTheme.typography.headlineSmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    project.category?.let { Pill(it, modifier = Modifier.weight(1f, fill = false)) }
+                    Pill(
+                        stringResource(
+                            R.string.home_continue_updated,
+                            relativeDay(project.updatedAt),
+                        ),
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
                 }
             }
         }
     }
 }
 
+/** Nothing in progress: say so and offer to start a project or pick one from the list. */
 @Composable
-private fun Pill(text: String) {
+private fun ContinueEmptyCard(
+    onNewProject: () -> Unit,
+    onBrowseProjects: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MaterialTheme.colorScheme
+    Column(
+        modifier = modifier.fillMaxWidth().padding(vertical = 8.dp).testTag("home-continue-empty"),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        // No second mascot: the greeting's one is right above.
+        Surface(
+            shape = CircleShape,
+            color = colors.secondaryContainer,
+            contentColor = colors.onSecondaryContainer,
+            modifier = Modifier.size(72.dp),
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    PhosphorIcons.Hoodie,
+                    contentDescription = null,
+                    modifier = Modifier.size(36.dp),
+                )
+            }
+        }
+        Text(
+            stringResource(R.string.projects_list_empty_title),
+            style = MaterialTheme.typography.titleLarge,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            stringResource(R.string.home_continue_empty_hint),
+            style = MaterialTheme.typography.bodyLarge,
+            color = colors.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            modifier = Modifier.padding(top = 8.dp),
+        ) {
+            Button(onClick = onNewProject, modifier = Modifier.testTag("home-continue-new")) {
+                Text(stringResource(R.string.project_new_label))
+            }
+            FilledTonalButton(
+                onClick = onBrowseProjects,
+                modifier = Modifier.testTag("home-continue-browse"),
+            ) {
+                Text(stringResource(R.string.home_continue_browse))
+            }
+        }
+    }
+}
+
+@Composable
+private fun Pill(text: String, modifier: Modifier = Modifier) {
     Text(
         text,
         style = MaterialTheme.typography.labelMedium,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         modifier =
-            Modifier.clip(CircleShape)
+            modifier
+                .clip(CircleShape)
                 .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f))
                 .padding(horizontal = 10.dp, vertical = 4.dp),
     )
@@ -752,6 +862,7 @@ private fun relativeDay(millis: Long): String =
             DateUtils.FORMAT_ABBREV_RELATIVE,
         )
         .toString()
+        .replaceFirstChar { it.lowercase() }
 
 @Composable
 internal fun SectionTitle(

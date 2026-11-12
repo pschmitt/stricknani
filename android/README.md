@@ -15,7 +15,7 @@ integration are implemented; see [TODO.md](TODO.md) for verified milestones and 
 
 ## Features (see TODO.md for status)
 
-- Home dashboard (with Ongoing projects), project and yarn stash browsing/search, project status
+- Home dashboard ("Continue knitting": a swipeable row of the projects in progress), project and yarn stash browsing/search, project status
   (in progress / done), category, tag, status and owner filters
 - Create, edit, and delete projects and yarn stash entries, fully offline via a local write queue
 - Offline-first: cached content stays fully usable with zero connectivity once synced - a network

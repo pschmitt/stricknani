@@ -403,6 +403,8 @@ fun StricknaniNavHost(
                                 )
                             )
                         },
+                        onNewProject = { navController.navigate(Route.ProjectEditor()) },
+                        onBrowseProjects = { navController.navigate(Route.Projects) },
                         onOpenDraft = { navController.navigate(draftRoute(it)) },
                     )
                 }

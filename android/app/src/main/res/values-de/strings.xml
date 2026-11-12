@@ -78,7 +78,6 @@
     <string name="local_move_uploading">Deine Handy-Daten werden auf %1$s hochgeladen…</string>
     <string name="share_local_unavailable">Link-Importe sind nicht verfügbar, solange die App nur auf diesem Handy läuft.</string>
     <string name="home_favorite_projects_title">Lieblingsprojekte</string>
-    <string name="home_ongoing_projects_title">Laufende Projekte</string>
     <string name="home_see_all">Alle anzeigen</string>
     <string name="home_favorite_yarns_title">Lieblingswolle</string>
     <string name="home_recent_projects_title">Zuletzt bearbeitet</string>
@@ -108,6 +107,9 @@
     <string name="home_greeting_updated">Neuigkeiten!</string>
     <string name="home_scroll_to_top">Nach oben</string>
     <string name="home_continue_title">Weiterstricken</string>
+    <string name="home_continue_updated">Aktualisiert %1$s</string>
+    <string name="home_continue_empty_hint">Gerade ist kein Projekt in Arbeit.</string>
+    <string name="home_continue_browse">Projekte ansehen</string>
 
     <!-- Search -->
     <string name="search_placeholder">Projekte und Garne durchsuchen</string>

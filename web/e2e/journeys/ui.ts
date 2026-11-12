@@ -777,6 +777,32 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
   );
   markStage("preparing the synthetic project reader fixture");
   ctx.projectId = await prepareProjectReaderFixture(page);
+  markStage("checking Home: Continue knitting carousel");
+  await page.goto(`${origin}/app/`, { waitUntil: "networkidle" });
+  const continueSection = page.locator("section.continue");
+  await continueSection.waitFor({ state: "visible", timeout: 10_000 });
+  const continueTrack = continueSection.getByRole("list", {
+    name: "Continue knitting",
+    exact: true,
+  });
+  await continueTrack.waitFor({ state: "visible", timeout: 10_000 });
+  check(
+    (await continueTrack
+      .getByRole("link", { name: /Heirloom Baby Blanket/ })
+      .count()) === 1,
+    "Continue knitting did not list the seeded in-progress project",
+  );
+  check(
+    (await page.getByRole("heading", { name: "Ongoing projects" }).count()) ===
+      0,
+    "the separate Ongoing projects section is back on Home",
+  );
+  check(
+    (await continueSection
+      .getByRole("link", { name: "See all", exact: true })
+      .getAttribute("href")) === "/app/projects?status=in_progress&owner=me",
+    "Continue knitting's See all does not open the in-progress filter",
+  );
   markStage("opening the authenticated project library");
   await page.goto(`${origin}/app/projects`, { waitUntil: "networkidle" });
   markStage("waiting for the seeded project card");

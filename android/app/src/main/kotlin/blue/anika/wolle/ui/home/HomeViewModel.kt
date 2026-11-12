@@ -43,22 +43,24 @@ import kotlinx.coroutines.launch
 
 private const val SECTION_LIMIT = 10
 
-/** The Home shelf "Ongoing projects" shows this many tiles, like the website's six. */
-internal const val ONGOING_SHELF_LIMIT = 6
+/** "Continue knitting" shows at most this many projects; "See all" opens the rest. */
+internal const val CONTINUE_LIMIT = 10
 
 /**
- * The user's own projects in progress for Home's "Ongoing projects" shelf: [projects] are in
- * most-recently-updated-first order and every status; items shared with the user, or other users'
- * projects an administrator sees, are not "their" ongoing projects.
+ * The projects of Home's "Continue knitting" carousel: the user's own projects in progress, most
+ * recently updated first, at most [CONTINUE_LIMIT]. Items shared with the user, or other users'
+ * projects an administrator sees, are not "their" ongoing projects. The sort is stable, so projects
+ * with the same time keep the given order.
  */
-internal fun ongoingOwnProjects(
+internal fun continueProjects(
     projects: List<ProjectEntity>,
     currentUserId: Long?,
 ): List<ProjectEntity> =
     projects
         .filter { it.status == ProjectStatus.IN_PROGRESS }
         .filter { ownerChoiceMatches(OwnerChoice.Mine, it.ownerId, currentUserId) }
-        .take(ONGOING_SHELF_LIMIT)
+        .sortedByDescending { it.updatedAt }
+        .take(CONTINUE_LIMIT)
 
 /**
  * No "recently viewed" tracking exists yet (would need a view-log table) - "recent" here is the
@@ -173,18 +175,15 @@ constructor(
             )
 
     /**
-     * Every project in progress, most recently updated first. The screen keeps the user's own and
-     * the first [SECTION_LIMIT] (it knows who the user is).
+     * Every project in progress, most recently updated first; null until the first read of the
+     * local database, so Home shows no empty state for a moment. The screen keeps the user's own
+     * (it knows who the user is), see [continueProjects].
      */
-    val ongoingProjects: StateFlow<List<ProjectEntity>> =
+    val ongoingProjects: StateFlow<List<ProjectEntity>?> =
         projectRepository
             .observeAll()
             .map { it.filter { project -> project.status == ProjectStatus.IN_PROGRESS } }
-            .stateIn(
-                viewModelScope,
-                SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
-                emptyList(),
-            )
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
 
     val recentProjects: StateFlow<List<ProjectEntity>> =
         projectRepository

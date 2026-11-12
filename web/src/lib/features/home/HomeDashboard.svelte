@@ -10,7 +10,6 @@
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import GetAppCard from "#lib/components/GetAppCard.svelte";
   import Button from "#lib/components/Button.svelte";
-  import EmptyState from "#lib/components/EmptyState.svelte";
   import Mascot from "#lib/components/Mascot.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
@@ -31,6 +30,7 @@
   import { greetingFor, visitGreetingIndex } from "./greeting";
   import { homeSection } from "./home-section.svelte";
   import ActivityFeed from "./ActivityFeed.svelte";
+  import ContinueCarousel from "./ContinueCarousel.svelte";
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
@@ -52,9 +52,6 @@
     loadOngoingProjects(signal, scope()),
   );
 
-  // The project worked on last gets the large card; the list below shows the rest.
-  const current = $derived(recentProjects.items[0] ?? null);
-  const otherRecent = $derived(recentProjects.items.slice(1));
   const favoritesLoaded = $derived(
     favoriteProjects.status !== "loading" && favoriteYarns.status !== "loading",
   );
@@ -175,87 +172,14 @@
   {:else}
     <ImportDraftCards target="all" />
 
-    <!-- 1. Pick up the project worked on last. -->
-    <section class="home-continue" aria-labelledby="home-continue-title">
-      <h2 id="home-continue-title" class="home-heading">
-        <span class="heading-badge" data-tone="home"
-          ><NavIcon name="projects" /></span
-        >{t("Continue knitting", locale)}
-      </h2>
-      {#if recentProjects.status === "loading"}
-        <div
-          class="continue-card continue-card--placeholder"
-          aria-hidden="true"
-        >
-          <span class="continue-card__image"></span>
-          <span class="continue-card__copy">
-            <span class="placeholder-line"></span>
-            <span class="placeholder-line placeholder-line--short"></span>
-          </span>
-        </div>
-        <p class="visually-hidden" role="status">
-          {t("Loading recent projects…", locale)}
-        </p>
-      {:else if recentProjects.status === "error"}
-        <div class="home-error" role="alert">
-          <p>{t("Recently updated projects could not be loaded.", locale)}</p>
-          <Button icon="reset" onclick={recentProjects.retry}>
-            {t("Try again", locale)}
-          </Button>
-        </div>
-      {:else if current}
-        <a
-          class="continue-card"
-          href={resolve("/projects/[id]", { id: String(current.id) })}
-        >
-          <span class="continue-card__image">
-            {#if current.preview_url}
-              <img src={current.preview_url} alt="" loading="eager" />
-            {:else}
-              <Mascot size={72} interactive="decorative" />
-            {/if}
-            {#if foreignOwner(current.owner, userId)}
-              {@const foreign = foreignOwner(current.owner, userId)}
-              {#if foreign}
-                <span class="owner-corner"
-                  ><OwnerBadge owner={foreign} {locale} /></span
-                >
-              {/if}
-            {/if}
-          </span>
-          <span class="continue-card__copy">
-            <span class="continue-card__name">{current.name}</span>
-            <span class="continue-card__meta">
-              {#if current.category}<span class="pill">{current.category}</span
-                >{/if}
-              <span class="pill"
-                >{t("Updated", locale)} {updatedAgo(current.updated_at)}</span
-              >
-            </span>
-          </span>
-          <span class="continue-card__go" aria-hidden="true">
-            <NavIcon name="next" />
-          </span>
-        </a>
-      {:else}
-        <EmptyState
-          icon="projects"
-          tone="projects"
-          headingTag="p"
-          title={t("Nothing on the needles yet", locale)}
-          hint={t("No projects yet.", locale)}
-        >
-          <a
-            class="ui-button ui-button--primary ui-button--md"
-            href={resolve("/create")}
-          >
-            <ActionLabel icon="create"
-              >{t("Create your first project", locale)}</ActionLabel
-            >
-          </a>
-        </EmptyState>
-      {/if}
-    </section>
+    <!-- 1. Pick up where you left off: the projects in progress, swipeable. -->
+    <ContinueCarousel
+      status={ongoingProjects.status}
+      items={ongoingProjects.items}
+      {locale}
+      {updatedAgo}
+      retry={ongoingProjects.retry}
+    />
 
     <!-- 2. Favourites as photo tiles, or one hint while there are none. -->
     {#if favoritesLoaded && !hasFavorites && favoriteProjects.status === "ready" && favoriteYarns.status === "ready"}
@@ -264,7 +188,7 @@
         <span>{t("Tap ♥ on a project or yarn to keep it here.", locale)}</span>
       </p>
     {/if}
-    {#each [{ id: "ongoing-projects", title: t("Ongoing projects", locale), section: ongoingProjects, kind: "project" as const, icon: "projects" as const, href: `${resolve("/projects")}?status=in_progress&owner=me`, error: t("Ongoing projects could not be loaded.", locale) }, { id: "favorite-projects", title: t("Favorite projects", locale), section: favoriteProjects, kind: "project" as const, icon: "favorite" as const, href: `${resolve("/projects")}?favorite=true`, error: t("Favorite projects could not be loaded.", locale) }, { id: "favorite-yarns", title: t("Favorite yarns", locale), section: favoriteYarns, kind: "yarn" as const, icon: "yarns" as const, href: `${resolve("/yarns")}?favorite=true`, error: t("Favorite yarns could not be loaded.", locale) }] as group (group.id)}
+    {#each [{ id: "favorite-projects", title: t("Favorite projects", locale), section: favoriteProjects, kind: "project" as const, icon: "favorite" as const, href: `${resolve("/projects")}?favorite=true`, error: t("Favorite projects could not be loaded.", locale) }, { id: "favorite-yarns", title: t("Favorite yarns", locale), section: favoriteYarns, kind: "yarn" as const, icon: "yarns" as const, href: `${resolve("/yarns")}?favorite=true`, error: t("Favorite yarns could not be loaded.", locale) }] as group (group.id)}
       {#if group.section.status === "error"}
         <div class="home-error" role="alert">
           <p>{group.error}</p>
@@ -322,8 +246,8 @@
       {/if}
     {/each}
 
-    <!-- 3. The rest of the recent projects, compact. -->
-    {#if otherRecent.length > 0}
+    <!-- 3. Recently updated projects, compact. -->
+    {#if recentProjects.items.length > 0}
       <section class="home-section" aria-labelledby="recent-projects-title">
         <div class="home-section__heading">
           <h2 id="recent-projects-title" class="home-heading">
@@ -336,7 +260,7 @@
           >
         </div>
         <ul class="recent-list" aria-label={t("Recent projects", locale)}>
-          {#each otherRecent as item (item.id)}
+          {#each recentProjects.items as item (item.id)}
             <li>
               <ResourceCard
                 kind="project"
@@ -392,15 +316,6 @@
     min-width: 0;
     gap: 1.75rem;
     padding-top: 0.5rem;
-  }
-
-  .visually-hidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
   }
 
   .home-greeting {
@@ -511,123 +426,6 @@
     height: 1rem;
   }
 
-  /* The one prominent element: the project to get back to. */
-  .home-continue {
-    display: grid;
-    gap: 0.7rem;
-  }
-  .continue-card {
-    position: relative;
-    display: grid;
-    grid-template-columns: 8.5rem minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 1.4rem;
-    border-radius: var(--radius-lg);
-    padding: 1.25rem 1.5rem 1.25rem 1.25rem;
-    color: var(--on-primary-container);
-    background: var(--primary-container);
-    text-decoration: none;
-    transition: transform 220ms cubic-bezier(0.3, 1.6, 0.5, 1);
-  }
-  /* The running stitch: a dashed line sewn just inside the edge. */
-  .continue-card::after {
-    position: absolute;
-    inset: 7px;
-    border: 1.6px dashed var(--stitch);
-    border-radius: 21px;
-    content: "";
-    pointer-events: none;
-  }
-  a.continue-card:hover {
-    transform: translateY(-2px);
-  }
-  a.continue-card:hover .continue-card__image {
-    transform: rotate(-1deg) scale(1.03);
-  }
-  a.continue-card:active {
-    transform: scale(0.97);
-  }
-  a.continue-card:focus-visible {
-    outline-offset: 4px;
-  }
-  .continue-card__image {
-    position: relative;
-    display: grid;
-    aspect-ratio: 1;
-    place-items: center;
-    overflow: hidden;
-    border-radius: 18px;
-    color: var(--accent-strong);
-    background: var(--surface);
-    box-shadow: 0 6px 16px rgb(63 20 80 / 18%);
-    transform: rotate(-4deg);
-    transition: transform 220ms cubic-bezier(0.3, 1.6, 0.5, 1);
-  }
-  .continue-card__image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-  .continue-card__image :global(svg) {
-    width: 2.5rem;
-    height: 2.5rem;
-  }
-  .continue-card__copy {
-    display: grid;
-    min-width: 0;
-    gap: 0.4rem;
-  }
-  .continue-card__name {
-    font-family: var(--font-display);
-    font-size: clamp(1.4rem, 1.1rem + 1.2vw, 1.9rem);
-    font-weight: 700;
-    line-height: 1.15;
-    font-variation-settings:
-      "SOFT" 100,
-      "WONK" 1;
-    overflow-wrap: anywhere;
-  }
-  .continue-card__meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.2rem 0.8rem;
-    font-size: 0.85rem;
-    font-weight: 800;
-  }
-  .pill {
-    border-radius: 999px;
-    padding: 0.15rem 0.7rem;
-    background: color-mix(in srgb, var(--surface) 72%, transparent);
-    color: var(--ink);
-  }
-  .continue-card__go {
-    display: grid;
-    place-items: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 999px;
-    color: var(--on-accent);
-    background: var(--accent);
-  }
-  .continue-card__go :global(svg) {
-    width: 1.2rem;
-    height: 1.2rem;
-  }
-  .continue-card--placeholder .continue-card__image,
-  .placeholder-line {
-    background: color-mix(in srgb, var(--surface) 60%, transparent);
-  }
-  .placeholder-line {
-    display: block;
-    width: 60%;
-    height: 1.2rem;
-    border-radius: 0.4rem;
-  }
-  .placeholder-line--short {
-    width: 35%;
-    height: 0.9rem;
-  }
-
   .tile-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
@@ -732,14 +530,6 @@
   }
 
   @media (max-width: 560px) {
-    .continue-card {
-      grid-template-columns: 6rem minmax(0, 1fr);
-      gap: 1rem;
-      padding: 1rem;
-    }
-    .continue-card__go {
-      display: none;
-    }
     .home-greeting :global(.mascot) {
       --mascot-size: 4.5rem;
     }
@@ -751,25 +541,13 @@
     }
   }
 
-  @media (max-width: 600px) {
-    .continue-card {
-      grid-template-columns: 6.5rem minmax(0, 1fr);
-      gap: 0.9rem;
-    }
-    .continue-card__go {
-      display: none;
-    }
-  }
-
   @media (prefers-reduced-motion: reduce) {
     .home-greeting__title {
       animation: none;
     }
-    .continue-card,
     .tile__image {
       transition: none;
     }
-    a.continue-card:active,
     .tile:hover .tile__image {
       transform: none;
     }

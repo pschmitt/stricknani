@@ -79,7 +79,6 @@
     <string name="local_move_uploading">Uploading your phone data to %1$s…</string>
     <string name="share_local_unavailable">Link imports are not available while the app only runs on this phone.</string>
     <string name="home_favorite_projects_title">Favorite projects</string>
-    <string name="home_ongoing_projects_title">Ongoing projects</string>
     <string name="home_see_all">See all</string>
     <string name="home_favorite_yarns_title">Favorite yarns</string>
     <string name="home_recent_projects_title">Recent projects</string>
@@ -109,6 +108,9 @@
     <string name="home_greeting_updated">Fresh updates!</string>
     <string name="home_scroll_to_top">Scroll to top</string>
     <string name="home_continue_title">Continue knitting</string>
+    <string name="home_continue_updated">Updated %1$s</string>
+    <string name="home_continue_empty_hint">No projects in progress.</string>
+    <string name="home_continue_browse">Browse projects</string>
 
     <!-- Search -->
     <string name="search_placeholder">Search projects and yarns</string>

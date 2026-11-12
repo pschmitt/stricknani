@@ -995,6 +995,10 @@ msgstr ""
 msgid "Browse and find your knitting projects."
 msgstr ""
 
+#: web/src/lib/features/home/ContinueCarousel.svelte:228
+msgid "Browse projects"
+msgstr ""
+
 #: web/src/lib/features/yarns/YarnLibrary.svelte:216
 msgid "Browse the yarns connected to your projects."
 msgstr ""
@@ -1385,7 +1389,8 @@ msgstr ""
 msgid "Continue"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:183
+#: web/src/lib/features/home/ContinueCarousel.svelte:110
+#: web/src/lib/features/home/ContinueCarousel.svelte:170
 msgid "Continue knitting"
 msgstr ""
 
@@ -1492,10 +1497,6 @@ msgstr ""
 #: web/src/lib/features/admin/AdminUsers.svelte:666
 #: web/src/lib/features/admin/AdminUsers.svelte:967
 msgid "Create user"
-msgstr ""
-
-#: web/src/lib/features/home/HomeDashboard.svelte:253
-msgid "Create your first project"
 msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:1541
@@ -2065,19 +2066,19 @@ msgstr ""
 msgid "Failed"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:267
+#: web/src/lib/features/home/HomeDashboard.svelte:191
 msgid "Favorite projects"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:267
+#: web/src/lib/features/home/HomeDashboard.svelte:191
 msgid "Favorite projects could not be loaded."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:267
+#: web/src/lib/features/home/HomeDashboard.svelte:191
 msgid "Favorite yarns"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:267
+#: web/src/lib/features/home/HomeDashboard.svelte:191
 msgid "Favorite yarns could not be loaded."
 msgstr ""
 
@@ -2328,7 +2329,7 @@ msgid ""
 "including shared timers, continue until stopped."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:132
+#: web/src/lib/features/home/HomeDashboard.svelte:129
 #: web/src/lib/nav-items.ts:20
 msgid "Home"
 msgstr ""
@@ -2904,6 +2905,10 @@ msgstr ""
 msgid "Loading linked projects…"
 msgstr ""
 
+#: web/src/lib/features/home/ContinueCarousel.svelte:158
+msgid "Loading ongoing projects…"
+msgstr ""
+
 #: web/src/lib/features/auth/PasskeysSection.svelte:254
 msgid "Loading passkeys…"
 msgstr ""
@@ -2918,10 +2923,6 @@ msgstr ""
 
 #: web/src/lib/features/history/HistorySection.svelte:253
 msgid "Loading recent changes…"
-msgstr ""
-
-#: web/src/lib/features/home/HomeDashboard.svelte:197
-msgid "Loading recent projects…"
 msgstr ""
 
 #: web/src/lib/features/admin/DiffPanel.svelte:123
@@ -2951,7 +2952,7 @@ msgstr ""
 msgid "Loading yarn options…"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:163
+#: web/src/lib/features/home/HomeDashboard.svelte:160
 msgid "Loading your home…"
 msgstr ""
 
@@ -3189,6 +3190,7 @@ msgstr ""
 msgid "New password"
 msgstr ""
 
+#: web/src/lib/features/home/ContinueCarousel.svelte:222
 #: web/src/lib/features/projects/ProjectEditor.svelte:1603
 #: web/src/lib/features/projects/ProjectEditor.svelte:1613
 #: web/src/lib/features/projects/ProjectLibrary.svelte:308
@@ -3234,6 +3236,10 @@ msgstr ""
 #: web/src/lib/features/admin/AdminAudit.svelte:638
 #: web/src/lib/features/admin/AdminUsers.svelte:886
 msgid "Next page"
+msgstr ""
+
+#: web/src/lib/features/home/ContinueCarousel.svelte:134
+msgid "Next project"
 msgstr ""
 
 #: web/src/lib/features/admin/AdminBackups.svelte:78
@@ -3326,6 +3332,10 @@ msgstr ""
 msgid "No photos yet."
 msgstr ""
 
+#: web/src/lib/features/home/ContinueCarousel.svelte:216
+msgid "No projects in progress."
+msgstr ""
+
 #: web/src/lib/features/projects/ProjectLibrary.svelte:413
 msgid "No projects match those filters."
 msgstr ""
@@ -3333,10 +3343,6 @@ msgstr ""
 #: web/src/lib/features/yarns/YarnDetail.svelte:548
 #: web/src/lib/features/yarns/YarnDetail.svelte:557
 msgid "No projects use this yarn yet."
-msgstr ""
-
-#: web/src/lib/features/home/HomeDashboard.svelte:246
-msgid "No projects yet."
 msgstr ""
 
 #: web/src/routes/privacy/+page.svelte:270
@@ -3435,7 +3441,7 @@ msgstr ""
 msgid "Nothing matches"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:245
+#: web/src/lib/features/home/ContinueCarousel.svelte:215
 #: web/src/lib/features/projects/ProjectLibrary.svelte:419
 msgid "Nothing on the needles yet"
 msgstr ""
@@ -3500,11 +3506,7 @@ msgstr ""
 msgid "One-time display"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:267
-msgid "Ongoing projects"
-msgstr ""
-
-#: web/src/lib/features/home/HomeDashboard.svelte:267
+#: web/src/lib/features/home/ContinueCarousel.svelte:162
 msgid "Ongoing projects could not be loaded."
 msgstr ""
 
@@ -3971,6 +3973,10 @@ msgstr ""
 msgid "Previous page"
 msgstr ""
 
+#: web/src/lib/features/home/ContinueCarousel.svelte:123
+msgid "Previous project"
+msgstr ""
+
 #: web/src/lib/features/projects/ProjectEditor.svelte:2153
 msgid "Previous yarn note"
 msgstr ""
@@ -4201,17 +4207,13 @@ msgid "Recent changes to your projects and yarns."
 msgstr ""
 
 #: web/src/lib/components/CommandPalette.svelte:109
-#: web/src/lib/features/home/HomeDashboard.svelte:332
-#: web/src/lib/features/home/HomeDashboard.svelte:338
+#: web/src/lib/features/home/HomeDashboard.svelte:256
+#: web/src/lib/features/home/HomeDashboard.svelte:262
 msgid "Recent projects"
 msgstr ""
 
 #: web/src/lib/components/CommandPalette.svelte:111
 msgid "Recent yarns"
-msgstr ""
-
-#: web/src/lib/features/home/HomeDashboard.svelte:201
-msgid "Recently updated projects could not be loaded."
 msgstr ""
 
 #: web/src/lib/features/media/OcrControl.svelte:186
@@ -4789,9 +4791,10 @@ msgstr ""
 msgid "Security"
 msgstr ""
 
+#: web/src/lib/features/home/ContinueCarousel.svelte:144
+#: web/src/lib/features/home/HomeDashboard.svelte:210
+#: web/src/lib/features/home/HomeDashboard.svelte:259
 #: web/src/lib/features/home/HomeDashboard.svelte:286
-#: web/src/lib/features/home/HomeDashboard.svelte:335
-#: web/src/lib/features/home/HomeDashboard.svelte:362
 msgid "See all"
 msgstr ""
 
@@ -4941,7 +4944,7 @@ msgstr ""
 #: web/src/lib/components/SignInForm.svelte:164
 #: web/src/lib/components/SignInForm.svelte:253
 #: web/src/lib/features/auth/SignupForm.svelte:281
-#: web/src/lib/features/home/HomeDashboard.svelte:172
+#: web/src/lib/features/home/HomeDashboard.svelte:169
 #: web/src/lib/features/projects/ProjectEditor.svelte:1624
 #: web/src/routes/+layout.svelte:265 web/src/routes/login/+page.svelte:8
 msgid "Sign in"
@@ -4976,7 +4979,7 @@ msgstr ""
 msgid "Sign in to see the trash."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:167
+#: web/src/lib/features/home/HomeDashboard.svelte:164
 msgid "Sign in to see your favorite projects and yarns."
 msgstr ""
 
@@ -5364,7 +5367,7 @@ msgstr ""
 msgid "Tap a photo to see it larger."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:264
+#: web/src/lib/features/home/HomeDashboard.svelte:188
 msgid "Tap ♥ on a project or yarn to keep it here."
 msgstr ""
 
@@ -6439,8 +6442,8 @@ msgstr ""
 #: web/src/lib/features/history/HistorySection.svelte:259
 #: web/src/lib/features/home/ActivityFeed.svelte:170
 #: web/src/lib/features/home/ActivityFeed.svelte:283
-#: web/src/lib/features/home/HomeDashboard.svelte:203
-#: web/src/lib/features/home/HomeDashboard.svelte:272
+#: web/src/lib/features/home/ContinueCarousel.svelte:163
+#: web/src/lib/features/home/HomeDashboard.svelte:196
 #: web/src/lib/features/media/ArchiveControl.svelte:513
 #: web/src/lib/features/projects/ProjectLibrary.svelte:396
 #: web/src/lib/features/projects/ProjectReader.svelte:847
@@ -6560,7 +6563,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminResource.svelte:453
 #: web/src/lib/features/admin/AdminResource.svelte:654
 #: web/src/lib/features/admin/audit-action.ts:30
-#: web/src/lib/features/home/HomeDashboard.svelte:232
+#: web/src/lib/features/home/ContinueCarousel.svelte:199
 #: web/src/lib/features/projects/ProjectReader.svelte:1135
 #: web/src/lib/features/yarns/YarnDetail.svelte:442
 msgid "Updated"
@@ -6769,7 +6772,7 @@ msgstr ""
 msgid "Well, that got tangled"
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:151
+#: web/src/lib/features/home/HomeDashboard.svelte:148
 msgid "What are we knitting today?"
 msgstr ""
 
@@ -7203,7 +7206,7 @@ msgstr ""
 msgid "Your edits stay here if saving fails."
 msgstr ""
 
-#: web/src/lib/features/home/HomeDashboard.svelte:135
+#: web/src/lib/features/home/HomeDashboard.svelte:132
 msgid "Your favorite projects and yarns, together."
 msgstr ""
 

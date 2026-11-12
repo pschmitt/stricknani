@@ -30,7 +30,7 @@ sealed interface Route {
     /**
      * The project list with filters preselected: [owner] is `me`, `shared` or a user id and
      * [status] `in_progress` or `done`, like `?owner=` and `?status=` of the website's
-     * `/app/projects`. Same screen as [Projects]; Home's "Ongoing projects" opens it with `owner =
+     * `/app/projects`. Same screen as [Projects]; Home's "Continue knitting" opens it with `owner =
      * "me", status = "in_progress"`.
      */
     @Serializable

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { CONTINUE_LIMIT } from "./continue-carousel";
 import {
   HOME_PREVIEW_LIMIT,
   loadFavoriteProjects,
@@ -75,15 +76,16 @@ describe("home dashboard API", () => {
     }
   });
 
-  it("asks for the user's own in-progress projects and keeps at most six in server order", async () => {
-    const projects = Array.from({ length: 8 }, (_, index) => ({
+  it("asks for the user's own in-progress projects, newest update first, capped for the carousel", async () => {
+    // The server order is not trusted: the oldest update comes first here.
+    const projects = Array.from({ length: CONTINUE_LIMIT + 2 }, (_, index) => ({
       id: index + 1,
       name: `Project ${index + 1}`,
       category: null,
       tags: [],
       is_favorite: false,
       status: "in_progress",
-      updated_at: `2026-11-0${8 - index}T12:00:00Z`,
+      updated_at: `2026-10-${String(index + 1).padStart(2, "0")}T12:00:00Z`,
       preview_url: null,
     }));
     const fetchMock = vi.fn((_input: RequestInfo | URL, _init?: RequestInit) =>
@@ -98,9 +100,26 @@ describe("home dashboard API", () => {
 
     const ongoing = await loadOngoingProjects(new AbortController().signal);
 
-    expect(ongoing.map((item) => item.id)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(ongoing).toHaveLength(CONTINUE_LIMIT);
+    expect(ongoing[0]?.id).toBe(CONTINUE_LIMIT + 2);
+    expect(ongoing.at(-1)?.id).toBe(3);
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
       "/api/v2/projects?status=in_progress&owner=me",
     );
+  });
+
+  it("returns an empty list when nothing is in progress", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          Response.json({
+            data: [],
+            meta: { page: 1, per_page: 50, has_more: false },
+          }),
+        ),
+      ),
+    );
+    expect(await loadOngoingProjects(new AbortController().signal)).toEqual([]);
   });
 });
