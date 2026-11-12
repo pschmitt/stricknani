@@ -26,7 +26,8 @@
         user={part.user}
         {locale}
         {size}
-      />{:else}{part.text}{/if}{/each}</span
+      />{:else}<span class="user-sentence__text">{part.text}</span
+      >{/if}{/each}</span
 >
 
 <style>
@@ -34,7 +35,12 @@
     display: inline-flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0 0.3rem;
+    gap: 0;
     min-width: 0;
+  }
+
+  /* Keep the spaces at the edges of a piece ("Owner: "); flex items would trim them. */
+  .user-sentence__text {
+    white-space: pre-wrap;
   }
 </style>

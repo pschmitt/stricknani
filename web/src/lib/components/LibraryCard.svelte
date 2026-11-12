@@ -180,7 +180,8 @@
     position: absolute;
     inset-block-end: 0.3rem;
     inset-inline-start: 0.3rem;
-    display: inline-flex;
+    display: flex;
+    max-width: calc(100% - 0.6rem);
   }
 
   .library-card__placeholder {

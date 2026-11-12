@@ -310,7 +310,8 @@
     position: absolute;
     inset-block-end: 0.2rem;
     inset-inline-end: 0.2rem;
-    display: inline-flex;
+    display: flex;
+    max-width: calc(100% - 0.4rem);
   }
 
   .resource-card__badge {

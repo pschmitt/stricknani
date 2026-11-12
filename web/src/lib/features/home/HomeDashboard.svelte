@@ -304,7 +304,8 @@
     position: absolute;
     inset-block-start: 0.4rem;
     inset-inline-start: 0.4rem;
-    display: inline-flex;
+    display: flex;
+    max-width: calc(100% - 0.8rem);
   }
 
   .home-dashboard:focus {
