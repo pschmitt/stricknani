@@ -714,9 +714,7 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
   const latestEntryText = (
     (await historyRows.first().textContent()) ?? ""
   ).replace(/\s+/g, " ");
-  const latestActor = historyRows
-    .first()
-    .locator(".entry-actor .user-label");
+  const latestActor = historyRows.first().locator(".entry-actor .user-label");
   check(
     (await latestActor.locator(".user-label__prefix").textContent()) ===
       "by " &&
