@@ -89,7 +89,7 @@ impl BackupConfig {
     /// `None` for in-memory databases, which have no file to back up or replace.
     pub fn resolve(
         database_url: &str,
-        backup_dir: Option<&str>,
+        backup_dir: Option<&Path>,
         media_root: Option<&Path>,
         auto_restart: bool,
     ) -> Option<Self> {
@@ -98,9 +98,11 @@ impl BackupConfig {
         if name.is_empty() || name.contains(":memory:") || name.starts_with("file:") {
             return None;
         }
-        let dir = match backup_dir.map(str::trim).filter(|dir| !dir.is_empty()) {
-            Some(dir) => PathBuf::from(dir),
-            None => database_path.parent()?.join("backups"),
+        // `Config::backup_dir` (STRICKNANI_BACKUP_DIR, else `backups` next to
+        // the database file); the same directory the pre-migration snapshots use.
+        let dir = match backup_dir {
+            Some(dir) => dir.to_path_buf(),
+            None => crate::pre_migrate_backup::backup_dir(&database_path),
         };
         Some(Self {
             dir,

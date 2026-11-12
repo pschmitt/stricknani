@@ -135,9 +135,13 @@ Use this file as the operational source of truth for working in Stricknani.
   writes and account isolation. Browser sessions and CSRF are not a native
   authentication replacement. Coordinate shared backend changes explicitly.
 - The UI owner deploys verified UI milestones to production so progress is
-  visible: build the exact commit on a build host first, back up the database,
-  then bump the pin. Coordinate backend changes with that owner so neither
-  deployment rolls back the other's changes.
+  visible: build the exact commit on a build host first, then bump the pin. The
+  database backup is automatic: the NixOS module writes
+  `backups/predeploy-<version>-<timestamp>.sqlite3` before a changed package
+  starts, and the server writes `pre-migrate-*` before pending migrations
+  (see `docs/rust-nixos.md`). Check the `predeploy-*` file exists after the
+  rollout; do not run a manual `sqlite3 .backup` first. Coordinate backend
+  changes with that owner so neither deployment rolls back the other's changes.
 - The user explicitly requests a Signal notification after every successful
   production rollout. The deployment agent loads `signal-notify`, verifies
   the deployed version and HTTPS route, then sends a short change summary with

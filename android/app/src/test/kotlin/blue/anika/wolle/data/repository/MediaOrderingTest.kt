@@ -64,12 +64,12 @@ class MediaOrderingTest {
         )
 
     @Test
-    fun `canMakeCover is true only for later server photos and moves them to the front`() {
-        assertFalse(canMakeCover(0, 3))
-        assertTrue(canMakeCover(1, 3))
-        assertTrue(canMakeCover(2, 3))
-        assertFalse(canMakeCover(3, 3))
-        assertFalse(canMakeCover(-1, 3))
+    fun `canMoveToFirst is true only for later server photos and moves them to the front`() {
+        assertFalse(canMoveToFirst(0, 3))
+        assertTrue(canMoveToFirst(1, 3))
+        assertTrue(canMoveToFirst(2, 3))
+        assertFalse(canMoveToFirst(3, 3))
+        assertFalse(canMoveToFirst(-1, 3))
         assertEquals(listOf(30, 10, 20), listOf(10, 20, 30).movedItem(2, 0))
     }
 

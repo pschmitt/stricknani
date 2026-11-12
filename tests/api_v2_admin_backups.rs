@@ -40,6 +40,7 @@ const NIGHTLY_NO_MEDIA: &str = "stricknani-20260102-020000.tar.gz";
 const PREDEPLOY: &str = "predeploy-1.7.0-20260103-030000.sqlite3";
 const PRE_MIGRATE: &str = "pre-migrate-34-to-37-20260104-040000.sqlite3";
 const MANUAL: &str = "my-copy.sqlite3";
+const MANUAL_PREDEPLOY: &str = "manual-predeploy-1.7.0-20260106-030000.sqlite3";
 const FUTURE: &str = "predeploy-9.9.9-20260105-050000.sqlite3";
 
 struct Env {
@@ -343,6 +344,7 @@ async fn seed_backups(env: &Env) {
     fs::copy(&full, env.backups.join(PREDEPLOY)).unwrap();
     make_database(&env.backups.join(PRE_MIGRATE), 2, 0, 0, 0, Some(34)).await;
     fs::copy(&full, env.backups.join(MANUAL)).unwrap();
+    fs::copy(&full, env.backups.join(MANUAL_PREDEPLOY)).unwrap();
     fs::copy(&full, env.backups.join(FUTURE)).unwrap();
     mark_future(&env.backups.join(FUTURE)).await;
     // Noise that must never show up.
@@ -423,6 +425,8 @@ async fn listing_reports_kinds_versions_counts_and_ignores_noise() {
     assert_eq!(pre_migrate["counts"]["users"], 2);
     assert_eq!(pre_migrate["restorable"], true);
     assert_eq!(entry(&body, MANUAL)["kind"], "manual");
+    // Operator copies named manual-* are manual whatever follows the prefix.
+    assert_eq!(entry(&body, MANUAL_PREDEPLOY)["kind"], "manual");
 
     let future = entry(&body, FUTURE);
     assert_eq!(future["schema_version"], 9999);
@@ -1005,7 +1009,7 @@ async fn startup_applies_the_staged_restore_and_migrates_forward() {
     live.pool.close().await;
     drop(live);
 
-    let service = backups::prepare_startup(&env.db_url, &env.media)
+    let service = backups::prepare_startup(&env.db_url, None, &env.media)
         .await
         .unwrap()
         .expect("file databases have backups");
@@ -1026,7 +1030,52 @@ async fn startup_applies_the_staged_restore_and_migrates_forward() {
     assert_eq!(outcome.backup, PRE_MIGRATE);
     assert_ne!(service.data_epoch(), epoch_before);
     // The original data lives on in the pre-restore backup ("Undo last restore").
-    assert!(env.backups.join(pre_restore).exists());
+    assert!(env.backups.join(&pre_restore).exists());
+
+    // The restore is a `server` event of the admin audit log, with its details.
+    let pool = db::connect(&env.db_url).await.unwrap();
+    sqlx::query("UPDATE users SET is_admin = 1 WHERE id = 1")
+        .execute(&pool)
+        .await
+        .unwrap();
+    add_token(&pool, 1, ADMIN_TOKEN, "browser").await;
+    let app = api_v2::router(
+        db::AppState::new(pool.clone()).with_secure_cookies(true),
+        false,
+    );
+    for query in ["/admin/audit", "/admin/audit?entity=server"] {
+        let (status, body) = browser(&app, "GET", query, ADMIN_TOKEN, None).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let events = body["data"].as_array().unwrap();
+        let event = events
+            .iter()
+            .find(|event| event["action"] == "backup_restored")
+            .unwrap_or_else(|| panic!("{query}: no restore event in {body}"));
+        assert_eq!(event["entity_type"], "server");
+        assert_eq!(event["resource"]["name"], PRE_MIGRATE);
+        assert_eq!(event["server"]["backup"], PRE_MIGRATE);
+        assert_eq!(event["server"]["pre_restore"], pre_restore);
+        assert_eq!(event["server"]["media"], "none");
+        assert_eq!(event["server"]["actor_email"], "admin@example.test");
+        // The requesting admin is not part of the restored data: no account is named.
+        assert!(event["actor_email"].is_null());
+    }
+    let (_, filtered) = browser(
+        &app,
+        "GET",
+        "/admin/audit?entity=project",
+        ADMIN_TOKEN,
+        None,
+    )
+    .await;
+    assert!(
+        !filtered["data"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|event| event["action"] == "backup_restored")
+    );
+    pool.close().await;
 }
 
 #[tokio::test]
@@ -1056,7 +1105,7 @@ async fn failed_migration_rolls_back_to_the_original_database() {
     live.pool.close().await;
     drop(live);
 
-    let service = backups::prepare_startup(&env.db_url, &env.media)
+    let service = backups::prepare_startup(&env.db_url, None, &env.media)
         .await
         .unwrap()
         .unwrap();
@@ -1092,7 +1141,7 @@ async fn a_damaged_staged_file_is_never_swapped_in() {
     let middle = bytes.len() / 2;
     bytes[middle] ^= 0xff;
     fs::write(&staged, bytes).unwrap();
-    let service = backups::prepare_startup(&env.db_url, &env.media)
+    let service = backups::prepare_startup(&env.db_url, None, &env.media)
         .await
         .unwrap()
         .unwrap();
@@ -1114,7 +1163,7 @@ async fn a_stale_request_is_discarded() {
     let mut marker: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
     marker["requested_at"] = json!(1_700_000_000);
     fs::write(&path, marker.to_string()).unwrap();
-    let service = backups::prepare_startup(&env.db_url, &env.media)
+    let service = backups::prepare_startup(&env.db_url, None, &env.media)
         .await
         .unwrap()
         .unwrap();
@@ -1143,7 +1192,7 @@ async fn an_interrupted_swap_resumes_without_losing_the_original() {
     // A stale WAL of the old database must not survive next to the new file.
     let wal = PathBuf::from(format!("{}-wal", env.db_path.display()));
     fs::write(&wal, b"stale wal").unwrap();
-    let service = backups::prepare_startup(&env.db_url, &env.media)
+    let service = backups::prepare_startup(&env.db_url, None, &env.media)
         .await
         .unwrap()
         .unwrap();
@@ -1160,14 +1209,14 @@ async fn startup_without_a_request_changes_nothing() {
     let live = live(&env).await;
     live.pool.close().await;
     let before = fs::read(&env.db_path).unwrap();
-    let service = backups::prepare_startup(&env.db_url, &env.media)
+    let service = backups::prepare_startup(&env.db_url, None, &env.media)
         .await
         .unwrap()
         .unwrap();
     assert!(service.last_restore().is_none());
     assert_eq!(fs::read(&env.db_path).unwrap(), before);
     assert!(
-        backups::prepare_startup("sqlite::memory:", &env.media)
+        backups::prepare_startup("sqlite::memory:", None, &env.media)
             .await
             .unwrap()
             .is_none()
@@ -1195,7 +1244,7 @@ async fn media_add_missing_never_overwrites_or_deletes() {
     stage_restore(&env, &live, NIGHTLY, "add_missing").await;
     live.pool.close().await;
     drop(live);
-    let service = backups::prepare_startup(&env.db_url, &env.media)
+    let service = backups::prepare_startup(&env.db_url, None, &env.media)
         .await
         .unwrap()
         .unwrap();
@@ -1229,7 +1278,7 @@ async fn media_none_leaves_the_media_tree_alone() {
     stage_restore(&env, &live, NIGHTLY, "none").await;
     live.pool.close().await;
     drop(live);
-    backups::prepare_startup(&env.db_url, &env.media)
+    backups::prepare_startup(&env.db_url, None, &env.media)
         .await
         .unwrap()
         .unwrap();

@@ -43,9 +43,32 @@ let
       "localhost"
     ]
   );
+  # Shared by the scheduled backup and the pre-upgrade backup. Expects DB_URL
+  # and PROG (the message prefix) and sets DB_PATH, accepting both
+  # `sqlite:/path` and `sqlite:///path`.
+  sqliteUrlToPath = ''
+    if [[ "$DB_URL" == sqlite:/* ]]
+    then
+      DB_PATH="''${DB_URL#sqlite:}"
+      while [[ "$DB_PATH" == //* ]]
+      do
+        DB_PATH="''${DB_PATH#/}"
+      done
+      if [[ "$DB_URL" == *\?* || "$DB_URL" == *#* || "$DB_PATH" != /* ]]
+      then
+        echo "$PROG: unsupported SQLite URL" >&2
+        exit 2
+      fi
+    else
+      echo "$PROG: requires file-backed SQLite" >&2
+      exit 2
+    fi
+  '';
+
   backupScript = pkgs.writeShellScript "stricknani-backup" ''
     set -euo pipefail
     umask 0077
+    PROG=stricknani-backup
 
     BACKUP_DIR='${cfg.backup.dir}'
     MEDIA_DIR='${cfg.mediaRoot}'
@@ -66,26 +89,11 @@ let
 
     trap cleanup EXIT
 
-    if [[ "$DB_URL" == sqlite:/* ]]
-    then
-      DB_PATH="''${DB_URL#sqlite:}"
-      while [[ "$DB_PATH" == //* ]]
-      do
-        DB_PATH="''${DB_PATH#/}"
-      done
-      if [[ "$DB_URL" == *\?* || "$DB_URL" == *#* || "$DB_PATH" != /* ]]
-      then
-        echo "stricknani-backup: unsupported SQLite URL" >&2
-        exit 2
-      fi
-    else
-      echo "stricknani-backup: requires file-backed SQLite" >&2
-      exit 2
-    fi
+    ${sqliteUrlToPath}
 
     if [[ ! -f "$DB_PATH" ]]
     then
-      echo "stricknani-backup: sqlite database not found at '$DB_PATH'" >&2
+      echo "$PROG: sqlite database not found at '$DB_PATH'" >&2
       exit 2
     fi
 
@@ -97,7 +105,7 @@ let
       tar -czf "$ARCHIVE_TMP" -C "$TMP_DIR" "$DB_SNAPSHOT" \
         -C "$(dirname "$MEDIA_DIR")" "$(basename "$MEDIA_DIR")"
     else
-      echo "stricknani-backup: media directory missing at '$MEDIA_DIR'" >&2
+      echo "$PROG: media directory missing at '$MEDIA_DIR'" >&2
       tar -czf "$ARCHIVE_TMP" -C "$TMP_DIR" "$DB_SNAPSHOT"
     fi
 
@@ -116,6 +124,88 @@ let
         rm -f -- "$OLD_BACKUP"
       done
     fi
+  '';
+
+  # ExecStartPre of stricknani.service: when the package differs from the one
+  # recorded by the last pre-upgrade backup, write a verified
+  # `sqlite3 .backup` copy of the database first. The marker is written right
+  # after the backup (not after a successful start), so a crash-looping new
+  # version does not take a backup per attempt and push the real pre-upgrade
+  # copy out of the retention window; a failed backup leaves the marker alone,
+  # keeps the service from starting, and is retried.
+  packageVersion = lib.strings.sanitizeDerivationName (cfg.package.version or "unknown");
+  preUpgradeBackupScript = pkgs.writeShellScript "stricknani-predeploy-backup" ''
+    set -euo pipefail
+    umask 0077
+    export PATH='${
+      lib.makeBinPath [
+        pkgs.coreutils
+        pkgs.sqlite
+      ]
+    }'
+    PROG=stricknani-predeploy-backup
+
+    BACKUP_DIR='${cfg.backup.dir}'
+    DB_URL='${cfg.databaseUrl}'
+    RETENTION='${toString cfg.backup.beforeUpgrade.retention}'
+    PACKAGE='${cfg.package}'
+    VERSION='${packageVersion}'
+    MARKER='${cfg.dataDir}/.predeploy-backup-package'
+
+    ${sqliteUrlToPath}
+
+    write_marker() {
+      printf '%s\n' "$PACKAGE" > "$MARKER.tmp"
+      mv -f -- "$MARKER.tmp" "$MARKER"
+    }
+
+    if [[ -f "$MARKER" && "$(< "$MARKER")" == "$PACKAGE" ]]
+    then
+      exit 0
+    fi
+
+    if [[ ! -f "$DB_PATH" ]]
+    then
+      # First installation: nothing to protect yet.
+      write_marker
+      exit 0
+    fi
+
+    mkdir -p -- "$BACKUP_DIR"
+    TIMESTAMP="$(date -u +%Y%m%d-%H%M%S)"
+    TARGET="$BACKUP_DIR/predeploy-$VERSION-$TIMESTAMP.sqlite3"
+    PARTIAL="$BACKUP_DIR/.predeploy-$VERSION-$TIMESTAMP.partial"
+    trap 'rm -f -- "$PARTIAL"' EXIT
+
+    rm -f -- "$PARTIAL"
+    sqlite3 "$DB_PATH" ".backup '$PARTIAL'"
+    RESULT="$(sqlite3 "$PARTIAL" 'PRAGMA integrity_check;')"
+    if [[ "$RESULT" != ok ]]
+    then
+      echo "$PROG: integrity check of the new backup failed" >&2
+      exit 1
+    fi
+    mv -- "$PARTIAL" "$TARGET"
+    echo "$PROG: wrote $TARGET ($(stat -c %s "$TARGET") bytes) before starting $PACKAGE"
+    write_marker
+
+    # Keep the newest RETENTION predeploy-* backups (by the UTC timestamp in
+    # the name); other files are never touched.
+    mapfile -t OLD < <(
+      for FILE in "$BACKUP_DIR"/predeploy-*.sqlite3
+      do
+        [[ -f "$FILE" ]] || continue
+        NAME="''${FILE##*/}"
+        NAME="''${NAME%.sqlite3}"
+        STAMP="''${NAME: -15}"
+        [[ "$STAMP" =~ ^[0-9]{8}-[0-9]{6}$ ]] || continue
+        printf '%s %s\n' "$STAMP" "$FILE"
+      done | sort | head -n "-$RETENTION" | cut -d' ' -f2-
+    )
+    for FILE in "''${OLD[@]}"
+    do
+      rm -f -- "$FILE"
+    done
   '';
 
   stricknaniCliWrapper = pkgs.writeShellScriptBin "stricknani-cli" ''
@@ -363,7 +453,7 @@ in
       dir = lib.mkOption {
         type = lib.types.str;
         default = "${cfg.dataDir}/backups";
-        description = "Directory where backup archives are stored.";
+        description = "Directory where backups are stored: scheduled archives, pre-upgrade and pre-migration copies (also passed to the server as `STRICKNANI_BACKUP_DIR`).";
       };
 
       schedule = lib.mkOption {
@@ -376,6 +466,44 @@ in
         type = lib.types.ints.positive;
         default = 7;
         description = "How many recent backups to keep.";
+      };
+
+      beforeUpgrade = {
+        enable = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          description = ''
+            Before the service starts with a different package than the one
+            of the previous pre-upgrade backup, write a verified
+            `sqlite3 .backup` copy of the database to
+            `<backup.dir>/predeploy-<version>-<UTC timestamp>.sqlite3`. If the
+            backup fails, the service does not start.
+          '';
+        };
+
+        retention = lib.mkOption {
+          type = lib.types.ints.positive;
+          default = 10;
+          description = "How many `predeploy-*` backups to keep.";
+        };
+      };
+
+      beforeMigration = {
+        enable = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          description = ''
+            Let the server snapshot the database (`VACUUM INTO`) to
+            `<backup.dir>/pre-migrate-*.sqlite3` before it applies pending
+            schema migrations (`STRICKNANI_PRE_MIGRATE_BACKUP`).
+          '';
+        };
+
+        retention = lib.mkOption {
+          type = lib.types.ints.positive;
+          default = 10;
+          description = "How many `pre-migrate-*` snapshots to keep (`STRICKNANI_PRE_MIGRATE_BACKUP_RETENTION`).";
+        };
       };
     };
 
@@ -503,8 +631,9 @@ in
           BIND_PORT = toString cfg.port;
           STRICKNANI_DATABASE_URL = cfg.databaseUrl;
           STRICKNANI_MEDIA_ROOT = toString cfg.mediaRoot;
-          # The admin Backups view lists this directory and restores from it.
-          STRICKNANI_BACKUP_DIR = toString cfg.backup.dir;
+          STRICKNANI_BACKUP_DIR = cfg.backup.dir;
+          STRICKNANI_PRE_MIGRATE_BACKUP = lib.boolToString cfg.backup.beforeMigration.enable;
+          STRICKNANI_PRE_MIGRATE_BACKUP_RETENTION = toString cfg.backup.beforeMigration.retention;
           TRUSTED_HOSTS = trustedHosts;
           SESSION_COOKIE_SECURE = lib.boolToString cfg.sessionCookieSecure;
           GRAVATAR_ENABLED = lib.boolToString cfg.gravatar.enable;
@@ -544,6 +673,7 @@ in
         // cfg.extraConfig;
 
         serviceConfig = {
+          ExecStartPre = lib.optional cfg.backup.beforeUpgrade.enable "${preUpgradeBackupScript}";
           ExecStart = lib.getExe cfg.package;
           WorkingDirectory = cfg.dataDir;
           # systemd creates a data directory under /var/lib; others come from tmpfiles.
@@ -568,18 +698,13 @@ in
           ProtectHome = true;
           ProtectSystem = "strict";
           ReadOnlyPaths = [ "/" ];
-          ReadWritePaths =
-            if toString cfg.mediaRoot == "${cfg.dataDir}/media" then
-              lib.unique [
-                cfg.dataDir
-                (toString cfg.backup.dir)
-              ]
-            else
-              lib.unique [
-                cfg.dataDir
-                cfg.mediaRoot
-                (toString cfg.backup.dir)
-              ];
+          # The backup directory is written by the pre-upgrade backup, the
+          # server's pre-migration snapshots and restores.
+          ReadWritePaths = lib.unique [
+            cfg.dataDir
+            (toString cfg.mediaRoot)
+            cfg.backup.dir
+          ];
           UnsetEnvironment = [
             "DATABASE_URL"
             "MEDIA_ROOT"
@@ -634,7 +759,7 @@ in
         "d ${cfg.dataDir} 0750 ${user} ${group} -"
         "d ${cfg.mediaRoot} 0750 ${user} ${group} -"
       ]
-      ++ lib.optional cfg.backup.enable "d ${cfg.backup.dir} 0750 ${user} ${group} -";
+      ++ [ "d ${cfg.backup.dir} 0750 ${user} ${group} -" ];
     };
 
     services.nginx.virtualHosts = lib.mkIf (cfg.nginx.enable && cfg.hostName != null) {

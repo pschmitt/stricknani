@@ -212,6 +212,8 @@ fn router_with_context(
             state.app.clone(),
             crate::impersonation::guard,
         ))
+        // Audit events record which client caused them (administrators only).
+        .layer(middleware::from_fn(crate::client_info::record_client))
         .with_state(state)
         .layer(middleware::from_fn(no_store))
 }

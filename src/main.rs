@@ -278,9 +278,12 @@ async fn serve() -> Result<(), &'static str> {
     let config = Config::from_env().map_err(|_| "invalid server configuration")?;
     // Completes a staged backup restore (swapping the database files) before
     // the pool opens.
-    let backups =
-        stricknani_server::backups::prepare_startup(&config.database_url, &config.media_root)
-            .await?;
+    let backups = stricknani_server::backups::prepare_startup(
+        &config.database_url,
+        config.backup_dir.as_deref(),
+        &config.media_root,
+    )
+    .await?;
     let pool = db::connect(&config.database_url)
         .await
         .map_err(|_| "cannot initialize Rust database")?;

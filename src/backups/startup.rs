@@ -49,19 +49,16 @@ const MAX_REQUEST_AGE: i64 = 60 * 60;
 /// the backup service. `None` for in-memory databases.
 pub async fn prepare(
     database_url: &str,
+    backup_dir: Option<&Path>,
     media_root: &Path,
 ) -> Result<Option<Arc<BackupService>>, &'static str> {
-    let backup_dir = std::env::var("STRICKNANI_BACKUP_DIR").ok();
     let auto_restart = !matches!(
         std::env::var("STRICKNANI_RESTORE_AUTO_RESTART").as_deref(),
         Ok("false" | "0")
     );
-    let Some(config) = BackupConfig::resolve(
-        database_url,
-        backup_dir.as_deref(),
-        Some(media_root),
-        auto_restart,
-    ) else {
+    let Some(config) =
+        BackupConfig::resolve(database_url, backup_dir, Some(media_root), auto_restart)
+    else {
         return Ok(None);
     };
     apply_pending(database_url, &config).await?;
@@ -408,8 +405,10 @@ async fn record_audit(pool: &SqlitePool, request: &Request) -> Result<(), sqlx::
     }
     // The administrator may not exist in the restored data: keep the email in
     // the details and leave the foreign key empty then.
-    let actor: Option<i64> = sqlx::query_scalar("SELECT id FROM users WHERE id = ?")
+    // The id alone is not enough: the restored data may give it to somebody else.
+    let actor: Option<i64> = sqlx::query_scalar("SELECT id FROM users WHERE id = ? AND email = ?")
         .bind(request.requested_by.id)
+        .bind(&request.requested_by.email)
         .fetch_optional(pool)
         .await?;
     let details = serde_json::json!({
@@ -427,6 +426,19 @@ async fn record_audit(pool: &SqlitePool, request: &Request) -> Result<(), sqlx::
     .bind(actor)
     .bind(actor)
     .bind(Utc::now().timestamp())
+    .bind(&details)
+    .execute(pool)
+    .await?;
+    // The same event for the admin audit log (entity `server`).
+    sqlx::query(
+        "INSERT INTO audit_events \
+         (actor_user_id, entity_type, entity_id, action, created_at, \
+          resource_name_snapshot, server_details, client_kind) \
+         VALUES (?, 'server', 0, 'backup_restored', \
+                 strftime('%Y-%m-%dT%H:%M:%f000Z', 'now'), ?, ?, 'system')",
+    )
+    .bind(actor)
+    .bind(&request.backup)
     .bind(details)
     .execute(pool)
     .await?;

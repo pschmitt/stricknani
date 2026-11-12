@@ -10,6 +10,7 @@ import blue.anika.wolle.data.account.AccountV2Api
 import blue.anika.wolle.data.api.AdminApi
 import blue.anika.wolle.data.api.AuthInterceptor
 import blue.anika.wolle.data.api.CategoriesApi
+import blue.anika.wolle.data.api.ClientHeaderInterceptor
 import blue.anika.wolle.data.api.DynamicBaseUrlInterceptor
 import blue.anika.wolle.data.api.HistoryApi
 import blue.anika.wolle.data.api.MetaApi
@@ -17,6 +18,7 @@ import blue.anika.wolle.data.api.ProjectsApi
 import blue.anika.wolle.data.api.SessionExpiryInterceptor
 import blue.anika.wolle.data.api.SyncApi
 import blue.anika.wolle.data.api.YarnsApi
+import blue.anika.wolle.data.api.clientHeaderValue
 import blue.anika.wolle.data.api.v2.ActivityV2Api
 import blue.anika.wolle.data.api.v2.ArchiveV2Api
 import blue.anika.wolle.data.api.v2.CategoriesV2Api
@@ -105,6 +107,16 @@ object NetworkModule {
             // see the real request.
             .addInterceptor(dynamicBaseUrlInterceptor)
             .addInterceptor(authInterceptor)
+            // Names this app build on the server's admin audit log.
+            .addInterceptor(
+                ClientHeaderInterceptor(
+                    clientHeaderValue(
+                        BuildConfig.VERSION_NAME,
+                        BuildConfig.VERSION_CODE,
+                        BuildConfig.DEBUG,
+                    )
+                )
+            )
             // After auth, so it sees which token a request carried.
             .addInterceptor(sessionExpiryInterceptor)
             .addInterceptor(loggingInterceptor())

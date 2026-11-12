@@ -4,9 +4,11 @@ import { closeBrowser } from "../lib/common";
 //
 // Runs against the disposable Rust fixture only (synthetic seeded records and
 // the demo photos), so reordering and deleting never touches real data. It
-// checks tile geometry, the hover/focus/touch action buttons, Make cover and keyboard
-// reordering with its live-region announcement, at desktop, phone and
-// narrowest-phone sizes.
+// checks tile geometry, the hover/focus/touch action buttons (only trash and edit:
+// no star, no drag grip), the Android-style reorder mode (press and hold, the
+// expanded grid, drag anywhere on a tile with a mouse or a touch pointer, Done)
+// and keyboard reordering with its live-region announcement, at desktop, phone
+// and narrowest-phone sizes.
 import { chmodSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { expect } from "@playwright/test";
@@ -142,12 +144,12 @@ async function geometry(tile: Locator): Promise<Geometry> {
     const del = tile.querySelector('.delete-button');
     return {
       media: rect(tile.querySelector('.tile-media')),
-      badge: rect(tile.querySelector('.cover-badge')),
+      badge: rect(tile.querySelector('.cover-badge:not(:empty)')),
       trash: rect(del),
       firstAction: rect(tile.querySelector('.tile-actions .tile-button')),
       trashOpacity: del ? Number(style(del).opacity) : null,
       dir: getComputedStyle(tile).direction,
-      badgeText: tile.querySelector('.cover-badge')?.textContent?.trim() ?? null,
+      badgeText: tile.querySelector('.cover-badge:not(:empty)')?.textContent?.trim() ?? null,
     };
   }`),
   );
@@ -254,7 +256,6 @@ async function checkTile(
   report: Report,
   shots: string | null,
   shotName: string,
-  expectCover: boolean,
 ): Promise<void> {
   const tiles = tilesOf(list);
   const count = await tiles.count();
@@ -318,46 +319,27 @@ async function checkTile(
       `${tag}: remove button is at least ${MIN_TARGET_PX.toFixed(0)}px`,
       `(${trash.width.toFixed(0)}x${trash.height.toFixed(0)}px)`,
     );
-    if (expectCover) {
-      report.check(badge !== null, `${tag}: first tile shows the cover star`);
-      if (badge !== null) {
-        const startGap = rtl
-          ? media.right - badge.right
-          : badge.left - media.left;
-        report.check(
-          near(media.bottom - badge.bottom, INSET_PX) &&
-            near(startGap, INSET_PX),
-          `${tag}: cover star sits bottom-start`,
-          `(bottom gap ${(media.bottom - badge.bottom).toFixed(1)}px, ` +
-            `start gap ${startGap.toFixed(1)}px)`,
-        );
-        const overlap = overlapArea(badge, trash);
-        report.check(
-          overlap === 0.0,
-          `${tag}: cover star and remove button do not overlap`,
-          `(tile ${media.width.toFixed(0)}x${media.height.toFixed(0)}px, ` +
-            `overlap ${overlap.toFixed(1)}px^2)`,
-        );
-        report.check(
-          badge.left >= media.left - 0.5 && badge.right <= media.right + 0.5,
-          `${tag}: cover star stays inside the tile`,
-        );
-      }
-      report.check(
+    report.check(badge === null, `${tag}: no cover star or tag on the tile`);
+    report.check(
+      (await first
+        .locator(".grip, [data-handle], .make-cover-button")
+        .count()) === 0 &&
         (await first.getByRole("button", { name: "Make cover" }).count()) === 0,
-        `${tag}: the cover tile has no Make cover action`,
-      );
-    } else {
-      report.check(badge === null, `${tag}: non-cover tile has no cover star`);
-    }
+      `${tag}: no star and no drag grip on the tile`,
+    );
+    const buttonCount = await first
+      .locator(".tile-actions .tile-button")
+      .count();
+    report.check(
+      buttonCount >= 1 && buttonCount <= 2,
+      `${tag}: the tile has only the remove (and edit) buttons`,
+      buttonCount,
+    );
     report.info(`INFO ${tag}: tile ${media.width.toFixed(0)}px wide`);
   }
   if (count >= 2) {
     const other = await geometry(tiles.nth(1));
-    report.check(
-      other.badge === null,
-      `${tag}: only the first tile is the cover`,
-    );
+    report.check(other.badge === null, `${tag}: no tile wears a cover tag`);
   }
 
   await page.mouse.move(1, 1);
@@ -372,23 +354,125 @@ async function checkTile(
   }
 }
 
-/** Make cover moves a later photo to the front in one step. */
-async function checkMakeCover(
+type Point = { x: number; y: number };
+
+async function centerOf(tile: Locator): Promise<Point> {
+  const box = await tile.boundingBox();
+  if (box === null) throw new AcceptanceFailure("tile has no bounding box");
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+}
+
+/** Dispatch a synthetic touch-type pointer event on a tile (no real touch hold exists in every engine). */
+async function touchEvent(
+  tile: Locator,
+  type: "pointerdown" | "pointermove" | "pointerup",
+  at: Point,
+): Promise<void> {
+  await tile.evaluate(
+    fn(`(element, args) => {
+      element.dispatchEvent(new PointerEvent(args.type, {
+        bubbles: true, cancelable: true, composed: true, pointerId: 7,
+        pointerType: 'touch', isPrimary: true, button: 0,
+        buttons: args.type === 'pointerup' ? 0 : 1,
+        clientX: args.at.x, clientY: args.at.y,
+      }));
+    }`),
+    { type, at },
+  );
+}
+
+function isExpanded(list: Locator): Promise<boolean> {
+  return list
+    .locator("xpath=..")
+    .evaluate(fn("element => element.classList.contains('expanded')"));
+}
+
+/** Press and hold a tile until reorder mode opens, with a mouse or a touch pointer. */
+async function holdTile(
+  page: Page,
+  tile: Locator,
+  pointer: "mouse" | "touch",
+): Promise<void> {
+  const at = await centerOf(tile);
+  if (pointer === "mouse") {
+    await page.mouse.move(at.x, at.y);
+    await page.mouse.down();
+    await page.waitForTimeout(600);
+    await page.mouse.up();
+  } else {
+    await touchEvent(tile, "pointerdown", at);
+    await page.waitForTimeout(600);
+    await touchEvent(tile, "pointerup", at);
+  }
+}
+
+/** Drag the tile at `from` onto the slot of the tile at `to` with the given pointer. */
+async function dragTile(
+  page: Page,
+  list: Locator,
+  from: number,
+  to: number,
+  pointer: "mouse" | "touch",
+  cancelWithEscape = false,
+): Promise<void> {
+  const tiles = tilesOf(list);
+  const source = tiles.nth(from);
+  const start = await centerOf(source);
+  const end = await centerOf(tiles.nth(to));
+  const steps = 8;
+  const at = (i: number): Point => ({
+    x: start.x + ((end.x - start.x) * i) / steps,
+    y: start.y + ((end.y - start.y) * i) / steps,
+  });
+  if (pointer === "mouse") {
+    await page.mouse.move(start.x, start.y);
+    await page.mouse.down();
+    for (let i = 1; i <= steps; i++) {
+      await page.mouse.move(at(i).x, at(i).y);
+    }
+    await page.waitForTimeout(250);
+    if (cancelWithEscape) await page.keyboard.press("Escape");
+    await page.mouse.up();
+  } else {
+    await touchEvent(source, "pointerdown", start);
+    await page.waitForTimeout(600);
+    for (let i = 1; i <= steps; i++) {
+      await touchEvent(source, "pointermove", at(i));
+      await page.waitForTimeout(40);
+    }
+    await page.waitForTimeout(250);
+    if (cancelWithEscape) await page.keyboard.press("Escape");
+    await touchEvent(source, "pointerup", end);
+  }
+}
+
+/**
+ * The Android-style reorder mode: press and hold opens an expanded grid with the
+ * hint and Done, a tile drags from anywhere, nothing is sent before Save, the
+ * keyboard has its own way in, and Done / Escape leave the mode.
+ */
+async function checkReorderMode(
   page: Page,
   tag: string,
   list: Locator,
   report: Report,
+  shots: string | null,
+  shotName: string,
+  touch: boolean,
 ): Promise<void> {
   const tiles = tilesOf(list);
   const count = await tiles.count();
-  if (count < 2) {
-    report.check(false, `${tag}: at least two photos for Make cover`, count);
+  if (count < 3) {
+    report.check(
+      false,
+      `${tag}: at least three photos for reorder mode`,
+      count,
+    );
     return;
   }
+  const root = list.locator("xpath=..");
+  const status = root.locator("[role=status]");
   const before = await tileIds(list);
-  const second = tiles.nth(1);
-  await centerTile(second);
-  await second.hover();
   const requests: string[] = [];
   const onRequest = (request: { method(): string; url(): string }): void => {
     if (request.method() === "PUT" && request.url().includes("/order")) {
@@ -396,40 +480,166 @@ async function checkMakeCover(
     }
   };
   page.on("request", onRequest);
-  const button = second.getByRole("button", { name: "Make cover" });
-  await expect(button).toHaveCount(1);
-  await button.click();
-  const status = list.locator("xpath=..").locator("[role=status]");
-  const announced = await holds(() =>
-    expect(status).toHaveText("Photo set as cover.", { timeout: 10_000 }),
-  );
-  page.off("request", onRequest);
-  const after = await tileIds(list);
-  report.check(
-    announced &&
-      after[0] === before[1] &&
-      after[1] === before[0] &&
-      requests.length === 0,
-    `${tag}: Make cover moves the photo to the front and sends nothing before Save`,
-    `(${JSON.stringify(before)} -> ${JSON.stringify(after)}, ` +
-      `${requests.length} request(s))`,
-  );
-  // Restore the original order with the keyboard.
-  await centerTile(tiles.nth(1));
-  await page.mouse.move(1, 1);
-  const reached = await tabToTile(page, tiles.nth(1));
-  if (reached) {
-    await page.keyboard.press("ArrowLeft");
+  try {
+    report.check(
+      !(await isExpanded(list)),
+      `${tag}: photos start in the compact layout`,
+    );
+    await centerTile(tiles.nth(0));
+    // A short press does not enter the mode.
+    const at = await centerOf(tiles.nth(1));
+    await page.mouse.move(at.x, at.y);
+    await page.mouse.down();
+    await page.waitForTimeout(80);
+    await page.mouse.up();
+    // A tap opens the photo where the tile has an open action (yarn): close it.
+    if ((await page.locator("dialog[open]").count()) > 0) {
+      await page.keyboard.press("Escape");
+      await expect(page.locator("dialog[open]")).toHaveCount(0);
+    }
+    report.check(
+      !(await isExpanded(list)),
+      `${tag}: a short press does not open reorder mode`,
+    );
+    // Press and hold: a mouse on the desktop, a touch pointer on phones.
+    await holdTile(page, tiles.nth(1), touch ? "touch" : "mouse");
+    const opened = await holds(async () => {
+      await expect(root).toHaveClass(/expanded/);
+    });
+    report.check(opened, `${tag}: press and hold opens reorder mode`);
+    if (!opened) return;
+    await expect(root.getByRole("button", { name: "Done" })).toBeVisible();
+    const hint = (await root.locator(".reorder-hint").textContent()) ?? "";
+    report.check(
+      /^Drag to reorder\./.test(hint.trim()),
+      `${tag}: the hint is shown`,
+      hint.trim(),
+    );
+    const grid = await list.evaluate(
+      fn(`element => {
+        const tiles = [...element.children];
+        const tops = tiles.map(tile => Math.round(tile.getBoundingClientRect().top));
+        const rects = tiles.map(tile => tile.getBoundingClientRect());
+        const style = getComputedStyle(element);
+        return {
+          columns: tops.filter(top => Math.abs(top - tops[0]) <= 1).length,
+          width: rects[0].width,
+          gap: parseFloat(style.columnGap),
+          grips: element.querySelectorAll('.grip, [data-handle]').length,
+          stars: element.querySelectorAll('.make-cover-button').length,
+          buttons: [...element.querySelectorAll('.tile-button')].map(b => b.className),
+          trashShown: [...element.querySelectorAll('.delete-button')]
+            .every(b => Number(getComputedStyle(b).opacity) === 1),
+        };
+      }`),
+    );
+    const g = grid as {
+      columns: number;
+      width: number;
+      gap: number;
+      grips: number;
+      stars: number;
+      buttons: string[];
+      trashShown: boolean;
+    };
+    report.check(
+      g.columns >= Math.min(3, count) && g.width >= 56 && g.gap === 10,
+      `${tag}: the grid has at least three columns, 10px apart`,
+      `(${g.columns} columns, ${g.width.toFixed(0)}px tiles, gap ${g.gap}px)`,
+    );
+    report.check(
+      g.grips === 0 &&
+        g.stars === 0 &&
+        g.buttons.every((c) => c.includes("delete-button")),
+      `${tag}: only trash icons on the tiles in reorder mode`,
+      g.buttons.length,
+    );
+    report.check(
+      g.trashShown,
+      `${tag}: trash icons are visible without hovering`,
+    );
+    await shot(page, shots, `${shotName}-5-reorder-mode`, list);
+
+    // Drag the first tile onto the third slot, anywhere on the tile.
+    await centerTile(tiles.nth(0));
+    await dragTile(page, list, 0, 2, touch ? "touch" : "mouse");
+    const afterDrag = await holds(async () => {
+      await expect(status).toHaveText(/Photo moved to position 3 of \d+\./, {
+        timeout: 10_000,
+      });
+    });
+    const dragged = await tileIds(list);
+    report.check(
+      afterDrag &&
+        dragged[2] === before[0] &&
+        dragged[0] === before[1] &&
+        requests.length === 0,
+      `${tag}: dragging a tile moves it and sends nothing before Save`,
+      `(${JSON.stringify(before)} -> ${JSON.stringify(dragged)}, ${requests.length} request(s))`,
+    );
+    report.check(
+      await list.evaluate(
+        fn(
+          "element => [...element.children].every(tile => !tile.style.transform)",
+        ),
+      ),
+      `${tag}: no tile keeps a drag transform after the drop`,
+    );
+    await shot(page, shots, `${shotName}-6-dragged`, list);
+
+    // Escape while dragging puts the tile back and changes nothing.
+    const staged = await tileIds(list);
+    await dragTile(page, list, 0, count - 1, touch ? "touch" : "mouse", true);
+    const afterEscape = await tileIds(list);
+    report.check(
+      JSON.stringify(afterEscape) === JSON.stringify(staged) &&
+        (await isExpanded(list)),
+      `${tag}: Escape cancels a drag and keeps reorder mode`,
+      `(${JSON.stringify(staged)} -> ${JSON.stringify(afterEscape)})`,
+    );
+
+    // Arrow keys also move the focused tile in reorder mode.
+    await page.mouse.move(1, 1);
+    const reached = await tabToTile(page, tiles.nth(2));
+    if (reached) {
+      await page.keyboard.press("ArrowLeft");
+      await page.keyboard.press("ArrowLeft");
+      await holds(async () => {
+        await expect(status).toHaveText(/Photo moved to position 1 of \d+\./, {
+          timeout: 10_000,
+        });
+      });
+    }
+    report.check(
+      JSON.stringify(await tileIds(list)) === JSON.stringify(before),
+      `${tag}: arrow keys restore the original order in reorder mode`,
+      JSON.stringify(await tileIds(list)),
+    );
+
+    // Done leaves the mode.
+    await root.getByRole("button", { name: "Done" }).click();
+    report.check(
+      !(await isExpanded(list)),
+      `${tag}: Done returns to the compact layout`,
+    );
+
+    // The keyboard way in: the Reorder photos button, then Escape out.
+    const enter = root.getByRole("button", { name: "Reorder photos" });
+    await enter.focus();
+    await page.keyboard.press("Enter");
+    report.check(
+      await isExpanded(list),
+      `${tag}: the keyboard entry opens reorder mode`,
+    );
+    await tiles.nth(0).focus();
+    await page.keyboard.press("Escape");
+    report.check(
+      !(await isExpanded(list)),
+      `${tag}: Escape leaves reorder mode`,
+    );
+  } finally {
+    page.off("request", onRequest);
   }
-  await holds(() =>
-    expect(status).toHaveText(/Photo moved to position 1 of \d+\./, {
-      timeout: 10_000,
-    }),
-  );
-  report.check(
-    JSON.stringify(await tileIds(list)) === JSON.stringify(before),
-    `${tag}: original photo order restored after Make cover`,
-  );
 }
 
 /** Arrow keys move the focused tile and the live region announces it. */
@@ -617,7 +827,6 @@ export async function runMediaTilesJourney(
         report,
         shots,
         `${base}-project-cover`,
-        true,
       );
       await checkTile(
         page,
@@ -626,7 +835,15 @@ export async function runMediaTilesJourney(
         report,
         shots,
         `${base}-project-step`,
-        false,
+      );
+      await checkReorderMode(
+        page,
+        `${tag}/project-step`,
+        stepList.first(),
+        report,
+        shots,
+        `${base}-project-step`,
+        profile.touch,
       );
       await checkReorder(
         page,
@@ -670,9 +887,16 @@ export async function runMediaTilesJourney(
         report,
         shots,
         `${base}-yarn`,
-        true,
       );
-      await checkMakeCover(page, `${tag}/yarn`, yarnList.first(), report);
+      await checkReorderMode(
+        page,
+        `${tag}/yarn`,
+        yarnList.first(),
+        report,
+        shots,
+        `${base}-yarn`,
+        profile.touch,
+      );
       await checkReorder(
         page,
         `${tag}/yarn`,

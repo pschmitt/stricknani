@@ -68,3 +68,9 @@ INSERT INTO auth_audit_events_new
 DROP TABLE auth_audit_events;
 ALTER TABLE auth_audit_events_new RENAME TO auth_audit_events;
 CREATE INDEX auth_audit_events_target ON auth_audit_events(target_user_id, created_at);
+
+-- The admin audit log lists a restore as an event of the entity `server`. Its
+-- bounded JSON (backup name, pre-restore backup name, media option, actor email)
+-- lives here, never in the legacy free-form `details` column.
+ALTER TABLE audit_events ADD COLUMN server_details TEXT
+    CHECK (server_details IS NULL OR length(server_details) <= 2048);
