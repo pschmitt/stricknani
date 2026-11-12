@@ -621,7 +621,7 @@ msgstr ""
 msgid "All"
 msgstr "All"
 
-#: web/src/lib/features/projects/ProjectEditor.svelte:2516
+#: web/src/lib/features/projects/ProjectEditor.svelte:2519
 #: web/src/lib/features/yarns/YarnForm.svelte:1336
 msgid "All changes saved"
 msgstr "All changes saved"
@@ -1003,8 +1003,8 @@ msgstr "Can view"
 #: web/src/lib/features/media/PhotoEditor.svelte:307
 #: web/src/lib/features/media/PhotoEditor.svelte:458
 #: web/src/lib/features/projects/ProjectEditor.svelte:2492
-#: web/src/lib/features/projects/ProjectEditor.svelte:2572
-#: web/src/lib/features/projects/ProjectEditor.svelte:2654
+#: web/src/lib/features/projects/ProjectEditor.svelte:2575
+#: web/src/lib/features/projects/ProjectEditor.svelte:2657
 #: web/src/lib/features/projects/ProjectReader.svelte:1525
 #: web/src/lib/features/projects/ProjectTimer.svelte:703
 #: web/src/lib/features/sharing/AccessNotice.svelte:121
@@ -1496,7 +1496,7 @@ msgid "Delete permanently?"
 msgstr "Delete permanently?"
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:2465
-#: web/src/lib/features/projects/ProjectEditor.svelte:2582
+#: web/src/lib/features/projects/ProjectEditor.svelte:2585
 #: web/src/lib/features/projects/ProjectReader.svelte:1331
 #: web/src/lib/features/projects/ProjectReader.svelte:1534
 msgid "Delete project"
@@ -2394,7 +2394,7 @@ msgstr "Impersonation stopped"
 
 #: web/src/lib/features/imports/ImportCard.svelte:557
 #: web/src/lib/features/imports/ImportDraftCards.svelte:78
-#: web/src/lib/features/projects/ProjectEditor.svelte:2625
+#: web/src/lib/features/projects/ProjectEditor.svelte:2628
 msgid "Import"
 msgstr "Import"
 
@@ -2430,7 +2430,7 @@ msgstr "Import this link as a project or as a yarn?"
 msgid "Import this pattern"
 msgstr "Import this pattern"
 
-#: web/src/lib/features/projects/ProjectEditor.svelte:2591
+#: web/src/lib/features/projects/ProjectEditor.svelte:2594
 msgid "Import this pattern?"
 msgstr "Import this pattern?"
 
@@ -2506,8 +2506,8 @@ msgid "It is due for deletion."
 msgstr "It is due for deletion."
 
 #: web/src/lib/features/categories/CategoryManager.svelte:392
-#: web/src/lib/features/projects/ProjectEditor.svelte:2543
-#: web/src/lib/features/projects/ProjectEditor.svelte:2550
+#: web/src/lib/features/projects/ProjectEditor.svelte:2546
+#: web/src/lib/features/projects/ProjectEditor.svelte:2553
 #: web/src/lib/features/projects/ProjectReader.svelte:1505
 #: web/src/lib/features/yarns/YarnDetail.svelte:809
 #: web/src/lib/features/yarns/YarnForm.svelte:1347
@@ -2787,7 +2787,7 @@ msgid "Links"
 msgstr "Links"
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1666
-#: web/src/lib/features/projects/ProjectEditor.svelte:2663
+#: web/src/lib/features/projects/ProjectEditor.svelte:2666
 #: web/src/lib/features/yarns/YarnForm.svelte:965
 #: web/src/lib/features/yarns/YarnForm.svelte:1400
 msgid "Load latest values"
@@ -3258,7 +3258,7 @@ msgstr "No yarn matches that search."
 msgid "No yarn matches those filters."
 msgstr "No yarn matches those filters."
 
-#: web/src/lib/features/projects/ProjectEditor.svelte:2617
+#: web/src/lib/features/projects/ProjectEditor.svelte:2620
 msgid "Not now"
 msgstr "Not now"
 
@@ -3950,7 +3950,7 @@ msgstr "Project pages"
 #: web/src/lib/features/projects/ProjectEditor.svelte:1949
 #: web/src/lib/features/projects/ProjectEditor.svelte:1953
 #: web/src/lib/features/projects/ProjectEditor.svelte:1954
-#: web/src/lib/features/projects/ProjectEditor.svelte:2526
+#: web/src/lib/features/projects/ProjectEditor.svelte:2529
 msgid "Project photo"
 msgstr "Project photo"
 
@@ -4145,7 +4145,7 @@ msgstr "Reload"
 
 #: web/src/lib/features/media/QueuedPhotoList.svelte:54
 #: web/src/lib/features/projects/ProjectEditor.svelte:2314
-#: web/src/lib/features/projects/ProjectEditor.svelte:2583
+#: web/src/lib/features/projects/ProjectEditor.svelte:2586
 msgid "Remove"
 msgstr "Remove"
 
@@ -4245,7 +4245,7 @@ msgstr "Repeat passphrase"
 msgid "Replace this import review? Your edits will be lost."
 msgstr "Replace this import review? Your edits will be lost."
 
-#: web/src/lib/features/projects/ProjectEditor.svelte:2632
+#: web/src/lib/features/projects/ProjectEditor.svelte:2635
 #: web/src/lib/features/yarns/YarnForm.svelte:1369
 msgid "Replace your unsaved edits with the latest saved version?"
 msgstr "Replace your unsaved edits with the latest saved version?"
@@ -5096,7 +5096,7 @@ msgstr "Stopped sharing with {name}"
 msgid "Storage, retention, and deletion"
 msgstr "Storage, retention, and deletion"
 
-#: web/src/lib/features/projects/ProjectEditor.svelte:2603
+#: web/src/lib/features/projects/ProjectEditor.svelte:2606
 msgid ""
 "Stricknani can read the pattern behind this link and fill in the project "
 "for you."
@@ -5104,7 +5104,7 @@ msgstr ""
 "Stricknani can read the pattern behind this link and fill in the project "
 "for you."
 
-#: web/src/lib/features/projects/ProjectEditor.svelte:2596
+#: web/src/lib/features/projects/ProjectEditor.svelte:2599
 msgid ""
 "Stricknani can read the pattern behind this link with the AI importer and"
 " fill in the project for you."
@@ -6298,12 +6298,12 @@ msgstr "Unlink this login?"
 msgid "Unlink {name}?"
 msgstr "Unlink {name}?"
 
-#: web/src/lib/features/projects/ProjectEditor.svelte:2512
+#: web/src/lib/features/projects/ProjectEditor.svelte:2518
 #: web/src/lib/features/yarns/YarnForm.svelte:883
 msgid "Unsaved changes"
 msgstr "Unsaved changes"
 
-#: web/src/lib/features/projects/ProjectEditor.svelte:2508
+#: web/src/lib/features/projects/ProjectEditor.svelte:2514
 #: web/src/lib/features/yarns/YarnForm.svelte:1328
 msgid "Unsaved changes. Removed items go to the trash when you save."
 msgstr "Unsaved changes. Removed items go to the trash when you save."

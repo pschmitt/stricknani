@@ -2504,7 +2504,7 @@
               >
             {:else if isDirty || !isCreating}
               <!-- One span for both states: replacing the element on the first
-                   keystroke splits the browser's undo of the name field. -->
+                   keystroke splits the undo history of the name field. -->
               <span
                 class="dirty-note"
                 role="status"
