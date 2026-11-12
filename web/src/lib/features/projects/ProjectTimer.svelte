@@ -1,9 +1,9 @@
 <script lang="ts">
+  import CloseButton from "#lib/components/CloseButton.svelte";
   import { onDestroy, untrack } from "svelte";
   import { resolve } from "$app/paths";
   import { ApiError } from "#lib/api.ts";
   import Button from "#lib/components/Button.svelte";
-  import NavIcon from "#lib/components/NavIcon.svelte";
   import { session } from "#lib/session.svelte.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { webNotifications } from "#lib/web-notifications.svelte.ts";
@@ -601,12 +601,11 @@
       aria-labelledby="project-timer-title"
     >
       <div class="timer-dialog__body">
-        <button
-          type="button"
+        <CloseButton
           class="timer-dialog__close"
-          aria-label={t("Close", locale)}
-          onclick={closeDialog}><NavIcon name="close" /></button
-        >
+          {locale}
+          onclick={closeDialog}
+        />
         <div class="timer-face" aria-live="off">
           {@render stopwatch(false)}
           <h2 id="project-timer-title">{t("Knitting time", locale)}</h2>
@@ -839,30 +838,10 @@
     gap: 1rem;
     padding: 1.4rem 1.2rem 1.2rem;
   }
-  .timer-dialog__close {
+  .timer-dialog__body > :global(.timer-dialog__close) {
     position: absolute;
     top: 0.4rem;
     right: 0.4rem;
-    display: grid;
-    width: 44px;
-    height: 44px;
-    place-items: center;
-    border: 0;
-    border-radius: 999px;
-    color: var(--ink-muted);
-    background: transparent;
-    cursor: pointer;
-  }
-  .timer-dialog__close:hover {
-    background: var(--accent-wash);
-  }
-  .timer-dialog__close:focus-visible {
-    outline: 3px solid var(--focus);
-    outline-offset: 2px;
-  }
-  .timer-dialog__close :global(svg) {
-    width: 20px;
-    height: 20px;
   }
   .timer-face {
     display: grid;

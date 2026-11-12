@@ -1,7 +1,7 @@
 <script lang="ts">
+  import CloseButton from "#lib/components/CloseButton.svelte";
   import { untrack } from "svelte";
   import Button from "#lib/components/Button.svelte";
-  import NavIcon from "#lib/components/NavIcon.svelte";
   import { msg, t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import {
@@ -300,16 +300,7 @@
   <div class="editor-body">
     <header class="editor-header">
       <h2 id={titleId}>{t("Edit photo", locale)}</h2>
-      <button
-        type="button"
-        class="editor-close"
-        aria-label={t("Cancel", locale)}
-        title={t("Cancel", locale)}
-        disabled={saving}
-        onclick={close}
-      >
-        <NavIcon name="close" />
-      </button>
+      <CloseButton {locale} disabled={saving} onclick={close} />
     </header>
     <p class="editor-hint" id={hintId}>
       {t("Drag the corners to crop.", locale)}
@@ -508,33 +499,6 @@
   h2 {
     margin: 0;
     font-size: 1.15rem;
-  }
-
-  .editor-close {
-    display: grid;
-    width: 44px;
-    height: 44px;
-    flex: 0 0 auto;
-    place-items: center;
-    border: 0;
-    border-radius: 999px;
-    color: var(--ink-muted);
-    background: transparent;
-    cursor: pointer;
-  }
-
-  .editor-close:hover:not(:disabled) {
-    background: var(--accent-wash);
-  }
-
-  .editor-close:focus-visible {
-    outline: 3px solid var(--focus);
-    outline-offset: 2px;
-  }
-
-  .editor-close :global(svg) {
-    width: 20px;
-    height: 20px;
   }
 
   .editor-hint {

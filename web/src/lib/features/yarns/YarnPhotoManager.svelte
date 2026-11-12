@@ -1,7 +1,7 @@
 <script lang="ts">
+  import CloseButton from "#lib/components/CloseButton.svelte";
   import { onMount, tick, untrack } from "svelte";
   import { ApiError } from "#lib/api.ts";
-  import Button from "#lib/components/Button.svelte";
   import OcrControl from "#lib/features/media/OcrControl.svelte";
   import PhotoEditor from "#lib/features/media/PhotoEditor.svelte";
   import { yarnPhotoEditPath } from "#lib/features/media/photo-editor.ts";
@@ -340,14 +340,7 @@
         {t("Yarn photo", locale)}
       </h2>
       <form method="dialog">
-        <Button
-          class="zoom-close"
-          variant="secondary"
-          size="sm"
-          icon="close"
-          type="submit"
-          aria-label={t("Close photo", locale)}
-        />
+        <CloseButton type="submit" {locale} label={t("Close photo", locale)} />
       </form>
     </header>
     {#if selectedPhoto}
@@ -463,13 +456,6 @@
 
   .zoom-dialog-header form {
     flex: 0 0 auto;
-  }
-
-  :global(.zoom-dialog form .zoom-close) {
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    padding: 0;
   }
 
   .zoom-dialog img {

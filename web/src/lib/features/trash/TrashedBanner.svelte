@@ -135,7 +135,7 @@
       {busy ? t("Restoring…", locale) : t("Restore", locale)}
     </Button>
     <Button
-      variant="danger"
+      variant="danger-ghost"
       icon="action-delete"
       type="button"
       disabled={busy}

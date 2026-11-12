@@ -1,5 +1,6 @@
 <script lang="ts">
   import { resolve } from "$app/paths";
+  import CloseButton from "#lib/components/CloseButton.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
@@ -140,15 +141,13 @@
               </span>
             </span>
           </a>
-          <button
-            type="button"
+          <CloseButton
             class="draft-card__dismiss"
-            aria-label={`${t("Dismiss", locale)}: ${title(draft)}`}
+            {locale}
+            label={`${t("Dismiss", locale)}: ${title(draft)}`}
             disabled={removing.includes(draft.id)}
             onclick={() => void dismiss(draft)}
-          >
-            <NavIcon name="close" />
-          </button>
+          />
         </li>
       {/each}
     </ul>
@@ -269,30 +268,11 @@
     animation: draft-spin 900ms linear infinite;
   }
 
-  .draft-card__dismiss {
+  :global(.draft-card__dismiss) {
     position: absolute;
     top: 50%;
     right: 0.35rem;
-    display: grid;
-    width: 2.75rem;
-    height: 2.75rem;
-    place-items: center;
     transform: translateY(-50%);
-    border: 0;
-    border-radius: 50%;
-    color: var(--ink-muted);
-    background: transparent;
-    cursor: pointer;
-  }
-
-  .draft-card__dismiss:hover {
-    color: var(--ink);
-    background: var(--surface-raised);
-  }
-
-  .draft-card__dismiss :global(svg) {
-    width: 1.2rem;
-    height: 1.2rem;
   }
 
   .visually-hidden {
