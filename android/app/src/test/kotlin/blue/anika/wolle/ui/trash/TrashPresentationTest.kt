@@ -104,10 +104,11 @@ class TrashPresentationTest {
     }
 
     @Test
-    fun `an owner without a name is shown by email`() {
-        val item = TrashItemDto(kind = "photo", id = 4, owner = OwnerDto(2, "a@example.com", ""))
+    fun `an owner without a name is shown by a name derived from the email, never the email`() {
+        val item =
+            TrashItemDto(kind = "photo", id = 4, owner = OwnerDto(2, "anika.berg@example.com", ""))
         assertEquals(
-            "a@example.com",
+            "Anika Berg",
             trashRow(item, showOwner = false, currentUserId = 1).ownerName,
         )
     }

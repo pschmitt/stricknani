@@ -717,7 +717,7 @@ async function assertAdminEditsForeignProject(
   const card = page.locator(".library-card").filter({ hasText: project.name });
   await card.waitFor({ state: "visible" });
   check(
-    (await card.locator('[aria-label^="Owned by "]').count()) === 1,
+    (await card.getByTestId("owner-badge").count()) === 1,
     "the foreign project card has no owner badge",
   );
   mark("administrator narrows the library to Mine and back");

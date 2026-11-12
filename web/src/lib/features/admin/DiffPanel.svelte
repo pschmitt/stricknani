@@ -4,7 +4,9 @@
   import { ApiError } from "#lib/api.ts";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
-  import UserAvatar from "#lib/components/UserAvatar.svelte";
+  import UserLabel from "#lib/components/UserLabel.svelte";
+  import UserSentence from "#lib/components/UserSentence.svelte";
+  import { auditActor, auditImpersonatedBy } from "./audit-people";
   import ChangeList from "#lib/features/history/ChangeList.svelte";
   import AuditActionBadge from "./AuditActionBadge.svelte";
   import AuditLifecycle from "./AuditLifecycle.svelte";
@@ -137,21 +139,20 @@
   {:else if detail}
     {@const resourceKind = detail.event.resource.kind ?? "resource"}
     {@const eventDetailHref = `/app/admin/audit/${detail.event.id}`}
+    {@const actor = auditActor(detail.event, locale)}
+    {@const impersonated = auditImpersonatedBy(detail.event, actor, locale)}
     <article class="event-card">
       <div class="event-actor">
-        <UserAvatar
-          avatarUrl={detail.event.actor_avatar_url}
-          name={detail.event.actor_email ??
-            (detail.event.system
-              ? t("System", locale)
-              : t("Unknown actor", locale))}
-        />
-        <span
-          >{detail.event.actor_email ??
-            (detail.event.system
-              ? t("System", locale)
-              : t("Unknown actor", locale))}</span
-        >
+        {#if impersonated}
+          <UserSentence
+            template={impersonated.template}
+            users={impersonated.users}
+            {locale}
+            size="regular"
+          />
+        {:else}
+          <UserLabel user={actor} {locale} size="regular" />
+        {/if}
         <time datetime={detail.event.created_at}
           >{dateLabel(detail.event.created_at)}</time
         >

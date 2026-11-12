@@ -27,6 +27,11 @@ function sessionFor(isAdmin: boolean): SessionData {
   };
 }
 
+/** The visible text of rendered markup. */
+function text(body: string): string {
+  return body.replace(/<[^>]*>/g, "");
+}
+
 afterEach(() => {
   session.data = null;
 });
@@ -34,9 +39,13 @@ afterEach(() => {
 describe("OwnerBadge", () => {
   it("names the owner for assistive technology and as a tooltip", () => {
     const { body } = render(OwnerBadge, { props: { owner } });
-    expect(body).toContain('aria-label="Owned by Anika"');
+    expect(body).toContain('data-testid="owner-badge"');
     expect(body).toContain('title="Owned by Anika"');
+    // The shared UserLabel: the avatar initial, then the name.
     expect(body).toContain(">A<");
+    expect(body).toContain("user-label__name");
+    expect(text(body)).toContain("Anika");
+    expect(body).not.toContain("anika@example.test");
   });
 });
 
@@ -46,7 +55,8 @@ describe("ForeignOwnerBanner", () => {
       props: { kind: "project", owner },
     });
     expect(body).toContain('role="note"');
-    expect(body).toContain("Anika's project");
+    expect(text(body)).toContain("Anika's project");
+    expect(body).toContain("user-label");
     expect(body).toContain(
       "Your changes are saved to their project and recorded in the audit log.",
     );
@@ -56,7 +66,7 @@ describe("ForeignOwnerBanner", () => {
     const { body } = render(ForeignOwnerBanner, {
       props: { kind: "yarn", owner },
     });
-    expect(body).toContain("Anika's yarn");
+    expect(text(body)).toContain("Anika's yarn");
     expect(body).toContain("saved to their yarn");
   });
 });

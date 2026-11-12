@@ -5,12 +5,23 @@
   import SharedButton from "#lib/components/Button.svelte";
   import { stopImpersonation } from "#lib/features/admin/admin-api.ts";
   import { t } from "#lib/i18n.svelte.ts";
+  import UserSentence from "#lib/components/UserSentence.svelte";
   import { refreshSession, session } from "#lib/session.svelte.ts";
+  import { accountUser } from "#lib/user-label.ts";
 
   // Shown at the top of every page while an administrator acts as another account. It cannot
   // be dismissed: the only way out is to stop, which returns to Admin, Users.
   const locale = $derived(session.data?.locale ?? "en");
   const impersonation = $derived(session.data?.impersonation ?? null);
+  // While acting as someone, the session's user is that account, so its avatar is theirs.
+  const target = $derived(
+    impersonation
+      ? accountUser({
+          ...impersonation.user,
+          avatar_url: session.data?.user?.avatar_url ?? null,
+        })
+      : null,
+  );
   let busy = $state(false);
   let failed = $state(false);
 
@@ -44,14 +55,16 @@
   }
 </script>
 
-{#if impersonation}
+{#if impersonation && target}
   <div class="impersonation-banner" role="alert" data-impersonation-banner>
     <p class="impersonation-text">
       <strong
-        >{t("You are acting as {email}", locale).replace(
-          "{email}",
-          impersonation.user.email,
-        )}</strong
+        ><UserSentence
+          template={t("You are acting as {name}", locale)}
+          users={{ name: target }}
+          {locale}
+          size="regular"
+        /></strong
       >
       <span
         >{t(

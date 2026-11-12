@@ -8,6 +8,7 @@ import blue.anika.wolle.data.repository.TrashFailure
 import blue.anika.wolle.data.repository.TrashKind
 import blue.anika.wolle.data.repository.TrashRef
 import blue.anika.wolle.data.util.DateTimeUtils
+import blue.anika.wolle.ui.common.nameFromEmail
 
 /*
  * Pure rules behind the Trash screen and the trash wording of the audit log, mirroring the web's
@@ -81,7 +82,12 @@ fun trashRow(item: TrashItemDto, showOwner: Boolean, currentUserId: Long? = null
         parentKind = item.parent?.kind?.ifBlank { null },
         parentName = item.parent?.name?.trim()?.ifBlank { null },
         detail = item.detail?.trim()?.ifBlank { null },
-        ownerName = named?.let { it.name.trim().ifBlank { it.email.ifBlank { null } } },
+        ownerName =
+            named?.let {
+                it.name.trim().ifBlank {
+                    it.email.takeIf { e -> e.isNotBlank() }?.let(::nameFromEmail)
+                }
+            },
         ownerEmail = named?.email?.ifBlank { null },
         ownerAvatarUrl = named?.avatarUrl,
         ownerIsForeign = foreign,

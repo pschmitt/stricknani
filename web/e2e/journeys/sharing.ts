@@ -427,7 +427,8 @@ export async function runSharingJourney(
     const card = beaPage.getByRole("link", { name: /Shared Cardigan/ }).first();
     await card.waitFor({ state: "visible" });
     await beaPage
-      .getByRole("img", { name: /Owned by olga/i })
+      .getByTestId("owner-badge")
+      .filter({ hasText: /olga/i })
       .first()
       .waitFor();
     await beaPage.goto(`${origin}/app/projects/${project1}`, {
@@ -435,10 +436,14 @@ export async function runSharingJourney(
     });
     const notice = beaPage.getByTestId("access-notice");
     await notice.waitFor({ state: "visible" });
-    const recipientLine = ((await notice.textContent()) ?? "").trim();
+    const recipientLine = (
+      (await notice.locator(".user-label__name").first().textContent()) ?? ""
+    ).trim();
+    const recipientText = ((await notice.textContent()) ?? "").trim();
     check(
-      /Shared by olga · Can view/i.test(recipientLine),
-      `the recipient line is wrong: ${recipientLine}`,
+      recipientLine.toLowerCase() === "olga" &&
+        /Shared by\s*\S?\s*olga · Can view/i.test(recipientText),
+      `the recipient line is wrong: ${recipientText}`,
     );
     check(
       (await beaPage.getByRole("link", { name: "Edit project" }).count()) === 0,
@@ -603,11 +608,13 @@ export async function runSharingJourney(
     await shoot(olgaPage, "transfer-confirmation.png");
     await transfer.getByRole("button", { name: /Transfer to bea/i }).click();
     await olgaPage.getByTestId("access-notice").waitFor({ state: "visible" });
-    const editorLine = (
-      (await olgaPage.getByTestId("access-notice").textContent()) ?? ""
-    ).trim();
+    const editorNotice = olgaPage.getByTestId("access-notice");
+    const editorLine = ((await editorNotice.textContent()) ?? "").trim();
     check(
-      /Shared by bea · Can edit/i.test(editorLine),
+      (await editorNotice.locator(".user-label__name").first().textContent())
+        ?.trim()
+        .toLowerCase() === "bea" &&
+        /Shared by\s*\S?\s*bea · Can edit/i.test(editorLine),
       `the previous owner is not an editor: ${editorLine}`,
     );
     await assertShareHasNoDialog(

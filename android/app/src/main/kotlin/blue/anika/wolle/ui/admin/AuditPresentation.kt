@@ -27,6 +27,8 @@ import blue.anika.wolle.data.api.dto.RESOURCE_STATE_IN_TRASH
 import blue.anika.wolle.data.repository.TrashRef
 import blue.anika.wolle.data.util.DateTimeUtils
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.UserKind
+import blue.anika.wolle.ui.common.UserRef
 import blue.anika.wolle.ui.history.TIMER_SECONDS_FIELD
 import blue.anika.wolle.ui.history.formatTimerDuration
 import java.time.Instant
@@ -393,6 +395,10 @@ private val lifecycleActions =
  */
 fun AuditEventDto.lifecycleOwnerName(): String? =
     if (action in lifecycleActions) subject?.name?.trim()?.ifBlank { null } else null
+
+/** [lifecycleOwnerName] as the person to show with the shared UserLabel. */
+fun AuditEventDto.lifecycleOwnerRef(): UserRef? =
+    lifecycleOwnerName()?.let { UserRef(UserKind.User, it, subject?.avatarUrl) }
 
 /**
  * Whether [AuditResourceDto.state] describes what the event is about. For a file event (it has

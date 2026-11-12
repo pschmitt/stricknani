@@ -22,7 +22,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
+import blue.anika.wolle.ui.common.UserLabelSize
+import blue.anika.wolle.ui.common.UserSentence
 import blue.anika.wolle.ui.common.YarnLoader
+import blue.anika.wolle.ui.common.accountRef
 import blue.anika.wolle.ui.oidc.ReauthSheet
 import blue.anika.wolle.ui.oidc.linkedDate
 
@@ -44,8 +47,10 @@ fun AdminIdentitiesSheet(viewModel: AdminIdentitiesViewModel) {
                     .testTag("admin-identities-sheet"),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(
-                stringResource(R.string.oidc_admin_title, user.email),
+            UserSentence(
+                R.string.oidc_admin_title,
+                accountRef(user.email, avatarUrl = user.avatarUrl),
+                size = UserLabelSize.Compact,
                 style = MaterialTheme.typography.titleLarge,
             )
             when {
@@ -109,12 +114,10 @@ fun AdminIdentitiesSheet(viewModel: AdminIdentitiesViewModel) {
             onDismissRequest = viewModel::dismissUnlink,
             title = { Text(stringResource(R.string.oidc_unlink_title)) },
             text = {
-                Text(
-                    stringResource(
-                        R.string.oidc_admin_unlink_text,
-                        state.providerName(identity.provider),
-                        user.email,
-                    )
+                UserSentence(
+                    R.string.oidc_admin_unlink_text,
+                    state.providerName(identity.provider),
+                    accountRef(user.email, avatarUrl = user.avatarUrl),
                 )
             },
             confirmButton = {

@@ -4,6 +4,7 @@ import blue.anika.wolle.data.api.dto.ActivityActorDto
 import blue.anika.wolle.data.api.dto.ActivityItemDto
 import blue.anika.wolle.data.api.dto.AuditEventDto
 import blue.anika.wolle.data.api.dto.AuditSubjectDto
+import blue.anika.wolle.data.api.dto.PersonDto
 
 /*
  * The one place that turns server fields into the person a [UserLabel] shows. The web does the
@@ -67,6 +68,32 @@ fun subjectRef(subject: AuditSubjectDto?): UserRef? {
 }
 
 /** The administrator behind an impersonated change: named when known, else generic. */
-fun impersonatorRef(name: String?): UserRef =
-    name?.trim()?.takeIf { it.isNotEmpty() }?.let { UserRef(UserKind.User, it) }
+fun impersonatorRef(name: String?, avatarUrl: String? = null): UserRef =
+    name?.trim()?.takeIf { it.isNotEmpty() }?.let { UserRef(UserKind.User, it, avatarUrl) }
         ?: UserRef(UserKind.Admin)
+
+/** An owner badge (a card's, a filter chip's, a suggestion's) as a person. */
+fun ownerRef(owner: OwnerBadgeData): UserRef = UserRef(UserKind.User, owner.name, owner.avatarUrl)
+
+/**
+ * A person of the sharing API (owner, share recipient, picked person): [UserKind.Self] when it is
+ * the viewer ([viewerId]), else a [UserKind.User] by display name.
+ */
+fun personRef(person: PersonDto, viewerId: Long? = null): UserRef =
+    UserRef(
+        if (viewerId != null && person.id == viewerId) UserKind.Self else UserKind.User,
+        person.name,
+        person.avatarUrl,
+    )
+
+/**
+ * An account the server identified by email (administrator screens, the impersonated account):
+ * shown by [name], else the name derived from the email like the server does. The email is for the
+ * caller to print as a secondary line where an administrator needs it.
+ */
+fun accountRef(email: String, name: String? = null, avatarUrl: String? = null): UserRef =
+    UserRef(
+        UserKind.User,
+        name?.trim()?.takeIf { it.isNotEmpty() } ?: nameFromEmail(email),
+        avatarUrl,
+    )

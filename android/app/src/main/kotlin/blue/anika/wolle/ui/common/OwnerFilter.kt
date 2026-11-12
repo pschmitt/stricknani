@@ -2,7 +2,7 @@ package blue.anika.wolle.ui.common
 
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -99,8 +99,13 @@ fun LazyListScope.ownerFilterItems(
         FilterChip(
             selected = selected,
             onClick = { onSelect(if (selected) null else OwnerChoice.User(owner.ownerId)) },
-            label = { Text(owner.name) },
-            leadingIcon = { OwnerBadge(owner, size = FilterChipDefaults.IconSize) },
+            label = {
+                UserLabel(
+                    ownerRef(owner),
+                    size = UserLabelSize.Inline,
+                    style = MaterialTheme.typography.labelLarge,
+                )
+            },
             modifier = Modifier.testTag("$testTagPrefix-owner-chip"),
         )
     }

@@ -198,6 +198,7 @@ class MainActivity : FragmentActivity() {
                         if (impersonation != null) {
                             ImpersonationBanner(
                                 session = impersonation,
+                                avatarUrl = apiState.user?.avatarUrl,
                                 credentialRejected = credentialRejected,
                                 nowSeconds = { System.currentTimeMillis() / MILLIS_PER_SECOND },
                                 onStop = {

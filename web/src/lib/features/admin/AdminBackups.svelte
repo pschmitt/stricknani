@@ -4,7 +4,9 @@
   import SharedButton from "#lib/components/Button.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
+  import UserSentence from "#lib/components/UserSentence.svelte";
   import { t } from "#lib/i18n.svelte.ts";
+  import { accountUser } from "#lib/user-label.ts";
   import { session } from "#lib/session.svelte.ts";
   import AdminTabs from "./AdminTabs.svelte";
   import BackupKindBadge from "./BackupKindBadge.svelte";
@@ -13,6 +15,7 @@
     listBackups,
     type BackupEntry,
     type BackupList,
+    type RestoreOutcome,
   } from "./backups-api.ts";
   import {
     compareBackups,
@@ -112,6 +115,14 @@
     if (!entry.readable) return t("Cannot be read", locale);
     return null;
   }
+
+  /** The administrator who requested a restore: by display name, with their avatar if known. */
+  function requester(outcome: RestoreOutcome) {
+    return accountUser({
+      email: outcome.requested_by_email,
+      avatar_url: outcome.requested_by_avatar_url,
+    });
+  }
 </script>
 
 <svelte:head
@@ -170,10 +181,13 @@
             {#if list.last_restore.error}<code>{list.last_restore.error}</code
               >{/if}
           {:else}
-            {t("{name} was restored on {time} by {email}.", locale)
-              .replace("{name}", list.last_restore.backup)
-              .replace("{time}", formatTime(list.last_restore.finished_at))
-              .replace("{email}", list.last_restore.requested_by_email)}
+            <UserSentence
+              template={t("{name} was restored on {time} by {user}.", locale)
+                .replace("{name}", list.last_restore.backup)
+                .replace("{time}", formatTime(list.last_restore.finished_at))}
+              users={{ user: requester(list.last_restore) }}
+              {locale}
+            />
           {/if}
         </p>
         {#if list.last_restore.media_error}
@@ -199,14 +213,17 @@
         <div class="undo-text">
           <h2 id="undo-title">{t("Undo the last restore", locale)}</h2>
           <p>
-            {t(
-              "{email} restored {name} on {time}. The data from before is saved as {saved}; restoring it brings that state back.",
-              locale,
-            )
-              .replace("{email}", list.last_restore.requested_by_email)
-              .replace("{name}", list.last_restore.backup)
-              .replace("{time}", formatTime(list.last_restore.finished_at))
-              .replace("{saved}", undoTarget.name)}
+            <UserSentence
+              template={t(
+                "{user} restored {name} on {time}. The data from before is saved as {saved}; restoring it brings that state back.",
+                locale,
+              )
+                .replace("{name}", list.last_restore.backup)
+                .replace("{time}", formatTime(list.last_restore.finished_at))
+                .replace("{saved}", undoTarget.name)}
+              users={{ user: requester(list.last_restore) }}
+              {locale}
+            />
           </p>
           {#if list.last_restore.media_error}
             <p>

@@ -168,3 +168,55 @@ export function subjectUser(
     avatarUrl: avatarPath(subject.avatar_url),
   };
 }
+
+/** A person with a display name and an avatar path: `ResourceOwner`, a share's user, a picked person. */
+export interface NamedPerson {
+  id?: number;
+  name: string;
+  avatar_url: string | null;
+}
+
+/**
+ * A project or yarn owner, a share recipient or a picked person as a `UserRef`. Pass the viewer's
+ * id to show the viewer themselves as "You". Never carries an email.
+ */
+export function personUser(
+  person: NamedPerson,
+  viewerId?: number | null,
+): UserRef {
+  const self =
+    viewerId !== null && viewerId !== undefined && person.id === viewerId;
+  return {
+    kind: self ? "self" : "user",
+    name: person.name,
+    avatarUrl: avatarPath(person.avatar_url),
+  };
+}
+
+/** A person known only by name (the server resolved it): "an administrator" without one. */
+export function nameUser(
+  name: string | null | undefined,
+  avatarUrl?: string | null,
+): UserRef {
+  const shown = name?.trim();
+  return shown
+    ? { kind: "user", name: shown, avatarUrl: avatarPath(avatarUrl) }
+    : { kind: "unknown", name: null, avatarUrl: null };
+}
+
+/**
+ * An account that the server identified by email (administrator views, the session user): shown
+ * by display name, derived from the email the same way the server does. The email itself is for
+ * the caller to print as a secondary line where an administrator needs it.
+ */
+export function accountUser(account: {
+  email: string;
+  name?: string | null;
+  avatar_url?: string | null;
+}): UserRef {
+  return {
+    kind: "user",
+    name: account.name?.trim() || nameFromEmail(account.email),
+    avatarUrl: avatarPath(account.avatar_url),
+  };
+}

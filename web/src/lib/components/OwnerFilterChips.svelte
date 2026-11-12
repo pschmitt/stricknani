@@ -3,10 +3,11 @@
   // owner (name and avatar, never the email), then Trash. Android shows the same chips in the
   // same order.
   import FilterChip from "#lib/components/FilterChip.svelte";
-  import UserAvatar from "#lib/components/UserAvatar.svelte";
+  import UserLabel from "#lib/components/UserLabel.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import type { OwnerChoice } from "#lib/owner-filter.ts";
   import type { ResourceOwner } from "#lib/owner.ts";
+  import { personUser } from "#lib/user-label.ts";
 
   interface Props {
     choice: OwnerChoice;
@@ -45,8 +46,8 @@
     testid={`${kind}-filter-owner`}
     onclick={() => toggle(String(owner.id) as OwnerChoice)}
   >
-    {#snippet leading()}
-      <UserAvatar avatarUrl={owner.avatar_url} name={owner.name} size="chip" />
+    {#snippet content()}
+      <UserLabel user={personUser(owner)} {locale} size="inline" />
     {/snippet}
   </FilterChip>
 {/each}

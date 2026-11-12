@@ -397,11 +397,23 @@ private fun HistoryRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
-                Text(
-                    headline,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                )
+                val sharing = sharingEventLine(event.action, event.subject)
+                if (sharing != null) {
+                    SharingHeadline(
+                        sharing,
+                        event.subject,
+                        style =
+                            MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                    )
+                } else {
+                    Text(
+                        headline,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
                 HistoryMeta(event, action, time, actor, owner, tone)
             }
             AuditMediaThumb(event.media, Modifier.padding(horizontal = 8.dp))
@@ -423,19 +435,30 @@ private val lifecycleOwnerActions = setOf("trashed", "restored", "purged")
  * administrator made while acting as the actor reads "by <admin> as <actor>".
  */
 @Composable
-private fun HistoryActor(event: AuditEventDto, actor: UserRef, size: UserLabelSize) {
+internal fun HistoryActor(
+    event: AuditEventDto,
+    actor: UserRef,
+    size: UserLabelSize,
+    by: Boolean = true,
+) {
     val style = MaterialTheme.typography.labelMedium
     val color = MaterialTheme.colorScheme.onSurfaceVariant
     val admin = event.impersonatedBy
     if (admin == null) {
-        UserLabel(actor, size = size, by = true, style = style, color = color)
+        UserLabel(actor, size = size, by = by, style = style, color = color)
         return
     }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        UserLabel(impersonatorRef(admin.name), size = size, by = true, style = style, color = color)
+        UserLabel(
+            impersonatorRef(admin.name, admin.avatarUrl),
+            size = size,
+            by = true,
+            style = style,
+            color = color,
+        )
         Text(stringResource(R.string.user_as), style = style, color = color)
         UserLabel(actor, size = size, style = style, color = color)
     }
@@ -503,13 +526,24 @@ private fun HistoryEventSheet(
             ) {
                 ActionBadge(kind)
                 Column(Modifier.weight(1f)) {
-                    Text(
-                        headline,
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.semantics { heading() },
-                    )
+                    val sharing = sharingEventLine(event.action, event.subject)
+                    if (sharing != null) {
+                        SharingHeadline(
+                            sharing,
+                            event.subject,
+                            size = UserLabelSize.Compact,
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.semantics { heading() },
+                        )
+                    } else {
+                        Text(
+                            headline,
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.semantics { heading() },
+                        )
+                    }
                     Text(
                         actionLabel(event.action, event.system),
                         style = MaterialTheme.typography.labelLarge,

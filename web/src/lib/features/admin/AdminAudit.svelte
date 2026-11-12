@@ -9,20 +9,23 @@
   import PageHeader from "#lib/components/PageHeader.svelte";
   import AdminTabs from "./AdminTabs.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
-  import UserAvatar from "#lib/components/UserAvatar.svelte";
+  import UserLabel from "#lib/components/UserLabel.svelte";
+  import UserSentence from "#lib/components/UserSentence.svelte";
   import AuditActionBadge from "./AuditActionBadge.svelte";
   import AuditLifecycle from "./AuditLifecycle.svelte";
   import AuditMediaPreview from "./AuditMediaPreview.svelte";
   import ClientIcon from "./ClientIcon.svelte";
   import { clientLabel } from "./audit-client";
-  import { auditUserRoleText } from "./audit-user-role";
-  import { knownAuditActions } from "./audit-action";
   import {
-    actionLabel,
-    impersonatedByText,
-    impersonationHeadline,
-  } from "#lib/features/history/history-summary.ts";
-  import { msg, t } from "#lib/i18n.svelte.ts";
+    auditActor,
+    auditImpersonatedBy,
+    auditUserRoleSentence,
+    impersonationTemplate,
+  } from "./audit-people";
+  import { knownAuditActions } from "./audit-action";
+  import { actionLabel } from "#lib/features/history/history-summary.ts";
+  import { t } from "#lib/i18n.svelte.ts";
+  import { accountUser, userLabelText } from "#lib/user-label.ts";
   import { session } from "#lib/session.svelte.ts";
   import {
     auditFiltersFromSearch,
@@ -56,7 +59,6 @@
   let filterUser = $state<AuditFilterUser | null>(null);
 
   const locale = $derived(session.data?.locale ?? "en");
-  const legacyUserMessage = msg("Legacy user");
   const userId = $derived(session.data?.user?.id ?? null);
   const filters = $derived(auditFiltersFromSearch(page.url.search));
   const pageUrl = $derived(page.url);
@@ -271,25 +273,6 @@
     );
   }
 
-  function actorLabel(event: AuditEvent): string {
-    if (event.actor_email) return event.actor_email;
-    if (event.system) return t("System", locale);
-    if (event.server?.actor_email) return event.server.actor_email;
-    if (event.legacy_actor_user_id !== null)
-      return `${t(legacyUserMessage, locale)} #${event.legacy_actor_user_id}`;
-    return t("Unknown actor", locale);
-  }
-
-  /** "by Ann as Bea": the administrator behind a change made while impersonating. */
-  function adminAsUser(event: AuditEvent, actor: string): string {
-    const admin = event.impersonated_by;
-    return impersonatedByText(
-      admin?.email ?? admin?.name ?? t("Unknown actor", locale),
-      actor,
-      locale,
-    );
-  }
-
   function entityLabel(entity: string): string {
     return entity === "project"
       ? t("Project", locale)
@@ -416,7 +399,9 @@
       <FilterChip
         label={t("User: {name}", locale).replace(
           "{name}",
-          filterUser?.email ?? `#${filters.user}`,
+          filterUser
+            ? userLabelText(accountUser(filterUser), locale)
+            : `#${filters.user}`,
         )}
         selected
         onclick={clearUserFilter}
@@ -424,6 +409,17 @@
       >
         {#snippet leading()}
           <NavIcon name="close" />
+        {/snippet}
+        {#snippet content()}
+          {#if filterUser}
+            <UserSentence
+              template={t("User: {name}", locale)}
+              users={{ name: accountUser(filterUser) }}
+              {locale}
+            />
+          {:else}
+            {t("User: {name}", locale).replace("{name}", `#${filters.user}`)}
+          {/if}
         {/snippet}
       </FilterChip>
     </div>
@@ -460,7 +456,8 @@
           <h2 class="day-heading" id={`audit-day-${day.key}`}>{day.label}</h2>
           <ol class="event-list">
             {#each day.events as event (event.id)}
-              {@const actor = actorLabel(event)}
+              {@const actor = auditActor(event, locale)}
+              {@const impersonated = auditImpersonatedBy(event, actor, locale)}
               {@const resourceKind = event.resource.kind ?? "resource"}
               <li class="event-row">
                 <div class="event-action">
@@ -493,8 +490,17 @@
                   {:else if event.entity_type === "user"}
                     <p class="impersonation-event">
                       <strong
-                        >{impersonationHeadline(event.action, actor, locale) ??
-                          actionLabel(event.action, locale)}</strong
+                        >{#if impersonationTemplate(event.action, locale)}<UserSentence
+                            template={impersonationTemplate(
+                              event.action,
+                              locale,
+                            ) ?? ""}
+                            users={{ admin: actor }}
+                            {locale}
+                          />{:else}{actionLabel(
+                            event.action,
+                            locale,
+                          )}{/if}</strong
                       >
                       <span>{event.resource.name ?? `#${event.entity_id}`}</span
                       >
@@ -539,30 +545,32 @@
                 </div>
                 <p class="event-actor">
                   <span class="visually-hidden">{t("By", locale)}</span>
-                  <span class="actor-identity" title={actor}>
-                    <UserAvatar
-                      avatarUrl={event.actor_avatar_url}
-                      name={actor}
-                    />
-                    <span class="actor-name"
-                      >{event.impersonated_by
-                        ? adminAsUser(event, actor)
-                        : actor}</span
-                    >
+                  <span class="actor-identity" data-testid="audit-actor">
+                    {#if impersonated}
+                      <UserSentence
+                        template={impersonated.template}
+                        users={impersonated.users}
+                        {locale}
+                      />
+                    {:else}
+                      <UserLabel user={actor} {locale} />
+                    {/if}
                   </span>
                   {#if filterUser}
-                    {@const roleText = auditUserRoleText(
+                    {@const role = auditUserRoleSentence(
                       event,
                       filterUser,
                       actor,
                       locale,
                     )}
-                    {#if roleText}
-                      <span
-                        class="user-role"
-                        data-testid="audit-user-role"
-                        title={roleText}>{roleText}</span
-                      >
+                    {#if role}
+                      <span class="user-role" data-testid="audit-user-role">
+                        <UserSentence
+                          template={role.template}
+                          users={role.users}
+                          {locale}
+                        />
+                      </span>
                     {/if}
                   {/if}
                   <span
@@ -821,12 +829,6 @@
     line-height: 1.2;
   }
   .client-name {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .actor-name {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;

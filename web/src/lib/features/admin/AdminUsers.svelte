@@ -9,7 +9,9 @@
   import NavIcon from "#lib/components/NavIcon.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import AdminTabs from "./AdminTabs.svelte";
-  import UserAvatar from "#lib/components/UserAvatar.svelte";
+  import UserLabel from "#lib/components/UserLabel.svelte";
+  import UserSentence from "#lib/components/UserSentence.svelte";
+  import { accountUser } from "#lib/user-label.ts";
   import ActionOverflow from "#lib/components/ActionOverflow.svelte";
   import AdminUserIdentities from "#lib/features/auth/AdminUserIdentities.svelte";
   import {
@@ -706,8 +708,12 @@
           aria-label={`${user.email}, ${user.is_admin ? t("Administrator", locale) : t("Member", locale)}, ${user.active ? t("Active", locale) : t("Disabled", locale)}`}
         >
           <div class="user-identity">
-            <UserAvatar avatarUrl={user.avatar_url} name={user.email} />
-            <strong class="user-email" title={user.email}>{user.email}</strong>
+            <span class="user-who">
+              <span class="user-name"
+                ><UserLabel user={accountUser(user)} {locale} /></span
+              >
+              <span class="user-email" title={user.email}>{user.email}</span>
+            </span>
             {#if user.id === userId}<span class="you-marker"
                 >{t("You", locale)}</span
               >{/if}
@@ -982,18 +988,24 @@
 >
   {#if impersonateTarget}
     <div class="target-identity">
-      <UserAvatar
-        avatarUrl={impersonateTarget.avatar_url}
-        name={impersonateTarget.email}
-        size="large"
-      />
-      <strong>{impersonateTarget.email}</strong>
+      <span class="target-who">
+        <UserLabel
+          user={accountUser(impersonateTarget)}
+          {locale}
+          size="regular"
+        />
+        <span class="target-email">{impersonateTarget.email}</span>
+      </span>
     </div>
     <p>
-      {t(
-        "Act as {email}? Everything you do is recorded as done by them and logged.",
-        locale,
-      ).replace("{email}", impersonateTarget.email)}
+      <UserSentence
+        template={t(
+          "Act as {name}? Everything you do is recorded as done by them and logged.",
+          locale,
+        )}
+        users={{ name: accountUser(impersonateTarget) }}
+        {locale}
+      />
     </p>
   {/if}
   {#if impersonateError}<p class="notice notice-error" role="alert">
@@ -1037,12 +1049,10 @@
     </h2>
     {#if activeTarget}
       <div class="target-identity">
-        <UserAvatar
-          avatarUrl={activeTarget.avatar_url}
-          name={activeTarget.email}
-          size="large"
-        />
-        <strong>{activeTarget.email}</strong>
+        <span class="target-who">
+          <UserLabel user={accountUser(activeTarget)} {locale} size="regular" />
+          <span class="target-email">{activeTarget.email}</span>
+        </span>
       </div>
     {/if}
     <p>
@@ -1102,12 +1112,10 @@
     <h2 id="reset-password-title">{t("Reset this password?", locale)}</h2>
     {#if resetTarget}
       <div class="target-identity">
-        <UserAvatar
-          avatarUrl={resetTarget.avatar_url}
-          name={resetTarget.email}
-          size="large"
-        />
-        <strong>{resetTarget.email}</strong>
+        <span class="target-who">
+          <UserLabel user={accountUser(resetTarget)} {locale} size="regular" />
+          <span class="target-email">{resetTarget.email}</span>
+        </span>
       </div>
     {/if}
     <p>{t("The user will need to sign in with the new password.", locale)}</p>
@@ -1199,12 +1207,41 @@
     gap: 0.65rem;
     min-width: 0;
   }
-  .user-email {
+  .user-who {
+    display: grid;
     min-width: 0;
+    gap: 0.05rem;
+  }
+  .user-email {
+    padding-inline-start: 1.75rem;
+  }
+  .user-name {
+    min-width: 0;
+    font-weight: 620;
+  }
+  .user-name :global(.user-label__name) {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-weight: 620;
+  }
+  .user-email,
+  .target-email {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--ink-muted);
+    font-size: 0.82rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .target-who {
+    display: grid;
+    min-width: 0;
+    gap: 0.1rem;
+    font-weight: 650;
+  }
+  .target-email {
+    padding-inline-start: 2.85rem;
+    font-weight: 400;
   }
   .you-marker {
     flex: none;

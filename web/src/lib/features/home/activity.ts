@@ -4,6 +4,7 @@ import {
   actionLabel,
   fieldNoun,
   sharingHeadline,
+  sharingSentence,
 } from "#lib/features/history/history-summary.ts";
 import {
   activityActor,
@@ -200,6 +201,15 @@ export function activityHeadline(item: ActivityItem, locale: Locale): string {
       item.subject ? { ...item.subject, role: item.subject_role } : null,
       locale,
     ) ?? actionLabel(item.action, locale, item.system)
+  );
+}
+
+/** The sharing sentence of a feed item with its person, or null for any other action. */
+export function activitySharing(item: ActivityItem, locale: Locale) {
+  return sharingSentence(
+    item.action,
+    item.subject ? { ...item.subject, role: item.subject_role } : null,
+    locale,
   );
 }
 

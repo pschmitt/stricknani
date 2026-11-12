@@ -11,9 +11,11 @@
     testid?: string;
     /** An avatar or icon before the label (Android's leadingIcon). */
     leading?: Snippet;
+    /** Replaces the plain label (a person's `UserLabel`); `label` still names the chip. */
+    content?: Snippet;
   }
 
-  let { label, selected, onclick, testid, leading }: Props = $props();
+  let { label, selected, onclick, testid, leading, content }: Props = $props();
 </script>
 
 <button
@@ -26,7 +28,13 @@
   {onclick}
 >
   {#if leading}{@render leading()}{/if}
-  <span class="filter-chip__label" data-label={label}>{label}</span>
+  {#if content}
+    <span class="filter-chip__content" data-label={label}
+      >{@render content()}</span
+    >
+  {:else}
+    <span class="filter-chip__label" data-label={label}>{label}</span>
+  {/if}
 </button>
 
 <style>
@@ -88,6 +96,18 @@
     display: inline-flex;
     min-width: 0;
     flex-direction: column;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .filter-chip__content {
+    display: inline-flex;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .filter-chip__content :global(.user-label__name) {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

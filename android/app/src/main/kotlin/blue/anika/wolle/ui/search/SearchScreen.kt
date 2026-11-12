@@ -158,7 +158,7 @@ private fun SearchResultCard(
                     )
                 }
             }
-            owner?.let { OwnerBadge(it, size = 24.dp) }
+            owner?.let { OwnerBadge(it) }
         }
     }
 }

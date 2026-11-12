@@ -24,6 +24,7 @@
     fullDate,
     historyDetailKind,
     relativeTime,
+    sharingSentence,
   } from "./history-summary";
 
   // "Recent changes" at the bottom of a project or yarn: a timeline of the newest recorded
@@ -196,6 +197,11 @@
       requestDetail(event.id, true);
   }
 
+  /** A sharing event's sentence, with its person as a `UserLabel`. */
+  function sharing(event: HistoryEvent) {
+    return sharingSentence(event.action, event.subject, locale);
+  }
+
   function headline(event: HistoryEvent): string {
     if (event.media?.name)
       return `${actionLabel(event.action, locale, event.system === true)}: ${event.media.name}`;
@@ -290,7 +296,13 @@
               />
             {/if}
             <span class="entry-main">
-              <span class="entry-headline">{headline(event)}</span>
+              <span class="entry-headline"
+                >{#if sharing(event)}<UserSentence
+                    template={sharing(event)?.template ?? ""}
+                    users={sharing(event)?.users ?? {}}
+                    {locale}
+                  />{:else}{headline(event)}{/if}</span
+              >
               <span class="entry-meta">
                 <span class="entry-action"
                   >{actionLabel(

@@ -7,7 +7,8 @@
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
-  import UserAvatar from "#lib/components/UserAvatar.svelte";
+  import UserLabel from "#lib/components/UserLabel.svelte";
+  import { accountUser } from "#lib/user-label.ts";
   import ProjectReader from "#lib/features/projects/ProjectReader.svelte";
   import type {
     ProjectDetail,
@@ -398,14 +399,16 @@
 
         {#if resource.owner}
           <section class="owner-strip" aria-label={t("Resource owner", locale)}>
-            <UserAvatar
-              avatarUrl={resource.owner.avatar_url}
-              name={resource.owner.email}
-              size="large"
-            />
             <div>
               <p class="field-label">{t("Owner", locale)}</p>
-              <p class="owner-name">{resource.owner.email}</p>
+              <p class="owner-name">
+                <UserLabel
+                  user={accountUser(resource.owner)}
+                  {locale}
+                  size="regular"
+                />
+              </p>
+              <p class="owner-email">{resource.owner.email}</p>
             </div>
           </section>
         {/if}
@@ -811,6 +814,11 @@
   .owner-name {
     font-weight: 650;
     overflow-wrap: anywhere;
+  }
+  .owner-strip .owner-email {
+    padding-inline-start: 2.85rem;
+    color: var(--ink-muted);
+    font-size: 0.85rem;
   }
   .field-label,
   .field-grid dt {

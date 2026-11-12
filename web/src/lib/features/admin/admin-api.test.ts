@@ -379,12 +379,19 @@ describe("administrator API", () => {
         name: "Admin",
         email: "admin@example.invalid",
       }),
-    ).toEqual({ id: 4, name: "Admin", email: "admin@example.invalid" });
-    expect(parseImpersonator({ id: 4, name: "Admin" })).toEqual({
+    ).toEqual({
       id: 4,
       name: "Admin",
-      email: null,
+      email: "admin@example.invalid",
+      avatar_url: null,
     });
+    expect(
+      parseImpersonator({ id: 4, name: "Admin", avatar_url: "/a/4" }),
+    ).toEqual({ id: 4, name: "Admin", email: null, avatar_url: "/a/4" });
+    expect(
+      parseImpersonator({ id: 4, name: "Admin", avatar_url: "//x.test/a" })
+        ?.avatar_url,
+    ).toBeNull();
   });
 
   it("serializes audit filters and parses entity/page URL state", async () => {

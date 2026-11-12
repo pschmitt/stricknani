@@ -5,11 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -187,14 +185,18 @@ fun FilterSearchField(
                                         .padding(horizontal = 16.dp)
                                         .testTag("filter-suggestion"),
                             ) {
-                                suggestion.owner?.let {
-                                    OwnerBadge(it, size = 24.dp)
-                                    Spacer(Modifier.width(12.dp))
+                                val owner = suggestion.owner
+                                if (owner != null) {
+                                    UserLabel(
+                                        ownerRef(owner),
+                                        style = MaterialTheme.typography.bodyLarge,
+                                    )
+                                } else {
+                                    Text(
+                                        suggestion.label,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                    )
                                 }
-                                Text(
-                                    suggestion.label,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                )
                             }
                         }
                     }

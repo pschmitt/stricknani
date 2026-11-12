@@ -2,7 +2,9 @@
   import { onDestroy, onMount } from "svelte";
   import Button from "#lib/components/Button.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
-  import UserAvatar from "#lib/components/UserAvatar.svelte";
+  import UserLabel from "#lib/components/UserLabel.svelte";
+  import { session } from "#lib/session.svelte.ts";
+  import { nameUser } from "#lib/user-label.ts";
   import {
     SUGGESTION_GROUPS,
     type FilterSuggestion,
@@ -44,6 +46,7 @@
     suggestions,
   }: Props = $props();
 
+  const locale = $derived(session.data?.locale ?? "en");
   const idPrefix = $props.id();
   const listId = `${idPrefix}-suggestions`;
   const optionId = (index: number) => `${idPrefix}-suggestion-${index}`;
@@ -316,12 +319,13 @@
                 onclick={() => selectSuggestion(suggestion)}
               >
                 {#if suggestion.group === "owners" && suggestion.avatarUrl !== undefined}
-                  <UserAvatar
-                    avatarUrl={suggestion.avatarUrl}
-                    name={suggestion.label}
+                  <UserLabel
+                    user={nameUser(suggestion.label, suggestion.avatarUrl)}
+                    {locale}
                   />
+                {:else}
+                  <span>{suggestion.label}</span>
                 {/if}
-                <span>{suggestion.label}</span>
               </div>
             {/each}
           </div>

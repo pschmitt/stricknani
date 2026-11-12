@@ -15,6 +15,7 @@
     ACTIVITY_PAGE_SIZE,
     activityDetail,
     activityHeadline,
+    activitySharing,
     activityIcon,
     activityItemActor,
     activityOwner,
@@ -190,6 +191,7 @@
             {#each day.items as item, index (item.id)}
               {@const name = activityResourceName(item, locale)}
               {@const headline = activityHeadline(item, locale)}
+              {@const sharing = activitySharing(item, locale)}
               {@const actor = activityItemActor(item)}
               {@const owner = activityOwner(item, locale)}
               {@const detail = activityDetail(item, locale)}
@@ -219,7 +221,13 @@
                     ><strong class="tl__name">{name}</strong></span
                   >
                   <span class="tl__meta">
-                    <span class="tl__action">{headline}</span>
+                    <span class="tl__action"
+                      >{#if sharing}<UserSentence
+                          template={sharing.template}
+                          users={sharing.users}
+                          {locale}
+                        />{:else}{headline}{/if}</span
+                    >
                     <UserLabel user={actor} {locale} size="inline" by />
                     <time datetime={item.created_at}
                       >{activityTime(item.created_at, locale)}</time

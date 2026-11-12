@@ -1,4 +1,5 @@
 import { apiRequest, type SessionData } from "#lib/api.ts";
+import { avatarPath } from "#lib/user-label.ts";
 
 /**
  * Client for the administrator backups API (`/api/v2/admin/backups`): the
@@ -40,6 +41,8 @@ export interface RestoreOutcome {
   media: MediaOption;
   finished_at: string;
   requested_by_email: string;
+  /** The administrator's avatar path when the account still exists. */
+  requested_by_avatar_url?: string | null;
   error: string | null;
   media_added: number | null;
   media_error: string | null;
@@ -146,6 +149,7 @@ function parseOutcome(value: unknown): RestoreOutcome | null {
     media: value.media === "add_missing" ? "add_missing" : "none",
     finished_at: text(value.finished_at),
     requested_by_email: text(value.requested_by_email),
+    requested_by_avatar_url: avatarPath(value.requested_by_avatar_url),
     error: optionalText(value.error),
     media_added: count(value.media_added),
     media_error: optionalText(value.media_error),

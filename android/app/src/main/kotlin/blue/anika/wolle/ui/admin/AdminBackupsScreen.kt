@@ -35,6 +35,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -49,6 +50,7 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -86,7 +88,9 @@ import blue.anika.wolle.data.backups.formatBackupTime
 import blue.anika.wolle.data.backups.isLocked
 import blue.anika.wolle.data.backups.value
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.UserSentence
 import blue.anika.wolle.ui.common.YarnLoader
+import blue.anika.wolle.ui.common.accountRef
 import blue.anika.wolle.ui.oidc.ReauthSheet
 import blue.anika.wolle.ui.theme.BackupManualInk
 import blue.anika.wolle.ui.theme.BackupManualInkNight
@@ -209,28 +213,32 @@ private fun BackupsList(
     ) {
         list.pendingRestore?.let { pending ->
             item {
-                Banner(
-                    stringResource(R.string.backups_pending, pending.backup),
-                    tag = "backups-pending",
-                )
+                Banner(tag = "backups-pending") {
+                    Text(stringResource(R.string.backups_pending, pending.backup))
+                }
             }
         }
         list.lastRestore?.let { last ->
             // The Undo card carries the success message; the plain banner covers the rest.
             if (undoTarget == null || !last.succeeded) {
                 item {
-                    val text =
+                    Banner(problem = !last.succeeded, tag = "backups-last-restore") {
                         if (last.succeeded)
-                            stringResource(
+                            UserSentence(
                                 R.string.backups_last_succeeded,
                                 last.backup,
                                 formatBackupTime(last.finishedAt),
-                                last.requestedByEmail,
+                                accountRef(
+                                    last.requestedByEmail,
+                                    avatarUrl = last.requestedByAvatarUrl,
+                                ),
                             )
                         else
-                            stringResource(R.string.backups_last_failed, last.backup) +
-                                (last.error?.let { " $it" } ?: "")
-                    Banner(text, problem = !last.succeeded, tag = "backups-last-restore")
+                            Text(
+                                stringResource(R.string.backups_last_failed, last.backup) +
+                                    (last.error?.let { " $it" } ?: "")
+                            )
+                    }
                     last.mediaError?.let {
                         Text(
                             stringResource(R.string.backups_media_error, it),
@@ -326,14 +334,12 @@ private fun UndoCard(
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
-                    Text(
-                        stringResource(
-                            R.string.backups_undo_text,
-                            last.requestedByEmail,
-                            last.backup,
-                            formatBackupTime(last.finishedAt),
-                            target.name,
-                        ),
+                    UserSentence(
+                        R.string.backups_undo_text,
+                        accountRef(last.requestedByEmail, avatarUrl = last.requestedByAvatarUrl),
+                        last.backup,
+                        formatBackupTime(last.finishedAt),
+                        target.name,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -360,7 +366,7 @@ private fun UndoCard(
 }
 
 @Composable
-private fun Banner(text: String, problem: Boolean = false, tag: String) {
+private fun Banner(problem: Boolean = false, tag: String, content: @Composable () -> Unit) {
     Surface(
         shape = MaterialTheme.shapes.medium,
         color =
@@ -368,13 +374,13 @@ private fun Banner(text: String, problem: Boolean = false, tag: String) {
             else MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier = Modifier.fillMaxWidth().testTag(tag),
     ) {
-        Text(
-            text,
-            modifier = Modifier.padding(12.dp),
-            color =
+        CompositionLocalProvider(
+            LocalContentColor provides
                 if (problem) MaterialTheme.colorScheme.onErrorContainer
-                else MaterialTheme.colorScheme.onSurface,
-        )
+                else MaterialTheme.colorScheme.onSurface
+        ) {
+            Box(Modifier.padding(12.dp)) { content() }
+        }
     }
 }
 

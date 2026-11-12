@@ -3,10 +3,12 @@
   import { isAccessLost } from "#lib/access.ts";
   import Button from "#lib/components/Button.svelte";
   import SegmentedControl from "#lib/components/SegmentedControl.svelte";
-  import UserAvatar from "#lib/components/UserAvatar.svelte";
+  import UserLabel from "#lib/components/UserLabel.svelte";
+  import UserSentence from "#lib/components/UserSentence.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
   import type { ShareOutcome } from "#lib/share-link.ts";
   import { session } from "#lib/session.svelte.ts";
+  import { personUser, type UserRef } from "#lib/user-label.ts";
   import PeoplePicker from "./PeoplePicker.svelte";
   import {
     addShare,
@@ -56,7 +58,10 @@
   const dialogId = $props.id();
 
   let dialog = $state<HTMLDialogElement>();
-  let status = $state("");
+  // A status line is a translated sentence; the people in it render as `UserLabel`s.
+  type Status = { template: string; users: Record<string, UserRef> };
+  let status = $state<Status | null>(null);
+  const plain = (text: string): Status => ({ template: text, users: {} });
   let error = $state("");
   let busyIds = $state<number[]>([]);
   let adding = $state(false);
@@ -64,7 +69,7 @@
   let newRole = $state<ShareRole>("viewer");
 
   export function showModal(): void {
-    status = "";
+    status = null;
     error = "";
     if (!dialog?.open) dialog?.showModal();
   }
@@ -83,7 +88,7 @@
   }
 
   function fail(failure: unknown, fallback: string) {
-    status = "";
+    status = null;
     if (isAccessLost(failure)) {
       onaccesslost();
       return;
@@ -103,7 +108,7 @@
     if (!currentSession?.user || !person || adding || !list) return;
     adding = true;
     error = "";
-    status = "";
+    status = null;
     try {
       const share = await addShare(
         kind,
@@ -115,7 +120,10 @@
       if (list) list = { ...list, shares: [...list.shares, share] };
       picked = null;
       newRole = "viewer";
-      status = t("Shared with {name}.", locale).replace("{name}", person.name);
+      status = {
+        template: t("Shared with {name}.", locale),
+        users: { name: personUser(person) },
+      };
     } catch (failure) {
       fail(failure, t("The share could not be added.", locale));
     } finally {
@@ -132,7 +140,7 @@
     if (!currentSession?.user || !list || role === share.role) return;
     setBusy(share.user.id, true);
     error = "";
-    status = "";
+    status = null;
     try {
       const updated = await changeShareRole(
         kind,
@@ -148,10 +156,10 @@
             item.user.id === updated.user.id ? updated : item,
           ),
         };
-      status = t("Role updated for {name}.", locale).replace(
-        "{name}",
-        share.user.name,
-      );
+      status = {
+        template: t("Role updated for {name}.", locale),
+        users: { name: personUser(share.user) },
+      };
     } catch (failure) {
       select.value = share.role;
       fail(failure, t("The role could not be changed.", locale));
@@ -165,7 +173,7 @@
     if (!currentSession?.user || !list) return;
     setBusy(share.user.id, true);
     error = "";
-    status = "";
+    status = null;
     try {
       await revokeShare(kind, resourceId, share.user.id, currentSession);
       if (list)
@@ -173,10 +181,10 @@
           ...list,
           shares: list.shares.filter((item) => item.user.id !== share.user.id),
         };
-      status = t("{name} no longer has access.", locale).replace(
-        "{name}",
-        share.user.name,
-      );
+      status = {
+        template: t("{name} no longer has access.", locale),
+        users: { name: personUser(share.user) },
+      };
     } catch (failure) {
       fail(failure, t("The share could not be removed.", locale));
     } finally {
@@ -187,10 +195,10 @@
   async function shareLinkNow() {
     error = "";
     const outcome = await onsharelink();
-    if (outcome === "copied") status = t("Link copied.", locale);
+    if (outcome === "copied") status = plain(t("Link copied.", locale));
     else if (outcome === "failed")
       error = t("The link could not be shared.", locale);
-    else status = "";
+    else status = null;
   }
 </script>
 
@@ -251,18 +259,17 @@
       aria-label={t("People with access", locale)}
     >
       <li class="share-person">
-        <UserAvatar avatarUrl={list.owner.avatar_url} name={list.owner.name} />
-        <span class="share-person__name">{list.owner.name}</span>
+        <span class="share-person__name"
+          ><UserLabel user={personUser(list.owner)} {locale} /></span
+        >
         <span class="share-person__owner">{t("Owner", locale)}</span>
       </li>
       {#each list.shares as share (share.user.id)}
         {@const busy = busyIds.includes(share.user.id)}
         <li class="share-person">
-          <UserAvatar
-            avatarUrl={share.user.avatar_url}
-            name={share.user.name}
-          />
-          <span class="share-person__name">{share.user.name}</span>
+          <span class="share-person__name"
+            ><UserLabel user={personUser(share.user)} {locale} /></span
+          >
           <div class="share-person__role">
             <label
               class="visually-hidden"
@@ -329,16 +336,24 @@
           disabled={!picked || adding}
           onclick={() => void add()}
         >
-          {picked
-            ? t("Share with {name}", locale).replace("{name}", picked.name)
-            : t("Share", locale)}
+          {#if picked}<UserSentence
+              template={t("Share with {name}", locale)}
+              users={{ name: personUser(picked) }}
+              {locale}
+            />{:else}{t("Share", locale)}{/if}
         </Button>
       </div>
     </section>
   {/if}
 
   <div class="share-dialog__feedback" aria-live="polite">
-    {#if status}<p class="share-dialog__status" role="status">{status}</p>{/if}
+    {#if status}<p class="share-dialog__status" role="status">
+        <UserSentence
+          template={status.template}
+          users={status.users}
+          {locale}
+        />
+      </p>{/if}
   </div>
   {#if error}<p class="share-dialog__error" role="alert">{error}</p>{/if}
 

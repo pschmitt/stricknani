@@ -99,6 +99,8 @@ data class RestoreOutcomeDto(
     val media: String = "none",
     @SerialName("finished_at") val finishedAt: String = "",
     @SerialName("requested_by_email") val requestedByEmail: String = "",
+    /** The requesting administrator's picture, when that account still exists. */
+    @SerialName("requested_by_avatar_url") val requestedByAvatarUrl: String? = null,
     val error: String? = null,
     @SerialName("media_added") val mediaAdded: Long? = null,
     @SerialName("media_error") val mediaError: String? = null,

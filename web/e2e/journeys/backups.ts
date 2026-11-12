@@ -741,9 +741,7 @@ export async function runBackupsJourney(
     await card("Aran Sweater").waitFor({ state: "visible", timeout: WAIT });
     await card("Borrowed Shawl").waitFor({ state: "visible", timeout: WAIT });
     check(
-      (await card("Borrowed Shawl")
-        .locator('[role="img"][aria-label^="Owned by"]')
-        .count()) === 0,
+      (await card("Borrowed Shawl").getByTestId("owner-badge").count()) === 0,
       "the restored shared project still shows an owner badge",
     );
     const cover = card("Aran Sweater").locator("img");

@@ -21,27 +21,29 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.ACCESS_EDITOR
 
-/** The owner's avatar (initial as the fallback) on a card; "Owned by Anika" for accessibility. */
+/**
+ * Who owns a card's project or yarn: the shared [UserLabel] (avatar + name) on a small pill over
+ * the card's picture; "Owned by Anika" for accessibility. The name shortens before the pill
+ * outgrows the picture.
+ */
 @Composable
-fun OwnerBadge(owner: OwnerBadgeData, modifier: Modifier = Modifier, size: Dp = 28.dp) {
-    val context = LocalOwnerContext.current
+fun OwnerBadge(owner: OwnerBadgeData, modifier: Modifier = Modifier) {
     val description = stringResource(R.string.owner_badge_description, owner.name)
     Surface(
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.surface,
-        border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = modifier.semantics { contentDescription = description }.testTag("owner-badge"),
     ) {
-        AccountAvatar(
-            url = context.resolveUrl(owner.avatarUrl),
-            email = owner.name,
-            size = size,
-            modifier = Modifier.padding(1.dp),
+        UserLabel(
+            ownerRef(owner),
+            size = UserLabelSize.Inline,
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.padding(start = 3.dp, end = 8.dp, top = 3.dp, bottom = 3.dp),
         )
     }
 }
@@ -53,11 +55,8 @@ fun OwnerBadge(owner: OwnerBadgeData, modifier: Modifier = Modifier, size: Dp = 
 @Composable
 fun OwnerBanner(banner: OwnerBannerData, modifier: Modifier = Modifier) {
     val project = banner.kind == OwnedKind.Project
-    val title =
-        stringResource(
-            if (project) R.string.owner_banner_project_title else R.string.owner_banner_yarn_title,
-            banner.ownerName,
-        )
+    val titleRes =
+        if (project) R.string.owner_banner_project_title else R.string.owner_banner_yarn_title
     val detail =
         stringResource(
             if (project) R.string.owner_banner_project_detail else R.string.owner_banner_yarn_detail
@@ -76,13 +75,13 @@ fun OwnerBanner(banner: OwnerBannerData, modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
         ) {
-            AccountAvatar(
-                url = LocalOwnerContext.current.resolveUrl(banner.avatarUrl),
-                email = banner.ownerName,
-                size = 36.dp,
-            )
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(title, style = MaterialTheme.typography.titleSmall)
+                UserSentence(
+                    titleRes,
+                    UserRef(UserKind.User, banner.ownerName, banner.avatarUrl),
+                    size = UserLabelSize.Regular,
+                    style = MaterialTheme.typography.titleSmall,
+                )
                 Text(
                     detail,
                     style = MaterialTheme.typography.bodySmall,
@@ -111,28 +110,16 @@ fun ItemBannerView(banner: ItemBanner, modifier: Modifier = Modifier) {
             }
         is ItemBanner.SharedBy ->
             BannerSurface(modifier) {
-                val resolve = LocalOwnerContext.current.resolveUrl
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    AccountAvatar(
-                        url = resolve(banner.owner.avatarUrl),
-                        email = banner.owner.name,
-                        size = 24.dp,
-                    )
-                    Text(
-                        stringResource(
-                            R.string.sharing_shared_by_role,
-                            banner.owner.name,
-                            stringResource(
-                                if (banner.role == ACCESS_EDITOR) R.string.sharing_role_editor
-                                else R.string.sharing_role_viewer
-                            ),
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                    )
-                }
+                UserSentence(
+                    R.string.sharing_shared_by_role,
+                    UserRef(UserKind.User, banner.owner.name, banner.owner.avatarUrl),
+                    stringResource(
+                        if (banner.role == ACCESS_EDITOR) R.string.sharing_role_editor
+                        else R.string.sharing_role_viewer
+                    ),
+                    size = UserLabelSize.Compact,
+                    style = MaterialTheme.typography.bodySmall,
+                )
             }
     }
 }

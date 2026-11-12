@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  accountUser,
   activityActor,
+  nameUser,
+  personUser,
   historyActor,
   sentenceParts,
   subjectUser,
@@ -109,5 +112,51 @@ describe("subjectUser and sentenceParts", () => {
       { text: "x " },
       { text: "{other}" },
     ]);
+  });
+});
+
+describe("person helpers", () => {
+  it("shows owners, shares and picked people by name, the viewer as You", () => {
+    const anna = {
+      id: 4,
+      name: "Anna",
+      avatar_url: "/api/v2/people/4/avatar/g",
+    };
+    expect(personUser(anna)).toEqual({
+      kind: "user",
+      name: "Anna",
+      avatarUrl: "/api/v2/people/4/avatar/g",
+    });
+    expect(personUser(anna, 4).kind).toBe("self");
+    expect(personUser(anna, 5).kind).toBe("user");
+    // Only same-origin paths become images.
+    expect(
+      personUser({ ...anna, avatar_url: "//evil.example/a.png" }).avatarUrl,
+    ).toBeNull();
+  });
+
+  it("derives the name of an email-identified account, never showing the email", () => {
+    expect(
+      accountUser({
+        email: "anika.bergmann@example.invalid",
+        avatar_url: null,
+      }),
+    ).toEqual({ kind: "user", name: "Anika Bergmann", avatarUrl: null });
+    expect(
+      accountUser({
+        email: "x@example.invalid",
+        name: "Xandra",
+        avatar_url: "/a",
+      }).name,
+    ).toBe("Xandra");
+  });
+
+  it("falls back to Unknown for a nameless person", () => {
+    expect(nameUser(" ").kind).toBe("unknown");
+    expect(nameUser("Bea", "/b.png")).toEqual({
+      kind: "user",
+      name: "Bea",
+      avatarUrl: "/b.png",
+    });
   });
 });

@@ -60,6 +60,8 @@ struct OutcomeView {
     media: String,
     finished_at: String,
     requested_by_email: String,
+    /// The requesting administrator's avatar path, when that account still exists.
+    requested_by_avatar_url: Option<String>,
     error: Option<String>,
     media_added: Option<u64>,
     media_error: Option<String>,
@@ -71,7 +73,25 @@ fn rfc3339(seconds: i64) -> String {
         .to_rfc3339_opts(SecondsFormat::Secs, true)
 }
 
-fn outcome_view(outcome: &crate::backups::Outcome) -> OutcomeView {
+async fn outcome_view(
+    outcome: &crate::backups::Outcome,
+    pool: &sqlx::SqlitePool,
+    gravatar_enabled: bool,
+) -> OutcomeView {
+    let requester: Option<(i64, i64, Option<String>)> = sqlx::query_as(
+        "SELECT u.id, u.use_gravatar, \
+         (SELECT filename FROM user_avatars WHERE user_id = u.id) \
+         FROM users AS u WHERE u.email = ?",
+    )
+    .bind(&outcome.requested_by_email)
+    .fetch_optional(pool)
+    .await
+    .ok()
+    .flatten();
+    let requested_by_avatar_url = requester.and_then(|(id, use_gravatar, filename)| {
+        crate::media::admin_avatar(id, filename.as_deref(), use_gravatar != 0, gravatar_enabled)
+            .map(|(url, _)| url)
+    });
     OutcomeView {
         status: outcome.status.clone(),
         backup: outcome.backup.clone(),
@@ -79,6 +99,7 @@ fn outcome_view(outcome: &crate::backups::Outcome) -> OutcomeView {
         media: outcome.media.clone(),
         finished_at: rfc3339(outcome.finished_at),
         requested_by_email: outcome.requested_by_email.clone(),
+        requested_by_avatar_url,
         error: outcome.error.clone(),
         media_added: outcome.media_added,
         media_error: outcome.media_error.clone(),
@@ -127,6 +148,12 @@ async fn list(State(state): State<ApiV2State>, headers: HeaderMap) -> Response {
         .iter()
         .find(|entry| entry.kind == crate::backups::Kind::PreRestore && entry.restorable)
         .map(|entry| entry.name.clone());
+    let last_restore = match service.last_restore() {
+        Some(outcome) => {
+            Some(outcome_view(outcome, &state.app.pool, state.app.gravatar.enabled).await)
+        }
+        None => None,
+    };
     Json(Envelope {
         data: ListData {
             available: true,
@@ -138,7 +165,7 @@ async fn list(State(state): State<ApiV2State>, headers: HeaderMap) -> Response {
                 pre_restore: request.pre_restore,
                 requested_at: rfc3339(request.requested_at),
             }),
-            last_restore: service.last_restore().map(outcome_view),
+            last_restore,
             data_epoch: Some(service.data_epoch().to_owned()),
             auto_restart: service.config().auto_restart,
         },

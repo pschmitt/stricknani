@@ -802,6 +802,16 @@ async fn audit_api_filters_by_user_across_actor_subject_and_impersonator() {
     assert_eq!(ids, [3, 2, 1]);
     assert_eq!(body["meta"]["user"]["id"], target);
     assert_eq!(body["meta"]["user"]["email"], "audit-target@example.test");
+    // The filtered account and the impersonator carry an avatar field (null without a picture)
+    // so clients can show them with the shared UserLabel.
+    assert!(body["meta"]["user"].get("avatar_url").is_some());
+    let impersonated = body["data"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|event| event["entity_id"] == 3)
+        .unwrap();
+    assert!(impersonated["impersonated_by"].get("avatar_url").is_some());
 
     let (_, _, ids) = entity_ids(app, &format!("/admin/audit?user={target}&role=any")).await;
     assert_eq!(ids, [3, 2, 1]);

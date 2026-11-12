@@ -1,5 +1,6 @@
 import { ApiError, apiRequest, type SessionData } from "#lib/api.ts";
 import { t } from "#lib/i18n.svelte.ts";
+import { avatarPath } from "#lib/user-label.ts";
 import { parseAuditClient, type AuditClient } from "./audit-client";
 import {
   parseChangeMedia,
@@ -55,6 +56,7 @@ export interface Impersonator {
   id: number | null;
   name: string | null;
   email: string | null;
+  avatar_url?: string | null;
 }
 
 /** The optional `impersonated_by` of an audit or history event; malformed values read as none. */
@@ -64,6 +66,7 @@ export function parseImpersonator(value: unknown): Impersonator | null {
     id: safeInteger(value.id) ? value.id : null,
     name: typeof value.name === "string" ? value.name : null,
     email: typeof value.email === "string" ? value.email : null,
+    avatar_url: avatarPath(value.avatar_url),
   };
 }
 
@@ -175,6 +178,7 @@ export interface AdminPage {
 export interface AuditFilterUser {
   id: number;
   email: string;
+  avatar_url?: string | null;
 }
 
 export interface AuditPage {
@@ -620,7 +624,11 @@ function parseFilterUser(value: unknown): AuditFilterUser | null {
   if (value === undefined || value === null) return null;
   if (!record(value) || !positiveInteger(value.id)) throw invalidResponse();
   if (typeof value.email !== "string") throw invalidResponse();
-  return { id: value.id, email: value.email };
+  return {
+    id: value.id,
+    email: value.email,
+    avatar_url: avatarPath(value.avatar_url),
+  };
 }
 
 export function auditFiltersFromSearch(search: string): AuditFilters {

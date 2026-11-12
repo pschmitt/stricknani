@@ -29,7 +29,12 @@ data class AdminPageMetaDto(
 )
 
 /** `meta.user` of the audit list: the account the list is filtered to. */
-@Serializable data class AuditFilterUserDto(val id: Long, val email: String)
+@Serializable
+data class AuditFilterUserDto(
+    val id: Long,
+    val email: String,
+    @SerialName("avatar_url") val avatarUrl: String? = null,
+)
 
 /** `impersonated_by` of an audit event: the administrator who acted as the actor. */
 @Serializable
@@ -37,6 +42,7 @@ data class AuditImpersonatorDto(
     val id: Long? = null,
     val name: String? = null,
     val email: String? = null,
+    @SerialName("avatar_url") val avatarUrl: String? = null,
 )
 
 @Serializable

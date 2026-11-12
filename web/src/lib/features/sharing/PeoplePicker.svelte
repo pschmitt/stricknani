@@ -2,8 +2,9 @@
   import { onDestroy, onMount } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import Button from "#lib/components/Button.svelte";
-  import UserAvatar from "#lib/components/UserAvatar.svelte";
+  import UserLabel from "#lib/components/UserLabel.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
+  import { personUser } from "#lib/user-label.ts";
   import { visiblePeople } from "./people-filter.ts";
   import {
     SEARCH_QUERY_LIMIT,
@@ -83,8 +84,9 @@
   <div class="people-picker">
     <span class="people-picker__label">{t("Selected person", locale)}</span>
     <div class="people-picker__selected">
-      <UserAvatar avatarUrl={selected.avatar_url} name={selected.name} />
-      <span class="people-picker__name">{selected.name}</span>
+      <span class="people-picker__name"
+        ><UserLabel user={personUser(selected)} {locale} /></span
+      >
       <Button
         type="button"
         variant="ghost"
@@ -129,8 +131,9 @@
               class="people-picker__person"
               onclick={() => onselect(person)}
             >
-              <UserAvatar avatarUrl={person.avatar_url} name={person.name} />
-              <span class="people-picker__name">{person.name}</span>
+              <span class="people-picker__name"
+                ><UserLabel user={personUser(person)} {locale} /></span
+              >
             </button>
           </li>
         {/each}

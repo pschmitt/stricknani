@@ -2,13 +2,15 @@
   import { resolve } from "$app/paths";
   import { ApiError } from "#lib/api.ts";
   import Button from "#lib/components/Button.svelte";
+  import UserSentence from "#lib/components/UserSentence.svelte";
   import { publishFeedback } from "#lib/feedback.ts";
   import type { Locale } from "#lib/i18n.svelte.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
+  import { subjectUser } from "#lib/user-label.ts";
   import { restoreTrashItem } from "../trash/trash-api";
   import { restoreErrorMessage } from "../trash/trash-undo";
-  import { lifecycleSubjectText, trashedStateText } from "../trash/trash-state";
+  import { trashedStateText } from "../trash/trash-state";
   import type { AuditEvent } from "./admin-api";
 
   // What became of the item a "moved to trash" entry is about, and who it belonged to:
@@ -29,7 +31,7 @@
   let busy = $state(false);
   let error = $state("");
 
-  const owner = $derived(lifecycleSubjectText(event.subject, locale));
+  const owner = $derived(subjectUser(event.subject, locale));
   // The resource state of a file or step event describes its project or yarn, not the item:
   // those only link to the Trash page, where they are restored.
   // The server sends `trash` only for events about the item itself.
@@ -88,7 +90,13 @@
 
 {#if owner || stateText || showTrashLink}
   <div class="audit-lifecycle" data-testid="audit-lifecycle">
-    {#if owner}<p class="audit-lifecycle__owner">{owner}</p>{/if}
+    {#if owner}<p class="audit-lifecycle__owner">
+        <UserSentence
+          template={t("Owner: {name}", locale)}
+          users={{ name: owner }}
+          {locale}
+        />
+      </p>{/if}
     {#if stateText}
       <p class="audit-lifecycle__state" data-state={event.resource.state}>
         {stateText}

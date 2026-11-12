@@ -55,11 +55,14 @@ import blue.anika.wolle.data.api.dto.TrashItemDto
 import blue.anika.wolle.data.repository.AdminFailure
 import blue.anika.wolle.data.repository.TrashFailure
 import blue.anika.wolle.ui.admin.AdminFailureState
-import blue.anika.wolle.ui.common.AccountAvatar
 import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.EveryoneMenu
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.UserKind
+import blue.anika.wolle.ui.common.UserLabelSize
+import blue.anika.wolle.ui.common.UserRef
+import blue.anika.wolle.ui.common.UserSentence
 import blue.anika.wolle.ui.common.YarnLoader
 import coil3.compose.AsyncImage
 
@@ -214,7 +217,6 @@ private fun TrashList(
             TrashRow(
                 row = trashRow(item, showOwner, currentUserId),
                 busy = state.busy != null,
-                avatarUrl = viewModel.avatarUrl(item.owner?.avatarUrl),
                 thumbnailUrl = viewModel.avatarUrl(item.thumbnailUrl),
                 onRestore = { viewModel.restore(item) },
                 onPurge = { onPurge(item) },
@@ -232,7 +234,6 @@ private fun TrashList(
 private fun TrashRow(
     row: TrashRowModel,
     busy: Boolean,
-    avatarUrl: String?,
     thumbnailUrl: String?,
     onRestore: () -> Unit,
     onPurge: () -> Unit,
@@ -284,22 +285,13 @@ private fun TrashRow(
                     )
                 }
                 row.ownerName?.let { owner ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        AccountAvatar(
-                            url = avatarUrl,
-                            email = row.ownerEmail ?: owner,
-                            size = 24.dp,
-                        )
-                        Text(
-                            if (row.ownerIsForeign) stringResource(R.string.trash_owner, owner)
-                            else owner,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+                    UserSentence(
+                        R.string.trash_owner,
+                        UserRef(UserKind.User, owner, row.ownerAvatarUrl),
+                        size = UserLabelSize.Compact,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
                 Text(
                     listOfNotNull(

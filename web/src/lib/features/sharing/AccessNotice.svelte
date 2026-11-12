@@ -4,10 +4,11 @@
   import { isAccessLost, mayLeave, type ResourceAccess } from "#lib/access.ts";
   import Button from "#lib/components/Button.svelte";
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
-  import UserAvatar from "#lib/components/UserAvatar.svelte";
+  import UserSentence from "#lib/components/UserSentence.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
   import type { ResourceOwner } from "#lib/owner.ts";
   import { session } from "#lib/session.svelte.ts";
+  import { personUser } from "#lib/user-label.ts";
   import { leaveShare, type ShareKind } from "./sharing-api.ts";
 
   let {
@@ -36,9 +37,8 @@
   const roleText = $derived(
     access.role === "editor" ? t("Can edit", locale) : t("Can view", locale),
   );
-  const line = $derived(
-    t("Shared by {name}", locale).replace("{name}", owner.name),
-  );
+  const sharedBy = $derived(t("Shared by {name}", locale));
+  const ownerUsers = $derived({ name: personUser(owner) });
   const leaveTitle = $derived(
     kind === "projects"
       ? t("Leave this project?", locale)
@@ -76,15 +76,29 @@
 </script>
 
 <div class="access-notice" data-testid="access-notice">
-  <UserAvatar avatarUrl={owner.avatar_url} name={owner.name} />
   <p class="access-notice__text">
     {#if access.derived}
-      <span class="access-notice__main">{line}</span>
+      <span class="access-notice__main"
+        ><UserSentence
+          template={sharedBy}
+          users={ownerUsers}
+          {locale}
+          size="compact"
+        /></span
+      >
       <span class="access-notice__sub"
         >{t("Visible through a shared project", locale)}</span
       >
     {:else}
-      <span class="access-notice__main">{line} · {roleText}</span>
+      <span class="access-notice__main"
+        ><UserSentence
+          template={sharedBy}
+          users={ownerUsers}
+          {locale}
+          size="compact"
+        />
+        · {roleText}</span
+      >
     {/if}
   </p>
   {#if mayLeave(access)}
@@ -143,13 +157,6 @@
     border-radius: var(--radius-sm, 12px);
     padding: 0.4rem 0.6rem;
     background: var(--surface-raised);
-  }
-
-  .access-notice :global(.user-avatar) {
-    flex-basis: 2rem;
-    width: 2rem;
-    height: 2rem;
-    font-size: 0.85rem;
   }
 
   .access-notice__text {

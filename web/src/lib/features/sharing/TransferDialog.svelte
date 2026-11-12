@@ -6,6 +6,8 @@
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
+  import UserSentence from "#lib/components/UserSentence.svelte";
+  import { personUser } from "#lib/user-label.ts";
   import PeoplePicker from "./PeoplePicker.svelte";
   import { moveYarnsLabel } from "./share-copy.ts";
   import {
@@ -139,9 +141,11 @@
       disabled={!picked || busy}
       onclick={() => void confirm()}
     >
-      {picked
-        ? t("Transfer to {name}", locale).replace("{name}", picked.name)
-        : t("Transfer ownership", locale)}
+      {#if picked}<UserSentence
+          template={t("Transfer to {name}", locale)}
+          users={{ name: personUser(picked) }}
+          {locale}
+        />{:else}{t("Transfer ownership", locale)}{/if}
     </Button>
   {/snippet}
 </ConfirmDialog>

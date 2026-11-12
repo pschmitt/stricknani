@@ -84,8 +84,13 @@ import blue.anika.wolle.data.repository.AdminFailure
 import blue.anika.wolle.ui.common.DiffSegment
 import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.UserKind
+import blue.anika.wolle.ui.common.UserLabel
+import blue.anika.wolle.ui.common.UserLabelSize
+import blue.anika.wolle.ui.common.UserSentence
 import blue.anika.wolle.ui.common.WordDiff
 import blue.anika.wolle.ui.common.YarnLoader
+import blue.anika.wolle.ui.history.HistoryActor
 import blue.anika.wolle.ui.history.MediaChangeCard
 import blue.anika.wolle.ui.history.mediaChangeRows
 import blue.anika.wolle.ui.trash.daysLeft
@@ -216,12 +221,15 @@ private fun AuditFilterBar(
                     selected = true,
                     onClick = onClearUser,
                     label = {
-                        Text(
-                            stringResource(
+                        if (user != null) {
+                            UserSentence(
                                 R.string.admin_filter_user,
-                                user?.email ?: "#${filter.userId}",
+                                user.ref(),
+                                style = MaterialTheme.typography.labelLarge,
                             )
-                        )
+                        } else {
+                            Text(stringResource(R.string.admin_filter_user, "#${filter.userId}"))
+                        }
                     },
                     trailingIcon = {
                         Icon(
@@ -452,6 +460,7 @@ private fun AuditRow(
     val time = formatTime(event)
     val actor =
         event.actorEmail ?: event.server?.actorEmail ?: stringResource(R.string.admin_actor_unknown)
+    val actorRef = event.auditActorRef()
     val target = event.target()
     // An item in the trash has no page (it would answer 404): a tap opens its details, whose link
     // leads to the Trash screen.
@@ -541,33 +550,30 @@ private fun AuditRow(
                             modifier = Modifier.testTag("admin-audit-row-in-trash"),
                         )
                     }
-                    event.lifecycleOwnerName()?.let { owner ->
-                        Text(
-                            stringResource(R.string.admin_owner_line, owner),
+                    event.lifecycleOwnerRef()?.let { owner ->
+                        UserSentence(
+                            R.string.admin_owner_line,
+                            owner,
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
                         )
                     }
+                    HistoryActor(event, actorRef, UserLabelSize.Inline, by = false)
                     val role = filterUser?.let { event.userRole(it) }
-                    if (role != null) {
-                        val name = filterUser?.email.orEmpty()
-                        Text(
+                    if (role != null && filterUser != null) {
+                        val person = filterUser.ref()
+                        UserSentence(
                             when (role) {
-                                AuditUserRole.Actor ->
-                                    stringResource(R.string.admin_role_actor, name)
-                                AuditUserRole.Impersonator ->
-                                    stringResource(R.string.admin_role_impersonator, name, actor)
+                                AuditUserRole.Actor -> R.string.admin_role_actor
+                                AuditUserRole.Impersonator -> R.string.admin_role_impersonator
                                 AuditUserRole.SubjectOfAccount ->
-                                    stringResource(R.string.admin_role_subject_account, name)
-                                AuditUserRole.Subject ->
-                                    stringResource(R.string.admin_role_subject, name)
+                                    R.string.admin_role_subject_account
+                                AuditUserRole.Subject -> R.string.admin_role_subject
                             },
+                            *(if (role == AuditUserRole.Impersonator) arrayOf(person, actorRef)
+                            else arrayOf(person)),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.testTag("admin-audit-user-role"),
                         )
                     }
@@ -584,7 +590,6 @@ private fun AuditRow(
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    AdminAvatar(avatarUrl(event.actorAvatarUrl), event.actorEmail, size = 24.dp)
                 }
             }
             IconButton(
@@ -768,27 +773,23 @@ private fun AuditDetailHeader(event: AuditEventDto, avatarUrl: (String?) -> Stri
         }
     }
     DetailLine(label = stringResource(R.string.admin_detail_who)) {
-        if (event.system) {
+        val actorRef = event.auditActorRef()
+        if (actorRef.kind == UserKind.Unknown) {
             Text(
-                stringResource(R.string.admin_actor_system),
+                stringResource(R.string.admin_actor_unknown),
                 style = MaterialTheme.typography.bodyLarge,
             )
         } else {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                AdminAvatar(avatarUrl(event.actorAvatarUrl), event.actorEmail, size = 28.dp)
-                Text(
-                    event.actorEmail ?: stringResource(R.string.admin_actor_unknown),
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-            }
+            HistoryActor(event, actorRef, UserLabelSize.Regular, by = false)
         }
     }
-    event.lifecycleOwnerName()?.let { owner ->
+    event.lifecycleOwnerRef()?.let { owner ->
         DetailLine(label = stringResource(R.string.sharing_owner)) {
-            Text(owner, style = MaterialTheme.typography.bodyLarge)
+            UserLabel(
+                owner,
+                size = UserLabelSize.Compact,
+                style = MaterialTheme.typography.bodyLarge,
+            )
         }
     }
     DetailLine(label = stringResource(R.string.admin_detail_when)) {

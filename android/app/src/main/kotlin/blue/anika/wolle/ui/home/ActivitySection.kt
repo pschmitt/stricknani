@@ -48,8 +48,9 @@ import blue.anika.wolle.ui.admin.DayLabel
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.UserLabel
 import blue.anika.wolle.ui.common.UserLabelSize
+import blue.anika.wolle.ui.history.SharingHeadline
 import blue.anika.wolle.ui.history.actionLabelText
-import blue.anika.wolle.ui.history.sharingHeadlineText
+import blue.anika.wolle.ui.history.sharingEventLine
 import blue.anika.wolle.ui.trash.daysLeft
 import blue.anika.wolle.ui.trash.daysLeftText
 import coil3.compose.AsyncImage
@@ -385,14 +386,23 @@ private fun activityIcon(kind: ActivityIconKind): ImageVector =
 @Composable
 private fun ActivityMeta(row: ActivityRowModel, time: String?, muted: Color) {
     val style = MaterialTheme.typography.labelMedium
-    val headline =
-        sharingHeadlineText(row.action, row.subject) ?: actionLabelText(row.action, row.system)
+    val sharing = sharingEventLine(row.action, row.subject)
+    val headline = actionLabelText(row.action, row.system)
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
         itemVerticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(headline, style = style, fontWeight = FontWeight.Bold, color = muted)
+        if (sharing != null) {
+            SharingHeadline(
+                sharing,
+                row.subject,
+                style = style.copy(fontWeight = FontWeight.Bold),
+                color = muted,
+            )
+        } else {
+            Text(headline, style = style, fontWeight = FontWeight.Bold, color = muted)
+        }
         UserLabel(row.actor, size = UserLabelSize.Inline, by = true, style = style, color = muted)
         if (time != null) Text(time, style = style, color = muted)
         row.trashDaysLeft?.let { days ->

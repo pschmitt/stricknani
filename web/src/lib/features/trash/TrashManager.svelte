@@ -7,7 +7,7 @@
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
   import EmptyState from "#lib/components/EmptyState.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
-  import OwnerBadge from "#lib/components/OwnerBadge.svelte";
+  import UserSentence from "#lib/components/UserSentence.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ScopeFilter from "#lib/components/ScopeFilter.svelte";
   import { publishFeedback } from "#lib/feedback.ts";
@@ -19,6 +19,7 @@
   import { scopeFor, setScope } from "#lib/library-scope.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import { session } from "#lib/session.svelte.ts";
+  import { personUser } from "#lib/user-label.ts";
   import {
     DEFAULT_RETENTION_DAYS,
     listTrash,
@@ -354,13 +355,11 @@
             {/if}
             {#if showsOwner(scope, item, session.data?.user?.id) && item.owner}
               <p class="trash__meta trash__owner">
-                <OwnerBadge owner={item.owner} {locale} />
-                <span
-                  >{t("Owner: {name}", locale).replace(
-                    "{name}",
-                    item.owner.name,
-                  )}</span
-                >
+                <UserSentence
+                  template={t("Owner: {name}", locale)}
+                  users={{ name: personUser(item.owner) }}
+                  {locale}
+                />
               </p>
             {/if}
             <p class="trash__meta">

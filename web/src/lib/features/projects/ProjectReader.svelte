@@ -18,7 +18,8 @@
   import PageHeader from "#lib/components/PageHeader.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import ShareMenuItem from "#lib/components/ShareMenuItem.svelte";
-  import UserAvatar from "#lib/components/UserAvatar.svelte";
+  import UserSentence from "#lib/components/UserSentence.svelte";
+  import { accountUser } from "#lib/user-label.ts";
   import ForeignOwnerBanner from "#lib/components/ForeignOwnerBanner.svelte";
   import { foreignOwner } from "#lib/owner.ts";
   import {
@@ -1147,15 +1148,12 @@
             <div class="reader-admin-context">
               <span>{t("Read-only view", locale)}</span>
               {#if adminData.owner}
-                <span
-                  class="reader-admin-owner"
-                  aria-label={`${t("Owner", locale)}: ${adminData.owner.email}`}
-                >
-                  <UserAvatar
-                    avatarUrl={adminData.owner.avatar_url}
-                    name={adminData.owner.email}
+                <span class="reader-admin-owner" title={adminData.owner.email}>
+                  <UserSentence
+                    template={t("Owner: {name}", locale)}
+                    users={{ name: accountUser(adminData.owner) }}
+                    {locale}
                   />
-                  <span>{adminData.owner.email}</span>
                 </span>
               {/if}
             </div>
@@ -1709,10 +1707,6 @@
 
   .reader-admin-context {
     flex-wrap: wrap;
-  }
-
-  .reader-admin-owner > span:last-child {
-    overflow-wrap: anywhere;
   }
 
   .reader-tags {

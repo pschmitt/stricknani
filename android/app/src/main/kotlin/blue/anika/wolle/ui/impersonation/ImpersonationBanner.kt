@@ -33,6 +33,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
 import blue.anika.wolle.data.impersonation.ImpersonationSession
+import blue.anika.wolle.ui.common.UserLabelSize
+import blue.anika.wolle.ui.common.UserSentence
+import blue.anika.wolle.ui.common.accountRef
 import kotlinx.coroutines.delay
 
 private val BannerBackground = Color(0xFF8A1C14)
@@ -47,6 +50,8 @@ private val BannerStripe = Color(0xFFFFD54A)
 @Composable
 fun ImpersonationBanner(
     session: ImpersonationSession,
+    /** The acted-as account's picture: while impersonating, the signed-in account is theirs. */
+    avatarUrl: String?,
     credentialRejected: Boolean,
     nowSeconds: () -> Long,
     onStop: () -> Unit,
@@ -86,11 +91,15 @@ fun ImpersonationBanner(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(
-                text = stringResource(R.string.impersonation_banner_title, session.targetEmail),
+            UserSentence(
+                R.string.impersonation_banner_title,
+                accountRef(session.targetEmail, session.targetName, avatarUrl),
+                size = UserLabelSize.Regular,
                 color = Color.White,
-                fontWeight = FontWeight.Bold,
-                style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
+                style =
+                    androidx.compose.material3.MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
             )
             Text(
                 text = stringResource(R.string.impersonation_banner_notice),

@@ -1,5 +1,6 @@
 import type { HistorySubject } from "./history-api";
 import { msg, t, type Locale } from "#lib/i18n.svelte.ts";
+import { subjectUser, type UserRef } from "#lib/user-label.ts";
 import type {
   ChangeItemV1,
   ChangeSetV1,
@@ -198,7 +199,26 @@ export function sharingHeadline(
   subject: HistorySubject | null | undefined,
   locale: Locale,
 ): string | null {
-  const name = subject?.name?.trim() || t("a deleted account", locale);
+  const sentence = sharingSentence(action, subject, locale);
+  return sentence
+    ? sentence.template.replace("{name}", sentence.users.name.name ?? "")
+    : null;
+}
+
+/**
+ * [sharingHeadline] split into its template and the person, so the person renders as a
+ * `UserLabel` ("Transferred to {name}"; the role is already filled in).
+ */
+export function sharingSentence(
+  action: string,
+  subject: HistorySubject | null | undefined,
+  locale: Locale,
+): { template: string; users: { name: UserRef } } | null {
+  const person: UserRef = subjectUser(subject ?? null, locale) ?? {
+    kind: "user",
+    name: t("a deleted account", locale),
+    avatarUrl: null,
+  };
   const role =
     subject?.role === "editor" ? t("Can edit", locale) : t("Can view", locale);
   let text: string;
@@ -221,7 +241,7 @@ export function sharingHeadline(
     default:
       return null;
   }
-  return text.replace("{name}", name).replace("{role}", role);
+  return { template: text.replace("{role}", role), users: { name: person } };
 }
 
 /**

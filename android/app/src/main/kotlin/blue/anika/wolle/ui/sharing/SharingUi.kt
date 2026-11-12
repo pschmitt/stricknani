@@ -45,7 +45,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
@@ -58,6 +57,9 @@ import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.SegmentedControl
 import blue.anika.wolle.ui.common.SegmentedOption
+import blue.anika.wolle.ui.common.UserLabel
+import blue.anika.wolle.ui.common.UserSentence
+import blue.anika.wolle.ui.common.personRef
 import blue.anika.wolle.ui.common.rememberDangerousActionGuard
 
 /** Maximum avatars on the Share row before "+N". */
@@ -398,12 +400,9 @@ private fun PersonRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         modifier = modifier.fillMaxWidth().heightIn(min = 48.dp).padding(vertical = 4.dp),
     ) {
-        PersonAvatar(person)
-        Text(
-            person.name,
+        UserLabel(
+            personRef(person),
             style = MaterialTheme.typography.bodyLarge,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
         trailing()
@@ -495,12 +494,9 @@ fun TransferDialog(
                                 .padding(top = 12.dp)
                                 .testTag("transfer-picked"),
                     ) {
-                        PersonAvatar(chosen, 32.dp)
-                        Text(
-                            chosen.name,
+                        UserLabel(
+                            personRef(chosen),
                             style = MaterialTheme.typography.bodyLarge,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f),
                         )
                         TextButton(
@@ -534,12 +530,9 @@ fun TransferDialog(
                                             onClick = { controller.selectNewOwner(person) },
                                         ),
                             ) {
-                                PersonAvatar(person, 32.dp)
-                                Text(
-                                    person.name,
+                                UserLabel(
+                                    personRef(person),
                                     style = MaterialTheme.typography.bodyLarge,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.weight(1f),
                                 )
                             }
@@ -601,11 +594,9 @@ fun TransferDialog(
                 enabled = target != null && !offline && !transfer.submitting,
                 modifier = Modifier.testTag("transfer-confirm"),
             ) {
-                Text(
-                    if (target != null)
-                        stringResource(R.string.sharing_transfer_confirm, target.name)
-                    else stringResource(R.string.sharing_transfer)
-                )
+                if (target != null)
+                    UserSentence(R.string.sharing_transfer_confirm, personRef(target))
+                else Text(stringResource(R.string.sharing_transfer))
             }
         },
         dismissButton = {

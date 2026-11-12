@@ -8,6 +8,7 @@ import {
   impersonatedByText,
   impersonationHeadline,
   relativeTime,
+  sharingSentence,
   summarizeChanges,
   timerHeadline,
   timerSeconds,
@@ -147,6 +148,18 @@ describe("sharing events", () => {
       "Stopped sharing with Anika",
     );
     expect(eventHeadline("share_left", null, "en", anika)).toBe("Anika left");
+  });
+
+  it("splits the sentence so the person renders as a UserLabel", () => {
+    const anika = { id: 7, name: "Anika", role: "editor", avatar_url: "/a/7" };
+    expect(sharingSentence("shared", anika, "en")).toEqual({
+      template: "Shared with {name} · Can edit",
+      users: { name: { kind: "user", name: "Anika", avatarUrl: "/a/7" } },
+    });
+    expect(sharingSentence("share_left", null, "en")?.users.name.name).toBe(
+      "a deleted account",
+    );
+    expect(sharingSentence("updated", anika, "en")).toBeNull();
   });
 
   it("says when the account is gone and never shows the raw action", () => {

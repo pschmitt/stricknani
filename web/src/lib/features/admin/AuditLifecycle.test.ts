@@ -75,9 +75,12 @@ describe("AuditLifecycle", () => {
   });
 
   it("names the owner of an administrator's or the system's action", () => {
-    expect(
-      html(event({ subject: { id: 2, name: "Anna" }, system: false })),
-    ).toContain("Owner: Anna");
+    const body = html(
+      event({ subject: { id: 2, name: "Anna" }, system: false }),
+    );
+    // The owner is a UserLabel (avatar + name), not plain text.
+    expect(body).toContain("user-label");
+    expect(body.replace(/<[^>]*>/g, "")).toMatch(/Owner:\s*A\s*Anna/);
   });
 
   it("renders nothing for an ordinary event", () => {

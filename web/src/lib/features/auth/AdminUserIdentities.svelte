@@ -2,9 +2,11 @@
   import { ApiError } from "#lib/api.ts";
   import SharedButton from "#lib/components/Button.svelte";
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
+  import UserLabel from "#lib/components/UserLabel.svelte";
   import { publishFeedback } from "#lib/feedback.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
+  import { accountUser } from "#lib/user-label.ts";
   import {
     adminUnlinkIdentity,
     formatLinkedDate,
@@ -27,7 +29,7 @@
     disabled = false,
     showTrigger = true,
   }: {
-    user: { id: number; email: string };
+    user: { id: number; email: string; avatar_url?: string | null };
     providers: OidcProvider[];
     disabled?: boolean;
     showTrigger?: boolean;
@@ -136,7 +138,10 @@
     opener?.focus();
   }}
 >
-  <p class="target">{user.email}</p>
+  <div class="target">
+    <UserLabel user={accountUser(user)} {locale} size="regular" />
+    <span class="target-email">{user.email}</span>
+  </div>
   {#if error}<p class="failure" role="alert">{error}</p>{/if}
   {#if status === "loading"}
     <p class="muted">{t("Loading linked logins…", locale)}</p>
@@ -201,9 +206,18 @@
 
 <style>
   .target {
+    display: grid;
+    gap: 0.1rem;
     margin: 0 0 0.8rem;
     font-weight: 650;
     overflow-wrap: anywhere;
+  }
+
+  .target-email {
+    padding-inline-start: 2.85rem;
+    color: var(--ink-muted);
+    font-size: 0.85rem;
+    font-weight: 400;
   }
 
   .muted {

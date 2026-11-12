@@ -83,7 +83,11 @@ import blue.anika.wolle.data.repository.AdminFailure
 import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.UserLabel
+import blue.anika.wolle.ui.common.UserLabelSize
+import blue.anika.wolle.ui.common.UserSentence
 import blue.anika.wolle.ui.common.YarnLoader
+import blue.anika.wolle.ui.common.accountRef
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -178,7 +182,6 @@ fun AdminAccountsScreen(
                                                 state.currentUserId,
                                             ),
                                         busy = state.busyUserId == user.id,
-                                        avatarUrl = viewModel.avatarUrl(user.avatarUrl),
                                         onToggleActive = { toToggle = user },
                                         // Only when the server lists a sign-in provider (OIDC)
                                         // and the account has a linked identity (like the web).
@@ -216,12 +219,12 @@ fun AdminAccountsScreen(
         AlertDialog(
             onDismissRequest = { toToggle = null },
             title = {
-                Text(
-                    stringResource(
-                        if (enabling) R.string.admin_accounts_enable_title
-                        else R.string.admin_accounts_disable_title,
-                        user.email,
-                    )
+                UserSentence(
+                    if (enabling) R.string.admin_accounts_enable_title
+                    else R.string.admin_accounts_disable_title,
+                    accountRef(user.email, avatarUrl = user.avatarUrl),
+                    size = UserLabelSize.Compact,
+                    style = MaterialTheme.typography.headlineSmall,
                 )
             },
             text = {
@@ -262,7 +265,13 @@ fun AdminAccountsScreen(
         AlertDialog(
             onDismissRequest = { toImpersonate = null },
             title = { Text(stringResource(R.string.admin_accounts_impersonate_title)) },
-            text = { Text(stringResource(R.string.admin_accounts_impersonate_text, user.email)) },
+            text = {
+                UserSentence(
+                    R.string.admin_accounts_impersonate_text,
+                    accountRef(user.email, avatarUrl = user.avatarUrl),
+                    size = UserLabelSize.Compact,
+                )
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -331,7 +340,6 @@ private fun AccountRow(
     user: AdminUserDto,
     isYou: Boolean,
     busy: Boolean,
-    avatarUrl: String?,
     onToggleActive: () -> Unit,
     onShowLogins: (() -> Unit)?,
     onOpenProjects: () -> Unit,
@@ -370,18 +378,25 @@ private fun AccountRow(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
         ) {
-            AdminAvatar(avatarUrl, user.email, size = 44.dp, dimmed = !user.active)
             Column(
                 Modifier.weight(1f)
-                    .padding(horizontal = 12.dp)
+                    .padding(start = 0.dp, end = 12.dp)
                     .alpha(if (user.active) 1f else 0.55f),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
+                // An administrator sees the display name with the picture, the email beneath.
+                UserLabel(
+                    accountRef(user.email, avatarUrl = user.avatarUrl),
+                    size = UserLabelSize.Regular,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
                 Text(
                     user.email,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(start = 46.dp),
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     if (isYou) {
@@ -623,7 +638,14 @@ private fun ResetPasswordDialog(
     val serverError = (form as? FormState.Failed)?.failure
     AlertDialog(
         onDismissRequest = { if (!saving) onDismiss() },
-        title = { Text(stringResource(R.string.admin_accounts_reset_title, user.email)) },
+        title = {
+            UserSentence(
+                R.string.admin_accounts_reset_title,
+                accountRef(user.email, avatarUrl = user.avatarUrl),
+                size = UserLabelSize.Compact,
+                style = MaterialTheme.typography.headlineSmall,
+            )
+        },
         text = {
             Column(
                 Modifier.verticalScroll(rememberScrollState()),
@@ -672,7 +694,7 @@ private fun PasswordResultDialog(
         title = { Text(stringResource(R.string.admin_accounts_result_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(stringResource(R.string.admin_accounts_result_text, email))
+                UserSentence(R.string.admin_accounts_result_text, accountRef(email))
                 Surface(
                     shape = MaterialTheme.shapes.small,
                     color = MaterialTheme.colorScheme.surfaceContainerHighest,

@@ -1,7 +1,8 @@
 <script lang="ts">
-  import UserAvatar from "#lib/components/UserAvatar.svelte";
+  import UserSentence from "#lib/components/UserSentence.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import type { ResourceOwner } from "#lib/owner.ts";
+  import { personUser } from "#lib/user-label.ts";
 
   /**
    * An administrator's view of someone else's project or yarn: whose it is (with their
@@ -10,7 +11,7 @@
   let {
     kind,
     owner,
-    locale = undefined,
+    locale = "en",
   }: {
     kind: "project" | "yarn";
     owner: ResourceOwner;
@@ -18,11 +19,11 @@
   } = $props();
 
   const title = $derived(
-    (kind === "project"
+    kind === "project"
       ? t("{name}'s project", locale)
-      : t("{name}'s yarn", locale)
-    ).replace("{name}", owner.name),
+      : t("{name}'s yarn", locale),
   );
+  const users = $derived({ name: personUser(owner) });
   const detail = $derived(
     kind === "project"
       ? t(
@@ -37,11 +38,10 @@
 </script>
 
 <p class="foreign-banner" role="note" data-testid="foreign-owner-banner">
-  <span class="foreign-banner__avatar" aria-hidden="true"
-    ><UserAvatar avatarUrl={owner.avatar_url} name={owner.name} /></span
-  >
   <span class="foreign-banner__copy">
-    <strong>{title}</strong>
+    <strong
+      ><UserSentence template={title} {users} {locale} size="regular" /></strong
+    >
     <span>{detail}</span>
   </span>
 </p>
@@ -57,11 +57,6 @@
     padding: 0.65rem 0.9rem;
     color: var(--ink);
     background: var(--accent-wash);
-  }
-
-  .foreign-banner__avatar {
-    display: inline-flex;
-    flex: none;
   }
 
   .foreign-banner__copy {

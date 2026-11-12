@@ -83,6 +83,8 @@ pub(crate) struct AuditFilter {
 pub(crate) struct AuditFilterUser {
     pub(crate) id: i64,
     pub(crate) email: String,
+    /// The administrator avatar path; null without a picture.
+    pub(crate) avatar_url: Option<String>,
 }
 
 /// `user` and `role` as bound parameters: the user id, then a flag and the
@@ -318,6 +320,8 @@ pub(crate) struct AuditImpersonator {
     pub(crate) name: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) email: Option<String>,
+    /// The avatar path any signed-in user may read; null without a picture.
+    pub(crate) avatar_url: Option<String>,
 }
 
 /// The other account a sharing event is about. Never carries an email.
@@ -392,6 +396,8 @@ macro_rules! resource_event_columns {
         e.client_kind, e.client_version, e.client_label, e.client_user_agent, \
         e.server_details, \
         (SELECT email FROM users WHERE id = e.impersonated_by_user_id) AS impersonator_email, \
+        (SELECT use_gravatar FROM users WHERE id = e.impersonated_by_user_id) AS impersonator_use_gravatar, \
+        (SELECT filename FROM user_avatars WHERE user_id = e.impersonated_by_user_id) AS impersonator_avatar_filename, \
         CASE WHEN length(e.safe_changes) <= 262144 THEN e.safe_changes END AS safe_changes, \
         CASE WHEN length(e.details) <= 262144 THEN e.details END AS details, \
         COALESCE(length(e.safe_changes) > 262144, 0) AS safe_changes_too_large, \
@@ -460,14 +466,26 @@ pub(crate) async fn list_events(
     let action = filter.action();
     let user = match filter.user {
         Some(id) => {
-            let email: Option<String> = sqlx::query_scalar("SELECT email FROM users WHERE id = ?")
-                .bind(id)
-                .fetch_optional(pool)
-                .await
-                .map_err(|_| AuditError::Database)?;
+            let row: Option<(String, i64, Option<String>)> = sqlx::query_as(
+                "SELECT u.email, u.use_gravatar, \
+                 (SELECT filename FROM user_avatars WHERE user_id = u.id) \
+                 FROM users AS u WHERE u.id = ?",
+            )
+            .bind(id)
+            .fetch_optional(pool)
+            .await
+            .map_err(|_| AuditError::Database)?;
+            let (email, use_gravatar, filename) = row.ok_or(AuditError::UserNotFound)?;
             Some(AuditFilterUser {
                 id,
-                email: email.ok_or(AuditError::UserNotFound)?,
+                email,
+                avatar_url: crate::media::admin_avatar(
+                    id,
+                    filename.as_deref(),
+                    use_gravatar != 0,
+                    gravatar_enabled,
+                )
+                .map(|(url, _)| url),
             })
         }
         None => None,
@@ -1558,6 +1576,16 @@ fn make_event(
                     id: Some(id),
                     name: email.as_deref().map(crate::resource_access::display_name),
                     email: email.filter(|_| matches!(audience, AuditAudience::Administrator)),
+                    avatar_url: crate::media::people_avatar(
+                        id,
+                        row.get::<Option<String>, _>("impersonator_avatar_filename")
+                            .as_deref(),
+                        row.get::<Option<i64>, _>("impersonator_use_gravatar")
+                            .unwrap_or(1)
+                            != 0,
+                        gravatar_enabled,
+                    )
+                    .map(|(url, _)| url),
                 }
             }),
         subject: row
