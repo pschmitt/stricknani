@@ -6,7 +6,6 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,9 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DragHandle
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -64,7 +60,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import blue.anika.wolle.R
-import blue.anika.wolle.data.repository.canMakeCover
+import blue.anika.wolle.data.repository.canMoveToFirst
 import coil3.compose.AsyncImage
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -100,9 +96,10 @@ internal fun photoGridSlot(
 
 /**
  * The expanded layout of [EditorPhotoStrip]'s reorder mode: every photo as a large thumbnail in a
- * multi-row grid. Drag a thumbnail (long-press it, or grab its handle) to any place; Move earlier /
- * Move later and Make cover are also offered as accessibility actions, Alt+arrow keys move the
- * focused photo. [onDone] leaves the mode. Placement animation is skipped when animations are off.
+ * multi-row grid. Long-press a thumbnail and drag it to any place (no handle, no cover star: the
+ * first photo is the cover); Move earlier / Move later / Move to first are also offered as
+ * accessibility actions, Alt+arrow keys move the focused photo. Only the trash icon is on a tile.
+ * [onDone] leaves the mode. Placement animation is skipped when animations are off.
  */
 @Composable
 internal fun PhotoReorderGrid(
@@ -124,7 +121,11 @@ internal fun PhotoReorderGrid(
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                stringResource(R.string.editor_photo_reorder_hint),
+                stringResource(
+                    if (reorder.firstIsCover) {
+                        R.string.editor_photo_reorder_hint
+                    } else R.string.editor_photo_reorder_hint_plain
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
@@ -183,7 +184,7 @@ internal fun PhotoReorderGrid(
                             )
                         val earlierLabel = stringResource(R.string.editor_photo_move_earlier)
                         val laterLabel = stringResource(R.string.editor_photo_move_later)
-                        val makeCoverLabel = stringResource(R.string.editor_photo_make_cover)
+                        val moveFirstLabel = stringResource(R.string.editor_photo_move_first)
                         val positionLabel =
                             if (reorderable) {
                                 stringResource(
@@ -243,8 +244,10 @@ internal fun PhotoReorderGrid(
                                                     true
                                                 }
                                             } else null,
-                                            if (reorderable && canMakeCover(index, reorder.count)) {
-                                                CustomAccessibilityAction(makeCoverLabel) {
+                                            if (
+                                                reorderable && canMoveToFirst(index, reorder.count)
+                                            ) {
+                                                CustomAccessibilityAction(moveFirstLabel) {
                                                     currentReorder.onMove(index, 0)
                                                     true
                                                 }
@@ -298,18 +301,6 @@ internal fun PhotoReorderGrid(
                                             } else Modifier
                                         ),
                             )
-                            if (index == 0) {
-                                CoverTag(Modifier.align(Alignment.BottomStart).padding(8.dp))
-                            }
-                            if (reorderable && canMakeCover(index, reorder.count)) {
-                                GridBadgeButton(
-                                    onClick = { currentReorder.onMove(index, 0) },
-                                    modifier = Modifier.align(Alignment.TopStart),
-                                    description = makeCoverLabel,
-                                ) {
-                                    Icon(Icons.Filled.Star, null, Modifier.size(18.dp))
-                                }
-                            }
                             GridBadgeButton(
                                 onClick = photo.onRemove,
                                 modifier = Modifier.align(Alignment.TopEnd),
@@ -317,41 +308,6 @@ internal fun PhotoReorderGrid(
                                 destructive = true,
                             ) {
                                 Icon(PhosphorIcons.Trash, null, Modifier.size(18.dp))
-                            }
-                            if (reorderable) {
-                                // The handle drags at once; the rest of the tile needs a long press
-                                // so scrolling the editor past the grid still works.
-                                Box(
-                                    Modifier.align(Alignment.BottomEnd).size(48.dp).pointerInput(
-                                        photo.key
-                                    ) {
-                                        detectDragGestures(
-                                            onDragStart = { startDrag(photo.key) },
-                                            onDrag = { change, amount ->
-                                                change.consume()
-                                                drag(amount)
-                                            },
-                                            onDragEnd = { heldKey = null },
-                                            onDragCancel = { heldKey = null },
-                                        )
-                                    },
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = Color.Black.copy(alpha = 0.6f),
-                                        contentColor = Color.White,
-                                        modifier = Modifier.size(32.dp),
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(
-                                                Icons.Filled.DragHandle,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp),
-                                            )
-                                        }
-                                    }
-                                }
                             }
                         }
                     }

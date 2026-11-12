@@ -43,7 +43,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CropRotate
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
@@ -117,7 +116,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
-import blue.anika.wolle.data.repository.canMakeCover
+import blue.anika.wolle.data.repository.canMoveToFirst
 import coil3.compose.AsyncImage
 import kotlin.math.abs
 import kotlinx.coroutines.delay
@@ -243,14 +242,19 @@ data class EditorPhoto(
  * server; photos still waiting to upload follow them and have no id to order yet). [onMove] moves
  * the photo at [from] to position [to]. The first photo is the cover.
  */
-class PhotoReorder(val count: Int, val onMove: (from: Int, to: Int) -> Unit)
+class PhotoReorder(
+    val count: Int,
+    /** False for groups without a cover (step photos): the hint then omits the cover sentence. */
+    val firstIsCover: Boolean = true,
+    val onMove: (from: Int, to: Int) -> Unit,
+)
 
 /**
- * A strip of photo thumbnails with an add tile. With [reorder], each server photo gets a drag
- * handle: long-press a thumbnail and drag it sideways, or tap the handle for Move earlier / Move
- * later (also offered to TalkBack as actions, and as Alt+arrow keys). In edit mode (long-press) a
- * star makes a photo the cover. The first photo wears a small star tag. Animation of the moving
- * thumbnails is skipped when animations are turned off.
+ * A strip of photo thumbnails with an add tile. With [reorder], long-pressing a photo enters the
+ * expanded reorder grid ([PhotoReorderGrid]); Move earlier / Move later / Move to first are also
+ * offered to TalkBack as actions, and Alt+arrow keys move the focused photo. A photo tile shows no
+ * star or drag handle, only the trash icon in edit mode; the first photo is the cover. Animation of
+ * the moving thumbnails is skipped when animations are turned off.
  */
 @Composable
 fun EditorPhotoStrip(
@@ -356,8 +360,8 @@ fun EditorPhotoStrip(
                 }
             val earlierLabel = stringResource(R.string.editor_photo_move_earlier)
             val laterLabel = stringResource(R.string.editor_photo_move_later)
-            val makeCoverLabel = stringResource(R.string.editor_photo_make_cover)
-            val canMakeCover = reorderable && canMakeCover(index, reorder!!.count)
+            val moveFirstLabel = stringResource(R.string.editor_photo_move_first)
+            val canMoveFirst = reorderable && canMoveToFirst(index, reorder!!.count)
             val positionLabel =
                 if (reorderable) {
                     stringResource(R.string.editor_photo_position, index + 1, reorder!!.count)
@@ -408,8 +412,8 @@ fun EditorPhotoStrip(
                                         true
                                     }
                                 } else null,
-                                if (canMakeCover) {
-                                    CustomAccessibilityAction(makeCoverLabel) {
+                                if (canMoveFirst) {
+                                    CustomAccessibilityAction(moveFirstLabel) {
                                         currentReorder?.onMove?.invoke(index, 0)
                                         true
                                     }
@@ -458,9 +462,6 @@ fun EditorPhotoStrip(
                                 } else Modifier
                             ),
                 )
-                if (reorder != null && index == 0) {
-                    CoverTag(Modifier.align(Alignment.BottomStart).padding(8.dp))
-                }
                 val onEdit = photo.onEdit
                 if (onEdit != null && editLabel != null && !editing) {
                     // Crop and rotate: a small dark badge, bottom end, with a 44dp touch target.
@@ -567,23 +568,6 @@ private fun AddPhotoTile(icon: ImageVector, label: String, size: Int, onClick: (
 private const val EDIT_IDLE_MILLIS = 5_000L
 private const val JIGGLE_DEGREES = 1.8f
 private const val JIGGLE_BOB_DP = 0.8f
-
-/** The cover tag on the first photo: a small star chip, named "Cover" for screen readers. */
-@Composable
-internal fun CoverTag(modifier: Modifier = Modifier) {
-    Surface(
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        modifier = modifier,
-    ) {
-        Icon(
-            Icons.Filled.Star,
-            contentDescription = stringResource(R.string.editor_photo_cover),
-            modifier = Modifier.padding(4.dp).size(14.dp),
-        )
-    }
-}
 
 /**
  * A text field that suggests common or existing values as you type (a combo box). Typing anything

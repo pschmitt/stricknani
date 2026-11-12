@@ -1375,11 +1375,6 @@ msgstr "Abendle!"
 msgid "Could not sign out."
 msgstr "Abmelden nicht möglich."
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:390
-#: web/src/lib/features/media/ReorderableMedia.svelte:392
-msgid "Cover photo"
-msgstr "Titelbild"
-
 #: web/src/lib/features/admin/audit-action.ts:92
 msgid "Cover photo changed"
 msgstr "Coverfoto geändert"
@@ -1684,7 +1679,7 @@ msgstr "Keine Sorge, deine Projekte liegen sicher im Wollkorb."
 
 #: web/src/lib/components/StatusBadge.svelte:22
 #: web/src/lib/features/gauge/SwatchSizeDialog.svelte:117
-#: web/src/lib/features/media/ReorderableMedia.svelte:327
+#: web/src/lib/features/media/ReorderableMedia.svelte:518
 #: web/src/lib/features/projects/ProjectEditor.svelte:2057
 #: web/src/lib/features/projects/ProjectLibrary.svelte:71
 #: web/src/lib/features/sharing/ShareDialog.svelte:360
@@ -1714,11 +1709,11 @@ msgstr "Für Android herunterladen"
 msgid "Drag the corners to crop."
 msgstr "Zum Zuschneiden die Ecken ziehen."
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:473
+#: web/src/lib/features/media/ReorderableMedia.svelte:104
 msgid "Drag to reorder."
 msgstr "Zum Sortieren ziehen."
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:472
+#: web/src/lib/features/media/ReorderableMedia.svelte:103
 msgid "Drag to reorder. The first photo is the cover."
 msgstr "Zum Sortieren ziehen. Das erste Foto ist das Titelbild."
 
@@ -1772,8 +1767,8 @@ msgstr "Als Markdown bearbeiten"
 
 #: web/src/lib/features/media/PhotoEditor.svelte:302
 #: web/src/lib/features/media/ProjectLightbox.svelte:251
-#: web/src/lib/features/media/ReorderableMedia.svelte:420
-#: web/src/lib/features/media/ReorderableMedia.svelte:421
+#: web/src/lib/features/media/ReorderableMedia.svelte:594
+#: web/src/lib/features/media/ReorderableMedia.svelte:595
 msgid "Edit photo"
 msgstr "Foto bearbeiten"
 
@@ -2952,11 +2947,6 @@ msgstr "Mit Garn und Liebe gemacht."
 msgid "Main photo"
 msgstr "Hauptfoto"
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:408
-#: web/src/lib/features/media/ReorderableMedia.svelte:409
-msgid "Make cover"
-msgstr "Als Titelbild festlegen"
-
 #: web/src/routes/more/+page.svelte:74
 msgid "Manage accounts and review the audit log."
 msgstr "Konten verwalten und das Änderungsprotokoll ansehen."
@@ -3072,15 +3062,20 @@ msgstr "Weitere Garne aus meinem Vorrat"
 msgid "Morning, sunshine!"
 msgstr "Moooin!"
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:450
+#: web/src/lib/features/media/ReorderableMedia.svelte:624
 #, python-brace-format
 msgid "Move photo {position} earlier"
 msgstr "Foto {position} nach vorn verschieben"
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:457
+#: web/src/lib/features/media/ReorderableMedia.svelte:631
 #, python-brace-format
 msgid "Move photo {position} later"
 msgstr "Foto {position} nach hinten verschieben"
+
+#: web/src/lib/features/media/ReorderableMedia.svelte:638
+#, python-brace-format
+msgid "Move photo {position} to first"
+msgstr "Foto {position} an den Anfang verschieben"
 
 #: web/src/lib/features/history/MediaStrip.svelte:29
 msgid "Moved"
@@ -3771,7 +3766,7 @@ msgstr "Foto gelöscht"
 msgid "Photo deleted forever"
 msgstr "Foto endgültig gelöscht"
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:132
+#: web/src/lib/features/media/ReorderableMedia.svelte:218
 #, python-brace-format
 msgid "Photo moved to position {position} of {total}."
 msgstr "Foto an Position {position} von {total} verschoben."
@@ -3788,10 +3783,6 @@ msgstr "Reihenfolge der Fotos"
 msgid "Photo restored from trash"
 msgstr "Foto aus dem Papierkorb wiederhergestellt"
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:154
-msgid "Photo set as cover."
-msgstr "Foto als Titelbild festgelegt."
-
 #: web/src/lib/features/admin/audit-action.ts:68
 msgid "Photo uploaded"
 msgstr "Foto hochgeladen"
@@ -3800,7 +3791,7 @@ msgstr "Foto hochgeladen"
 msgid "Photo uploaded."
 msgstr "Foto hochgeladen."
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:99
+#: web/src/lib/features/media/ReorderableMedia.svelte:132
 #, python-brace-format
 msgid "Photo {position} of {total}"
 msgstr "Foto {position} von {total}"
@@ -4235,8 +4226,8 @@ msgstr "Link entfernen"
 msgid "Remove location and camera data from new photos"
 msgstr "Standort- und Kameradaten aus neuen Fotos entfernen"
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:432
-#: web/src/lib/features/media/ReorderableMedia.svelte:433
+#: web/src/lib/features/media/ReorderableMedia.svelte:606
+#: web/src/lib/features/media/ReorderableMedia.svelte:607
 msgid "Remove photo"
 msgstr "Foto entfernen"
 
@@ -4295,7 +4286,7 @@ msgstr "Wird entfernt …"
 msgid "Rename"
 msgstr "Umbenennen"
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:327
+#: web/src/lib/features/media/ReorderableMedia.svelte:528
 msgid "Reorder photos"
 msgstr "Fotos sortieren"
 
@@ -5606,8 +5597,7 @@ msgstr "Das neue Passwort wurde nicht akzeptiert."
 msgid "The new passwords do not match."
 msgstr "Die neuen Passwörter stimmen nicht überein."
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:133
-#: web/src/lib/features/media/ReorderableMedia.svelte:155
+#: web/src/lib/features/media/ReorderableMedia.svelte:219
 msgid "The new photo order could not be saved. The previous order was restored."
 msgstr ""
 "Die neue Fotoreihenfolge konnte nicht gespeichert werden. Die vorherige "
@@ -8076,3 +8066,12 @@ msgstr ""
 
 #~ msgid "This photo is no longer available."
 #~ msgstr "Dieses Foto ist nicht mehr verfügbar."
+
+#~ msgid "Cover photo"
+#~ msgstr "Titelbild"
+
+#~ msgid "Make cover"
+#~ msgstr "Als Titelbild festlegen"
+
+#~ msgid "Photo set as cover."
+#~ msgstr "Foto als Titelbild festgelegt."
