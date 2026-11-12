@@ -397,10 +397,7 @@ fun StricknaniNavHost(
                         onTrashClick = { navController.navigate(Route.Trash) },
                         onSeeAllOngoing = {
                             navController.navigate(
-                                Route.ProjectsFiltered(
-                                    owner = "me",
-                                    status = ProjectStatus.IN_PROGRESS,
-                                )
+                                Route.ProjectsFiltered(status = ProjectStatus.IN_PROGRESS)
                             )
                         },
                         onNewProject = { navController.navigate(Route.ProjectEditor()) },

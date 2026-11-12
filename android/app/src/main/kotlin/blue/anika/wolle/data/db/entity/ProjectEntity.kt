@@ -42,9 +42,7 @@ data class ProjectEntity(
     val ownerName: String? = null,
     val ownerAvatarUrl: String? = null,
     /**
-     * Sharing: the caller's access as the server reported it (`access.role`). Null = the signed-in
-     * user's own item (and rows from before sharing). Shared rows carry `viewer`/`editor`; an
-     * administrator's view of someone else's item carries `admin`.
+     * Effective access as reported by the server (`access.role`); keep for permissions and labels.
      */
     val accessRole: String? = null,
     /** True for a yarn read only through a shared project. */
@@ -53,4 +51,6 @@ data class ProjectEntity(
     val canEdit: Boolean? = null,
     /** `access.can_manage`: may share, transfer and delete; null = not reported. */
     val canManage: Boolean? = null,
+    /** Explicit share relationship, independent of effective role (for example admin + viewer). */
+    val accessShareRole: String? = null,
 )

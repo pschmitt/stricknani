@@ -99,6 +99,9 @@ author ("by You"). Recent changes and activity rows always name their actor.
   and CI's `android-lint` ktfmt job (Checks workflow) (shared workflow, `nix develop .#ktfmt`) all run the same
   nixpkgs `ktfmt` (kotlinlang style) from the root `flake.lock`. The app does not use the ktfmt
   Gradle plugin any more. If CI's ktfmt job fails anyway, apply its `ktfmt-diff-patch` artifact.
+  Always pass `--kotlinlang-style`: plain `ktfmt` uses a different style and fails this repository's
+  checks, even with the correct binary. For selected files, run `nix develop 'path:.#ktfmt' -c ktfmt
+  --kotlinlang-style <files>` from the repository root on the build host.
 - CI workflows here are thin callers (`android/.github` doesn't exist - see repo-root
   `.github/workflows/`: the `android-lint` job of `checks.yaml`, `android` of `build.yaml`,
   `android-e2e`/`android-replay` of `e2e.yaml`, plus `release.yaml` (GitHub release and Google Play),

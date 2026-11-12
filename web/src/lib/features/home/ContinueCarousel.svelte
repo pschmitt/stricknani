@@ -12,9 +12,9 @@
   import { activeSlide, slideForKey } from "./continue-carousel";
   import type { SectionStatus } from "./home-section.svelte";
 
-  // "Continue knitting": the user's projects in progress as large cards in a row that snaps card
-  // by card, with a peek of the next one. The cards are plain links, so Tab, Enter and the arrow
-  // keys all work without a widget role.
+  // "Continue knitting": owned and explicitly shared projects in progress as large cards in a
+  // row that snaps card by card, with a peek of the next one. The cards are plain links, so Tab,
+  // Enter and the arrow keys all work without a widget role.
   let {
     status,
     items,
@@ -29,7 +29,7 @@
     retry: () => void;
   } = $props();
 
-  const seeAllHref = `${resolve("/projects")}?status=in_progress&owner=me`;
+  const seeAllHref = `${resolve("/projects")}?status=in_progress`;
 
   let scroller = $state<HTMLElement>();
   let active = $state(0);

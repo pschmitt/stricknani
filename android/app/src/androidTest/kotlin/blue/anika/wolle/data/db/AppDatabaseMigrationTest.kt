@@ -16,8 +16,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * Room 3 -> 4 (admin scope owner columns), 4 -> 5 (sharing role, derived and capability flags) and
- * sign-out isolation, on a real SQLite database.
+ * Room 3 -> 4 (admin scope owner columns), 4 -> 5 (sharing role, derived and capability flags), 6
+ * -> 7 (direct share metadata), and sign-out isolation on a real SQLite database.
  */
 @RunWith(AndroidJUnit4::class)
 class AppDatabaseMigrationTest {
@@ -170,6 +170,115 @@ class AppDatabaseMigrationTest {
     }
 
     @Test
+    fun migrate6To7_refetchesProjectScopesAndKeepsCachedRowsQueueAndOtherCursors() {
+        helper.createDatabase(DB, 6).apply {
+            execSQL(
+                "INSERT INTO projects (id, name, category, tagsJson, isFavorite, status, updatedAt, " +
+                    "previewUrl, detailJson, ownerId, ownerName, ownerAvatarUrl, accessRole, " +
+                    "accessDerived, canEdit, canManage) " +
+                    "VALUES (5, 'Admin shared', NULL, '[]', 0, 'in_progress', 1000, NULL, '{}', " +
+                    "7, 'Owner', NULL, 'admin', 0, 1, 1)"
+            )
+            execSQL(
+                "INSERT INTO projects (id, name, category, tagsJson, isFavorite, status, updatedAt, " +
+                    "previewUrl, detailJson, ownerId, ownerName, ownerAvatarUrl, accessRole, " +
+                    "accessDerived, canEdit, canManage) " +
+                    "VALUES (6, 'Finished', NULL, '[]', 1, 'done', 2000, NULL, '{}', NULL, NULL, " +
+                    "NULL, 'owner', 0, 1, 1)"
+            )
+            execSQL(
+                "INSERT INTO yarns (id, name, brand, colorway, weightCategory, isFavorite, " +
+                    "updatedAt, previewUrl, detailJson) " +
+                    "VALUES (9, 'Linen', NULL, NULL, NULL, 0, 3000, NULL, '{}')"
+            )
+            execSQL(
+                "INSERT INTO pending_mutations (entityType, operation, localId, payloadJson, " +
+                    "createdAt, lastErrorMessage, isConflict) " +
+                    "VALUES ('project', 'update', 5, '{\"name\":\"queued\"}', 4000, NULL, 0)"
+            )
+            listOf(
+                    "project" to "P1",
+                    "project@all" to "P2",
+                    "yarn" to "Y1",
+                    "yarn@all" to "Y2",
+                    "categories" to "C1",
+                    "everyone_filter" to "0",
+                )
+                .forEach { (entity, cursor) ->
+                    execSQL(
+                        "INSERT INTO sync_state (entityType, cursor) VALUES ('$entity', '$cursor')"
+                    )
+                }
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(DB, 7, true, MIGRATION_6_7)
+
+        db.query(
+                "SELECT id, name, status, accessRole, accessDerived, canEdit, canManage, " +
+                    "accessShareRole FROM projects ORDER BY id"
+            )
+            .use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals(5, c.getInt(0))
+                assertEquals("Admin shared", c.getString(1))
+                assertEquals("in_progress", c.getString(2))
+                assertEquals("admin", c.getString(3))
+                assertEquals(0, c.getInt(4))
+                assertEquals(1, c.getInt(5))
+                assertEquals(1, c.getInt(6))
+                assertTrue(c.isNull(7))
+                assertTrue(c.moveToNext())
+                assertEquals(6, c.getInt(0))
+                assertEquals("Finished", c.getString(1))
+                assertEquals("done", c.getString(2))
+                assertEquals("owner", c.getString(3))
+                assertTrue(!c.moveToNext())
+                assertTrue(c.isAfterLast())
+            }
+        db.query("SELECT name FROM yarns").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("Linen", c.getString(0))
+            assertTrue(!c.moveToNext())
+        }
+        db.query("SELECT entityType, operation, localId, payloadJson FROM pending_mutations").use {
+            c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("project", c.getString(0))
+            assertEquals("update", c.getString(1))
+            assertEquals(5, c.getInt(2))
+            assertEquals("{\"name\":\"queued\"}", c.getString(3))
+            assertTrue(!c.moveToNext())
+        }
+        db.query("SELECT COUNT(*) FROM sync_state WHERE entityType IN ('project', 'project@all')")
+            .use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals(0, c.getInt(0))
+            }
+        db.query("SELECT COUNT(*) FROM projects").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(2, c.getInt(0))
+        }
+        db.query("SELECT COUNT(*) FROM yarns").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(1, c.getInt(0))
+        }
+        db.query("SELECT entityType, cursor FROM sync_state ORDER BY entityType").use { c ->
+            val retained = mutableMapOf<String, String>()
+            while (c.moveToNext()) retained[c.getString(0)] = c.getString(1)
+            assertEquals(
+                mapOf(
+                    "categories" to "C1",
+                    "everyone_filter" to "0",
+                    "yarn" to "Y1",
+                    "yarn@all" to "Y2",
+                ),
+                retained,
+            )
+        }
+    }
+
+    @Test
     fun clearAllTables_removesSharedRowsToo_soAccountsNeverMix() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
@@ -200,6 +309,48 @@ class AppDatabaseMigrationTest {
             db.clearAllTables()
 
             assertTrue(db.projectDao().getServerIds().isEmpty())
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun projectForeignIds_keepAdminDirectSharesAndReturnAdminOnlyRows() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val db = Room.inMemoryDatabaseBuilder(context, AppDatabase::class.java).build()
+        try {
+            db.projectDao()
+                .upsertAll(
+                    listOf(
+                        ProjectEntity(
+                            id = 7,
+                            name = "Shared with admin",
+                            category = null,
+                            tagsJson = "[]",
+                            isFavorite = false,
+                            updatedAt = 1,
+                            previewUrl = null,
+                            detailJson = "{}",
+                            ownerId = 2,
+                            accessRole = "admin",
+                            accessShareRole = "viewer",
+                        ),
+                        ProjectEntity(
+                            id = 8,
+                            name = "Admin only",
+                            category = null,
+                            tagsJson = "[]",
+                            isFavorite = false,
+                            updatedAt = 1,
+                            previewUrl = null,
+                            detailJson = "{}",
+                            ownerId = 3,
+                            accessRole = "admin",
+                        ),
+                    )
+                )
+
+            assertEquals(listOf(8), db.projectDao().getForeignIds(currentUserId = 1))
         } finally {
             db.close()
         }

@@ -33,15 +33,18 @@ export async function loadRecentProjects(
 }
 
 /**
- * The user's own projects still in progress for "Continue knitting": most recently updated first,
- * at most [CONTINUE_LIMIT].
+ * Projects the user owns or can access through an explicit share for "Continue knitting": most
+ * recently updated first, at most [CONTINUE_LIMIT]. Always use the mine scope, even for admins,
+ * so the home carousel cannot include unrelated projects visible only through admin access.
  */
 export async function loadOngoingProjects(
   signal: AbortSignal,
-  scope?: LibraryScope,
+  _scope?: LibraryScope,
 ): Promise<ProjectSummary[]> {
-  const page = await listProjects("status=in_progress&owner=me", signal, {
-    scope,
+  const page = await listProjects("status=in_progress", signal, {
+    // The mine scope includes owned and explicitly shared projects. The caller's global scope may
+    // be `all` for an administrator, which would also include unrelated admin-visible projects.
+    scope: "mine",
   });
   return continueProjects(page.data);
 }

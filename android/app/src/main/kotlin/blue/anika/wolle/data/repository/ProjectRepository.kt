@@ -78,7 +78,9 @@ constructor(
     /** What the lists show: an administrator on Mine sees only their own rows (cache untouched). */
     fun observeAll(): Flow<List<ProjectEntity>> =
         combine(projectDao.observeAll(), everyoneScope.listFilter) { rows, me ->
-            rows.visibleTo(me, { it.ownerId }) { isSharedWithMe(it.accessRole, it.accessDerived) }
+            rows.visibleTo(me, { it.ownerId }) {
+                isSharedWithMe(it.accessShareRole ?: it.accessRole, it.accessDerived)
+            }
         }
 
     /** Every cached row regardless of the Mine filter, for detail screens resolving links by id. */
@@ -803,6 +805,7 @@ internal fun ProjectDto.toEntity(json: Json): ProjectEntity =
         ownerName = owner?.name?.ifBlank { null } ?: owner?.email?.ifBlank { null },
         ownerAvatarUrl = owner?.avatarUrl,
         accessRole = access?.role,
+        accessShareRole = access?.shareRole,
         accessDerived = access?.derived ?: false,
         canEdit = access?.canEdit,
         canManage = access?.canManage,

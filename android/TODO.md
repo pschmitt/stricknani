@@ -41,6 +41,15 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-114: Shared projects in Continue knitting
+
+Status: mostly done (2026-11-12, Codex; focused checks pass, CI and APK delivery pending)
+
+- [x] Include owned and explicitly shared in-progress projects on web and Android.
+- [x] Keep unrelated administrator-visible projects out of the carousel.
+- [x] Preserve stable newest-first order, the ten-project limit, ownership hints and permissions.
+- [ ] Verify both clients and include the change in the v1.7.4 APK.
+
 ## SNA-113: Trash card and activity attribution polish
 
 Status: mostly done (2026-11-12, Codex; web deployed, Android install follows v1.7.4)

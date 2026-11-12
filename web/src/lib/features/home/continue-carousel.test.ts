@@ -31,6 +31,22 @@ describe("continue carousel", () => {
     expect(ordered.map((item) => item.id)).toEqual([2, 3, 4, 1]);
   });
 
+  it("keeps admin-role projects returned by the mine-scope loader", () => {
+    const directlySharedWithAdmin = {
+      ...project(3, "2026-11-06T10:00:00Z"),
+      access: {
+        role: "admin" as const,
+        derived: false,
+        can_edit: true,
+        can_manage: true,
+      },
+    };
+
+    expect(
+      continueProjects([directlySharedWithAdmin]).map((item) => item.id),
+    ).toEqual([3]);
+  });
+
   it("is empty for no in-progress projects and caps a long list", () => {
     expect(continueProjects([])).toEqual([]);
     const many = Array.from({ length: CONTINUE_LIMIT + 5 }, (_, index) =>

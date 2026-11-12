@@ -24,7 +24,7 @@ import blue.anika.wolle.data.db.entity.YarnEntity
             SyncStateEntity::class,
             PendingMutationEntity::class,
         ],
-    version = 6,
+    version = 7,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -98,3 +98,21 @@ val MIGRATION_5_6: Migration =
 
 internal val MIGRATION_5_6_STATEMENTS: List<String> =
     listOf("ALTER TABLE `projects` ADD COLUMN `status` TEXT NOT NULL DEFAULT 'in_progress'")
+
+/**
+ * 6 -> 7 (direct share relationship): projects cache `access.share_role` separately from effective
+ * permissions. Refetch project deltas in both scopes so existing rows gain the metadata; preserve
+ * all cached data, queued writes, and every non-project cursor.
+ */
+val MIGRATION_6_7: Migration =
+    object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            MIGRATION_6_7_STATEMENTS.forEach(db::execSQL)
+        }
+    }
+
+internal val MIGRATION_6_7_STATEMENTS: List<String> =
+    listOf(
+        "ALTER TABLE `projects` ADD COLUMN `accessShareRole` TEXT",
+        "DELETE FROM `sync_state` WHERE `entityType` IN ('project', 'project@all')",
+    )

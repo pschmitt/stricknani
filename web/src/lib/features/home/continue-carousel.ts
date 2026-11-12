@@ -1,11 +1,12 @@
 import type { ProjectSummary } from "#lib/features/projects/project-api.ts";
 
-/** The carousel shows at most this many projects; "See all" opens the rest. */
+/** The carousel shows at most this many projects; "See all" opens the in-progress library. */
 export const CONTINUE_LIMIT = 10;
 
 /**
- * The projects the "Continue knitting" carousel shows: most recently updated first, at most
- * [CONTINUE_LIMIT]. The sort is stable, so projects with the same time keep the server order.
+ * The projects returned by the Home loader's mine-scope request: most recently updated first, at
+ * most [CONTINUE_LIMIT]. That server scope includes direct shares with administrators, whose
+ * effective access role can still be "admin". The sort is stable, so ties keep server order.
  */
 export function continueProjects(projects: ProjectSummary[]): ProjectSummary[] {
   const stamp = (project: ProjectSummary) => {

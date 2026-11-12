@@ -25,15 +25,18 @@ case "${E2E_LANE:-smoke}" in
     run_test blue.anika.wolle.focused.FocusedComponentSemanticsTest
     ;;
   full)
+    run_test blue.anika.wolle.data.db.AppDatabaseMigrationTest
     run_test blue.anika.wolle.e2e.StricknaniFullE2eTest
     run_test blue.anika.wolle.e2e.DataBackupE2eTest
     run_test blue.anika.wolle.e2e.StricknaniLiveWriteE2eTest
     ;;
   smoke)
+    run_test blue.anika.wolle.data.db.AppDatabaseMigrationTest
     run_test blue.anika.wolle.e2e.StricknaniSmokeTest
     run_test blue.anika.wolle.e2e.DataBackupE2eTest
     ;;
   backups)
+    run_test blue.anika.wolle.data.db.AppDatabaseMigrationTest
     # Data export and restore only: CI runs it on an older Android as well (see e2e.yaml).
     run_test blue.anika.wolle.e2e.DataBackupE2eTest
     # The same round trip in the local-only mode (skipped without the in-app server library).

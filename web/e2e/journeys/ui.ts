@@ -800,7 +800,7 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
   check(
     (await continueSection
       .getByRole("link", { name: "See all", exact: true })
-      .getAttribute("href")) === "/app/projects?status=in_progress&owner=me",
+      .getAttribute("href")) === "/app/projects?status=in_progress",
     "Continue knitting's See all does not open the in-progress filter",
   );
   markStage("opening the authenticated project library");

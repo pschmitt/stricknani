@@ -12,6 +12,8 @@ class ContinueProjectsTest {
         status: String = "in_progress",
         ownerId: Long? = null,
         updatedAt: Long = 0L,
+        accessRole: String? = null,
+        accessShareRole: String? = null,
     ) =
         ProjectEntity(
             id = id,
@@ -24,10 +26,12 @@ class ContinueProjectsTest {
             previewUrl = null,
             detailJson = "{}",
             ownerId = ownerId,
+            accessRole = accessRole,
+            accessShareRole = accessShareRole,
         )
 
     @Test
-    fun `keeps the user's own projects in progress, never done or shared ones`() {
+    fun `keeps owned and explicitly shared projects but not unrelated admin-visible ones`() {
         val all =
             listOf(
                 project(1),
@@ -35,9 +39,13 @@ class ContinueProjectsTest {
                 project(3, ownerId = me),
                 project(4, ownerId = 7),
                 project(5),
+                project(6, ownerId = 8, accessRole = "viewer"),
+                project(7, ownerId = 9, accessRole = "editor"),
+                project(8, ownerId = 10, accessRole = "admin"),
+                project(9, ownerId = 11, accessRole = "admin", accessShareRole = "viewer"),
             )
 
-        assertEquals(listOf(1, 3, 5), continueProjects(all, me).map { it.id })
+        assertEquals(listOf(1, 3, 5, 6, 7, 9), continueProjects(all, me).map { it.id })
     }
 
     @Test

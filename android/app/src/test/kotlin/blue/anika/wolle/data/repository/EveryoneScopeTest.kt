@@ -72,7 +72,7 @@ class EveryoneScopeTest {
                 .filter {
                     it.ownerId != null &&
                         it.ownerId != currentUserId &&
-                        !isSharedWithMe(it.accessRole, it.accessDerived)
+                        !isSharedWithMe(it.accessShareRole ?: it.accessRole, it.accessDerived)
                 }
                 .map { it.id }
     }
@@ -110,7 +110,13 @@ class EveryoneScopeTest {
                 .map { it.id }
     }
 
-    private fun project(id: Int, ownerId: Long?, role: String? = null, derived: Boolean = false) =
+    private fun project(
+        id: Int,
+        ownerId: Long?,
+        role: String? = null,
+        derived: Boolean = false,
+        shareRole: String? = null,
+    ) =
         ProjectEntity(
             id = id,
             name = "P$id",
@@ -124,6 +130,7 @@ class EveryoneScopeTest {
             ownerName = ownerId?.let { "Owner$it" },
             accessRole = role,
             accessDerived = derived,
+            accessShareRole = shareRole,
         )
 
     private fun yarn(id: Int, ownerId: Long?, role: String? = null, derived: Boolean = false) =
@@ -288,14 +295,15 @@ class EveryoneScopeTest {
                 project(2, 7, role = "admin"),
                 project(3, 7, role = "viewer"),
                 project(4, 7, role = "viewer", derived = true),
+                project(5, 7, role = "admin", shareRole = "viewer"),
             )
 
         val shown =
             rows.visibleTo(hiddenFor = 1L, { it.ownerId }) {
-                isSharedWithMe(it.accessRole, it.accessDerived)
+                isSharedWithMe(it.accessShareRole ?: it.accessRole, it.accessDerived)
             }
 
-        assertEquals(listOf(1, 3, 4), shown.map { it.id })
+        assertEquals(listOf(1, 3, 4, 5), shown.map { it.id })
     }
 
     @Test
@@ -309,13 +317,14 @@ class EveryoneScopeTest {
                         project(2, 7, role = "editor"),
                         project(3, 7, role = "admin"),
                         project(4, 7),
+                        project(5, 7, role = "admin", shareRole = "editor"),
                     ),
                 yarns = listOf(yarn(10, 7, role = "viewer", derived = true), yarn(11, 7)),
             )
 
         f.scope.forSync()
 
-        assertEquals(listOf(1, 2), f.projects.rows.map { it.id })
+        assertEquals(listOf(1, 2, 5), f.projects.rows.map { it.id })
         assertEquals(listOf(10), f.yarns.rows.map { it.id })
     }
 

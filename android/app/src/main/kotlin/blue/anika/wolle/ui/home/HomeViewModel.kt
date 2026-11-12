@@ -15,6 +15,7 @@ import blue.anika.wolle.data.repository.ActivityRepository
 import blue.anika.wolle.data.repository.CategoryRepository
 import blue.anika.wolle.data.repository.ProjectRepository
 import blue.anika.wolle.data.repository.YarnRepository
+import blue.anika.wolle.data.repository.isSharedWithMe
 import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.update.AppUpdate
@@ -47,10 +48,9 @@ private const val SECTION_LIMIT = 10
 internal const val CONTINUE_LIMIT = 10
 
 /**
- * The projects of Home's "Continue knitting" carousel: the user's own projects in progress, most
- * recently updated first, at most [CONTINUE_LIMIT]. Items shared with the user, or other users'
- * projects an administrator sees, are not "their" ongoing projects. The sort is stable, so projects
- * with the same time keep the given order.
+ * Home's "Continue knitting" carousel: the user's own and explicitly shared projects in progress,
+ * most recently updated first, at most [CONTINUE_LIMIT]. Admin-only projects do not qualify. The
+ * sort is stable, so projects with the same time keep the given order.
  */
 internal fun continueProjects(
     projects: List<ProjectEntity>,
@@ -58,7 +58,10 @@ internal fun continueProjects(
 ): List<ProjectEntity> =
     projects
         .filter { it.status == ProjectStatus.IN_PROGRESS }
-        .filter { ownerChoiceMatches(OwnerChoice.Mine, it.ownerId, currentUserId) }
+        .filter {
+            ownerChoiceMatches(OwnerChoice.Mine, it.ownerId, currentUserId) ||
+                isSharedWithMe(it.accessShareRole ?: it.accessRole, it.accessDerived)
+        }
         .sortedByDescending { it.updatedAt }
         .take(CONTINUE_LIMIT)
 

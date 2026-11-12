@@ -29,13 +29,16 @@ interface ProjectDao {
      * Ids of rows owned by someone other than [currentUserId] that were not shared with the user
      * (an administrator's view of other people's items). Rows without owner info are the user's
      * own, and shared or derived rows (`viewer`/`editor`) are legitimately cached for everybody;
-     * neither ever matches.
+     * neither ever matches. `accessShareRole` distinguishes direct sharing from effective admin
+     * access without changing permission or banner roles.
      */
     @Query(
         """
         SELECT id FROM projects
         WHERE ownerId IS NOT NULL AND ownerId != :currentUserId
-          AND accessDerived = 0 AND (accessRole IS NULL OR accessRole NOT IN ('viewer', 'editor'))
+          AND accessDerived = 0
+          AND (COALESCE(accessShareRole, accessRole) IS NULL
+               OR COALESCE(accessShareRole, accessRole) NOT IN ('viewer', 'editor'))
         """
     )
     suspend fun getForeignIds(currentUserId: Long): List<Int>

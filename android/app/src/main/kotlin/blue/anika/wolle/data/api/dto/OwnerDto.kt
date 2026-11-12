@@ -28,6 +28,10 @@ data class AccessDto(
     val derived: Boolean = false,
     @SerialName("can_edit") val canEdit: Boolean = true,
     @SerialName("can_manage") val canManage: Boolean = true,
+    /**
+     * The caller's direct sharing relationship, even when an administrator remains [ACCESS_ADMIN].
+     */
+    @SerialName("share_role") val shareRole: String? = null,
 )
 
 const val ACCESS_OWNER = "owner"

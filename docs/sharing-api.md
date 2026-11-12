@@ -60,6 +60,11 @@ sync entries carry:
   reads solely through a shared project (role is then `viewer`).
 - `can_edit`: may change content and media. `can_manage`: may share, transfer
   and delete. Use these flags rather than comparing role strings.
+- `share_role` is optional `viewer` or `editor` metadata for the caller's direct
+  share. An administrator can have `role: "admin"` and `share_role: "viewer"`;
+  the effective role and capability flags do not change. It is omitted for
+  owners, derived-only access and administrator-only access. Cache it separately
+  from `role` when distinguishing shared projects from unrelated admin-visible ones.
 - `owner.email` is the empty string unless the caller is the owner or an
   administrator. `owner.avatar_url` is readable by any signed-in user.
 - Yarn `project_ids` lists only the linked projects the caller can open.

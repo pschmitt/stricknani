@@ -76,7 +76,7 @@ describe("home dashboard API", () => {
     }
   });
 
-  it("asks for the user's own in-progress projects, newest update first, capped for the carousel", async () => {
+  it("asks for the mine scope's in-progress projects, newest update first, capped for the carousel", async () => {
     // The server order is not trusted: the oldest update comes first here.
     const projects = Array.from({ length: CONTINUE_LIMIT + 2 }, (_, index) => ({
       id: index + 1,
@@ -98,13 +98,16 @@ describe("home dashboard API", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const ongoing = await loadOngoingProjects(new AbortController().signal);
+    const ongoing = await loadOngoingProjects(
+      new AbortController().signal,
+      "all",
+    );
 
     expect(ongoing).toHaveLength(CONTINUE_LIMIT);
     expect(ongoing[0]?.id).toBe(CONTINUE_LIMIT + 2);
     expect(ongoing.at(-1)?.id).toBe(3);
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
-      "/api/v2/projects?status=in_progress&owner=me",
+      "/api/v2/projects?status=in_progress&scope=mine",
     );
   });
 

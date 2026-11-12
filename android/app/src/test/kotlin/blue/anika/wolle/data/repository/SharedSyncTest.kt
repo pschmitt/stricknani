@@ -7,7 +7,9 @@ import blue.anika.wolle.data.api.v2.V2SyncPageDto
 import blue.anika.wolle.data.api.v2.runV2Sync
 import blue.anika.wolle.data.api.v2.staleAfterFullResync
 import blue.anika.wolle.data.db.entity.ProjectEntity
+import blue.anika.wolle.ui.home.continueProjects
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -96,6 +98,24 @@ class SharedSyncTest {
         assertEquals(false, shared.access().canManage)
         assertTrue(shared.access().isShared)
         assertEquals(ItemAccess.Own, device.rows.getValue(1).access())
+    }
+
+    @Test
+    fun `an administrator's direct share stays admin with separate relationship and capabilities`() {
+        val dto =
+            json.decodeFromString<ProjectDto>(
+                """{"id":20,"name":"P20","is_ai_enhanced":false,"is_favorite":false,"created_at":"2026-01-01T00:00:00Z","updated_at":"2026-01-01T00:00:00Z","owner":{"id":7},"access":{"role":"admin","share_role":"viewer","derived":false,"can_edit":true,"can_manage":true}}"""
+            )
+
+        val entity = dto.toEntity(json)
+
+        assertEquals("admin", dto.access?.role)
+        assertEquals("admin", entity.accessRole)
+        assertEquals("viewer", entity.accessShareRole)
+        assertEquals("admin", entity.access().role)
+        assertTrue(entity.access().canEdit)
+        assertTrue(entity.access().canManage)
+        assertEquals(listOf(20), continueProjects(listOf(entity), me).map { it.id })
     }
 
     @Test
