@@ -41,6 +41,8 @@ pub struct AppState {
     pub external_imports: bool,
     pub image_fetcher: Arc<dyn crate::image_import::ImageFetcher>,
     pub oidc: Option<Arc<crate::oidc_http_state::OidcRuntime>>,
+    /// Administrator backups and restore; absent for in-memory databases.
+    pub backups: Option<Arc<crate::backups::BackupService>>,
 }
 
 impl AppState {
@@ -108,6 +110,12 @@ impl AppState {
         self
     }
 
+    /// Enable the administrator backup listing and restore.
+    pub fn with_backups(mut self, backups: Arc<crate::backups::BackupService>) -> Self {
+        self.backups = Some(backups);
+        self
+    }
+
     pub fn new(pool: SqlitePool) -> Self {
         Self {
             pool,
@@ -123,6 +131,7 @@ impl AppState {
             external_imports: false,
             image_fetcher: Arc::new(crate::image_import::HttpImageFetcher),
             oidc: None,
+            backups: None,
         }
     }
 }

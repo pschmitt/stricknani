@@ -30,6 +30,7 @@ mod access;
 mod account;
 mod activity;
 mod admin;
+mod admin_backups;
 mod admin_resources;
 mod archive;
 mod audit;
@@ -203,6 +204,7 @@ fn router_with_context(
         .merge(tools::router())
         .merge(account::router())
         .merge(admin::router())
+        .merge(admin_backups::router())
         .merge(admin_resources::router())
         .merge(audit::router())
         .merge(signup::router())

@@ -85,6 +85,7 @@ async fn known_app_routes_use_a_private_shell_and_manifest_hashes() {
         "/app/trash",
         "/app/admin",
         "/app/audit",
+        "/app/admin/backups",
         "/app/admin/resources/project/42",
         "/app/admin/resources/yarn/42",
         "/app/admin/resources/category/42",
@@ -143,6 +144,7 @@ async fn unknown_app_paths_do_not_receive_the_shell() {
     let fixture = BuildFixture::new();
     for path in [
         "/app/admin/unknown",
+        "/app/admin/backups/extra",
         "/app/admin/resources/other/42",
         "/app/admin/resources/project/0",
         "/app/admin/audit/0",

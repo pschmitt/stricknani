@@ -10,6 +10,7 @@ mod audit;
 pub(crate) mod audit_service;
 pub mod auth;
 pub(crate) mod auth_stepup_service;
+pub mod backups;
 pub mod categories;
 pub mod config;
 pub mod db;
@@ -147,6 +148,7 @@ fn app_with_services_and_web_root(
     web_root: Option<PathBuf>,
 ) -> Router {
     let state = state.with_external_imports(external_imports);
+    let write_guard_state = state.clone();
     let ai = ai.map(Arc::new);
     let core = Router::new()
         .nest(
@@ -200,6 +202,11 @@ fn app_with_services_and_web_root(
             ai,
         ))
         .merge(core)
+        // A staged backup restore rejects writes until the server restarts.
+        .layer(axum::middleware::from_fn_with_state(
+            write_guard_state,
+            backups::guard_writes,
+        ))
         .layer(axum::middleware::from_fn(security::security_headers))
 }
 

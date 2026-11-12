@@ -91,6 +91,45 @@ PostgreSQL URLs are rejected (the legacy module's PostgreSQL backup went away
 with the Python backend). A backup does not make legacy Python data usable in
 the Rust schema.
 
+## Admin backups and restore
+
+Administrators get a Backups view (web `/app/admin/backups`, the Android
+Admin screen; API `GET /api/v2/admin/backups`). It lists the files in the
+backup directory, `STRICKNANI_BACKUP_DIR` (the module sets it to
+`services.stricknani.backup.dir`; elsewhere it defaults to `backups` next to the
+database file): the nightly `stricknani-<ts>.tar.gz` (`database.sqlite3` plus
+`media/`), `predeploy-*`, `pre-migrate-*` and `pre-restore-*` database copies,
+and any other `*.sqlite3` / `*.tar.gz` file (shown as "manual"). Only regular
+files of that directory are listed; symlinks and hidden files are ignored.
+Downloading backups is deliberately not offered: they contain every account's
+data.
+
+A restore needs an administrator, a recent re-authentication (action
+`restore_backup` of `POST /api/v2/account/reauth`) and the exact backup name.
+The server first writes `pre-restore-<ts>.sqlite3` (`VACUUM INTO` plus an
+integrity check; the restore aborts if that fails), then stages the chosen
+database next to it and persists `.restore-request.json`. It rejects writes
+from then on and stops with exit status 75. On the next start, before the
+database pool opens, the swap runs: the live database and its `-wal`/`-shm`
+move aside, the staged file takes its place, the migrations run (a backup of an
+older schema is migrated forward; one from a newer server is refused), the
+audit event `backup_restored` is recorded and the aside files are deleted. If
+the restored database cannot be opened or migrated the original files are put
+back and the failure is shown in the Backups view. A request older than an hour
+is discarded.
+
+The module's unit has `RestartForceExitStatus = [ 75 ]`, so systemd restarts the
+server within `RestartSec`. Without a supervisor (for example `just run`) the
+server exits and the restore completes the next time you start it; set
+`STRICKNANI_RESTORE_AUTO_RESTART=false` to keep it running after staging and
+restart it yourself. A container needs a restart policy.
+
+Restoring an archive can add the media files that are missing
+(`media: "add_missing"`); it never overwrites or deletes a file. After a
+restore the server's data epoch (`data_epoch` in `GET /api/v2/meta`) changes,
+and the web and Android apps discard their caches and queued offline changes:
+changes made on a device but not yet synced are lost.
+
 ## Web Push
 
 Timer reminders reach browsers through Web Push when a user turns on

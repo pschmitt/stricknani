@@ -374,7 +374,7 @@ fn callback_authority_is_trusted(callback_uri: &str, trusted_hosts: &str) -> boo
     })
 }
 
-fn database_path(url: &str) -> Option<PathBuf> {
+pub(crate) fn database_path(url: &str) -> Option<PathBuf> {
     use std::str::FromStr;
     let options = sqlx::sqlite::SqliteConnectOptions::from_str(url).ok()?;
     Some(resolved_path(options.get_filename()))

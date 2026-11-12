@@ -503,6 +503,8 @@ in
           BIND_PORT = toString cfg.port;
           STRICKNANI_DATABASE_URL = cfg.databaseUrl;
           STRICKNANI_MEDIA_ROOT = toString cfg.mediaRoot;
+          # The admin Backups view lists this directory and restores from it.
+          STRICKNANI_BACKUP_DIR = toString cfg.backup.dir;
           TRUSTED_HOSTS = trustedHosts;
           SESSION_COOKIE_SECURE = lib.boolToString cfg.sessionCookieSecure;
           GRAVATAR_ENABLED = lib.boolToString cfg.gravatar.enable;
@@ -553,6 +555,9 @@ in
           Group = group;
           Restart = "on-failure";
           RestartSec = 10;
+          # An administrator's backup restore stops the server with 75 so that
+          # the swap runs on the next start (RESTART_EXIT_CODE in src/backups).
+          RestartForceExitStatus = [ 75 ];
           UMask = "0077";
 
           # Security hardening
@@ -565,11 +570,15 @@ in
           ReadOnlyPaths = [ "/" ];
           ReadWritePaths =
             if toString cfg.mediaRoot == "${cfg.dataDir}/media" then
-              [ cfg.dataDir ]
+              lib.unique [
+                cfg.dataDir
+                (toString cfg.backup.dir)
+              ]
             else
               lib.unique [
                 cfg.dataDir
                 cfg.mediaRoot
+                (toString cfg.backup.dir)
               ];
           UnsetEnvironment = [
             "DATABASE_URL"

@@ -206,6 +206,7 @@ fn is_known_route(path: &str) -> bool {
         | ["audit"]
         | ["admin", "users"]
         | ["admin", "audit"]
+        | ["admin", "backups"]
         | ["gauge"] => true,
         ["admin", "audit", event_id] => valid_positive_id(event_id),
         ["admin", "resources", kind, id] => {
