@@ -77,6 +77,24 @@ fn runtime(state: &ApiV2State) -> Result<&PasskeyRuntime, Box<Response>> {
     })
 }
 
+/// Fail early when a browser asks from a host outside the RP ID: it would reject the options.
+fn require_covered_host(
+    runtime: &PasskeyRuntime,
+    headers: &HeaderMap,
+) -> Result<(), Box<Response>> {
+    let Some(host) = header_text(headers, "host") else {
+        return Ok(());
+    };
+    if runtime.covers_host(host) {
+        return Ok(());
+    }
+    Err(Box::new(api_error(
+        StatusCode::CONFLICT,
+        "passkey_host_unsupported",
+        "Passkeys do not work on this host name. Open the site on its main address instead.",
+    )))
+}
+
 #[derive(Serialize)]
 struct ChallengeData {
     challenge_id: String,
@@ -294,6 +312,9 @@ async fn web_login_options(
         Ok(runtime) => runtime,
         Err(response) => return *response,
     };
+    if let Err(response) = require_covered_host(runtime, &headers) {
+        return *response;
+    }
     if let Err(response) = check_login_request(&state, &headers) {
         return *response;
     }
@@ -555,6 +576,11 @@ async fn registration_options(
         Ok(context) => context,
         Err(response) => return *response,
     };
+    if credential.kind == auth_stepup_service::CredentialKind::Browser
+        && let Err(response) = require_covered_host(runtime, &headers)
+    {
+        return *response;
+    }
     let recent = match auth_stepup_service::recent_auth(credential, proof_hash.as_deref()) {
         Ok(recent) => recent,
         Err(error) => return stepup_error(error),
@@ -727,6 +753,11 @@ async fn reauth_options(
         Ok(credential) => credential,
         Err(response) => return *response,
     };
+    if credential.kind == auth_stepup_service::CredentialKind::Browser
+        && let Err(response) = require_covered_host(runtime, &headers)
+    {
+        return *response;
+    }
     if let Err(error) = request {
         return json_rejection(error);
     }
