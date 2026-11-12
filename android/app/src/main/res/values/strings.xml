@@ -1646,4 +1646,22 @@
     </plurals>
 
     <string name="trash_banner_delete_dialog_title">Delete permanently?</string>
+
+    <!-- Device unlock for dangerous actions -->
+    <string name="device_unlock_title">This device</string>
+    <string name="device_unlock_toggle">Unlock to confirm dangerous actions</string>
+    <string name="device_unlock_toggle_help">Asks for your fingerprint, face or screen lock before deleting permanently, restoring, transferring ownership and similar actions.</string>
+    <string name="device_unlock_no_screen_lock">Set up a screen lock to use this.</string>
+    <string name="unlock_title">Confirm: %1$s</string>
+    <string name="unlock_subtitle">Use your fingerprint, face or screen lock.</string>
+    <string name="unlock_failed">Could not verify it is you. Nothing was changed.</string>
+    <string name="unlock_reason_purge">delete permanently</string>
+    <string name="unlock_reason_delete_account">delete account</string>
+    <string name="unlock_reason_transfer">transfer ownership</string>
+    <string name="unlock_reason_revoke_token">revoke access token</string>
+    <string name="unlock_reason_unlink_login">remove linked login</string>
+    <string name="unlock_reason_disable_user">disable account</string>
+    <string name="unlock_reason_reset_password">reset password</string>
+    <string name="unlock_reason_impersonate">impersonate user</string>
+    <string name="unlock_reason_turn_off">turn off this protection</string>
 </resources>
