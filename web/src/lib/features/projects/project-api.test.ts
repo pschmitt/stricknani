@@ -88,6 +88,7 @@ const session = {
     archive_state: false,
     account_actions: true,
     admin_actions: false,
+    passkeys: false,
   },
   locale: "en" as const,
 };
@@ -403,6 +404,7 @@ describe("project URL state and API DTOs", () => {
         archive_state: false,
         account_actions: true,
         admin_actions: false,
+        passkeys: false,
       },
       locale: "en",
     });

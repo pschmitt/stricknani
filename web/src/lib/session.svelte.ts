@@ -3,6 +3,7 @@ import {
   ApiError,
   getSession,
   login as postLogin,
+  loginWithPasskey as postPasskeyLogin,
   logout as postLogout,
   setUnauthorizedHandler,
   type AvatarSource,
@@ -13,6 +14,7 @@ import {
   sanitizeDetailOrder,
   type DetailCardDomain,
 } from "./detail-order";
+import { getLoginAssertion } from "./features/auth/passkey-api";
 import { t } from "./i18n.svelte";
 
 export type SessionStatus = "loading" | "ready" | "error";
@@ -39,6 +41,7 @@ const anonymousSession: SessionData = {
     archive_state: false,
     account_actions: false,
     admin_actions: false,
+    passkeys: false,
   },
   locale: "en",
 };
@@ -101,6 +104,48 @@ export async function signIn(email: string, password: string): Promise<void> {
   session.data = data;
   session.status = "ready";
   session.expired = false;
+}
+
+/**
+ * Sign in with a passkey. The authenticator prompt can stay open for minutes
+ * (conditional mediation in the email field), so the session generation is only
+ * claimed once the assertion is in hand.
+ */
+export async function signInWithPasskey(
+  options: { conditional?: boolean; signal?: AbortSignal } = {},
+): Promise<void> {
+  const csrfToken = session.data?.csrf_token;
+  if (!csrfToken)
+    throw new ApiError(
+      t("The session token is missing. Refresh and try again."),
+      400,
+      "csrf_missing",
+    );
+  const assertion = await getLoginAssertion(csrfToken, options);
+  const generation = ++sessionGeneration;
+  advanceAuthEpoch();
+  session.error = null;
+  const data = await postPasskeyLogin(
+    assertion.challengeId,
+    assertion.credential,
+    session.data?.csrf_token ?? csrfToken,
+  );
+  if (generation !== sessionGeneration) return;
+  advanceAuthEpoch();
+  session.data = data;
+  session.status = "ready";
+  session.expired = false;
+}
+
+/**
+ * Fetch a fresh signed-out session so the login CSRF token (valid for ten
+ * minutes) is renewed while the sign-in page stays open. A signed-in session is
+ * left alone.
+ */
+export async function renewLoginCsrf(signal?: AbortSignal): Promise<void> {
+  const data = await getSession(signal);
+  if (signal?.aborted || session.data?.user) return;
+  session.data = data;
 }
 
 export async function signOut(): Promise<void> {

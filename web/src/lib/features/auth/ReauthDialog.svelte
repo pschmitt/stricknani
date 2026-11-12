@@ -10,6 +10,7 @@
     type OidcProvider,
     type ReauthRequest,
   } from "./oidc-api";
+  import { reauthWithPasskey } from "./passkey-api";
   import {
     CLOSED,
     classifyReauthFailure,
@@ -31,6 +32,7 @@
     locale,
     oidcProvider = null,
     passwordEnabled = true,
+    passkeyAvailable = false,
     message,
     onconfirmed,
   }: {
@@ -38,6 +40,8 @@
     /** Offered as "Confirm with ..." when the user already has a linked login. */
     oidcProvider?: OidcProvider | null;
     passwordEnabled?: boolean;
+    /** Offered as "Confirm with a passkey" when the account has one and the browser can use it. */
+    passkeyAvailable?: boolean;
     /** Replaces the default explanation above the password field. */
     message?: string;
     onconfirmed: (request: ReauthRequest) => void | Promise<void>;
@@ -93,6 +97,21 @@
     await onconfirmed(request);
   }
 
+  async function confirmWithPasskey(): Promise<void> {
+    if (reauth.phase !== "prompt" || !passkeyAvailable) return;
+    const request = reauth.request;
+    dispatch({ type: "submit", method: "passkey" });
+    try {
+      await reauthWithPasskey(request, session.data?.csrf_token ?? "");
+      dispatch({ type: "passkey_confirmed" });
+    } catch (error) {
+      dispatch({ type: "failed", failure: classifyReauthFailure(error) });
+      return;
+    }
+    dialog?.close();
+    await onconfirmed(request);
+  }
+
   async function confirmWithProvider(): Promise<void> {
     if (reauth.phase !== "prompt" || !oidcProvider) return;
     const request = reauth.request;
@@ -118,6 +137,10 @@
     switch (value) {
       case "invalid_credentials":
         return t("That password is not correct.", locale);
+      case "invalid_passkey":
+        return t("That passkey could not be verified.", locale);
+      case "passkey_cancelled":
+        return t("Confirming with a passkey was cancelled.", locale);
       case "rate_limited":
         return t("Too many attempts. Wait a moment and try again.", locale);
       case "unavailable":
@@ -162,7 +185,7 @@
         aria-invalid={failure === "invalid_credentials" ? "true" : undefined}
       />
     </form>
-  {:else if !oidcProvider}
+  {:else if !oidcProvider && !passkeyAvailable}
     <p class="reauth-muted">
       {t("There is no way to confirm your identity right now.", locale)}
     </p>
@@ -176,6 +199,18 @@
     >
       {t("Cancel", locale)}
     </SharedButton>
+    {#if passkeyAvailable}
+      <SharedButton
+        variant="secondary"
+        disabled={busy}
+        onclick={() => void confirmWithPasskey()}
+        icon="key"
+      >
+        {reauth.phase === "verifying" && reauth.method === "passkey"
+          ? t("Waiting for your passkey…", locale)
+          : t("Confirm with a passkey", locale)}
+      </SharedButton>
+    {/if}
     {#if oidcProvider}
       <SharedButton
         variant="secondary"

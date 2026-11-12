@@ -16,6 +16,7 @@
   import DeleteAccountDialog from "./DeleteAccountDialog.svelte";
   import { formatLastUsed } from "./connect-app.ts";
   import LinkedLogins from "#lib/features/auth/LinkedLogins.svelte";
+  import PasskeysSection from "#lib/features/auth/PasskeysSection.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
   import {
@@ -1410,6 +1411,7 @@
           </form>
         </div>
       </div>
+      <PasskeysSection />
       <LinkedLogins />
     </div>
   </section>

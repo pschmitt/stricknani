@@ -30,6 +30,7 @@ const session = {
     archive_state: false,
     account_actions: true,
     admin_actions: false,
+    passkeys: false,
   },
   locale: "en" as const,
 };

@@ -32,6 +32,7 @@ const session: SessionData = {
     archive_state: true,
     account_actions: true,
     admin_actions: false,
+    passkeys: false,
   },
   locale: "en",
 };

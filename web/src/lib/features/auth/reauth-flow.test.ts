@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { ApiError } from "#lib/api.ts";
+import { PasskeyCeremonyError } from "./passkey-api";
 import {
   CLOSED,
   PENDING_REAUTH_KEY,
@@ -202,5 +203,68 @@ describe("pending provider reauth", () => {
       },
     };
     expect(() => savePendingReauth(broken, request)).not.toThrow();
+  });
+});
+
+describe("passkey step-up", () => {
+  const manage = { action: "manage_passkeys" as const };
+
+  it("walks open, submit with a passkey, passkey_confirmed", () => {
+    expect(
+      run([
+        { type: "open", request: manage },
+        { type: "submit", method: "passkey" },
+        { type: "passkey_confirmed" },
+      ]),
+    ).toEqual({ phase: "confirmed", request: manage });
+  });
+
+  it("only a passkey attempt can be confirmed by a passkey", () => {
+    const verifying = run([
+      { type: "open", request: manage },
+      { type: "submit", method: "password" },
+    ]);
+    expect(reauthReducer(verifying, { type: "passkey_confirmed" })).toBe(
+      verifying,
+    );
+    expect(reauthReducer(CLOSED, { type: "passkey_confirmed" })).toBe(CLOSED);
+  });
+
+  it("returns to the prompt with the failure after a rejected passkey", () => {
+    expect(
+      run([
+        { type: "open", request: manage },
+        { type: "submit", method: "passkey" },
+        { type: "failed", failure: "invalid_passkey" },
+      ]),
+    ).toEqual({ phase: "prompt", request: manage, failure: "invalid_passkey" });
+  });
+
+  it("classifies passkey failures", () => {
+    expect(
+      classifyReauthFailure(new ApiError("x", 401, "invalid_passkey")),
+    ).toBe("invalid_passkey");
+    expect(
+      classifyReauthFailure(new ApiError("x", 400, "invalid_challenge")),
+    ).toBe("invalid_passkey");
+    expect(
+      classifyReauthFailure(new PasskeyCeremonyError("cancelled")),
+    ).toBe("passkey_cancelled");
+    expect(
+      classifyReauthFailure(new PasskeyCeremonyError("unsupported")),
+    ).toBe("unavailable");
+  });
+
+  it("remembers a manage_passkeys request across a provider redirect", () => {
+    const store = new Map<string, string>();
+    const storage = {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => void store.set(key, value),
+      removeItem: (key: string) => void store.delete(key),
+    };
+    savePendingReauth(storage, manage, 1000);
+    expect(takePendingReauth(storage, 2000)).toEqual({
+      action: "manage_passkeys",
+    });
   });
 });

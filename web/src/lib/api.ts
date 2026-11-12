@@ -13,7 +13,9 @@ export type Capability =
   | "import_preview"
   | "archive_state"
   | "account_actions"
-  | "admin_actions";
+  | "admin_actions"
+  /** Passkey (WebAuthn) sign-in is configured on the server. */
+  | "passkeys";
 export type ApiMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 /** Where the avatar comes from: an upload, or the server-fetched Gravatar. */
@@ -135,6 +137,25 @@ export async function login(
   return response.data;
 }
 
+/** Finish a passkey sign-in: the assertion for the challenge `/auth/passkey/options` issued. */
+export async function loginWithPasskey(
+  challengeId: string,
+  credential: Record<string, unknown>,
+  csrfToken: string,
+): Promise<SessionData> {
+  const response = await apiRequest<DataEnvelope<unknown>>(
+    "/api/v2/auth/passkey/login",
+    {
+      method: "POST",
+      csrfToken,
+      body: { challenge_id: challengeId, credential },
+    },
+  );
+  if (!isDataEnvelope(response) || !isSessionData(response.data))
+    throw invalidResponse();
+  return response.data;
+}
+
 export async function logout(csrfToken: string): Promise<void> {
   await apiRequest<void>("/api/v2/auth/logout", {
     method: "POST",
@@ -214,6 +235,8 @@ async function performApiRequest<T = unknown>(
       response.status === 401 &&
       path !== "/api/v2/auth/login" &&
       failure?.code !== "invalid_credentials" &&
+      // A rejected passkey is not an expired session.
+      failure?.code !== "invalid_passkey" &&
       !options.signal?.aborted &&
       requestAuthEpoch === authEpoch
     )
@@ -358,6 +381,11 @@ function localizedError(code: string): string {
     ),
     internal_error: t("The server could not complete this request. Try again."),
     reauth_required: t("Confirm it is you to continue."),
+    invalid_passkey: t("That passkey could not be verified."),
+    invalid_challenge: t("The passkey request expired. Try again."),
+    passkey_exists: t("This passkey is already registered."),
+    passkey_limit: t("Remove a passkey before adding another."),
+    passkeys_unavailable: t("Passkeys are not available on this server."),
     oidc_identity_unlinked: t(
       "No Stricknani account is linked to this login yet. Sign in with your password, then link it in your account settings.",
     ),
@@ -472,6 +500,7 @@ function isCapabilities(value: unknown): value is SessionData["capabilities"] {
     "archive_state",
     "account_actions",
     "admin_actions",
+    "passkeys",
   ].every((key) => typeof candidate[key] === "boolean");
 }
 

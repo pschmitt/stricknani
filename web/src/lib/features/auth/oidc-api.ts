@@ -43,7 +43,8 @@ export type ReauthAction =
   | "change_password"
   | "create_api_token"
   | "revoke_api_token"
-  | "delete_account";
+  | "delete_account"
+  | "manage_passkeys";
 
 export interface ReauthTarget {
   provider?: string;

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
@@ -15,24 +15,118 @@
   import SelfHostCard from "#lib/components/SelfHostCard.svelte";
   import OidcSignIn from "#lib/features/auth/OidcSignIn.svelte";
   import { t } from "#lib/i18n.svelte.ts";
-  import { session, signIn } from "#lib/session.svelte.ts";
+  import {
+    renewLoginCsrf,
+    session,
+    signIn,
+    signInWithPasskey,
+  } from "#lib/session.svelte.ts";
+  import {
+    conditionalMediationSupported,
+    passkeysSupported,
+  } from "#lib/features/auth/passkey-api.ts";
+  import {
+    classifyPasskeyLoginFailure,
+    runConditionalSignIn,
+    type PasskeyLoginFailure,
+  } from "#lib/features/auth/passkey-login.ts";
   import { registerPwaUpdateGuard } from "#lib/pwa-update-coordinator.ts";
 
   let email = $state("");
   let password = $state("");
   let submitting = $state(false);
   let failure = $state<ApiError | Error | null>(null);
+  let passkeyBrowser = $state(false);
+  let passkeyAutofill = $state(false);
+  let passkeyBusy = $state(false);
+  let passkeyFailure = $state<PasskeyLoginFailure | null>(null);
+  // Bumped to restart the autofill request after the button flow ended.
+  let autofillRound = $state(0);
+  let autofillController: AbortController | null = null;
 
   const locale = $derived(session.data?.locale ?? "en");
   const accountCreated = $derived(page.url.searchParams.get("created") === "1");
   const accountDeleted = $derived(page.url.searchParams.get("goodbye") === "1");
-
-  onMount(() =>
-    registerPwaUpdateGuard(() => ({
-      dirty: email.length > 0 || password.length > 0,
-      busy: submitting,
-    })),
+  // Passkeys need the server to have them configured and a browser that can use them.
+  const passkeysAvailable = $derived(
+    passkeyBrowser && session.data?.capabilities.passkeys === true,
   );
+  const autofillReady = $derived(
+    passkeysAvailable && passkeyAutofill && !!session.data?.csrf_token,
+  );
+
+  onMount(() => {
+    passkeyBrowser = passkeysSupported();
+    void conditionalMediationSupported().then(
+      (supported) => (passkeyAutofill = supported),
+    );
+    return registerPwaUpdateGuard(() => ({
+      dirty: email.length > 0 || password.length > 0,
+      busy: submitting || passkeyBusy,
+    }));
+  });
+
+  // A passkey request that stays pending behind the email field's autofill, so
+  // choosing a passkey there signs in without pressing anything.
+  $effect(() => {
+    void autofillRound;
+    if (!autofillReady) return;
+    const controller = new AbortController();
+    autofillController = controller;
+    untrack(() => {
+      void runConditionalSignIn({
+        signIn: signInWithPasskey,
+        renew: () => renewLoginCsrf(controller.signal),
+        onSignedIn: () => goto(resolve("/projects")),
+        onFailure: (reason) => (passkeyFailure = reason),
+        signal: controller.signal,
+      });
+    });
+    return () => {
+      controller.abort();
+      if (autofillController === controller) autofillController = null;
+    };
+  });
+
+  async function submitPasskey() {
+    if (passkeyBusy || submitting) return;
+    passkeyFailure = null;
+    passkeyBusy = true;
+    autofillController?.abort();
+    try {
+      await signInWithPasskey();
+      await goto(resolve("/projects"));
+    } catch (error) {
+      passkeyFailure = classifyPasskeyLoginFailure(error);
+    } finally {
+      passkeyBusy = false;
+      autofillRound += 1;
+    }
+  }
+
+  function passkeyFailureMessage(reason: PasskeyLoginFailure): string {
+    switch (reason) {
+      case "cancelled":
+        return t(
+          "Passkey sign-in was cancelled. Try again or use your password.",
+          locale,
+        );
+      case "not_recognized":
+        return t(
+          "That passkey is not registered for any account here. Use another passkey or your password.",
+          locale,
+        );
+      case "rate_limited":
+        return t("Too many attempts. Wait a moment and try again.", locale);
+      case "unavailable":
+        return t(
+          "Passkeys do not work on this page right now. Use your password.",
+          locale,
+        );
+      default:
+        return t("Passkey sign-in did not work. Try again.", locale);
+    }
+  }
 
   async function submit(event: SubmitEvent) {
     event.preventDefault();
@@ -109,12 +203,18 @@
         </div>
       {/if}
 
+      {#if passkeyFailure}
+        <div class="form-error" role="alert">
+          {passkeyFailureMessage(passkeyFailure)}
+        </div>
+      {/if}
+
       <div class="auth-body">
         <form class="auth-form" onsubmit={submit}>
           <label for="email">{t("Email", locale)}</label>
           <input
             bind:value={email}
-            autocomplete="username"
+            autocomplete={passkeysAvailable ? "username webauthn" : "username"}
             id="email"
             name="email"
             type="email"
@@ -154,6 +254,24 @@
             {/if}
           </SharedButton>
         </form>
+
+        {#if passkeysAvailable}
+          <div class="passkey-divider" aria-hidden="true">
+            <span>{t("or", locale)}</span>
+          </div>
+          <SharedButton
+            variant="secondary"
+            class="passkey-button"
+            type="button"
+            disabled={submitting || passkeyBusy || !session.data?.csrf_token}
+            onclick={() => void submitPasskey()}
+            icon="key"
+          >
+            {passkeyBusy
+              ? t("Waiting for your passkey…", locale)
+              : t("Sign in with a passkey", locale)}
+          </SharedButton>
+        {/if}
 
         <OidcSignIn {locale} />
       </div>
@@ -270,6 +388,27 @@
   :global(.auth-submit) {
     width: 100%;
     margin-top: 1rem;
+  }
+
+  .passkey-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1rem 0 0.75rem;
+    color: var(--ink-muted);
+    font-size: 0.85rem;
+  }
+
+  .passkey-divider::before,
+  .passkey-divider::after {
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+    content: "";
+  }
+
+  :global(.passkey-button) {
+    width: 100%;
   }
 
   :global(.spinner-light) {

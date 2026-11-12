@@ -47,6 +47,7 @@ const anonymous: SessionData = {
     archive_state: false,
     account_actions: false,
     admin_actions: false,
+    passkeys: false,
   },
   locale: "en",
 };

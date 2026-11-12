@@ -1,4 +1,5 @@
 import { ApiError } from "#lib/api.ts";
+import { PasskeyCeremonyError } from "./passkey-api";
 import type { ReauthRequest } from "./oidc-api";
 
 /**
@@ -7,10 +8,15 @@ import type { ReauthRequest } from "./oidc-api";
  * nothing but the requested action and a failure kind.
  */
 
-export type ReauthMethod = "password" | "oidc";
+export type ReauthMethod = "password" | "oidc" | "passkey";
 
 export type ReauthFailure =
-  "invalid_credentials" | "rate_limited" | "unavailable" | "unknown";
+  | "invalid_credentials"
+  | "invalid_passkey"
+  | "passkey_cancelled"
+  | "rate_limited"
+  | "unavailable"
+  | "unknown";
 
 export type ReauthState =
   | { phase: "closed" }
@@ -23,6 +29,7 @@ export type ReauthEvent =
   | { type: "open"; request: ReauthRequest }
   | { type: "submit"; method: ReauthMethod }
   | { type: "password_confirmed" }
+  | { type: "passkey_confirmed" }
   | { type: "provider_started" }
   | { type: "failed"; failure: ReauthFailure | "session_expired" }
   | { type: "cancel" };
@@ -46,6 +53,10 @@ export function reauthReducer(
       return state.phase === "verifying" && state.method === "password"
         ? { phase: "confirmed", request: state.request }
         : state;
+    case "passkey_confirmed":
+      return state.phase === "verifying" && state.method === "passkey"
+        ? { phase: "confirmed", request: state.request }
+        : state;
     case "provider_started":
       return state.phase === "verifying" && state.method === "oidc"
         ? { phase: "redirecting", request: state.request }
@@ -65,10 +76,15 @@ export function reauthReducer(
 export function classifyReauthFailure(
   error: unknown,
 ): ReauthFailure | "session_expired" {
+  if (error instanceof PasskeyCeremonyError)
+    return error.failure === "cancelled" ? "passkey_cancelled" : "unavailable";
   if (!(error instanceof ApiError)) return "unknown";
   switch (error.code) {
     case "invalid_credentials":
       return "invalid_credentials";
+    case "invalid_passkey":
+    case "invalid_challenge":
+      return "invalid_passkey";
     case "session_expired":
       return "session_expired";
     case "rate_limited":
@@ -120,6 +136,7 @@ const ACTIONS = new Set([
   "create_api_token",
   "revoke_api_token",
   "delete_account",
+  "manage_passkeys",
 ]);
 
 /**
