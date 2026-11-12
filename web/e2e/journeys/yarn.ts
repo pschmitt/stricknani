@@ -142,13 +142,23 @@ async function prepareScreenshot(page: Page): Promise<void> {
 }
 
 async function visibleHeights(page: Page, selector: string): Promise<number[]> {
-  const values: unknown = await page
-    .locator(selector)
-    .evaluateAll((elements) =>
-      elements
-        .filter((el) => el.getClientRects().length > 0)
-        .map((el) => el.getBoundingClientRect().height),
-    );
+  const values: unknown = await page.locator(selector).evaluateAll((elements) =>
+    elements
+      .filter((el) => el.getClientRects().length > 0)
+      .map((el) => {
+        // A compact chip reaches 44px through its absolutely positioned
+        // ::after hit area; count it as the target.
+        const after = getComputedStyle(el, "::after");
+        const reach =
+          after.content !== "none" && after.position === "absolute"
+            ? parseFloat(after.height)
+            : 0;
+        return Math.max(
+          el.getBoundingClientRect().height,
+          Number.isFinite(reach) ? reach : 0,
+        );
+      }),
+  );
   if (
     !Array.isArray(values) ||
     values.some((value) => typeof value !== "number")
