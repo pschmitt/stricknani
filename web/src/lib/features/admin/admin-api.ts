@@ -1,5 +1,6 @@
 import { ApiError, apiRequest, type SessionData } from "#lib/api.ts";
 import { t } from "#lib/i18n.svelte.ts";
+import { parseAuditClient, type AuditClient } from "./audit-client";
 import {
   parseChangeMedia,
   type ChangeMedia,
@@ -44,6 +45,8 @@ export interface AuditEvent {
   system: boolean;
   /** The owner of the resource, named on events an administrator or the system caused. */
   subject: LifecycleSubject | null;
+  /** The client that caused the event; `unknown` for events recorded before clients were kept. */
+  client: AuditClient;
 }
 
 export interface Impersonator {
@@ -262,6 +265,7 @@ function parseAuditEvent(value: unknown): AuditEvent {
     impersonated_by: parseImpersonator(value.impersonated_by),
     system: value.system === true,
     subject: parseLifecycleSubject(value.subject),
+    client: parseAuditClient(value.client),
   };
 }
 

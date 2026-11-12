@@ -55,6 +55,28 @@ route. It is current resource media, not an event-time image snapshot; category,
 deleted, and imageless resources use `null`. No image metadata is added to old
 audit rows. The list must not include full resource text or change payloads.
 
+### Client (administrators only)
+
+The administrator list and detail add `client: { kind: 'web' | 'android' |
+'api' | 'system' | 'unknown', version: string | null, label: string | null,
+user_agent: string | null }`. It says which client caused the event, and is
+never part of the owner history, the resource history or the activity feed
+(tests assert the key and the raw user agent are absent there, also for members
+of a shared resource).
+
+The server reads `X-Stricknani-Client: <kind>/<version>[ (<params>)]` (the web
+app sends `web/1.7.1 (build 9a7bfc70)`, the Android app `android/1.7.1 (code
+123; debug)`) and otherwise classifies the `User-Agent` (browser family and
+major version plus OS family, `okhttp`, or the first `product/version`). A
+header outside the grammar (kind `web`, `android` or `api`; version
+`[0-9A-Za-z._+-]{1,32}`; params printable `[0-9A-Za-z._+;: -]`, at most 48
+characters; at most 128 bytes in all) is ignored. The raw `User-Agent` is kept
+without control characters and cut to 256 characters; no IP address is stored.
+`label` is the display text (`Firefox 159 · Linux`, `Android 1.7.1 (debug)`).
+`system` means no request caused the event (the trash purge); `unknown` is every
+row written before migration 0035. Clients show `System` and `Unknown client`
+in their own language and the label for everything else.
+
 Owner-scoped `ProjectYarn` and `LinkedProject` previews are derived from the
 existing yarn `photos` and project `images` detail DTOs. They retain the normal
 owner media URLs and do not grant cross-owner access.

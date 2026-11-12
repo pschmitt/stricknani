@@ -1876,6 +1876,15 @@ async fn children_and_categories_are_purged_after_ninety_days_too() {
     .await
     .unwrap();
     assert_eq!(systems, 4);
+    // No request caused these: the client is the system, with no user agent.
+    let system_clients: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM audit_events WHERE action IN ('purged','step_purged') \
+         AND client_kind = 'system' AND client_user_agent IS NULL AND client_label IS NULL",
+    )
+    .fetch_one(&f.pool)
+    .await
+    .unwrap();
+    assert_eq!(system_clients, 4);
 }
 
 #[tokio::test]
