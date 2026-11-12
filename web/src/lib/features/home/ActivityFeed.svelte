@@ -198,7 +198,11 @@
               {@const note = activityStateNote(item, locale)}
               {@const icon = activityIcon(item.action)}
               {#snippet row()}
-                <span class="tl__node" aria-hidden="true">
+                <span
+                  class="tl__node"
+                  class:tl__node--danger={icon === "trash"}
+                  aria-hidden="true"
+                >
                   {#if icon === "sparkle"}
                     <svg
                       viewBox="0 0 24 24"
@@ -524,6 +528,10 @@
   .tl__entry[data-deleted] .tl__node {
     color: var(--ink-muted);
     background: var(--surface-highest);
+  }
+  .tl__entry .tl__node.tl__node--danger {
+    color: var(--danger);
+    background: color-mix(in srgb, var(--danger) 14%, var(--surface));
   }
   .tl__entry[data-deleted] .tl__thumb {
     opacity: 0.55;

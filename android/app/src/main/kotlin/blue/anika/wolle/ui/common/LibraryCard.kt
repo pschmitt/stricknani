@@ -242,6 +242,7 @@ fun LibraryRow(
                 data.owner?.let { owner ->
                     OwnerBadge(
                         owner,
+                        compact = true,
                         modifier = Modifier.align(Alignment.BottomStart).padding(4.dp),
                     )
                 }

@@ -41,6 +41,18 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## Now
 
+## SNA-113: Trash card and activity attribution polish
+
+Status: in progress (2026-11-12, Codex)
+
+- [ ] Match trash cards across web and Android: thumbnail beside title, quiet kind label, clickable
+      parent, owner and deletion timing, then restore and permanent-delete controls below the content.
+- [ ] Keep action targets usable on narrow phones and preserve confirmation, permission, busy and
+      error behavior.
+- [ ] Match activity attribution with the avatar before “You” and use danger styling for permanent
+      deletion on both clients.
+- [ ] Record the web/Android screen parity review and required checks.
+
 ## SNA-110: Formatting icons in the text-selection menu
 
 Status: **done** (2026-11-11, Codex)

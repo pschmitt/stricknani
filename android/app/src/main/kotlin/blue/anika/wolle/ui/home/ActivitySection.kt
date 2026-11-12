@@ -347,6 +347,7 @@ private fun TimelineNode(row: ActivityRowModel) {
     val colors = MaterialTheme.colorScheme
     val (container, content) =
         when {
+            row.icon == ActivityIconKind.Trash -> colors.errorContainer to colors.onErrorContainer
             row.deleted -> colors.surfaceContainerHighest to colors.onSurfaceVariant
             row.isYarn -> colors.secondaryContainer to colors.onSecondaryContainer
             else -> colors.primaryContainer to colors.onPrimaryContainer

@@ -89,7 +89,9 @@
       <NavIcon name={iconName} />
     {/if}
     {#if owner}
-      <span class="resource-card__owner"><OwnerBadge {owner} /></span>
+      <span class="resource-card__owner"
+        ><OwnerBadge {owner} compact={variant !== "library"} /></span
+      >
     {/if}
     {#if variant === "library" && badge}
       <span class="resource-card__badge">{badge}</span>

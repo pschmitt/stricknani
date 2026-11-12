@@ -1,4 +1,5 @@
 <script lang="ts">
+  import UserAvatar from "#lib/components/UserAvatar.svelte";
   import UserLabel from "#lib/components/UserLabel.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import type { ResourceOwner } from "#lib/owner.ts";
@@ -10,7 +11,12 @@
   let {
     owner,
     locale = undefined,
-  }: { owner: ResourceOwner; locale?: "en" | "de" } = $props();
+    compact = false,
+  }: {
+    owner: ResourceOwner;
+    locale?: "en" | "de";
+    compact?: boolean;
+  } = $props();
 
   const shown = $derived(locale ?? session.data?.locale ?? "en");
   const label = $derived(
@@ -18,8 +24,18 @@
   );
 </script>
 
-<span class="owner-badge" title={label} data-testid="owner-badge">
-  <UserLabel user={personUser(owner)} locale={shown} size="inline" />
+<span
+  class="owner-badge"
+  class:compact
+  title={label}
+  aria-label={label}
+  data-testid="owner-badge"
+>
+  {#if compact}
+    <UserAvatar avatarUrl={owner.avatar_url} name={owner.name} />
+  {:else}
+    <UserLabel user={personUser(owner)} locale={shown} size="inline" />
+  {/if}
 </span>
 
 <style>
@@ -34,6 +50,18 @@
     font-weight: 650;
     background: color-mix(in srgb, var(--surface) 92%, transparent);
     box-shadow: 0 0 0 1px var(--line);
+  }
+
+  .owner-badge.compact {
+    padding: 0.12rem;
+    border-radius: 50%;
+  }
+
+  .owner-badge.compact :global(.user-avatar) {
+    width: 1.4rem;
+    height: 1.4rem;
+    flex-basis: 1.4rem;
+    font-size: 0.7rem;
   }
 
   .owner-badge :global(.user-label__name) {

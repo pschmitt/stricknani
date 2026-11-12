@@ -331,27 +331,40 @@
             {/if}
           </span>
           <div class="trash__main">
-            <p class="trash__kind">{kindLabel(item)}</p>
-            <p class="trash__name">
-              {#if item.kind === "project"}
-                <a
-                  href={resolve("/projects/[id]", { id: String(item.id) })}
-                  data-testid="trash-item-link">{item.name}</a
-                >
-              {:else if item.kind === "yarn"}
-                <a
-                  href={resolve("/yarns/[id]", { id: String(item.id) })}
-                  data-testid="trash-item-link">{item.name}</a
-                >
-              {:else}
-                {item.name}
-              {/if}
-            </p>
+            <div class="trash__heading">
+              <p class="trash__name">
+                {#if item.kind === "project"}
+                  <a
+                    href={resolve("/projects/[id]", { id: String(item.id) })}
+                    data-testid="trash-item-link">{item.name}</a
+                  >
+                {:else if item.kind === "yarn"}
+                  <a
+                    href={resolve("/yarns/[id]", { id: String(item.id) })}
+                    data-testid="trash-item-link">{item.name}</a
+                  >
+                {:else}
+                  {item.name}
+                {/if}
+              </p>
+              <p class="trash__kind">{kindLabel(item)}</p>
+            </div>
             {#if item.detail && item.detail !== item.name}
               <p class="trash__meta">{item.detail}</p>
             {/if}
             {#if item.parent}
-              <p class="trash__meta">{parentLabel(item)}</p>
+              <p class="trash__meta">
+                <a
+                  href={item.parent.kind === "project"
+                    ? resolve("/projects/[id]", {
+                        id: String(item.parent.id),
+                      })
+                    : resolve("/yarns/[id]", {
+                        id: String(item.parent.id),
+                      })}
+                  data-testid="trash-parent-link">{parentLabel(item)}</a
+                >
+              </p>
             {/if}
             {#if showsOwner(scope, item, session.data?.user?.id) && item.owner}
               <p class="trash__meta trash__owner">
@@ -471,10 +484,9 @@
   }
 
   .trash__row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 3.5rem minmax(0, 1fr) auto;
+    align-items: start;
     gap: 0.75rem;
     border: 1px solid var(--line);
     border-radius: var(--radius-sm);
@@ -492,6 +504,13 @@
     border-radius: var(--radius-sm);
     background: var(--surface-muted, var(--line));
     color: var(--ink-muted);
+  }
+
+  .trash__heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.6rem;
   }
 
   .trash__thumb img {
@@ -521,9 +540,6 @@
   .trash__kind {
     color: var(--ink-muted);
     font-size: 0.78rem;
-    font-weight: 650;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
   }
 
   .trash__name {
@@ -550,8 +566,25 @@
 
   .trash__actions {
     display: flex;
+    align-self: center;
     flex-wrap: wrap;
     gap: 0.5rem;
+  }
+
+  .trash__actions :global(.ui-button--secondary) {
+    border-color: var(--line);
+    background: var(--surface);
+  }
+
+  @media (max-width: 40rem) {
+    .trash__row {
+      grid-template-columns: 3.5rem minmax(0, 1fr);
+    }
+
+    .trash__actions {
+      grid-column: 1 / -1;
+      justify-content: flex-start;
+    }
   }
 
   .trash__restored {

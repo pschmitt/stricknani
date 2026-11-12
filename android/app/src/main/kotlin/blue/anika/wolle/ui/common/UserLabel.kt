@@ -160,14 +160,19 @@ fun UserLabel(
     color: Color = Color.Unspecified,
 ) {
     val text = if (by) userByString(user) else userLabelString(user)
+    // Keep the declined author name intact in German (dir, einem Administrator).
+    val separator = if (by) text.indexOf(' ') + 1 else 0
+    val prefix = text.take(separator).trimEnd()
+    val person = text.drop(separator)
     Row(
         modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement =
             Arrangement.spacedBy(if (size == UserLabelSize.Regular) 10.dp else 6.dp),
     ) {
+        if (prefix.isNotEmpty()) Text(prefix, style = style, color = color)
         UserAvatar(user, size.avatar)
-        Text(text, style = style, color = color, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Text(person, style = style, color = color, maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
 }
 

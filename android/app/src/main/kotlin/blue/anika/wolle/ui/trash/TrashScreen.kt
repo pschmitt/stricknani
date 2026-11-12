@@ -7,6 +7,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -220,6 +222,9 @@ private fun TrashList(
                 thumbnailUrl = viewModel.avatarUrl(item.thumbnailUrl),
                 onRestore = { viewModel.restore(item) },
                 onPurge = { onPurge(item) },
+                parentId = item.parent?.id,
+                onOpenProject = onOpenProject,
+                onOpenYarn = onOpenYarn,
                 // A trashed project or yarn opens read-only; the other kinds have no page.
                 onOpen =
                     if (item.kind == "project" || item.kind == "yarn") {
@@ -231,6 +236,7 @@ private fun TrashList(
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 private fun TrashRow(
     row: TrashRowModel,
     busy: Boolean,
@@ -238,6 +244,9 @@ private fun TrashRow(
     onRestore: () -> Unit,
     onPurge: () -> Unit,
     onOpen: (() -> Unit)?,
+    parentId: Long?,
+    onOpenProject: (Int) -> Unit,
+    onOpenYarn: (Int) -> Unit,
 ) {
     val kind = stringResource(row.kindLabelRes)
     val deletedAgo = trashDeletedAgo(row.deletedAt)
@@ -254,93 +263,122 @@ private fun TrashRow(
                 )
                 .testTag("trash-row"),
     ) {
-        Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            TrashThumbnail(row.ref.kind, thumbnailUrl)
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    kind,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Text(
-                    row.name ?: kind,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                row.parentKind?.let { parentKind ->
-                    row.parentName?.let { parentName ->
+        Column(
+            Modifier.fillMaxWidth().padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                TrashThumbnail(row.ref.kind, thumbnailUrl)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        row.name ?: kind,
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        kind,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    row.parentKind?.let { parentKind ->
+                        row.parentName?.let { parentName ->
+                            val openParent =
+                                when (parentKind) {
+                                    "project" -> parentId?.let { id -> { onOpenProject(id.toInt()) } }
+                                    "yarn" -> parentId?.let { id -> { onOpenYarn(id.toInt()) } }
+                                    else -> null
+                                }
+                            if (openParent != null) {
+                                TextButton(
+                                    onClick = openParent,
+                                    contentPadding = PaddingValues(0.dp),
+                                    colors =
+                                        ButtonDefaults.textButtonColors(
+                                            contentColor = MaterialTheme.colorScheme.primary
+                                        ),
+                                    modifier = Modifier.testTag("trash-parent-link"),
+                                ) {
+                                    Text(
+                                        stringResource(trashParentRes(parentKind), parentName),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    stringResource(trashParentRes(parentKind), parentName),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                    row.detail?.let {
                         Text(
-                            stringResource(trashParentRes(parentKind), parentName),
+                            it,
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                }
-                row.detail?.let {
-                    Text(
-                        it,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                row.ownerName?.let { owner ->
-                    UserSentence(
-                        R.string.trash_owner,
-                        UserRef(UserKind.User, owner, row.ownerAvatarUrl),
-                        size = UserLabelSize.Compact,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                Text(
-                    listOfNotNull(
-                            deletedAgo?.let { stringResource(R.string.trash_deleted_when, it) },
-                            daysLeftText(row.daysLeft),
+                    row.ownerName?.let { owner ->
+                        UserSentence(
+                            R.string.trash_owner,
+                            UserRef(UserKind.User, owner, row.ownerAvatarUrl),
+                            size = UserLabelSize.Compact,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        .joinToString(" · "),
-                    style = MaterialTheme.typography.bodySmall,
-                    color =
-                        if (row.daysLeft is DaysLeft.Due) MaterialTheme.colorScheme.error
-                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (row.canRestore) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.padding(top = 4.dp),
-                    ) {
-                        OutlinedButton(
-                            onClick = onRestore,
-                            enabled = !busy,
-                            modifier = Modifier.testTag("trash-restore"),
-                        ) {
-                            Icon(
-                                PhosphorIcons.ClockCounterClockwise,
-                                contentDescription = null,
-                                modifier = Modifier.padding(end = 6.dp),
-                            )
-                            Text(stringResource(R.string.trash_restore))
-                        }
-                        TextButton(
-                            onClick = onPurge,
-                            enabled = !busy,
-                            colors =
-                                ButtonDefaults.textButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.error
-                                ),
-                            modifier = Modifier.testTag("trash-purge"),
-                        ) {
-                            Text(stringResource(R.string.trash_purge))
-                        }
                     }
-                } else {
                     Text(
-                        stringResource(R.string.trash_cannot_restore),
+                        listOfNotNull(
+                                deletedAgo?.let { stringResource(R.string.trash_deleted_when, it) },
+                                daysLeftText(row.daysLeft),
+                            )
+                            .joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp).testTag("trash-cannot-restore"),
+                        color =
+                            if (row.daysLeft is DaysLeft.Due) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+            }
+            if (row.canRestore) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    OutlinedButton(
+                        onClick = onRestore,
+                        enabled = !busy,
+                        modifier = Modifier.testTag("trash-restore"),
+                    ) {
+                        Icon(
+                            PhosphorIcons.ClockCounterClockwise,
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = 6.dp),
+                        )
+                        Text(stringResource(R.string.trash_restore))
+                    }
+                    TextButton(
+                        onClick = onPurge,
+                        enabled = !busy,
+                        colors =
+                            ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            ),
+                        modifier = Modifier.testTag("trash-purge"),
+                    ) {
+                        Text(stringResource(R.string.trash_purge))
+                    }
+                }
+            } else {
+                Text(
+                    stringResource(R.string.trash_cannot_restore),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.testTag("trash-cannot-restore"),
+                )
             }
         }
     }

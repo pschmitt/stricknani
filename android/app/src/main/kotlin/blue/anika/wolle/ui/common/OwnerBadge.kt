@@ -31,7 +31,7 @@ import blue.anika.wolle.data.api.dto.ACCESS_EDITOR
  * outgrows the picture.
  */
 @Composable
-fun OwnerBadge(owner: OwnerBadgeData, modifier: Modifier = Modifier) {
+fun OwnerBadge(owner: OwnerBadgeData, modifier: Modifier = Modifier, compact: Boolean = false) {
     val description = stringResource(R.string.owner_badge_description, owner.name)
     Surface(
         shape = CircleShape,
@@ -39,12 +39,16 @@ fun OwnerBadge(owner: OwnerBadgeData, modifier: Modifier = Modifier) {
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         modifier = modifier.semantics { contentDescription = description }.testTag("owner-badge"),
     ) {
-        UserLabel(
-            ownerRef(owner),
-            size = UserLabelSize.Inline,
-            style = MaterialTheme.typography.labelMedium,
-            modifier = Modifier.padding(start = 3.dp, end = 8.dp, top = 3.dp, bottom = 3.dp),
-        )
+        if (compact) {
+            UserAvatar(ownerRef(owner), size = 24.dp, modifier = Modifier.padding(3.dp))
+        } else {
+            UserLabel(
+                ownerRef(owner),
+                size = UserLabelSize.Inline,
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.padding(start = 3.dp, end = 8.dp, top = 3.dp, bottom = 3.dp),
+            )
+        }
     }
 }
 
