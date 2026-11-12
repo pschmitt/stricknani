@@ -153,7 +153,19 @@ pub(crate) async fn password_stepup(
     now: i64,
 ) -> Result<Option<String>, StepupError> {
     verify_current_password(pool, credential.user_id, password).await?;
+    complete_stepup(pool, credential, action, target_user_id, now).await
+}
 
+/// Record a verified step-up (password or passkey): stamp the current browser session, or issue
+/// a one-time proof bound to the current API token and exact action. The caller has verified the
+/// credential; this never does.
+pub(crate) async fn complete_stepup(
+    pool: &SqlitePool,
+    credential: CurrentCredential,
+    action: RecentAction<'_>,
+    target_user_id: i64,
+    now: i64,
+) -> Result<Option<String>, StepupError> {
     match credential.kind {
         CredentialKind::Browser => {
             oidc_identity_service::stamp_browser_reauth(

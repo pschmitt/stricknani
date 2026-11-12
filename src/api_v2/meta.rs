@@ -51,6 +51,8 @@ struct MetaImports {
 struct AuthDiscovery {
     password: bool,
     oidc: Vec<ProviderSummary>,
+    /// Passkey (WebAuthn) sign-in is available, so native clients can offer it.
+    passkeys: bool,
 }
 
 #[derive(Serialize)]
@@ -150,6 +152,7 @@ async fn meta(State(state): State<ApiV2State>, headers: axum::http::HeaderMap) -
             auth: AuthDiscovery {
                 password: true,
                 oidc,
+                passkeys: state.app.passkeys.is_some(),
             },
             error_reporting,
         },

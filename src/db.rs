@@ -41,6 +41,8 @@ pub struct AppState {
     pub external_imports: bool,
     pub image_fetcher: Arc<dyn crate::image_import::ImageFetcher>,
     pub oidc: Option<Arc<crate::oidc_http_state::OidcRuntime>>,
+    /// The passkey (WebAuthn) relying party; passkeys are unavailable without it.
+    pub passkeys: Option<Arc<crate::passkeys::PasskeyRuntime>>,
 }
 
 impl AppState {
@@ -108,6 +110,12 @@ impl AppState {
         self
     }
 
+    /// Enable passkey (WebAuthn) sign-in and step-up.
+    pub fn with_passkeys(mut self, runtime: Arc<crate::passkeys::PasskeyRuntime>) -> Self {
+        self.passkeys = Some(runtime);
+        self
+    }
+
     pub fn new(pool: SqlitePool) -> Self {
         Self {
             pool,
@@ -123,6 +131,7 @@ impl AppState {
             external_imports: false,
             image_fetcher: Arc::new(crate::image_import::HttpImageFetcher),
             oidc: None,
+            passkeys: None,
         }
     }
 }

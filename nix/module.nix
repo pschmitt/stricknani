@@ -267,6 +267,19 @@ in
       description = "SHA-256 fingerprints of the signing certificates of the Android app builds that may open this instance's project and yarn links directly (Android App Links, served as /.well-known/assetlinks.json). Sets ANDROID_APP_LINK_FINGERPRINTS. Empty: links open in the browser.";
     };
 
+    passkeys.enable = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Let people sign in with a passkey (WebAuthn) as an alternative to the password, on the web and in the Android app. Sets PASSKEYS_ENABLED. Needs HTTPS and a DNS host name; the relying-party ID is the first DNS name in the trusted hosts unless passkeys.rpId says otherwise. The Android app additionally needs android.appLinkFingerprints.";
+    };
+
+    passkeys.rpId = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      example = "example.org";
+      description = "The WebAuthn relying-party ID: one of the trusted host names or a parent domain of one. Sets PASSKEY_RP_ID. Passkeys are bound to it, so changing it later makes every registered passkey unusable. Null: the first DNS name in the trusted hosts.";
+    };
+
     registration.enable = lib.mkOption {
       type = lib.types.bool;
       default = false;
@@ -509,6 +522,12 @@ in
           SIGNUP_ENABLED = lib.boolToString cfg.registration.enable;
           EXTERNAL_IMPORTS_ENABLED = lib.boolToString cfg.imports.enable;
           AI_ENABLED = lib.boolToString cfg.ai.enable;
+        }
+        // {
+          PASSKEYS_ENABLED = lib.boolToString cfg.passkeys.enable;
+        }
+        // lib.optionalAttrs (cfg.passkeys.rpId != null) {
+          PASSKEY_RP_ID = cfg.passkeys.rpId;
         }
         // lib.optionalAttrs (cfg.android.appLinkFingerprints != [ ]) {
           ANDROID_APP_LINK_FINGERPRINTS = lib.concatStringsSep "," cfg.android.appLinkFingerprints;

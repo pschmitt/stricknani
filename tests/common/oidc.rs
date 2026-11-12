@@ -23,7 +23,7 @@ use openidconnect::{
     },
 };
 use rsa::{
-    PrivateKey,
+    RsaPrivateKey,
     pkcs1::{EncodeRsaPrivateKey, LineEnding},
 };
 use serde_json::Value;
@@ -54,7 +54,7 @@ pub struct MockOidcIssuer {
 
 impl MockOidcIssuer {
     pub async fn start() -> Self {
-        let private = PrivateKey::new(&mut rand::rng(), 2048).unwrap();
+        let private = RsaPrivateKey::new(&mut rand::rng(), 2048).unwrap();
         let signing_key = private.to_pkcs1_pem(LineEnding::LF).unwrap().to_string();
         let signing_key_object = CoreRsaPrivateSigningKey::from_pem(
             &signing_key,

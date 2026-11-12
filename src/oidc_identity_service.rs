@@ -56,6 +56,8 @@ pub(crate) enum RecentAction<'a> {
         token_id: i64,
     },
     DeleteAccount,
+    /// Add or remove a passkey.
+    ManagePasskeys,
 }
 
 #[derive(Clone, Copy)]
@@ -148,6 +150,7 @@ impl<'a> RecentAction<'a> {
             Self::CreateApiToken => "create_api_token",
             Self::RevokeApiToken { .. } => "revoke_api_token",
             Self::DeleteAccount => "delete_account",
+            Self::ManagePasskeys => "manage_passkeys",
         }
     }
 
@@ -185,7 +188,10 @@ impl<'a> RecentAction<'a> {
                 }
                 actor_user_id
             }
-            Self::ChangePassword | Self::CreateApiToken | Self::DeleteAccount => actor_user_id,
+            Self::ChangePassword
+            | Self::CreateApiToken
+            | Self::DeleteAccount
+            | Self::ManagePasskeys => actor_user_id,
             Self::RevokeApiToken { token_id } => {
                 if token_id <= 0 {
                     return Err(OidcIdentityError::InvalidIdentity);
@@ -206,7 +212,10 @@ impl<'a> RecentAction<'a> {
             Self::UnlinkIdentity { identity_id }
             | Self::AdminUnlinkIdentity { identity_id, .. } => (None, Some(identity_id), None),
             Self::RevokeApiToken { token_id } => (None, None, Some(token_id)),
-            Self::ChangePassword | Self::CreateApiToken | Self::DeleteAccount => (None, None, None),
+            Self::ChangePassword
+            | Self::CreateApiToken
+            | Self::DeleteAccount
+            | Self::ManagePasskeys => (None, None, None),
         }
     }
 }
@@ -908,7 +917,8 @@ async fn validate_action_target_tx(
         RecentAction::LinkIdentity { .. }
         | RecentAction::ChangePassword
         | RecentAction::CreateApiToken
-        | RecentAction::DeleteAccount => true,
+        | RecentAction::DeleteAccount
+        | RecentAction::ManagePasskeys => true,
     };
     if visible {
         Ok(())

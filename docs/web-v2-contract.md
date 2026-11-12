@@ -352,6 +352,49 @@ All seven routes above accept a bearer PAT with these rules (T121.8):
   without these changes answer a bearer call on these routes with `401`; Android
   hides the account features then.
 
+## Passkeys (WebAuthn)
+
+Passkeys are an optional sign-in and step-up method next to the password (see
+[install.md](install.md#passkeys) for the RP ID, origin and Android setup).
+`capabilities.passkeys` in the session says whether the server has them on;
+when it is off every route below answers `404 passkeys_unavailable`.
+Options are the WebAuthn JSON of `webauthn-rs`: `{publicKey: {...}}` with
+base64url strings; the server asks for `residentKey: preferred` and
+`userVerification: required`, and drops `extensions` and the `mediation` hint
+(the client chooses a modal or an autofill prompt; native responses never carry
+`extensions`). Every ceremony has a server-side challenge, valid for five
+minutes and for one use; an unknown, expired or reused `challenge_id` returns
+`400 invalid_challenge`.
+
+| Method and path | Auth | Result |
+| --- | --- | --- |
+| `POST /auth/passkey/options` | login CSRF + same origin | `{data: {challenge_id, options}}` for a username-less sign-in |
+| `POST /auth/passkey/login` | login CSRF + same origin | body `{challenge_id, credential}`; the session answer and cookie of `POST /auth/login` |
+| `POST /auth/passkey/token/options` | none | as `/auth/passkey/options`, for native apps |
+| `POST /auth/passkey/token` | none | body `{challenge_id, credential, device_name?}`; `{data: {token}}`, an API-purpose PAT named like the password exchange (`Android (passkey login)` by default) |
+| `GET /account/passkeys` | session or PAT | `{data: [{id, nickname, created_at, last_used_at, transports, backup_eligible, backup_state}], meta: {limit}}` |
+| `POST /account/passkeys/registration/options` | session or PAT + recent authentication | `{data: {challenge_id, options}}` |
+| `POST /account/passkeys/registration/verify` | session or PAT + recent authentication | body `{challenge_id, credential, nickname?}`; `201 {data: passkey}` |
+| `PATCH /account/passkeys/{id}` | session or PAT | body `{nickname}` (1 to 100 characters); `{data: passkey}` |
+| `DELETE /account/passkeys/{id}` | session or PAT + recent authentication | `204` |
+| `POST /account/reauth/passkey/options` | session or PAT | `{data: {challenge_id, options}}` limited to the account's own passkeys |
+| `POST /account/reauth/passkey` | session or PAT | body `{challenge_id, credential, action, target?}`; the answer of `POST /account/reauth` |
+
+Registration and removal use the new step-up action `manage_passkeys` (no
+target): a browser session needs a fresh stamp (`POST /account/reauth` with a
+password, an OIDC confirmation, or a passkey), a PAT an `X-Reauth-Token` proof
+for that action, consumed by the registration or removal. A missing or stale
+step-up returns `403 reauth_required`. Verification failures of a sign-in
+(unknown credential, bad signature, wrong origin or RP ID, wrong user handle,
+disabled account) all return `401 invalid_passkey`; of a registration
+`422 passkey_rejected`. `409 passkey_limit` (ten per account),
+`409 passkey_exists`, `409 no_passkeys` (step-up without passkeys). Sign-in
+and step-up verifications share the password attempt budget and answer
+`429 rate_limited`; challenge requests have their own, wider budget. Passkey
+routes are refused while an administrator impersonates an account.
+Registered, removed and used passkeys (sign-in and step-up) are recorded in the
+auth audit.
+
 ## Photo metadata setting
 
 `GET /account` returns `strip_photo_metadata` (default `false`) and

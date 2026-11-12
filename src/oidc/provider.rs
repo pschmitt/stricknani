@@ -757,7 +757,7 @@ mod tests {
         Audience, EmptyAdditionalClaims, EndUserEmail, JsonWebKeyId, PrivateSigningKey,
         StandardClaims, SubjectIdentifier,
     };
-    use rsa::PrivateKey;
+    use rsa::RsaPrivateKey;
     use rsa::pkcs1::{EncodeRsaPrivateKey, LineEnding};
     use serde_json::Value;
     use sha2::{Digest, Sha256};
@@ -897,7 +897,7 @@ mod tests {
     }
 
     fn generate_signing_key() -> String {
-        let private = PrivateKey::new(&mut rand::rng(), 2048).unwrap();
+        let private = RsaPrivateKey::new(&mut rand::rng(), 2048).unwrap();
         private.to_pkcs1_pem(LineEnding::LF).unwrap().to_string()
     }
 

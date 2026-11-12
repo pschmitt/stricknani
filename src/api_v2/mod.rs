@@ -43,6 +43,7 @@ mod ocr;
 mod oidc_account;
 mod oidc_common;
 mod oidc_login;
+mod passkeys;
 mod project_preview;
 mod project_timer;
 mod projects;
@@ -181,6 +182,7 @@ fn router_with_context(
         .merge(native_auth::router())
         .merge(oidc_account::router())
         .merge(oidc_login::router())
+        .merge(passkeys::router())
         .merge(projects::router())
         .merge(resource_history::router())
         .merge(search::router())
@@ -254,6 +256,8 @@ struct Capabilities {
     archive_state: bool,
     account_actions: bool,
     admin_actions: bool,
+    /// Passkey (WebAuthn) sign-in is configured on this server.
+    passkeys: bool,
 }
 
 impl Capabilities {
@@ -276,6 +280,7 @@ impl Capabilities {
             archive_state: authenticated && state.app.archive_enabled,
             account_actions: authenticated,
             admin_actions: user.is_some_and(|user| user.is_admin),
+            passkeys: state.app.passkeys.is_some(),
         }
     }
 }
@@ -523,6 +528,17 @@ async fn login(
                 );
             }
         };
+    login_session_response(&state, &headers, &token).await
+}
+
+/// The signed-in session answer: the account, the CSRF token and the session cookie. Password and
+/// passkey sign-in share it.
+async fn login_session_response(
+    state: &ApiV2State,
+    headers: &HeaderMap,
+    token: &auth::MintedToken,
+) -> Response {
+    let cookie_name = login_csrf_cookie_name(state.app.secure_cookies);
     let user = match load_user(&state.app.pool, token.user_id, state.app.gravatar.enabled).await {
         Ok(Some(user)) => user,
         _ => {
@@ -534,15 +550,15 @@ async fn login(
         }
     };
     let csrf_token = crate::web::csrf(&token.token);
-    let capabilities = Capabilities::from_state(&state, Some(&user));
-    let error_reporting = telemetry::ErrorReportingInfo::load(&state, Some(user.id)).await;
+    let capabilities = Capabilities::from_state(state, Some(&user));
+    let error_reporting = telemetry::ErrorReportingInfo::load(state, Some(user.id)).await;
     let mut response = Json(Envelope {
         data: SessionData {
             user: Some(user),
             csrf_token,
             capabilities,
             error_reporting,
-            locale: locale(&headers),
+            locale: locale(headers),
             impersonation: None,
         },
     })

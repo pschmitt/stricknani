@@ -39,6 +39,12 @@ pub struct RateLimiter {
 
 impl RateLimiter {
     pub(crate) fn reserve(&self, keys: &[String]) -> Option<u64> {
+        self.reserve_with_limit(keys, RATE_LIMIT_ATTEMPTS)
+    }
+
+    /// [`reserve`](Self::reserve) with a different attempt budget per window, for callers whose
+    /// normal use makes more requests than a password login (passkey challenges).
+    pub(crate) fn reserve_with_limit(&self, keys: &[String], limit: usize) -> Option<u64> {
         let now = Instant::now();
         let mut entries = self.entries.lock().unwrap_or_else(PoisonError::into_inner);
         entries.retain(|_, attempts| {
@@ -49,7 +55,7 @@ impl RateLimiter {
         let limited = keys.iter().any(|key| {
             entries
                 .get(key)
-                .is_some_and(|attempts| attempts.len() >= RATE_LIMIT_ATTEMPTS)
+                .is_some_and(|attempts| attempts.len() >= limit)
         }) || entries.len()
             + keys
                 .iter()
@@ -75,7 +81,7 @@ impl RateLimiter {
         Some(attempt_id)
     }
 
-    fn refund(&self, keys: &[String], attempt_id: u64) {
+    pub(crate) fn refund(&self, keys: &[String], attempt_id: u64) {
         let mut entries = self.entries.lock().unwrap_or_else(PoisonError::into_inner);
         for key in keys {
             if let Some(attempts) = entries.get_mut(key) {

@@ -41,6 +41,9 @@ pub struct Config {
     pub trusted_hosts: TrustedHosts,
     /// The Android app allowed to open this server's links (App Links), when configured.
     pub android_app_links: Option<crate::app_links::AppLinks>,
+    /// Passkey (WebAuthn) relying-party settings; `None` when passkeys are off or the instance
+    /// has no DNS name.
+    pub passkeys: Option<crate::passkeys::PasskeyConfig>,
 }
 
 impl fmt::Debug for Config {
@@ -158,6 +161,20 @@ impl Config {
             get("ANDROID_APP_LINK_FINGERPRINTS").as_deref(),
         )
         .map_err(ConfigError)?;
+        let passkeys_enabled = match get("PASSKEYS_ENABLED").as_deref() {
+            None | Some("true" | "1") => true,
+            Some("false" | "0") => false,
+            _ => return Err(ConfigError("PASSKEYS_ENABLED must be true or false")),
+        };
+        let passkeys = crate::passkeys::PasskeyConfig::from_settings(
+            passkeys_enabled,
+            get("PASSKEY_RP_ID").as_deref(),
+            &trusted_hosts,
+            secure_cookies,
+            port,
+            android_app_links.as_ref(),
+        )
+        .map_err(ConfigError)?;
         let signup_enabled = match get("SIGNUP_ENABLED").as_deref() {
             None | Some("false" | "0") => false,
             Some("true" | "1") => true,
@@ -230,6 +247,7 @@ impl Config {
             oidc_pat_ttl_seconds,
             trusted_hosts,
             android_app_links,
+            passkeys,
         })
     }
 }

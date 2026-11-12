@@ -67,13 +67,23 @@ impl AppLinks {
         }))
     }
 
+    /// The configured SHA-256 signing certificate fingerprints (`AB:CD:...`, upper case).
+    pub fn fingerprints(&self) -> &[String] {
+        &self.fingerprints
+    }
+
     fn statement(&self) -> serde_json::Value {
         serde_json::Value::Array(
             self.packages
                 .iter()
                 .map(|package| {
                     serde_json::json!({
-                        "relation": ["delegate_permission/common.handle_all_urls"],
+                        // `get_login_creds` lets Credential Manager use this site's passkeys
+                        // (the web relying party) from the app.
+                        "relation": [
+                            "delegate_permission/common.handle_all_urls",
+                            "delegate_permission/common.get_login_creds"
+                        ],
                         "target": {
                             "namespace": "android_app",
                             "package_name": package,
@@ -190,6 +200,10 @@ mod tests {
         assert_eq!(
             body[0]["relation"][0],
             "delegate_permission/common.handle_all_urls"
+        );
+        assert_eq!(
+            body[0]["relation"][1],
+            "delegate_permission/common.get_login_creds"
         );
         assert_eq!(
             body[0]["target"]["sha256_cert_fingerprints"][0]

@@ -58,6 +58,35 @@ the SHA-256 fingerprints of the app's signing certificates (comma separated,
 under the app's "Open by default" settings, since the app can only verify
 domains it names itself.
 
+### Passkeys
+
+People can sign in with a passkey (WebAuthn: fingerprint, face or screen lock)
+as an optional alternative to their password, on the web and in the Android app.
+Passwords keep working and a passkey never replaces them. Adding or removing a
+passkey asks for a fresh confirmation (password, linked login or another
+passkey), and a passkey can confirm sensitive actions the same way.
+
+* **HTTPS and a DNS name.** Browsers only offer WebAuthn on HTTPS (and on
+  `localhost` for development). Passkeys are off on an instance whose
+  `TRUSTED_HOSTS` holds only IP addresses.
+* **RP ID.** The relying-party ID is the instance host name: the first DNS name in
+  `TRUSTED_HOSTS`, or `PASSKEY_RP_ID` (a trusted host or a parent domain of one).
+  Passkeys are bound to it: changing the host name or the RP ID makes every
+  registered passkey unusable (the password still works). Origins accepted are the
+  trusted DNS names under the RP ID, over `https` when `SESSION_COOKIE_SECURE=true`.
+* **Android.** The app signs in and registers through Credential Manager. It needs
+  `ANDROID_APP_LINK_FINGERPRINTS` (see above): the server then adds
+  `delegate_permission/common.get_login_creds` to `/.well-known/assetlinks.json`
+  so Android lets the app use this site's passkeys, and accepts the app's origin
+  `android:apk-key-hash:<base64url SHA-256 of the signing certificate>`, one per
+  fingerprint. The app and the web app therefore share the same passkeys.
+* **Switch off.** `PASSKEYS_ENABLED=false` hides the buttons and answers
+  `404 passkeys_unavailable`; registered passkeys stay in the database.
+* An account holds at most 10 passkeys, which are removed with the account. A
+  disabled account cannot sign in with a passkey. Hardware keys that cannot store
+  a discoverable credential can confirm sensitive actions but not sign in without
+  an email address.
+
 Optional Sentry error reporting stays off unless `STRICKNANI_SENTRY_DSN_FILE` (or
 `STRICKNANI_SENTRY_DSN`) is set; see [rust-nixos.md](rust-nixos.md#error-reporting-sentry).
 

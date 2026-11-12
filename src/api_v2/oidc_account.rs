@@ -226,7 +226,7 @@ struct ReauthRequest {
 
 #[derive(Clone, Copy, Deserialize)]
 #[serde(rename_all = "snake_case")]
-enum ActionName {
+pub(super) enum ActionName {
     LinkIdentity,
     UnlinkIdentity,
     AdminUnlinkIdentity,
@@ -234,18 +234,19 @@ enum ActionName {
     CreateApiToken,
     RevokeApiToken,
     DeleteAccount,
+    ManagePasskeys,
 }
 
 #[derive(Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct ActionTargetRequest {
+pub(super) struct ActionTargetRequest {
     provider: Option<String>,
     identity_id: Option<i64>,
     user_id: Option<i64>,
     token_id: Option<i64>,
 }
 
-enum OwnedAction {
+pub(super) enum OwnedAction {
     LinkIdentity(String),
     UnlinkIdentity(i64),
     AdminUnlinkIdentity { user_id: i64, identity_id: i64 },
@@ -253,10 +254,11 @@ enum OwnedAction {
     CreateApiToken,
     RevokeApiToken(i64),
     DeleteAccount,
+    ManagePasskeys,
 }
 
 impl OwnedAction {
-    fn recent_action(&self) -> RecentAction<'_> {
+    pub(super) fn recent_action(&self) -> RecentAction<'_> {
         match self {
             Self::LinkIdentity(provider_id) => RecentAction::LinkIdentity { provider_id },
             Self::UnlinkIdentity(identity_id) => RecentAction::UnlinkIdentity {
@@ -275,10 +277,11 @@ impl OwnedAction {
                 token_id: *token_id,
             },
             Self::DeleteAccount => RecentAction::DeleteAccount,
+            Self::ManagePasskeys => RecentAction::ManagePasskeys,
         }
     }
 
-    fn target_user_id(&self, actor_user_id: i64) -> i64 {
+    pub(super) fn target_user_id(&self, actor_user_id: i64) -> i64 {
         match self {
             Self::AdminUnlinkIdentity { user_id, .. } => *user_id,
             _ => actor_user_id,
@@ -294,6 +297,7 @@ impl OwnedAction {
             Self::CreateApiToken => ReauthAction::CreateApiToken,
             Self::RevokeApiToken(_) => ReauthAction::RevokeApiToken,
             Self::DeleteAccount => ReauthAction::DeleteAccount,
+            Self::ManagePasskeys => ReauthAction::ManagePasskeys,
         }
     }
 
@@ -319,9 +323,10 @@ impl OwnedAction {
                 token_id: Some(*token_id),
                 ..OidcActionTarget::default()
             },
-            Self::ChangePassword | Self::CreateApiToken | Self::DeleteAccount => {
-                OidcActionTarget::default()
-            }
+            Self::ChangePassword
+            | Self::CreateApiToken
+            | Self::DeleteAccount
+            | Self::ManagePasskeys => OidcActionTarget::default(),
         }
     }
 }
@@ -330,7 +335,7 @@ fn boxed_validation_error(field: &'static str, message: &'static str) -> Box<Res
     Box::new(validation_error(field, message))
 }
 
-fn parse_action(
+pub(super) fn parse_action(
     action: ActionName,
     target: Option<ActionTargetRequest>,
     actor_user_id: i64,
@@ -418,6 +423,10 @@ fn parse_action(
         ActionName::DeleteAccount => {
             none_target(target)?;
             Ok(OwnedAction::DeleteAccount)
+        }
+        ActionName::ManagePasskeys => {
+            none_target(target)?;
+            Ok(OwnedAction::ManagePasskeys)
         }
         ActionName::RevokeApiToken => {
             let Some(target) = target else {
@@ -1170,7 +1179,8 @@ fn target_matches_reauth_action(target: &OidcActionTarget, action: ReauthAction)
         }
         ReauthAction::ChangePassword
         | ReauthAction::CreateApiToken
-        | ReauthAction::DeleteAccount => {
+        | ReauthAction::DeleteAccount
+        | ReauthAction::ManagePasskeys => {
             target.provider.is_none()
                 && target.identity_id.is_none()
                 && target.user_id.is_none()
@@ -1306,7 +1316,7 @@ async fn exchange_oidc_reauth(
     .into_response()
 }
 
-async fn authenticate(
+pub(super) async fn authenticate(
     state: &ApiV2State,
     headers: &HeaderMap,
     mutation: bool,
@@ -1328,7 +1338,7 @@ async fn authenticate(
     .map_err(|error| Box::new(stepup_error(error)))
 }
 
-async fn validate_admin_action_target(
+pub(super) async fn validate_admin_action_target(
     pool: &SqlitePool,
     actor_user_id: i64,
     action: &OwnedAction,
@@ -1535,6 +1545,7 @@ fn action_from_context(action: ReauthAction, context: &OidcFlowContext) -> Resul
         ReauthAction::ChangePassword if empty => Ok(OwnedAction::ChangePassword),
         ReauthAction::CreateApiToken if empty => Ok(OwnedAction::CreateApiToken),
         ReauthAction::DeleteAccount if empty => Ok(OwnedAction::DeleteAccount),
+        ReauthAction::ManagePasskeys if empty => Ok(OwnedAction::ManagePasskeys),
         ReauthAction::RevokeApiToken
             if target.token_id.is_some()
                 && target.provider.is_none()
@@ -1563,6 +1574,7 @@ fn reauth_action_name(action: ReauthAction) -> &'static str {
         ReauthAction::CreateApiToken => "create_api_token",
         ReauthAction::RevokeApiToken => "revoke_api_token",
         ReauthAction::DeleteAccount => "delete_account",
+        ReauthAction::ManagePasskeys => "manage_passkeys",
     }
 }
 

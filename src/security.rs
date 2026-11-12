@@ -131,6 +131,17 @@ impl TrustedHosts {
         )
     }
 
+    /// The listed DNS names (no IP addresses) with their optional ports, in a stable order.
+    pub fn domain_authorities(&self) -> Vec<(String, Option<u16>)> {
+        self.0
+            .iter()
+            .filter(|authority| {
+                !authority.host.starts_with('[') && authority.host.parse::<IpAddr>().is_err()
+            })
+            .map(|authority| (authority.host.clone(), authority.port))
+            .collect()
+    }
+
     /// Check whether a Host authority is accepted by this allowlist.
     pub fn allows_host(&self, host: &str) -> bool {
         HostAuthority::parse(host).is_ok_and(|actual| self.allows(&actual))

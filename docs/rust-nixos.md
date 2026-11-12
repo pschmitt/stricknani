@@ -47,6 +47,13 @@ the Android app. Leave it off for a private instance.
 builds that may open this instance's links (Android App Links, served as
 `/.well-known/assetlinks.json`).
 
+`passkeys.enable` (default `true`) sets `PASSKEYS_ENABLED`, and `passkeys.rpId`
+(default `null`) sets `PASSKEY_RP_ID`; see [Passkeys](install.md#passkeys). The
+same `android.appLinkFingerprints` also let the Android app use the web
+passkeys: the assetlinks file then carries `delegate_permission/common.get_login_creds`
+next to the link permission, and the Android app origin
+(`android:apk-key-hash:...`) is accepted by the passkey relying party.
+
 `sessionCookieSecure` defaults to the module's HTTPS virtual-host setting. Set
 it to `true` when HTTPS terminates at an external proxy. A non-loopback Rust
 listener also requires secure cookies and an explicit trusted-host allowlist;
