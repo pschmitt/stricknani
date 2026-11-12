@@ -64,6 +64,9 @@ interface PendingMutationDao {
     )
     suspend fun getReplayableLocalIds(entityType: String, localIds: List<Int>): List<Int>
 
+    /** Every queued mutation, conflicts included: all of it belongs to the signed-in account. */
+    @Query("SELECT COUNT(*) FROM pending_mutations") suspend fun countAll(): Int
+
     @Query("SELECT COUNT(*) FROM pending_mutations WHERE isConflict = 0")
     fun observeCount(): Flow<Int>
 

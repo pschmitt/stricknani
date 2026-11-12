@@ -63,6 +63,7 @@ constructor(
     private val syncScheduler: SyncScheduler,
     private val oidc: OidcCoordinator,
     private val passkeys: PasskeyService,
+    private val passkeyLogin: blue.anika.wolle.data.passkey.PasskeyLoginApi,
     private val deviceNames: DeviceNameProvider,
     private val tokenRenamer: DeviceTokenRenamer,
     private val localServer: LocalServer,
@@ -345,6 +346,13 @@ constructor(
         // Only persisted - and only now starts being read by the network layer's interceptors -
         // once the server has actually confirmed this token works.
         settingsRepository.save(serverUrl, apiToken)
+        // Remember who the token is, so a later "sign in again" cannot swap the account under the
+        // cache and the outbox. Best effort: without it that screen stays strict.
+        viewModelScope.launch {
+            passkeyLogin.identity(serverUrl.trim().trimEnd('/'), apiToken)?.let {
+                settingsRepository.setAccountUserId(it.userId)
+            }
+        }
         // So the first sync doesn't wait for the periodic schedule.
         syncScheduler.syncNow()
         _uiState.value = OnboardingUiState.Success

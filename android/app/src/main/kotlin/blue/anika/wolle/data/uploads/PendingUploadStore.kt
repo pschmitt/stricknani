@@ -41,6 +41,10 @@ class PendingUploadStore @Inject constructor(@ApplicationContext private val con
             )
         }
 
+    /** Picked files still waiting for their upload (they belong to the signed-in account). */
+    fun hasPending(): Boolean =
+        File(context.filesDir, UPLOAD_DIRECTORY).list()?.isNotEmpty() == true
+
     fun multipart(upload: PendingUpload): MultipartBody.Part {
         val file = File(upload.path)
         require(file.isFile) { "Pending upload is missing: ${upload.path}" }

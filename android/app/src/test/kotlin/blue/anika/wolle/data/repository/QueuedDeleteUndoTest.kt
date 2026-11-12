@@ -148,6 +148,8 @@ private class FakeOutbox : PendingMutationDao {
     override suspend fun getReplayableLocalIds(entityType: String, localIds: List<Int>) =
         getAll().filter { it.entityType == entityType && it.localId in localIds }.map { it.localId }
 
+    override suspend fun countAll() = rows.size
+
     override fun observeCount(): Flow<Int> = count
 
     override fun observeFailed(): Flow<List<PendingMutationEntity>> =

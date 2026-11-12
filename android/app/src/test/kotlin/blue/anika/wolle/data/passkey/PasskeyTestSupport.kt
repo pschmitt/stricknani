@@ -108,11 +108,14 @@ internal class FakePasskeyApi : PasskeyApi {
 /** A scriptable [PasskeyLoginApi]. */
 internal class FakeLoginApi : PasskeyLoginApi {
     var available = true
+    var identity: PasskeyIdentity? = PasskeyIdentity(1, "me@example.org")
     var error: Exception? = null
     var exchangeError: Exception? = null
     val exchanges = mutableListOf<List<Any>>()
 
     override suspend fun available(serverUrl: String) = available
+
+    override suspend fun identity(serverUrl: String, token: String) = identity
 
     override suspend fun options(serverUrl: String): ChallengeDto {
         error?.let { throw it }

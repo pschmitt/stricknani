@@ -69,6 +69,21 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         _accountEmail.value = cleaned
     }
 
+    /**
+     * Server id of the account this device's cache and outbox belong to, when it is known (set at
+     * sign-in once the server says who the token is). Null for sessions that predate it or came
+     * from a pasted token. Used to refuse a different account's sign-in over queued work.
+     */
+    private val _accountUserId =
+        MutableStateFlow(prefs.getLong(KEY_ACCOUNT_USER_ID, -1L).takeIf { it > 0 })
+    val accountUserId: StateFlow<Long?> = _accountUserId.asStateFlow()
+
+    fun setAccountUserId(id: Long?) {
+        if (id == null || id <= 0) prefs.edit().remove(KEY_ACCOUNT_USER_ID).apply()
+        else prefs.edit().putLong(KEY_ACCOUNT_USER_ID, id).apply()
+        _accountUserId.value = id?.takeIf { it > 0 }
+    }
+
     /** Last avatar path the server reported (`/media/...`), so the avatar can show offline. */
     private val _accountAvatarUrl = MutableStateFlow(prefs.getString(KEY_ACCOUNT_AVATAR, null))
     val accountAvatarUrl: StateFlow<String?> = _accountAvatarUrl.asStateFlow()
@@ -190,10 +205,12 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
             .putString(KEY_API_TOKEN, trimmedToken)
             .remove(KEY_LOCAL_MODE)
             .remove(KEY_ACCOUNT_EMAIL)
+            .remove(KEY_ACCOUNT_USER_ID)
             .remove(KEY_ACCOUNT_AVATAR)
             .putAuthInfo(expiresAt, authOrigin)
             .apply()
         _accountEmail.value = null
+        _accountUserId.value = null
         _accountAvatarUrl.value = null
         _authInfo.value = AuthInfo(expiresAt, authOrigin)
         _sessionExpired.value = false
@@ -258,6 +275,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
             .remove(KEY_PENDING_TOKEN_RENAME)
             .apply()
         _accountEmail.value = null
+        _accountUserId.value = null
         _accountAvatarUrl.value = null
         _authInfo.value = AuthInfo(null, null)
         _sessionExpired.value = false
@@ -290,6 +308,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         const val KEY_LOCAL_MODE = "local_mode"
         const val KEY_API_TOKEN = "api_token"
         const val KEY_ACCOUNT_EMAIL = "account_email"
+        const val KEY_ACCOUNT_USER_ID = "account_user_id"
         const val KEY_ACCOUNT_AVATAR = "account_avatar_url"
         const val KEY_BACKUP_PASSWORD = "scheduled_backup_password"
     }

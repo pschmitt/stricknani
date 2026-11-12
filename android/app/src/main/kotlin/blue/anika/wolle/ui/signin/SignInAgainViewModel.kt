@@ -5,14 +5,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
 import blue.anika.wolle.data.device.DeviceNameProvider
-import blue.anika.wolle.data.oidc.OidcLoginApi
 import blue.anika.wolle.data.onboarding.OnboardingError
 import blue.anika.wolle.data.onboarding.OnboardingValidationException
 import blue.anika.wolle.data.onboarding.PasswordTokenMinter
+import blue.anika.wolle.data.passkey.AccountIdentityStore
 import blue.anika.wolle.data.passkey.PasskeyFailure
 import blue.anika.wolle.data.passkey.PasskeyHost
+import blue.anika.wolle.data.passkey.PasskeyLoginApi
 import blue.anika.wolle.data.passkey.PasskeyService
-import blue.anika.wolle.data.passkey.passkeyFailure
+import blue.anika.wolle.data.passkey.PasskeySignInAgain
+import blue.anika.wolle.data.passkey.QueuedWork
+import blue.anika.wolle.data.passkey.SignInAgainOutcome
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.passkey.messageResId
@@ -58,7 +61,8 @@ constructor(
     private val deviceNames: DeviceNameProvider,
     private val syncScheduler: SyncScheduler,
     private val passkeys: PasskeyService,
-    private val oidcLogin: OidcLoginApi,
+    private val passkeyLogin: PasskeyLoginApi,
+    private val queuedWork: QueuedWork,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
     private val _state = MutableStateFlow<SignInAgainState>(SignInAgainState.Idle)
@@ -76,42 +80,53 @@ constructor(
         viewModelScope.launch { _passkeysAvailable.value = passkeys.available(serverUrl) }
     }
 
+    private val passkeyReSignIn =
+        PasskeySignInAgain(
+            passkeys,
+            passkeyLogin,
+            object : AccountIdentityStore {
+                override val userId
+                    get() = settings.accountUserId.value
+
+                override val email
+                    get() = settings.accountEmail.value
+
+                override fun remember(userId: Long, email: String) {
+                    settings.setAccountUserId(userId)
+                    settings.setAccountEmail(email)
+                }
+            },
+            queuedWork,
+        )
+
     /**
-     * Signs in again with a passkey. Like the password path, only the token is replaced. A passkey
-     * of another account than the one on this device is refused (its token is never saved), so
-     * queued writes are never replayed under a different account. A dismissed system sheet is not
-     * an error.
+     * Signs in again with a passkey. Like the password path, only the token is replaced, so the
+     * passkey must be the account the cache and queued writes belong to (see [PasskeySignInAgain]);
+     * otherwise its token is dropped. A dismissed system sheet is not an error.
      */
     fun signInWithPasskey(host: PasskeyHost) {
         if (_state.value is SignInAgainState.Working) return
         _state.value = SignInAgainState.Working
         viewModelScope.launch {
-            val result = passkeys.signIn(host, serverUrl, deviceNames.deviceName())
-            val token = result.getOrNull()
-            if (token == null) {
-                val failure = result.passkeyFailure()
-                _state.value =
-                    if (failure == null || failure == PasskeyFailure.Cancelled)
-                        SignInAgainState.Idle
-                    else SignInAgainState.Error(context.getString(failure.messageResId()))
-                return@launch
+            when (val outcome = passkeyReSignIn.run(host, serverUrl, deviceNames.deviceName())) {
+                is SignInAgainOutcome.Accepted -> {
+                    settings.replaceToken(outcome.token, expiresAt = null, authOrigin = null)
+                    syncScheduler.replayThenSyncNow()
+                    _state.value = SignInAgainState.Done
+                }
+                SignInAgainOutcome.Mismatch ->
+                    _state.value =
+                        SignInAgainState.Error(
+                            context.getString(R.string.sign_in_again_account_mismatch)
+                        )
+                is SignInAgainOutcome.Failed ->
+                    _state.value =
+                        if (outcome.failure == PasskeyFailure.Cancelled) SignInAgainState.Idle
+                        else
+                            SignInAgainState.Error(
+                                context.getString(outcome.failure.messageResId())
+                            )
             }
-            val email = oidcLogin.currentUserEmail(serverUrl, token)
-            val saved = settings.accountEmail.value
-            val sameAccount =
-                if (saved.isNullOrBlank()) true
-                else email != null && isSameAccountForSignInAgain(saved, email)
-            if (!sameAccount) {
-                _state.value =
-                    SignInAgainState.Error(
-                        context.getString(R.string.sign_in_again_account_mismatch)
-                    )
-                return@launch
-            }
-            settings.replaceToken(token, expiresAt = null, authOrigin = null)
-            email?.let { settings.setAccountEmail(it) }
-            syncScheduler.replayThenSyncNow()
-            _state.value = SignInAgainState.Done
         }
     }
 

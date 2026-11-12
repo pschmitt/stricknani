@@ -74,6 +74,13 @@ data class PasskeyTokenRequest(
 
 @Serializable data class PasskeyTokenResponse(val token: String)
 
+/** The account a token belongs to. */
+data class PasskeyIdentity(val userId: Long, val email: String)
+
+@Serializable internal data class MetaIdentityUserDto(val id: Long, val email: String)
+
+@Serializable internal data class MetaIdentityDto(val user: MetaIdentityUserDto? = null)
+
 /** `data.auth.passkeys` of `GET /api/v2/meta`. */
 @Serializable internal data class MetaPasskeyAuthDto(val passkeys: Boolean = false)
 

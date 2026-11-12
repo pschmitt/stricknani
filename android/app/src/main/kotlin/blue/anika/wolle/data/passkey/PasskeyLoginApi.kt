@@ -27,6 +27,9 @@ interface PasskeyLoginApi {
     /** `data.auth.passkeys` of an anonymous `GET /api/v2/meta`; false when unknown or older. */
     suspend fun available(serverUrl: String): Boolean
 
+    /** Who the token belongs to (`GET /api/v2/meta` with it), or null when it cannot be told. */
+    suspend fun identity(serverUrl: String, token: String): PasskeyIdentity?
+
     /**
      * A sign-in challenge. Throws [PasskeyHttpException] on a non-2xx answer, [IOException]
      * offline.
@@ -72,6 +75,34 @@ constructor(@ValidationClient private val client: OkHttpClient, private val json
                 }
             } catch (_: IOException) {
                 false
+            }
+        }
+
+    override suspend fun identity(serverUrl: String, token: String): PasskeyIdentity? =
+        withContext(Dispatchers.IO) {
+            val base = baseUrl(serverUrl) ?: return@withContext null
+            val request =
+                Request.Builder()
+                    .url(base.newBuilder().addPathSegments("api/v2/meta").build())
+                    .header("Authorization", "Bearer $token")
+                    .header("Accept", "application/json")
+                    .build()
+            try {
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) return@use null
+                    runCatching {
+                            json
+                                .decodeFromString<V2Envelope<MetaIdentityDto>>(
+                                    response.body.string()
+                                )
+                                .data
+                                .user
+                                ?.let { PasskeyIdentity(it.id, it.email) }
+                        }
+                        .getOrNull()
+                }
+            } catch (_: IOException) {
+                null
             }
         }
 
