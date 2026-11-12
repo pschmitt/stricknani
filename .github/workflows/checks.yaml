@@ -127,6 +127,9 @@ jobs:
       - name: Run web and catalog checks
         run: nix develop '.#tooling' --command just web-check web-test i18n-check
 
+      - name: Verify CI artifact handoff and retries
+        run: nix develop '.#tooling' --command node --test ci/wait-for-nix-producer.test.mjs
+
   nix-lint:
     needs: changes
     if: ${{ needs.changes.outputs.nix == 'true' }}
@@ -141,7 +144,7 @@ jobs:
     uses: pschmitt/ci-workflows/.github/workflows/lint.yaml@main
     with:
       project-directory: android
-      lint-baseline-path: ''
+      lint-baseline-path: ""
       enable-auto-fix: false
       # ktfmt runs from the root flake's `ktfmt` devShell (the shared workflow's default
       # `.#ktfmt`): the same nixpkgs binary as the pre-commit hook.
