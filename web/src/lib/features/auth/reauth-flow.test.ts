@@ -247,12 +247,12 @@ describe("passkey step-up", () => {
     expect(
       classifyReauthFailure(new ApiError("x", 400, "invalid_challenge")),
     ).toBe("invalid_passkey");
-    expect(
-      classifyReauthFailure(new PasskeyCeremonyError("cancelled")),
-    ).toBe("passkey_cancelled");
-    expect(
-      classifyReauthFailure(new PasskeyCeremonyError("unsupported")),
-    ).toBe("unavailable");
+    expect(classifyReauthFailure(new PasskeyCeremonyError("cancelled"))).toBe(
+      "passkey_cancelled",
+    );
+    expect(classifyReauthFailure(new PasskeyCeremonyError("unsupported"))).toBe(
+      "unavailable",
+    );
   });
 
   it("remembers a manage_passkeys request across a provider redirect", () => {
