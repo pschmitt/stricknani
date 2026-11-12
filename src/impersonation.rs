@@ -1,10 +1,16 @@
-//! Administrator impersonation of a user account, for the browser session only.
+//! Administrator impersonation of a user account.
 //!
-//! The session row (`api_tokens`, purpose `browser`) keeps the administrator as
-//! its owner and records the account it acts as plus an expiry. Only
-//! [`crate::auth::browser_user`] resolves that account; Bearer tokens never do.
+//! Two carriers exist. The browser: the session row (`api_tokens`, purpose
+//! `browser`) keeps the administrator as its owner and records the account it
+//! acts as plus an expiry. Only [`crate::auth::browser_user`] resolves that
+//! account; API-purpose PATs never do.
 //! Requests made while impersonating run inside [`scope`], so audit events
 //! written by the services can name the acting administrator.
+//!
+//! The native app: a short-lived `sni_` bearer credential in
+//! `impersonation_tokens`, bound to (target account, administrator) and
+//! resolved by [`crate::auth`] only on the bearer path. The same request
+//! restrictions and audit scope apply as for the browser.
 
 use std::future::Future;
 
@@ -176,6 +182,34 @@ async fn audit(
     Ok(())
 }
 
+/// The administrator is an active administrator and the target an active,
+/// different, non-administrator account.
+async fn validate_pair(
+    conn: &mut sqlx::SqliteConnection,
+    admin_id: i64,
+    target_id: i64,
+) -> Result<(), ImpersonationError> {
+    let is_admin: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM users WHERE id = ? AND active = 1 AND is_admin = 1)",
+    )
+    .bind(admin_id)
+    .fetch_one(&mut *conn)
+    .await?;
+    if !is_admin {
+        return Err(ImpersonationError::Forbidden);
+    }
+    let target =
+        sqlx::query_as::<_, (bool, bool)>("SELECT active, is_admin FROM users WHERE id = ?")
+            .bind(target_id)
+            .fetch_optional(&mut *conn)
+            .await?
+            .ok_or(ImpersonationError::NotFound)?;
+    if target_id == admin_id || !target.0 || target.1 {
+        return Err(ImpersonationError::InvalidTarget);
+    }
+    Ok(())
+}
+
 /// Start acting as `target_id` on the administrator's browser session.
 pub(crate) async fn start(
     pool: &SqlitePool,
@@ -184,24 +218,7 @@ pub(crate) async fn start(
     target_id: i64,
 ) -> Result<ImpersonationInfo, ImpersonationError> {
     let mut tx = crate::db::begin_write(pool).await?;
-    let is_admin: bool = sqlx::query_scalar(
-        "SELECT EXISTS(SELECT 1 FROM users WHERE id = ? AND active = 1 AND is_admin = 1)",
-    )
-    .bind(admin_id)
-    .fetch_one(&mut *tx)
-    .await?;
-    if !is_admin {
-        return Err(ImpersonationError::Forbidden);
-    }
-    let target =
-        sqlx::query_as::<_, (bool, bool)>("SELECT active, is_admin FROM users WHERE id = ?")
-            .bind(target_id)
-            .fetch_optional(&mut *tx)
-            .await?
-            .ok_or(ImpersonationError::NotFound)?;
-    if target_id == admin_id || !target.0 || target.1 {
-        return Err(ImpersonationError::InvalidTarget);
-    }
+    validate_pair(&mut tx, admin_id, target_id).await?;
     let expires_at = chrono::Utc::now().timestamp() + IMPERSONATION_SECONDS;
     let updated = sqlx::query(
         "UPDATE api_tokens SET impersonated_user_id = ?, impersonation_expires_at = ? \
@@ -259,6 +276,217 @@ pub(crate) async fn stop(pool: &SqlitePool, raw_token: &str) -> Result<bool, sql
     }
 }
 
+/// Prefix of a native impersonation credential. It differs from the `sna_` PAT
+/// prefix so the request guard only looks a bearer up when it can be one.
+pub(crate) const NATIVE_TOKEN_PREFIX: &str = "sni_";
+
+/// A freshly started native impersonation. The raw token is shown once.
+pub(crate) struct NativeStarted {
+    pub(crate) token: String,
+    pub(crate) info: ImpersonationInfo,
+}
+
+/// Whether a raw bearer value can be a native impersonation credential.
+pub(crate) fn is_native_token(raw_token: &str) -> bool {
+    raw_token.starts_with(NATIVE_TOKEN_PREFIX)
+}
+
+/// A native credential row: `live` means not revoked, not expired, and the
+/// administrator is still an active administrator and the target still an
+/// active non-administrator.
+struct NativeRecorded {
+    id: i64,
+    admin_id: i64,
+    target_id: i64,
+    revoked: bool,
+    live: bool,
+}
+
+async fn native_recorded(
+    pool: &SqlitePool,
+    raw_token: &str,
+) -> Result<Option<NativeRecorded>, sqlx::Error> {
+    let row = sqlx::query_as::<_, (i64, i64, i64, bool, bool)>(
+        "SELECT t.id, t.admin_user_id, t.target_user_id, t.revoked_at IS NOT NULL, \
+                (t.revoked_at IS NULL AND t.expires_at > unixepoch() \
+                 AND target.active = 1 AND target.is_admin = 0 \
+                 AND admin.active = 1 AND admin.is_admin = 1) \
+         FROM impersonation_tokens t \
+         JOIN users target ON target.id = t.target_user_id \
+         JOIN users admin ON admin.id = t.admin_user_id \
+         WHERE t.token_hash = ?",
+    )
+    .bind(auth::token_hash(raw_token.as_bytes()))
+    .fetch_optional(pool)
+    .await?;
+    Ok(
+        row.map(|(id, admin_id, target_id, revoked, live)| NativeRecorded {
+            id,
+            admin_id,
+            target_id,
+            revoked,
+            live,
+        }),
+    )
+}
+
+/// The target account a live native credential acts as. Used by
+/// [`crate::auth`] for bearer requests; the target's own error-reporting
+/// preference applies, as for a browser impersonation.
+pub(crate) async fn native_target(
+    pool: &SqlitePool,
+    raw_token: &str,
+) -> Result<Option<(i64, i64)>, sqlx::Error> {
+    sqlx::query_as::<_, (i64, i64)>(
+        "SELECT target.id, target.error_reporting \
+         FROM impersonation_tokens t \
+         JOIN users target ON target.id = t.target_user_id \
+         JOIN users admin ON admin.id = t.admin_user_id \
+         WHERE t.token_hash = ? AND t.revoked_at IS NULL AND t.expires_at > unixepoch() \
+           AND target.active = 1 AND target.is_admin = 0 \
+           AND admin.active = 1 AND admin.is_admin = 1",
+    )
+    .bind(auth::token_hash(raw_token.as_bytes()))
+    .fetch_optional(pool)
+    .await
+}
+
+async fn native_info(
+    pool: &SqlitePool,
+    admin_id: i64,
+    target_id: i64,
+    expires_at: i64,
+) -> Result<ImpersonationInfo, ImpersonationError> {
+    let emails =
+        sqlx::query_as::<_, (i64, String)>("SELECT id, email FROM users WHERE id IN (?, ?)")
+            .bind(admin_id)
+            .bind(target_id)
+            .fetch_all(pool)
+            .await?;
+    let email = |id: i64| {
+        emails
+            .iter()
+            .find(|(user, _)| *user == id)
+            .map(|(_, email)| email.clone())
+    };
+    let (Some(admin_email), Some(user_email)) = (email(admin_id), email(target_id)) else {
+        return Err(ImpersonationError::Database);
+    };
+    Ok(ImpersonationInfo {
+        user: ImpersonatedUser {
+            id: target_id,
+            name: display_name(&user_email),
+            email: user_email,
+        },
+        admin: ImpersonatingAdmin {
+            id: admin_id,
+            email: admin_email,
+        },
+        expires_at,
+    })
+}
+
+/// Revoke one native credential and log it, exactly once however many stops
+/// and expiry checks race. Returns whether this call ended it.
+async fn native_end(
+    pool: &SqlitePool,
+    id: i64,
+    admin_id: i64,
+    target_id: i64,
+) -> Result<bool, sqlx::Error> {
+    let mut tx = crate::db::begin_write(pool).await?;
+    let updated = sqlx::query(
+        "UPDATE impersonation_tokens SET revoked_at = unixepoch() \
+         WHERE id = ? AND revoked_at IS NULL",
+    )
+    .bind(id)
+    .execute(&mut *tx)
+    .await?
+    .rows_affected();
+    if updated == 1 {
+        audit(&mut tx, "impersonation_stopped", admin_id, target_id).await?;
+    }
+    tx.commit().await?;
+    Ok(updated == 1)
+}
+
+/// Issue a native impersonation credential for `target_id`. The caller has
+/// authenticated `admin_id` with an API-purpose PAT. Only one native
+/// impersonation runs per administrator: starting another ends the previous.
+pub(crate) async fn start_native(
+    pool: &SqlitePool,
+    admin_id: i64,
+    target_id: i64,
+) -> Result<NativeStarted, ImpersonationError> {
+    let token = format!(
+        "{NATIVE_TOKEN_PREFIX}{}",
+        auth::generate_token()
+            .map_err(|()| ImpersonationError::Database)?
+            .trim_start_matches("sna_")
+    );
+    let mut tx = crate::db::begin_write(pool).await?;
+    validate_pair(&mut tx, admin_id, target_id).await?;
+    let previous = sqlx::query_as::<_, (i64, i64)>(
+        "SELECT id, target_user_id FROM impersonation_tokens \
+         WHERE admin_user_id = ? AND revoked_at IS NULL",
+    )
+    .bind(admin_id)
+    .fetch_all(&mut *tx)
+    .await?;
+    for (id, previous_target) in previous {
+        sqlx::query("UPDATE impersonation_tokens SET revoked_at = unixepoch() WHERE id = ?")
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
+        audit(&mut tx, "impersonation_stopped", admin_id, previous_target).await?;
+    }
+    let expires_at = chrono::Utc::now().timestamp() + IMPERSONATION_SECONDS;
+    sqlx::query(
+        "INSERT INTO impersonation_tokens \
+         (token_hash, admin_user_id, target_user_id, created_at, expires_at) \
+         VALUES (?, ?, ?, unixepoch(), ?)",
+    )
+    .bind(auth::token_hash(token.as_bytes()))
+    .bind(admin_id)
+    .bind(target_id)
+    .bind(expires_at)
+    .execute(&mut *tx)
+    .await?;
+    audit(&mut tx, "impersonation_started", admin_id, target_id).await?;
+    tx.commit().await?;
+    let info = native_info(pool, admin_id, target_id, expires_at).await?;
+    Ok(NativeStarted { token, info })
+}
+
+/// End the native impersonation carried by `raw_token`. Idempotent: returns
+/// whether this call ended one. An unknown token is `NotFound`.
+pub(crate) async fn stop_native(
+    pool: &SqlitePool,
+    raw_token: &str,
+) -> Result<bool, ImpersonationError> {
+    let recorded = native_recorded(pool, raw_token)
+        .await?
+        .ok_or(ImpersonationError::NotFound)?;
+    Ok(native_end(pool, recorded.id, recorded.admin_id, recorded.target_id).await?)
+}
+
+/// End every native impersonation of `admin_id`: the administrator's own way
+/// out when the app lost its credential.
+pub(crate) async fn stop_all_native(pool: &SqlitePool, admin_id: i64) -> Result<bool, sqlx::Error> {
+    let rows = sqlx::query_as::<_, (i64, i64)>(
+        "SELECT id, target_user_id FROM impersonation_tokens \
+         WHERE admin_user_id = ? AND revoked_at IS NULL",
+    )
+    .bind(admin_id)
+    .fetch_all(pool)
+    .await?;
+    let mut ended = false;
+    for (id, target_id) in rows {
+        ended |= native_end(pool, id, admin_id, target_id).await?;
+    }
+    Ok(ended)
+}
+
 /// Whether an impersonating session may not make this request. Resource routes
 /// (projects, yarns, media, reading the account) stay open; administration and
 /// everything that changes how the account signs in or leaves with its data
@@ -296,15 +524,19 @@ fn internal_error() -> Response {
     )
 }
 
-/// Request guard for browser sessions: ends an impersonation that has expired,
+/// Request guard for browser sessions and native impersonation credentials: ends an impersonation that has expired,
 /// refuses account-security and administration requests while one is active,
 /// and records the acting administrator for audit events written meanwhile.
-/// Bearer requests are not touched: they never impersonate.
+/// Other Bearer requests (API-purpose PATs) are not touched: they never
+/// impersonate.
 pub(crate) async fn guard(
     State(state): State<AppState>,
     request: Request<Body>,
     next: Next,
 ) -> Response {
+    if let Some(raw_token) = native_token(request.headers()) {
+        return native_guard(&state, &raw_token, request, next).await;
+    }
     let Some(raw_token) = browser_token(request.headers(), state.secure_cookies) else {
         return next.run(request).await;
     };
@@ -327,6 +559,66 @@ pub(crate) async fn guard(
             );
         }
         return next.run(request).await;
+    }
+    if forbidden_while_impersonating(request.method(), request.uri().path()) {
+        return error(
+            StatusCode::FORBIDDEN,
+            "impersonation_forbidden",
+            "This is not available while impersonating",
+        );
+    }
+    scope(recorded.admin_id, next.run(request)).await
+}
+
+/// The native impersonation credential of a request, if it carries exactly one
+/// Authorization header holding a `sni_` bearer token.
+fn native_token(headers: &HeaderMap) -> Option<String> {
+    let mut values = headers.get_all(header::AUTHORIZATION).iter();
+    let value = values.next()?;
+    if values.next().is_some() {
+        return None;
+    }
+    let token = crate::auth_stepup_service::parse_bearer(value.to_str().ok()?)?;
+    is_native_token(token).then(|| token.to_owned())
+}
+
+/// The guard for a native credential: same restrictions and audit scope as a
+/// browser impersonation. A credential that is no longer good (expired,
+/// stopped, administrator demoted, target disabled) ends here and is logged once.
+async fn native_guard(
+    state: &AppState,
+    raw_token: &str,
+    request: Request<Body>,
+    next: Next,
+) -> Response {
+    let recorded = match native_recorded(&state.pool, raw_token).await {
+        Ok(Some(recorded)) => recorded,
+        // Unknown: the normal bearer authentication rejects it.
+        Ok(None) => return next.run(request).await,
+        Err(_) => return internal_error(),
+    };
+    let is_stop = request.uri().path().ends_with("/admin/impersonation/stop");
+    if !recorded.live {
+        if is_stop {
+            return next.run(request).await;
+        }
+        if !recorded.revoked
+            && native_end(
+                &state.pool,
+                recorded.id,
+                recorded.admin_id,
+                recorded.target_id,
+            )
+            .await
+            .is_err()
+        {
+            return internal_error();
+        }
+        return error(
+            StatusCode::UNAUTHORIZED,
+            "impersonation_expired",
+            "Impersonation has ended",
+        );
     }
     if forbidden_while_impersonating(request.method(), request.uri().path()) {
         return error(

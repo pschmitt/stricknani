@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import blue.anika.wolle.data.account.AccountV2Api
 import blue.anika.wolle.data.account.DetailCardOrderDto
 import blue.anika.wolle.data.account.UpdateAccountRequest
+import blue.anika.wolle.data.impersonation.SessionMode
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
@@ -161,6 +162,10 @@ constructor(
     val yarnOrder = orderFlow(DetailCardDomain.YARN)
 
     suspend fun setOrder(domain: DetailCardDomain, order: List<String>) {
+        // The order is the signed-in account's setting, cached in DataStore shared with the
+        // administrator's own account: an impersonation neither reads it from nor writes it to the
+        // server, so a change could otherwise be pushed to the wrong account afterwards.
+        if (SessionMode.impersonating) return
         syncMutex.withLock { adoptLocalOrdersOnce() }
         dataStore.edit { preferences ->
             preferences[key(domain)] = DetailCardOrderSync.encode(order)
@@ -170,6 +175,7 @@ constructor(
     }
 
     suspend fun reset(domain: DetailCardDomain) {
+        if (SessionMode.impersonating) return
         syncMutex.withLock { adoptLocalOrdersOnce() }
         dataStore.edit { preferences ->
             preferences.remove(key(domain))
@@ -180,6 +186,7 @@ constructor(
 
     /** Pushes pending changes, then adopts the server's order for every other page. */
     suspend fun sync() {
+        if (SessionMode.impersonating) return
         syncMutex.withLock {
             adoptLocalOrdersOnce()
             pushPendingLocked()

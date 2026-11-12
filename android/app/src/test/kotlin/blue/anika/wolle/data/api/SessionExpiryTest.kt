@@ -23,6 +23,16 @@ class SessionExpiryTest {
     }
 
     @Test
+    fun `an ended impersonation credential is a rejected token`() {
+        assertTrue(
+            isRejectedTokenResponse(
+                "/api/v2/projects",
+                """{"error":{"code":"impersonation_expired","message":"Impersonation has ended"}}""",
+            )
+        )
+    }
+
+    @Test
     fun `a wrong password proof is not`() {
         assertFalse(
             isRejectedTokenResponse(

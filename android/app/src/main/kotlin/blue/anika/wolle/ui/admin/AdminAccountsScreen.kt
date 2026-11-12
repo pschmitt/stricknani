@@ -64,7 +64,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -85,7 +84,6 @@ import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.YarnLoader
-import blue.anika.wolle.ui.common.rememberDangerousActionGuard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,8 +102,7 @@ fun AdminAccountsScreen(
     var toReset by remember { mutableStateOf<AdminUserDto?>(null) }
     var resetResult by remember { mutableStateOf<Pair<AdminUserDto, String>?>(null) }
     var showAdd by rememberSaveable { mutableStateOf(false) }
-    val uriHandler = LocalUriHandler.current
-    val guard = rememberDangerousActionGuard()
+    var toImpersonate by remember { mutableStateOf<AdminUserDto?>(null) }
 
     Scaffold(
         topBar = {
@@ -199,19 +196,12 @@ fun AdminAccountsScreen(
                                             viewModel.clearForm()
                                             toReset = user
                                         },
-                                        // The web app does the impersonating (the native
-                                        // session never becomes another account): hidden where
-                                        // the web hides it.
+                                        // Same entries as the web; the app switches into an
+                                        // impersonation session itself (restarts as that account).
                                         onImpersonate =
-                                            viewModel.impersonationLink(user)?.let { url ->
-                                                {
-                                                    guard.confirm(
-                                                        R.string.unlock_reason_impersonate
-                                                    ) {
-                                                        runCatching { uriHandler.openUri(url) }
-                                                    }
-                                                }
-                                            },
+                                            if (viewModel.canImpersonateUser(user)) {
+                                                { toImpersonate = user }
+                                            } else null,
                                     )
                                 }
                             }
@@ -262,6 +252,30 @@ fun AdminAccountsScreen(
             },
             dismissButton = {
                 TextButton(onClick = { toToggle = null }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
+            },
+        )
+    }
+
+    toImpersonate?.let { user ->
+        AlertDialog(
+            onDismissRequest = { toImpersonate = null },
+            title = { Text(stringResource(R.string.admin_accounts_impersonate_title)) },
+            text = { Text(stringResource(R.string.admin_accounts_impersonate_text, user.email)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        toImpersonate = null
+                        viewModel.impersonate(user)
+                    },
+                    modifier = Modifier.testTag("admin-impersonate-confirm"),
+                ) {
+                    Text(stringResource(R.string.admin_accounts_impersonate))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { toImpersonate = null }) {
                     Text(stringResource(R.string.common_cancel))
                 }
             },

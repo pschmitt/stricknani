@@ -3013,6 +3013,48 @@ web (`web/src/lib/features/trash`).
 - [x] Trash rows show the item's cover or picture (`thumbnail_url`), an icon for categories, steps
       and attachments.
 
+## SNA-112: Native admin impersonation (Impersonate inside the app)
+
+Status: **done** (server and Android implemented and unit tested; the process restart and the banner
+layout are not verified on a device yet, see "Open").
+
+Admin, Accounts, Impersonate (the row menu, after the web's "Act as {email}?" confirmation) switches
+the app into an impersonation session instead of opening the browser. Server:
+`POST /api/v2/admin/users/{id}/impersonation-token` (administrator's API-purpose PAT only) returns a
+one-hour `sni_` credential bound to (target, administrator) and
+`POST /api/v2/admin/impersonation/stop` revokes it (see `src/impersonation.rs`, migration 0036).
+
+Design:
+
+- The identity of the app is fixed per process. Starting and stopping both end with a process
+  restart (`ProcessRestartActivity` in the `:restart` process), so the credential, the Room file and
+  the queue of picked uploads switch together and nothing in memory survives from the other identity.
+  `SettingsRepository` reads the stored impersonation once at construction and overlays the
+  credential; later writes only matter for the next process.
+- Isolation: an impersonation uses its own Room file (`stricknani-impersonation.db`) and upload
+  directory (`pending-uploads-impersonation`, `SessionNamespace`). The administrator's cache, tombstones,
+  sync cursors and queue of offline writes stay in `stricknani.db` and are not opened, so a queued
+  write can never be replayed under the other identity. The impersonation's files are deleted on Stop
+  and on the next normal start (also after a crash).
+- Online-only: while impersonating, the queue refuses a write without a validated connection
+  (`OnlineOnlyPendingMutationDao`; the local change rolls back with the transaction and the screens
+  show their usual offline failure). With a connection the normal write path works and replays at
+  once under the impersonation's credential. Anything still queued when the session ends is deleted
+  with its database.
+- The server refuses the same requests as for the web's impersonation (administration, account
+  security, tokens, identities, push subscription, export/import, delete account) with
+  `impersonation_forbidden`; every action is audited with `impersonated_by_user_id`.
+- Banner: `ImpersonationBanner` above the navigation graph on every screen with the web's wording
+  ("You are acting as {email}", "Everything you do is recorded as done by them and logged.", "Stop
+  impersonating", en and de). Stop (and the expiry, or a rejected credential) returns to the
+  administrator's account list.
+- No notifications about the impersonated account (sync changes, timers, imports) and no scheduled
+  backup run while impersonating; push is not registered (`/push/subscription` is refused).
+
+Open: verify the restart and the banner insets on a device (Compose and process restarts are not
+covered by the unit tests).
+
+
 ## SNA-111: Photo reorder grid auto-scroll (web parity)
 
 The web reorder grid scrolls the page while a lifted photo is held near the top or bottom edge

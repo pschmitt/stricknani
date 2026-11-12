@@ -73,6 +73,30 @@ data class ResetPasswordDataDto(
 
 @Serializable data class ResetPasswordEnvelopeDto(val data: ResetPasswordDataDto)
 
+/** `ImpersonatedUser` in `impersonation.rs`. */
+@Serializable data class ImpersonatedUserDto(val id: Long, val email: String, val name: String)
+
+/** `ImpersonatingAdmin` in `impersonation.rs`. */
+@Serializable data class ImpersonatingAdminDto(val id: Long, val email: String)
+
+/**
+ * `POST /api/v2/admin/users/{id}/impersonation-token`: the short-lived `sni_` credential (shown
+ * once) plus who acts as whom. [expiresAt] is epoch seconds.
+ */
+@Serializable
+data class ImpersonationStartDto(
+    val token: String,
+    val user: ImpersonatedUserDto,
+    val admin: ImpersonatingAdminDto,
+    @SerialName("expires_at") val expiresAt: Long,
+)
+
+@Serializable data class ImpersonationStartEnvelopeDto(val data: ImpersonationStartDto)
+
+@Serializable data class ImpersonationStopDto(val stopped: Boolean = false)
+
+@Serializable data class ImpersonationStopEnvelopeDto(val data: ImpersonationStopDto)
+
 /** `AuditResource` in `audit_service.rs`: what the event was about, resolved by the server. */
 @Serializable
 data class AuditResourceDto(

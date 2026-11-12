@@ -1055,6 +1055,12 @@
     <string name="admin_accounts_badge_active">Aktiv</string>
     <string name="admin_accounts_badge_you">Du</string>
     <string name="admin_accounts_impersonate">Identität übernehmen</string>
+    <string name="impersonation_banner_title">Du handelst als %1$s</string>
+    <string name="impersonation_banner_notice">Alles, was du tust, wird als von dieser Person getan aufgezeichnet und protokolliert.</string>
+    <string name="impersonation_banner_stop">Identitätswechsel beenden</string>
+    <string name="admin_accounts_impersonate_title">Die Identität dieses Kontos übernehmen?</string>
+    <string name="admin_accounts_impersonate_text">Als %1$s handeln? Alles, was du tust, wird als von dieser Person getan aufgezeichnet und protokolliert.</string>
+    <string name="admin_accounts_impersonate_failed">Der Identitätswechsel konnte nicht gestartet werden.</string>
     <string name="admin_accounts_badge_disabled">Deaktiviert</string>
     <string name="admin_accounts_menu">Mehr für %1$s</string>
     <string name="admin_accounts_disable">Konto deaktivieren</string>

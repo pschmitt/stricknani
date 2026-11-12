@@ -1056,6 +1056,12 @@
     <string name="admin_accounts_badge_active">Active</string>
     <string name="admin_accounts_badge_you">You</string>
     <string name="admin_accounts_impersonate">Impersonate</string>
+    <string name="impersonation_banner_title">You are acting as %1$s</string>
+    <string name="impersonation_banner_notice">Everything you do is recorded as done by them and logged.</string>
+    <string name="impersonation_banner_stop">Stop impersonating</string>
+    <string name="admin_accounts_impersonate_title">Impersonate this account?</string>
+    <string name="admin_accounts_impersonate_text">Act as %1$s? Everything you do is recorded as done by them and logged.</string>
+    <string name="admin_accounts_impersonate_failed">Impersonation could not be started.</string>
     <string name="admin_accounts_badge_disabled">Disabled</string>
     <string name="admin_accounts_menu">More for %1$s</string>
     <string name="admin_accounts_disable">Disable account</string>

@@ -2,6 +2,7 @@ package blue.anika.wolle.data.account
 
 import blue.anika.wolle.data.device.DeviceNameProvider
 import blue.anika.wolle.data.device.deviceTokenName
+import blue.anika.wolle.data.impersonation.SessionMode
 import blue.anika.wolle.data.settings.SettingsRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -39,7 +40,8 @@ internal constructor(
     ) : this(
         api,
         { deviceNames.deviceName() },
-        { settings.pendingTokenRename },
+        // The renaming belongs to the administrator's own token, not to an impersonation.
+        { settings.pendingTokenRename && !SessionMode.impersonating },
         { settings.pendingTokenRename = it },
     )
 
