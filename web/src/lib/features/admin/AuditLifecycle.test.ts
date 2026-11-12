@@ -25,6 +25,7 @@ const event = (patch: Partial<AuditEvent> = {}): AuditEvent => ({
   impersonated_by: null,
   system: false,
   subject: null,
+  client: { kind: "unknown", version: null, label: null, user_agent: null },
   resource: {
     kind: "project",
     id: 3,

@@ -193,6 +193,33 @@ pub(crate) struct AuditEvent {
     /// No account caused this event: the automatic purge of the trash.
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub(crate) system: bool,
+    /// The client that caused the event. Administrator audit reads only: the
+    /// per-resource history never sets it, so it is absent from those responses.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) client: Option<AuditClient>,
+}
+
+/// Client of the request behind an event. `kind` is `web`, `android`, `api`,
+/// `system` (no request) or `unknown` (written before clients were recorded).
+#[derive(Clone, Debug, Serialize)]
+pub(crate) struct AuditClient {
+    pub(crate) kind: String,
+    pub(crate) version: Option<String>,
+    pub(crate) label: Option<String>,
+    pub(crate) user_agent: Option<String>,
+}
+
+fn audit_client(row: &sqlx::sqlite::SqliteRow) -> AuditClient {
+    let kind = row
+        .get::<Option<String>, _>("client_kind")
+        .filter(|kind| crate::client_info::ClientKind::parse(kind).is_some())
+        .unwrap_or_else(|| "unknown".to_owned());
+    AuditClient {
+        kind,
+        version: row.get("client_version"),
+        label: row.get("client_label"),
+        user_agent: row.get("client_user_agent"),
+    }
 }
 
 /// An administrator who acted as another account. The email is only given to
@@ -265,6 +292,7 @@ macro_rules! resource_event_columns {
         e.subject_user_id, e.subject_role, \
         (SELECT email FROM users WHERE id = e.subject_user_id) AS subject_email, \
         e.impersonated_by_user_id, \
+        e.client_kind, e.client_version, e.client_label, e.client_user_agent, \
         (SELECT email FROM users WHERE id = e.impersonated_by_user_id) AS impersonator_email, \
         CASE WHEN length(e.safe_changes) <= 262144 THEN e.safe_changes END AS safe_changes, \
         CASE WHEN length(e.details) <= 262144 THEN e.details END AS details, \
@@ -1280,6 +1308,7 @@ fn make_event(
         has_changes,
         media,
         media_thumbnails: None,
+        client: matches!(audience, AuditAudience::Administrator).then(|| audit_client(row)),
         impersonated_by: row
             .get::<Option<i64>, _>("impersonated_by_user_id")
             .map(|id| {

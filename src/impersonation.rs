@@ -153,18 +153,24 @@ async fn audit(
     admin_id: i64,
     target_id: i64,
 ) -> Result<(), sqlx::Error> {
+    let client = crate::client_info::current();
     sqlx::query(
         "INSERT INTO audit_events \
          (actor_user_id, entity_type, entity_id, action, created_at, \
-          resource_name_snapshot, subject_user_id) \
+          resource_name_snapshot, subject_user_id, \
+          client_kind, client_version, client_label, client_user_agent) \
          VALUES (?, 'user', ?, ?, strftime('%Y-%m-%dT%H:%M:%f000Z', 'now'), \
-                 (SELECT email FROM users WHERE id = ?), ?)",
+                 (SELECT email FROM users WHERE id = ?), ?, ?, ?, ?, ?)",
     )
     .bind(admin_id)
     .bind(target_id)
     .bind(action)
     .bind(target_id)
     .bind(target_id)
+    .bind(client.kind.as_str())
+    .bind(client.version)
+    .bind(client.label)
+    .bind(client.user_agent)
     .execute(conn)
     .await?;
     Ok(())

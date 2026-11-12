@@ -607,11 +607,13 @@ pub(crate) async fn record_sharing(
         .bind(target_id)
         .fetch_optional(&mut *conn)
         .await?;
+    let client = crate::client_info::current();
     sqlx::query(
         "INSERT INTO audit_events \
          (actor_user_id, entity_type, entity_id, action, created_at, \
-          resource_name_snapshot, subject_user_id, subject_role, impersonated_by_user_id) \
-         VALUES (?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%f000Z', 'now'), ?, ?, ?, ?)",
+          resource_name_snapshot, subject_user_id, subject_role, impersonated_by_user_id, \
+          client_kind, client_version, client_label, client_user_agent) \
+         VALUES (?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%f000Z', 'now'), ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(actor_id)
     .bind(entity.as_str())
@@ -621,6 +623,10 @@ pub(crate) async fn record_sharing(
     .bind(subject.user_id)
     .bind(subject.role)
     .bind(crate::impersonation::current_impersonator())
+    .bind(client.kind.as_str())
+    .bind(client.version)
+    .bind(client.label)
+    .bind(client.user_agent)
     .execute(conn)
     .await?;
     Ok(())
@@ -725,12 +731,15 @@ async fn record_event(
         }
         None => (None, None),
     };
+    let client = crate::client_info::current();
     sqlx::query(
         "INSERT INTO audit_events \
          (actor_user_id, entity_type, entity_id, action, created_at, \
           resource_name_snapshot, change_version, safe_changes, \
-          media_kind, media_public_id, media_name, impersonated_by_user_id) \
-         VALUES (?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%f000Z', 'now'), ?, ?, ?, ?, ?, ?, ?)",
+          media_kind, media_public_id, media_name, impersonated_by_user_id, \
+          client_kind, client_version, client_label, client_user_agent) \
+         VALUES (?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%f000Z', 'now'), ?, ?, ?, ?, ?, ?, ?, \
+                 ?, ?, ?, ?)",
     )
     .bind(actor_id)
     .bind(entity.as_str())
@@ -743,6 +752,10 @@ async fn record_event(
     .bind(media.map(|media| media.public_id))
     .bind(media.and_then(|media| media.name.as_deref()))
     .bind(crate::impersonation::current_impersonator())
+    .bind(client.kind.as_str())
+    .bind(client.version)
+    .bind(client.label)
+    .bind(client.user_agent)
     .execute(&mut **tx)
     .await?;
     Ok(())

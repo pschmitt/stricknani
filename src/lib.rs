@@ -11,6 +11,7 @@ pub(crate) mod audit_service;
 pub mod auth;
 pub(crate) mod auth_stepup_service;
 pub mod categories;
+pub(crate) mod client_info;
 pub mod config;
 pub mod db;
 pub(crate) mod detail_order;
@@ -200,6 +201,8 @@ fn app_with_services_and_web_root(
             ai,
         ))
         .merge(core)
+        // Audit events record which client caused them (administrators only).
+        .layer(axum::middleware::from_fn(client_info::record_client))
         .layer(axum::middleware::from_fn(security::security_headers))
 }
 
