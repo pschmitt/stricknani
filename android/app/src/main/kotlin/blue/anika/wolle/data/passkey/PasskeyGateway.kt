@@ -36,7 +36,9 @@ fun interface PasskeyHost {
     fun activityContext(): Context
 }
 
-/** Credential Manager passkeys need Android 9 (API 28) with Google Play services below Android 14. */
+/**
+ * Credential Manager passkeys need Android 9 (API 28) with Google Play services below Android 14.
+ */
 private const val PASSKEY_MIN_SDK = 28
 
 /** The result of one Credential Manager call. */

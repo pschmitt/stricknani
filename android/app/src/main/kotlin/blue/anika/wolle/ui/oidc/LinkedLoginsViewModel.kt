@@ -143,7 +143,8 @@ constructor(
     fun confirmWithProvider() = stepUp.useProvider()
 
     /** Confirms with one of the account's passkeys (offered by the sheet when it has one). */
-    fun confirmWithPasskey(host: blue.anika.wolle.data.passkey.PasskeyHost) = stepUp.usePasskey(host)
+    fun confirmWithPasskey(host: blue.anika.wolle.data.passkey.PasskeyHost) =
+        stepUp.usePasskey(host)
 
     // ---- internals -------------------------------------------------------------------------
 

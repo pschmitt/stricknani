@@ -1,8 +1,8 @@
 package blue.anika.wolle.data.oidc
 
 import blue.anika.wolle.data.device.DeviceNameProvider
-import blue.anika.wolle.data.passkey.PasskeyService
 import blue.anika.wolle.data.device.deviceTokenName
+import blue.anika.wolle.data.passkey.PasskeyService
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.sync.SyncScheduler
 import java.io.IOException
