@@ -1,5 +1,6 @@
 package blue.anika.wolle.ui.admin
 
+import blue.anika.wolle.ui.common.rememberDangerousActionGuard
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -103,6 +104,7 @@ fun AdminAccountsScreen(
     var resetResult by remember { mutableStateOf<Pair<AdminUserDto, String>?>(null) }
     var showAdd by rememberSaveable { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
+    val guard = rememberDangerousActionGuard()
 
     Scaffold(
         topBar = {
@@ -200,7 +202,11 @@ fun AdminAccountsScreen(
                                         // the web hides it.
                                         onImpersonate =
                                             viewModel.impersonationLink(user)?.let { url ->
-                                                { runCatching { uriHandler.openUri(url) } }
+                                                {
+                                                    guard.confirm(R.string.unlock_reason_impersonate) {
+                                                        runCatching { uriHandler.openUri(url) }
+                                                    }
+                                                }
                                             },
                                     )
                                 }

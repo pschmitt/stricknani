@@ -1,5 +1,6 @@
 package blue.anika.wolle.ui.trash
 
+import blue.anika.wolle.ui.common.DangerousActionGuard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
@@ -67,6 +68,7 @@ constructor(
     private val feedback: MutationFeedback,
     private val mediaUrlResolver: MediaUrlResolver,
     capabilities: ApiCapabilities,
+    private val guard: DangerousActionGuard,
 ) : ViewModel() {
     /** The signed-in user's id; null while unknown (a legacy server). */
     val currentUserId: StateFlow<Long?> =
@@ -169,7 +171,11 @@ constructor(
         }
     }
 
-    fun purge(item: TrashItemDto) {
+    /** Permanent deletion: after the dialog, behind the device unlock. */
+    fun purge(item: TrashItemDto) =
+        guard.confirm(R.string.unlock_reason_purge) { purgeConfirmed(item) }
+
+    private fun purgeConfirmed(item: TrashItemDto) {
         if (_state.value.busy != null) return
         _state.update { it.copy(busy = TrashRef(item.kind, item.id)) }
         viewModelScope.launch {

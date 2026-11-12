@@ -26,6 +26,7 @@ import blue.anika.wolle.data.oidc.PendingOidcFlow
 import blue.anika.wolle.data.oidc.ReauthAction
 import blue.anika.wolle.data.oidc.ReauthProof
 import blue.anika.wolle.data.oidc.ReauthTarget
+import blue.anika.wolle.ui.common.FakeDangerousActionGuard
 import blue.anika.wolle.ui.common.MutationFeedback
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -57,6 +58,7 @@ class AccountSecurityViewModelTest {
         var toggle: AccountProfileResult? = null
         val toggled = mutableListOf<Boolean>()
         var passwordCalls = 0
+        var revokeCalls = 0
         var createCalls = 0
 
         override suspend fun loadProfile() = profile
@@ -96,7 +98,10 @@ class AccountSecurityViewModelTest {
             return createWithProof
         }
 
-        override suspend fun revokeToken(id: Long) = revoke
+        override suspend fun revokeToken(id: Long): RevokeResult {
+            revokeCalls++
+            return revoke
+        }
 
         override suspend fun changePassword(
             currentPassword: String,
@@ -113,6 +118,7 @@ class AccountSecurityViewModelTest {
 
     private val gateway = FakeGateway()
     private val feedback = MutationFeedback()
+    private val guard = FakeDangerousActionGuard()
     private var currentTokenId: Long? = 7
 
     private val tablet = ApiTokenDto(3, "tablet", "2026-11-03T10:00:00Z")
@@ -144,6 +150,7 @@ class AccountSecurityViewModelTest {
             ApiCapabilities(meta) { "https://s\nt" },
             feedback,
             coordinator,
+            guard,
         )
     }
 
@@ -324,6 +331,20 @@ class AccountSecurityViewModelTest {
         assertNull(state.signOutNotice)
         assertNull(state.confirmRevoke)
         assertEquals(listOf(7L), state.tokens.map { it.id })
+    }
+
+    @Test
+    fun `revoking a token needs the device unlock`() {
+        gateway.list = TokenListResult.Loaded(listOf(tablet, thisPhone))
+        guard.unlocked = false
+        val vm = viewModel()
+
+        vm.askRevoke(tablet)
+        vm.confirmRevoke()
+
+        assertEquals(listOf(R.string.unlock_reason_revoke_token), guard.requests)
+        assertEquals(0, gateway.revokeCalls)
+        assertEquals(listOf(3L, 7L), vm.state.value.tokens.map { it.id })
     }
 
     @Test

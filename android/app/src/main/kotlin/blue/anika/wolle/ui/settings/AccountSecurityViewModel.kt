@@ -1,5 +1,6 @@
 package blue.anika.wolle.ui.settings
 
+import blue.anika.wolle.ui.common.DangerousActionGuard
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -143,6 +144,7 @@ constructor(
     private val capabilities: ApiCapabilities,
     private val feedback: MutationFeedback,
     private val oidc: OidcCoordinator,
+    private val guard: DangerousActionGuard,
 ) : ViewModel() {
     private val _state = MutableStateFlow(AccountSecurityState())
     val state: StateFlow<AccountSecurityState> = _state.asStateFlow()
@@ -481,7 +483,12 @@ constructor(
 
     fun confirmRevoke() {
         val token = _state.value.confirmRevoke ?: return
-        _state.update { it.copy(confirmRevoke = null, revokingId = token.id) }
+        _state.update { it.copy(confirmRevoke = null) }
+        guard.confirm(R.string.unlock_reason_revoke_token) { revoke(token) }
+    }
+
+    private fun revoke(token: ApiTokenDto) {
+        _state.update { it.copy(revokingId = token.id) }
         viewModelScope.launch {
             val result = gateway.revokeToken(token.id)
             _state.update { state ->

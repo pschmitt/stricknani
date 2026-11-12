@@ -30,6 +30,9 @@ import kotlinx.serialization.json.Json
  */
 @Serializable data class NavbarItemPreference(val id: String, val visible: Boolean = true)
 
+/** Dangerous actions ask for a device unlock unless the user turned that off (per device). */
+const val DEVICE_UNLOCK_DEFAULT = true
+
 /**
  * Non-secret, non-sync app preferences (SNA-18's theme toggle, SNA-16's navbar customization) -
  * DataStore rather than `SettingsRepository`'s `EncryptedSharedPreferences`, since nothing here
@@ -104,6 +107,17 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
 
     suspend fun setDeveloperMode(enabled: Boolean) {
         dataStore.edit { prefs -> prefs[KEY_DEVELOPER_MODE] = enabled }
+    }
+
+    /**
+     * Ask for the fingerprint, face or screen lock before dangerous actions (permanent deletion,
+     * restore, ownership transfer, ...). On by default; a per-device choice, never synced.
+     */
+    val deviceUnlockEnabled =
+        dataStore.data.map { prefs -> prefs[KEY_DEVICE_UNLOCK_ENABLED] ?: DEVICE_UNLOCK_DEFAULT }
+
+    suspend fun setDeviceUnlockEnabled(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[KEY_DEVICE_UNLOCK_ENABLED] = enabled }
     }
 
     /**
@@ -301,6 +315,7 @@ constructor(private val dataStore: DataStore<Preferences>, private val json: Jso
         val KEY_BACKUP_INCLUDE_DATA = booleanPreferencesKey("scheduled_backup_include_data")
         val KEY_BACKUP_FREQUENCY = stringPreferencesKey("scheduled_backup_frequency")
         val KEY_DEVELOPER_MODE = booleanPreferencesKey("developer_mode")
+        val KEY_DEVICE_UNLOCK_ENABLED = booleanPreferencesKey("device_unlock_enabled")
         val KEY_NOTIFICATION_PERMISSION_REQUESTED =
             booleanPreferencesKey("notification_permission_requested")
     }

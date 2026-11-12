@@ -1635,4 +1635,22 @@
     </plurals>
 
     <string name="trash_banner_delete_dialog_title">Endgültig löschen?</string>
+
+    <!-- Device unlock for dangerous actions -->
+    <string name="device_unlock_title">Dieses Gerät</string>
+    <string name="device_unlock_toggle">Gefährliche Aktionen mit Entsperren bestätigen</string>
+    <string name="device_unlock_toggle_help">Fragt vor endgültigem Löschen, Wiederherstellen, Übertragen des Eigentums und ähnlichen Aktionen nach deinem Fingerabdruck, Gesicht oder deiner Displaysperre.</string>
+    <string name="device_unlock_no_screen_lock">Richte eine Displaysperre ein, um dies zu nutzen.</string>
+    <string name="unlock_title">Bestätigen: %1$s</string>
+    <string name="unlock_subtitle">Nutze deinen Fingerabdruck, dein Gesicht oder deine Displaysperre.</string>
+    <string name="unlock_failed">Die Überprüfung ist fehlgeschlagen. Es wurde nichts geändert.</string>
+    <string name="unlock_reason_purge">endgültig löschen</string>
+    <string name="unlock_reason_delete_account">Konto löschen</string>
+    <string name="unlock_reason_transfer">Eigentum übertragen</string>
+    <string name="unlock_reason_revoke_token">Zugriffstoken widerrufen</string>
+    <string name="unlock_reason_unlink_login">verknüpfte Anmeldung entfernen</string>
+    <string name="unlock_reason_disable_user">Konto deaktivieren</string>
+    <string name="unlock_reason_reset_password">Passwort zurücksetzen</string>
+    <string name="unlock_reason_impersonate">als Nutzer anmelden</string>
+    <string name="unlock_reason_turn_off">diesen Schutz ausschalten</string>
 </resources>

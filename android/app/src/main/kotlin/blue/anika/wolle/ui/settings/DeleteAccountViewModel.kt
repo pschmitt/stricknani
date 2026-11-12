@@ -15,6 +15,7 @@ import blue.anika.wolle.data.oidc.ReauthAction
 import blue.anika.wolle.data.oidc.ReauthProof
 import blue.anika.wolle.data.oidc.ReauthTarget
 import blue.anika.wolle.data.settings.SettingsRepository
+import blue.anika.wolle.ui.common.DangerousActionGuard
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.oidc.DEFAULT_PROVIDER_NAME
 import blue.anika.wolle.ui.oidc.ReauthRequest
@@ -48,19 +49,36 @@ data class DeleteAccountState(
  */
 @HiltViewModel
 class DeleteAccountViewModel
-@Inject
-constructor(
+internal constructor(
     private val gateway: AccountDeletionGateway,
     private val oidc: OidcCoordinator,
-    private val settings: SettingsRepository,
+    private val accountEmail: () -> String?,
+    private val serverUrl: () -> String,
     private val feedback: MutationFeedback,
+    private val guard: DangerousActionGuard,
 ) : ViewModel() {
+    @Inject
+    constructor(
+        gateway: AccountDeletionGateway,
+        oidc: OidcCoordinator,
+        settings: SettingsRepository,
+        feedback: MutationFeedback,
+        guard: DangerousActionGuard,
+    ) : this(
+        gateway,
+        oidc,
+        { settings.accountEmail.value },
+        { settings.credentials.value.serverUrl },
+        feedback,
+        guard,
+    )
+
     private val _state = MutableStateFlow(DeleteAccountState())
     val state: StateFlow<DeleteAccountState> = _state.asStateFlow()
 
     /** The email the user may type instead of `DELETE`. */
     val email: String
-        get() = settings.accountEmail.value.orEmpty()
+        get() = accountEmail().orEmpty()
 
     private var providers: List<OidcProvider> = emptyList()
     private var identities: List<OidcIdentity> = emptyList()
@@ -101,8 +119,16 @@ constructor(
         it.copy(confirmation = value.take(MAX_CONFIRMATION_LENGTH), error = null)
     }
 
+    /**
+     * The typed confirmation is right: behind the device unlock, ask for the password (or provider)
+     * and delete. Without a successful unlock nothing is sent.
+     */
     fun confirm() {
         if (_state.value.busy || !confirmationValid) return
+        guard.confirm(R.string.unlock_reason_delete_account) { beginReauth() }
+    }
+
+    private fun beginReauth() {
         _state.update { it.copy(error = null) }
         stepUp.begin(
             ReauthRequest(
@@ -133,7 +159,7 @@ constructor(
         viewModelScope.launch {
             // Unknown (older server, offline): assume a password, which is what most accounts have.
             providers =
-                runCatching { oidc.providers(settings.credentials.value.serverUrl) }
+                runCatching { oidc.providers(serverUrl()) }
                     .getOrDefault(emptyList())
             if (providers.isEmpty()) {
                 identities = emptyList()
