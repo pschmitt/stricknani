@@ -895,12 +895,12 @@
     <string name="photo_take">Take photo</string>
     <string name="photo_choose">Choose photo</string>
     <string name="photo_camera_denied">Camera access is off. Allow it in the system settings to take a photo.</string>
-    <string name="editor_photo_cover">Cover</string>
-    <string name="editor_photo_make_cover">Make cover</string>
+    <string name="editor_photo_move_first">Move to first</string>
     <string name="editor_photo_move_earlier">Move earlier</string>
     <string name="editor_photo_move_later">Move later</string>
     <string name="editor_photo_position">Photo %1$d of %2$d</string>
     <string name="editor_photo_reorder_hint">Drag to reorder. The first photo is the cover.</string>
+    <string name="editor_photo_reorder_hint_plain">Drag to reorder.</string>
     <string name="project_editor_step_removed">Step removed</string>
     <string name="editor_photo_removed">Photo removed.</string>
     <string name="editor_photo_removed_to_trash">Removed. It goes to the trash when you save.</string>

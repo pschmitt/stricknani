@@ -831,7 +831,9 @@ fun ProjectEditorScreen(
                             } else null,
                         reorder =
                             if (reorderAvailable) {
-                                PhotoReorder(step.existingImages.size) { from, to ->
+                                PhotoReorder(step.existingImages.size, firstIsCover = false) {
+                                    from,
+                                    to ->
                                     viewModel.moveStepImage(index, from, to)
                                 }
                             } else null,

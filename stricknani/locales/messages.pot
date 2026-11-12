@@ -1327,11 +1327,6 @@ msgstr ""
 msgid "Could not sign out."
 msgstr ""
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:390
-#: web/src/lib/features/media/ReorderableMedia.svelte:392
-msgid "Cover photo"
-msgstr ""
-
 #: web/src/lib/features/admin/audit-action.ts:92
 msgid "Cover photo changed"
 msgstr ""
@@ -1634,7 +1629,7 @@ msgstr ""
 
 #: web/src/lib/components/StatusBadge.svelte:22
 #: web/src/lib/features/gauge/SwatchSizeDialog.svelte:117
-#: web/src/lib/features/media/ReorderableMedia.svelte:327
+#: web/src/lib/features/media/ReorderableMedia.svelte:518
 #: web/src/lib/features/projects/ProjectEditor.svelte:2057
 #: web/src/lib/features/projects/ProjectLibrary.svelte:71
 #: web/src/lib/features/sharing/ShareDialog.svelte:360
@@ -1664,11 +1659,11 @@ msgstr ""
 msgid "Drag the corners to crop."
 msgstr ""
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:473
+#: web/src/lib/features/media/ReorderableMedia.svelte:104
 msgid "Drag to reorder."
 msgstr ""
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:472
+#: web/src/lib/features/media/ReorderableMedia.svelte:103
 msgid "Drag to reorder. The first photo is the cover."
 msgstr ""
 
@@ -1722,8 +1717,8 @@ msgstr ""
 
 #: web/src/lib/features/media/PhotoEditor.svelte:302
 #: web/src/lib/features/media/ProjectLightbox.svelte:251
-#: web/src/lib/features/media/ReorderableMedia.svelte:420
-#: web/src/lib/features/media/ReorderableMedia.svelte:421
+#: web/src/lib/features/media/ReorderableMedia.svelte:594
+#: web/src/lib/features/media/ReorderableMedia.svelte:595
 msgid "Edit photo"
 msgstr ""
 
@@ -2826,11 +2821,6 @@ msgstr ""
 msgid "Main photo"
 msgstr ""
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:408
-#: web/src/lib/features/media/ReorderableMedia.svelte:409
-msgid "Make cover"
-msgstr ""
-
 #: web/src/routes/more/+page.svelte:74
 msgid "Manage accounts and review the audit log."
 msgstr ""
@@ -2944,14 +2934,19 @@ msgstr ""
 msgid "Morning, sunshine!"
 msgstr ""
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:450
+#: web/src/lib/features/media/ReorderableMedia.svelte:624
 #, python-brace-format
 msgid "Move photo {position} earlier"
 msgstr ""
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:457
+#: web/src/lib/features/media/ReorderableMedia.svelte:631
 #, python-brace-format
 msgid "Move photo {position} later"
+msgstr ""
+
+#: web/src/lib/features/media/ReorderableMedia.svelte:638
+#, python-brace-format
+msgid "Move photo {position} to first"
 msgstr ""
 
 #: web/src/lib/features/history/MediaStrip.svelte:29
@@ -3602,7 +3597,7 @@ msgstr ""
 msgid "Photo deleted forever"
 msgstr ""
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:132
+#: web/src/lib/features/media/ReorderableMedia.svelte:218
 #, python-brace-format
 msgid "Photo moved to position {position} of {total}."
 msgstr ""
@@ -3619,10 +3614,6 @@ msgstr ""
 msgid "Photo restored from trash"
 msgstr ""
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:154
-msgid "Photo set as cover."
-msgstr ""
-
 #: web/src/lib/features/admin/audit-action.ts:68
 msgid "Photo uploaded"
 msgstr ""
@@ -3631,7 +3622,7 @@ msgstr ""
 msgid "Photo uploaded."
 msgstr ""
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:99
+#: web/src/lib/features/media/ReorderableMedia.svelte:132
 #, python-brace-format
 msgid "Photo {position} of {total}"
 msgstr ""
@@ -4043,8 +4034,8 @@ msgstr ""
 msgid "Remove location and camera data from new photos"
 msgstr ""
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:432
-#: web/src/lib/features/media/ReorderableMedia.svelte:433
+#: web/src/lib/features/media/ReorderableMedia.svelte:606
+#: web/src/lib/features/media/ReorderableMedia.svelte:607
 msgid "Remove photo"
 msgstr ""
 
@@ -4103,7 +4094,7 @@ msgstr ""
 msgid "Rename"
 msgstr ""
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:327
+#: web/src/lib/features/media/ReorderableMedia.svelte:528
 msgid "Reorder photos"
 msgstr ""
 
@@ -5309,8 +5300,7 @@ msgstr ""
 msgid "The new passwords do not match."
 msgstr ""
 
-#: web/src/lib/features/media/ReorderableMedia.svelte:133
-#: web/src/lib/features/media/ReorderableMedia.svelte:155
+#: web/src/lib/features/media/ReorderableMedia.svelte:219
 msgid "The new photo order could not be saved. The previous order was restored."
 msgstr ""
 
