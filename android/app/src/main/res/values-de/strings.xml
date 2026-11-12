@@ -1065,6 +1065,13 @@
     <string name="admin_accounts_enable_text">Die Person kann sich danach wieder anmelden.</string>
     <string name="admin_accounts_disabled">%1$s ist gesperrt</string>
     <string name="admin_accounts_enabled">%1$s ist entsperrt</string>
+    <string name="admin_accounts_activity">Aktivität</string>
+    <string name="admin_filter_user">Benutzer: %1$s</string>
+    <string name="admin_filter_user_remove">Benutzerfilter entfernen</string>
+    <string name="admin_role_actor">Von %1$s</string>
+    <string name="admin_role_impersonator">%1$s als %2$s</string>
+    <string name="admin_role_subject_account">Auf dem Konto von %1$s</string>
+    <string name="admin_role_subject">Betrifft %1$s</string>
     <string name="admin_accounts_reset_password">Passwort zurücksetzen</string>
     <string name="admin_accounts_reset_title">Passwort für %1$s zurücksetzen?</string>
     <string name="admin_accounts_reset_text">Die Person muss sich mit dem neuen Passwort anmelden.</string>
@@ -1278,7 +1285,8 @@
     </plurals>
     <string name="activity_show_more">Mehr anzeigen</string>
     <string name="activity_see_all">Alle anzeigen</string>
-    <string name="activity_page_title">Aktivität</string>
+    <string name="activity_page_title">Meine Aktivität</string>
+    <string name="more_activity_subtitle">Letzte Änderungen an deinen Projekten und Garnen.</string>
     <string name="activity_unavailable">Aktivität braucht eine Verbindung</string>
     <string name="activity_empty">Noch nichts – deine Änderungen erscheinen hier.</string>
     <string name="activity_more_failed">Weitere Aktivität konnte nicht geladen werden.</string>

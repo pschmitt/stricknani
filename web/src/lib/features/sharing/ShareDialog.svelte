@@ -5,7 +5,6 @@
   import SegmentedControl from "#lib/components/SegmentedControl.svelte";
   import UserAvatar from "#lib/components/UserAvatar.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
-  import NavIcon from "#lib/components/NavIcon.svelte";
   import type { ShareOutcome } from "#lib/share-link.ts";
   import { session } from "#lib/session.svelte.ts";
   import PeoplePicker from "./PeoplePicker.svelte";
@@ -207,15 +206,14 @@
   </header>
 
   <section class="share-link" aria-labelledby={`${dialogId}-link`}>
-    <button
-      type="button"
+    <Button
       class="share-link__button"
+      icon="share"
       aria-describedby={`${dialogId}-link-hint`}
       onclick={() => void shareLinkNow()}
     >
-      <NavIcon name="share" />
       <span id={`${dialogId}-link`}>{t("Share link", locale)}</span>
-    </button>
+    </Button>
     <p class="share-link__hint" id={`${dialogId}-link-hint`}>
       {t(
         "Opens for people who already have access. Pick someone below to give them access.",
@@ -398,34 +396,9 @@
     border-bottom: 1px solid var(--line);
   }
 
-  .share-link__button {
-    display: inline-flex;
-    min-height: 2.75rem;
+  .share-link :global(.share-link__button) {
     width: 100%;
-    align-items: center;
-    gap: 0.6rem;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-xs);
-    padding: 0.4rem 0.8rem;
-    color: var(--ink);
-    background: var(--surface-raised);
-    font: inherit;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .share-link__button:hover {
-    border-color: var(--accent-strong);
-  }
-
-  .share-link__button:focus-visible {
-    outline: 2px solid var(--accent-strong);
-    outline-offset: 2px;
-  }
-
-  .share-link__button :global(svg) {
-    flex: none;
-    color: var(--accent-strong);
+    justify-content: flex-start;
   }
 
   .share-link__hint {

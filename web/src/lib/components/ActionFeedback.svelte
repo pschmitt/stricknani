@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CloseButton from "#lib/components/CloseButton.svelte";
   import { backOut } from "svelte/easing";
   import { fade, fly } from "svelte/transition";
   import NavIcon from "#lib/components/NavIcon.svelte";
@@ -83,14 +84,11 @@
           {action.label}
         </button>
       {/if}
-      <button
-        type="button"
-        class="action-feedback__close"
-        aria-label={t("Dismiss message", locale)}
+      <CloseButton
+        {locale}
+        label={t("Dismiss message", locale)}
         onclick={() => dismissFeedback(currentEvent.id)}
-      >
-        <NavIcon name="close" />
-      </button>
+      />
     </div>
   {/key}
 {/if}
@@ -193,38 +191,6 @@
   }
 
   .action-feedback__action:focus-visible {
-    outline: 3px solid var(--focus);
-    outline-offset: -3px;
-  }
-
-  .action-feedback__close {
-    display: grid;
-    width: 44px;
-    height: 44px;
-    flex-shrink: 0;
-    place-items: center;
-    border: 0;
-    border-radius: 50%;
-    padding: 0;
-    color: var(--ink-muted);
-    background: transparent;
-    cursor: pointer;
-    transition:
-      background-color 120ms ease,
-      color 120ms ease;
-  }
-
-  .action-feedback__close :global(svg) {
-    width: 1.25rem;
-    height: 1.25rem;
-  }
-
-  .action-feedback__close:hover {
-    color: var(--ink);
-    background: var(--surface-raised);
-  }
-
-  .action-feedback__close:focus-visible {
     outline: 3px solid var(--focus);
     outline-offset: -3px;
   }

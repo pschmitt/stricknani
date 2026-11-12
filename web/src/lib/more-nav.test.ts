@@ -20,6 +20,7 @@ describe("isMoreActive", () => {
     "/app/categories/3",
     "/app/gauge",
     "/app/trash",
+    "/app/activity",
     "/app/admin/users",
     "/app/admin/audit",
     "/app/about",

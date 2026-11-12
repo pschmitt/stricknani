@@ -486,6 +486,7 @@ fun StricknaniNavHost(
                         onCreateClick = { navController.navigate(Route.Create) },
                         onGaugeClick = { navController.navigate(Route.Gauge) },
                         onTrashClick = { navController.navigate(Route.Trash) },
+                        onActivityClick = { navController.navigate(Route.Activity) },
                         onSearchClick = { paletteOpen = true },
                     )
                 }
@@ -502,7 +503,7 @@ fun StricknaniNavHost(
                         category = SettingsCategory.valueOf(route.categoryName),
                         onBack = { navController.navigateUp() },
                         onShowLibraries = { navController.navigate(Route.Libraries) },
-                        onOpenAdminActivity = { navController.navigate(Route.AdminAudit) },
+                        onOpenAdminActivity = { navController.navigate(Route.AdminAudit()) },
                         onOpenAdminAccounts = { navController.navigate(Route.AdminAccounts) },
                         onOpenAdminBackups = { navController.navigate(Route.AdminBackups) },
                         onOpenCategory = {
@@ -554,6 +555,9 @@ fun StricknaniNavHost(
                             navController.navigate(projectsOwnedByRoute(id))
                         },
                         onOpenUserYarns = { id -> navController.navigate(yarnsOwnedByRoute(id)) },
+                        onOpenUserActivity = { id ->
+                            navController.navigate(Route.AdminAudit(userId = id))
+                        },
                     )
                 }
                 screen<Route.Libraries>(motion) {

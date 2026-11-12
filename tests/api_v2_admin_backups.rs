@@ -1285,3 +1285,61 @@ async fn media_none_leaves_the_media_tree_alone() {
     assert_eq!(dir_names(&env.media), ["a.jpg"]);
     assert_eq!(fs::read(env.media.join("a.jpg")).unwrap(), b"current-a");
 }
+
+#[tokio::test]
+async fn the_restore_shows_in_the_per_user_view_of_the_requesting_admin() {
+    let env = env();
+    let live = live(&env).await;
+    // A backup in which the requesting administrator exists (same id and email).
+    let scratch = tempfile::tempdir().unwrap();
+    let database = env.backups.join("predeploy-1.0.0-20260107-070000.sqlite3");
+    make_database(&database, 2, 0, 0, 0, None).await;
+    let pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect_with(SqliteConnectOptions::new().filename(&database))
+        .await
+        .unwrap();
+    sqlx::query("UPDATE users SET email = 'admin@example.test', is_admin = 1 WHERE id = 1")
+        .execute(&pool)
+        .await
+        .unwrap();
+    pool.close().await;
+    drop(scratch);
+    let name = "predeploy-1.0.0-20260107-070000.sqlite3";
+    stage_restore(&env, &live, name, "none").await;
+    live.pool.close().await;
+    drop(live);
+    backups::prepare_startup(&env.db_url, None, &env.media)
+        .await
+        .unwrap()
+        .unwrap();
+    let pool = db::connect(&env.db_url).await.unwrap();
+    add_token(&pool, 1, ADMIN_TOKEN, "browser").await;
+    let app = api_v2::router(db::AppState::new(pool.clone()).with_secure_cookies(true), false);
+    for query in [
+        "/admin/audit?user=1",
+        "/admin/audit?user=1&role=actor",
+        "/admin/audit?user=1&entity=server",
+    ] {
+        let (status, body) = browser(&app, "GET", query, ADMIN_TOKEN, None).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let event = body["data"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|event| event["action"] == "backup_restored")
+            .unwrap_or_else(|| panic!("{query}: restore missing in {body}"));
+        assert_eq!(event["actor_email"], "admin@example.test");
+        assert_eq!(event["server"]["backup"], name);
+    }
+    // Somebody else's view does not list it.
+    let (_, other) = browser(&app, "GET", "/admin/audit?user=2", ADMIN_TOKEN, None).await;
+    assert!(
+        !other["data"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|event| event["action"] == "backup_restored")
+    );
+    pool.close().await;
+}

@@ -88,8 +88,11 @@ sealed interface Route {
     /** The full "Recent activity" timeline - opened from Home's "See all". */
     @Serializable data object Activity : Route
 
-    /** Administrator audit log (SNA-86) - reachable from Settings -> Admin. */
-    @Serializable data object AdminAudit : Route
+    /**
+     * Administrator audit log (SNA-86) - reachable from Settings -> Admin. With [userId] it shows
+     * only the events that account took part in (the accounts list's "Activity" entry).
+     */
+    @Serializable data class AdminAudit(val userId: Long? = null) : Route
 
     /** The trash: deleted items wait here for 90 days - reachable from More. */
     @Serializable data object Trash : Route
@@ -142,7 +145,7 @@ enum class TopLevelDestination(
         Route.Home,
         R.string.destination_label_home,
         PhosphorIcons.HouseLine,
-        setOf(Route.Home::class, Route.Activity::class),
+        setOf(Route.Home::class),
     ),
     PROJECTS(
         Route.Projects,
@@ -209,6 +212,7 @@ enum class TopLevelDestination(
             Route.AdminBackups::class,
             Route.Trash::class,
             Route.TrashedItem::class,
+            Route.Activity::class,
         ),
     ),
 }

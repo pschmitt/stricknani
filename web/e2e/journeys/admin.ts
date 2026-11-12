@@ -1074,6 +1074,7 @@ async function assertMoreNavigation(
     ["Categories", "/categories"],
     ["Gauge calculator", "/gauge"],
     ["Trash", "/trash"],
+    ["My activity", "/activity"],
   ];
   if (opts.isAdmin) expectedCards.push(["Admin", "/admin/users"]);
   expectedCards.push(["About", "/about"]);

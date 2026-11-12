@@ -41,8 +41,8 @@ msgstr "Revoke"
 msgid "Import a pattern"
 msgstr ""
 
-#: src/import_service.rs:703 web/src/routes/+layout.svelte:328
-#: web/src/routes/+layout.svelte:429
+#: src/import_service.rs:703 web/src/routes/+layout.svelte:329
+#: web/src/routes/+layout.svelte:430
 msgid "Main navigation"
 msgstr "Main navigation"
 
@@ -53,7 +53,7 @@ msgstr "Main navigation"
 #: web/src/lib/features/admin/RestoreBackupDialog.svelte:287
 #: web/src/lib/features/projects/ProjectLibrary.svelte:291
 #: web/src/lib/features/projects/ProjectLibrary.svelte:302
-#: web/src/lib/nav-items.ts:20
+#: web/src/lib/nav-items.ts:21
 msgid "Projects"
 msgstr "Projects"
 
@@ -65,7 +65,7 @@ msgstr "Projects"
 #: web/src/lib/features/yarns/YarnDetail.svelte:359
 #: web/src/lib/features/yarns/YarnLibrary.svelte:213
 #: web/src/lib/features/yarns/YarnLibrary.svelte:224
-#: web/src/lib/nav-items.ts:21
+#: web/src/lib/nav-items.ts:22
 msgid "Yarns"
 msgstr "Yarns"
 
@@ -114,8 +114,8 @@ msgstr "Create yarn"
 msgid "Content fingerprint"
 msgstr ""
 
-#: src/import_service.rs:716 web/src/lib/features/admin/AdminAudit.svelte:274
-#: web/src/lib/features/admin/AdminAudit.svelte:365
+#: src/import_service.rs:716 web/src/lib/features/admin/AdminAudit.svelte:299
+#: web/src/lib/features/admin/AdminAudit.svelte:390
 #: web/src/lib/features/admin/AdminResource.svelte:237
 #: web/src/lib/features/admin/AdminResource.svelte:433
 #: web/src/lib/features/admin/DiffPanel.svelte:96
@@ -151,8 +151,8 @@ msgstr "Stitch sample"
 msgid "Other materials"
 msgstr "Other materials"
 
-#: src/import_service.rs:720 web/src/lib/features/admin/AdminAudit.svelte:272
-#: web/src/lib/features/admin/AdminAudit.svelte:364
+#: src/import_service.rs:720 web/src/lib/features/admin/AdminAudit.svelte:297
+#: web/src/lib/features/admin/AdminAudit.svelte:389
 #: web/src/lib/features/admin/AdminResource.svelte:235
 #: web/src/lib/features/admin/AdminResource.svelte:437
 #: web/src/lib/features/admin/DiffPanel.svelte:94
@@ -172,7 +172,7 @@ msgstr "Yarn"
 #: web/src/lib/features/admin/AdminResource.svelte:681
 #: web/src/lib/features/history/change-format.ts:127
 #: web/src/lib/features/history/change-format.ts:144
-#: web/src/lib/features/media/PhotoEditor.svelte:424
+#: web/src/lib/features/media/PhotoEditor.svelte:415
 #: web/src/lib/features/yarns/YarnDetail.svelte:483
 #: web/src/lib/features/yarns/YarnForm.svelte:1241
 msgid "Description"
@@ -260,7 +260,7 @@ msgstr "1 day left"
 msgid "1 filter suggestion"
 msgstr "1 filter suggestion"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:755
+#: web/src/lib/features/projects/ProjectTimer.svelte:754
 msgid "1 hour"
 msgstr "1 hour"
 
@@ -268,11 +268,11 @@ msgstr "1 hour"
 msgid "1 linked yarn"
 msgstr "1 linked yarn"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:756
+#: web/src/lib/features/projects/ProjectTimer.svelte:755
 msgid "2 hours"
 msgstr "2 hours"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:754
+#: web/src/lib/features/projects/ProjectTimer.svelte:753
 msgid "30 minutes"
 msgstr "30 minutes"
 
@@ -332,7 +332,7 @@ msgstr "A newer version was saved"
 msgid "A place for your projects and yarn."
 msgstr "A place for your projects and yarn."
 
-#: web/src/routes/+layout.svelte:243
+#: web/src/routes/+layout.svelte:244
 msgid "A quiet place to keep your knitting projects and yarn close."
 msgstr "A quiet place to keep your knitting projects and yarn close."
 
@@ -397,8 +397,8 @@ msgstr "API access"
 msgid "API token revoked."
 msgstr "API token revoked."
 
-#: web/src/lib/palette/entries.ts:204 web/src/routes/+layout.svelte:403
-#: web/src/routes/about/+page.svelte:201 web/src/routes/more/+page.svelte:82
+#: web/src/lib/palette/entries.ts:204 web/src/routes/+layout.svelte:404
+#: web/src/routes/about/+page.svelte:201 web/src/routes/more/+page.svelte:88
 msgid "About"
 msgstr "About"
 
@@ -409,12 +409,12 @@ msgstr "About this policy"
 #: web/src/lib/features/account/AccountSettings.svelte:877
 #: web/src/lib/features/account/AccountSettings.svelte:885
 #: web/src/lib/palette/entries.ts:186 web/src/lib/palette/entries.ts:215
-#: web/src/routes/+layout.svelte:362 web/src/routes/+layout.svelte:365
-#: web/src/routes/+layout.svelte:373 web/src/routes/more/+page.svelte:54
+#: web/src/routes/+layout.svelte:363 web/src/routes/+layout.svelte:366
+#: web/src/routes/+layout.svelte:374 web/src/routes/more/+page.svelte:60
 msgid "Account"
 msgstr "Account"
 
-#: web/src/routes/+layout.svelte:413
+#: web/src/routes/+layout.svelte:414
 msgid "Account access"
 msgstr "Account access"
 
@@ -435,7 +435,7 @@ msgstr "Account registration"
 msgid "Account registration is unavailable."
 msgstr "Account registration is unavailable."
 
-#: web/src/routes/more/+page.svelte:57 web/src/routes/more/+page.svelte:58
+#: web/src/routes/more/+page.svelte:63 web/src/routes/more/+page.svelte:64
 msgid "Account settings"
 msgstr "Account settings"
 
@@ -455,12 +455,12 @@ msgstr ""
 msgid "Acknowledge that you saved the token before closing this dialog."
 msgstr "Acknowledge that you saved the token before closing this dialog."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:984
+#: web/src/lib/features/admin/AdminUsers.svelte:993
 #, python-brace-format
 msgid "Act as {email}? Everything you do is recorded as done by them and logged."
 msgstr "Act as {email}? Everything you do is recorded as done by them and logged."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:370
+#: web/src/lib/features/admin/AdminAudit.svelte:395
 msgid "Action"
 msgstr "Action"
 
@@ -477,8 +477,7 @@ msgstr "Active"
 msgid "Active API tokens"
 msgstr "Active API tokens"
 
-#: web/src/routes/activity/+page.svelte:11
-#: web/src/routes/activity/+page.svelte:17
+#: web/src/lib/features/admin/AdminUsers.svelte:815
 msgid "Activity"
 msgstr "Activity"
 
@@ -507,7 +506,7 @@ msgstr "Add attachment"
 msgid "Add category"
 msgstr "Add category"
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:306
+#: web/src/lib/features/sharing/ShareDialog.svelte:304
 msgid "Add people"
 msgstr "Add people"
 
@@ -582,7 +581,7 @@ msgstr ""
 "Adds the projects, yarns and photos from a Stricknani download as new "
 "items. Nothing you already have is changed."
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:667
+#: web/src/lib/features/projects/ProjectTimer.svelte:666
 msgid "Adjust total time"
 msgstr "Adjust total time"
 
@@ -594,14 +593,14 @@ msgstr "Adjusted rows"
 msgid "Adjusted stitches"
 msgstr "Adjusted stitches"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:341
-#: web/src/lib/features/admin/AdminAudit.svelte:350
+#: web/src/lib/features/admin/AdminAudit.svelte:366
+#: web/src/lib/features/admin/AdminAudit.svelte:375
 #: web/src/lib/features/admin/AdminBackups.svelte:108
 #: web/src/lib/features/admin/AdminBackups.svelte:116
 #: web/src/lib/features/admin/AdminUsers.svelte:650
 #: web/src/lib/features/admin/AdminUsers.svelte:657
-#: web/src/lib/palette/entries.ts:195 web/src/routes/+layout.svelte:393
-#: web/src/routes/more/+page.svelte:69 web/src/routes/more/+page.svelte:73
+#: web/src/lib/palette/entries.ts:195 web/src/routes/+layout.svelte:394
+#: web/src/routes/more/+page.svelte:75 web/src/routes/more/+page.svelte:79
 msgid "Admin"
 msgstr "Admin"
 
@@ -614,12 +613,12 @@ msgstr "Admin sections"
 msgid "Administrator"
 msgstr "Administrator"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:940
+#: web/src/lib/features/admin/AdminUsers.svelte:949
 msgid "Administrator access"
 msgstr "Administrator access"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:154
-#: web/src/lib/features/admin/AdminAudit.svelte:192
+#: web/src/lib/features/admin/AdminAudit.svelte:159
+#: web/src/lib/features/admin/AdminAudit.svelte:199
 #: web/src/lib/features/admin/AdminBackups.svelte:50
 #: web/src/lib/features/admin/AdminBackups.svelte:65
 #: web/src/lib/features/admin/AdminResource.svelte:123
@@ -633,6 +632,11 @@ msgstr "Administrator access"
 #: web/src/lib/features/projects/ProjectReader.svelte:300
 msgid "Administrator access is required."
 msgstr "Administrator access is required."
+
+#: web/src/lib/features/admin/audit-user-role.ts:43
+#, python-brace-format
+msgid "Affects {user}"
+msgstr "Affects {user}"
 
 #: web/src/lib/features/history/ChangeList.svelte:132
 msgid "After"
@@ -665,7 +669,7 @@ msgstr "All"
 msgid "All changes saved"
 msgstr "All changes saved"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:362
+#: web/src/lib/features/admin/AdminAudit.svelte:387
 msgid "All entities"
 msgstr "All entities"
 
@@ -752,7 +756,7 @@ msgstr "Android"
 msgid "Android app and offline data"
 msgstr "Android app and offline data"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:377
+#: web/src/lib/features/admin/AdminAudit.svelte:402
 msgid "Any action"
 msgstr "Any action"
 
@@ -819,7 +823,7 @@ msgstr "Archiving is unavailable right now."
 msgid "Ask AI to improve extraction"
 msgstr "Ask AI to improve extraction"
 
-#: web/src/routes/+layout.svelte:417
+#: web/src/routes/+layout.svelte:418
 msgid "Ask an administrator if you need access."
 msgstr "Ask an administrator if you need access."
 
@@ -873,21 +877,21 @@ msgstr "Attachment uploaded"
 msgid "Attachments"
 msgstr "Attachments"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:414
+#: web/src/lib/features/admin/AdminAudit.svelte:457
 msgid "Audit events"
 msgstr "Audit events"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:195
+#: web/src/lib/features/admin/AdminAudit.svelte:204
 #: web/src/lib/features/admin/DiffPanel.svelte:80
 msgid "Audit events could not be loaded."
 msgstr "Audit events could not be loaded."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:341
+#: web/src/lib/features/admin/AdminAudit.svelte:366
 #: web/src/lib/features/admin/AdminTabs.svelte:22
 msgid "Audit log"
 msgstr "Audit log"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:560
+#: web/src/lib/features/admin/AdminAudit.svelte:618
 msgid "Audit pages"
 msgstr "Audit pages"
 
@@ -904,7 +908,7 @@ msgstr ""
 "verification."
 
 #: web/src/lib/features/admin/RestoreBackupDialog.svelte:546
-#: web/src/routes/+layout.svelte:321
+#: web/src/routes/+layout.svelte:322
 msgid "Back"
 msgstr "Back"
 
@@ -929,7 +933,7 @@ msgstr "Back to More"
 #: web/src/lib/features/projects/ProjectReader.svelte:815
 #: web/src/lib/features/projects/ProjectReader.svelte:826
 #: web/src/lib/features/projects/ProjectReader.svelte:832
-#: web/src/routes/+layout.svelte:419
+#: web/src/routes/+layout.svelte:420
 msgid "Back to projects"
 msgstr "Back to projects"
 
@@ -1034,9 +1038,14 @@ msgstr ""
 msgid "Bulleted list"
 msgstr "Bulleted list"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:498
+#: web/src/lib/features/admin/AdminAudit.svelte:541
 msgid "By"
 msgstr "By"
+
+#: web/src/lib/features/admin/audit-user-role.ts:36
+#, python-brace-format
+msgid "By {user}"
+msgstr "By {user}"
 
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:221
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:241
@@ -1057,17 +1066,17 @@ msgstr "Calculation results"
 
 #: web/src/lib/features/history/history-summary.ts:203
 #: web/src/lib/features/sharing/AccessNotice.svelte:37
-#: web/src/lib/features/sharing/ShareDialog.svelte:83
-#: web/src/lib/features/sharing/ShareDialog.svelte:289
-#: web/src/lib/features/sharing/ShareDialog.svelte:322
+#: web/src/lib/features/sharing/ShareDialog.svelte:82
+#: web/src/lib/features/sharing/ShareDialog.svelte:287
+#: web/src/lib/features/sharing/ShareDialog.svelte:320
 msgid "Can edit"
 msgstr "Can edit"
 
 #: web/src/lib/features/history/history-summary.ts:203
 #: web/src/lib/features/sharing/AccessNotice.svelte:37
-#: web/src/lib/features/sharing/ShareDialog.svelte:83
-#: web/src/lib/features/sharing/ShareDialog.svelte:288
-#: web/src/lib/features/sharing/ShareDialog.svelte:321
+#: web/src/lib/features/sharing/ShareDialog.svelte:82
+#: web/src/lib/features/sharing/ShareDialog.svelte:286
+#: web/src/lib/features/sharing/ShareDialog.svelte:319
 msgid "Can view"
 msgstr "Can view"
 
@@ -1077,22 +1086,20 @@ msgstr "Can view"
 #: web/src/lib/features/account/AccountSettings.svelte:1495
 #: web/src/lib/features/account/BackupsSection.svelte:490
 #: web/src/lib/features/account/BackupsSection.svelte:526
-#: web/src/lib/features/admin/AdminUsers.svelte:948
-#: web/src/lib/features/admin/AdminUsers.svelte:999
-#: web/src/lib/features/admin/AdminUsers.svelte:1059
-#: web/src/lib/features/admin/AdminUsers.svelte:1135
+#: web/src/lib/features/admin/AdminUsers.svelte:957
+#: web/src/lib/features/admin/AdminUsers.svelte:1008
+#: web/src/lib/features/admin/AdminUsers.svelte:1068
+#: web/src/lib/features/admin/AdminUsers.svelte:1144
 #: web/src/lib/features/admin/RestoreBackupDialog.svelte:534
 #: web/src/lib/features/auth/ReauthDialog.svelte:187
 #: web/src/lib/features/categories/CategoryManager.svelte:341
 #: web/src/lib/features/gauge/SwatchSizeDialog.svelte:114
-#: web/src/lib/features/media/PhotoEditor.svelte:306
-#: web/src/lib/features/media/PhotoEditor.svelte:307
-#: web/src/lib/features/media/PhotoEditor.svelte:458
+#: web/src/lib/features/media/PhotoEditor.svelte:449
 #: web/src/lib/features/projects/ProjectEditor.svelte:2492
 #: web/src/lib/features/projects/ProjectEditor.svelte:2575
 #: web/src/lib/features/projects/ProjectEditor.svelte:2657
 #: web/src/lib/features/projects/ProjectReader.svelte:1525
-#: web/src/lib/features/projects/ProjectTimer.svelte:703
+#: web/src/lib/features/projects/ProjectTimer.svelte:702
 #: web/src/lib/features/sharing/AccessNotice.svelte:121
 #: web/src/lib/features/sharing/TransferDialog.svelte:133
 #: web/src/lib/features/yarns/YarnForm.svelte:1314
@@ -1113,7 +1120,7 @@ msgstr "Cannot get in?"
 #: web/src/lib/features/categories/CategoryManager.svelte:225
 #: web/src/lib/features/projects/ProjectLibrary.svelte:201
 #: web/src/lib/features/yarns/YarnLibrary.svelte:138
-#: web/src/lib/nav-items.ts:26 web/src/routes/more/+page.svelte:30
+#: web/src/lib/nav-items.ts:27 web/src/routes/more/+page.svelte:30
 msgid "Categories"
 msgstr "Categories"
 
@@ -1321,17 +1328,17 @@ msgstr "Client"
 msgid "Clipboard access is unavailable. Select and copy the text manually."
 msgstr "Clipboard access is unavailable. Select and copy the text manually."
 
+#: web/src/lib/components/CloseButton.svelte:27
 #: web/src/lib/features/account/ConnectAppDialog.svelte:114
 #: web/src/lib/features/admin/AuditMediaPreview.svelte:100
 #: web/src/lib/features/admin/RestoreBackupDialog.svelte:526
 #: web/src/lib/features/admin/RestoreBackupDialog.svelte:564
 #: web/src/lib/features/admin/RestoreBackupDialog.svelte:572
 #: web/src/lib/features/auth/AdminUserIdentities.svelte:195
-#: web/src/lib/features/projects/ProjectTimer.svelte:607
 msgid "Close"
 msgstr "Close"
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:279
+#: web/src/lib/features/media/ProjectLightbox.svelte:276
 msgid "Close image viewer"
 msgstr "Close image viewer"
 
@@ -1340,7 +1347,7 @@ msgstr "Close image viewer"
 msgid "Close notes"
 msgstr "Close notes"
 
-#: web/src/lib/features/yarns/YarnPhotoManager.svelte:349
+#: web/src/lib/features/yarns/YarnPhotoManager.svelte:343
 msgid "Close photo"
 msgstr "Close photo"
 
@@ -1389,7 +1396,7 @@ msgstr "Confirm with {name}"
 msgid "Confirming…"
 msgstr "Confirming…"
 
-#: web/src/lib/components/GetAppCard.svelte:92
+#: web/src/lib/components/GetAppCard.svelte:93
 #: web/src/lib/features/account/AccountSettings.svelte:1434
 #: web/src/lib/features/account/ConnectAppDialog.svelte:82
 msgid "Connect the app"
@@ -1482,12 +1489,12 @@ msgstr "Cover photo changed"
 msgid "Cover picture"
 msgstr "Cover picture"
 
-#: web/src/lib/nav-items.ts:22 web/src/routes/create/+page.svelte:41
+#: web/src/lib/nav-items.ts:23 web/src/routes/create/+page.svelte:41
 #: web/src/routes/more/+page.svelte:24 web/src/routes/share/+page.svelte:88
 msgid "Create"
 msgstr "Create"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:894
+#: web/src/lib/features/admin/AdminUsers.svelte:903
 msgid "Create a user account"
 msgstr "Create a user account"
 
@@ -1510,7 +1517,7 @@ msgid "Create token"
 msgstr "Create token"
 
 #: web/src/lib/features/admin/AdminUsers.svelte:666
-#: web/src/lib/features/admin/AdminUsers.svelte:958
+#: web/src/lib/features/admin/AdminUsers.svelte:967
 msgid "Create user"
 msgstr "Create user"
 
@@ -1529,7 +1536,7 @@ msgstr "Created"
 msgid "Creating account…"
 msgstr "Creating account…"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:957
+#: web/src/lib/features/admin/AdminUsers.svelte:966
 msgid "Creating…"
 msgstr "Creating…"
 
@@ -1732,7 +1739,7 @@ msgstr "Diagram URL not attached"
 msgid "Diagrams and documents"
 msgstr "Diagrams and documents"
 
-#: web/src/lib/features/imports/ImportDraftCards.svelte:88
+#: web/src/lib/features/imports/ImportDraftCards.svelte:89
 msgid "Did not work"
 msgstr "Did not work"
 
@@ -1745,11 +1752,11 @@ msgstr "Difficulty"
 msgid "Disable"
 msgstr "Disable"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1072
+#: web/src/lib/features/admin/AdminUsers.svelte:1081
 msgid "Disable account"
 msgstr "Disable account"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1027
+#: web/src/lib/features/admin/AdminUsers.svelte:1036
 msgid "Disable this account?"
 msgstr "Disable this account?"
 
@@ -1763,7 +1770,7 @@ msgstr "Disabled"
 msgid "Discard this password draft?"
 msgstr "Discard this password draft?"
 
-#: web/src/lib/components/GetAppCard.svelte:102
+#: web/src/lib/components/GetAppCard.svelte:101
 #: web/src/lib/features/imports/ImportCard.svelte:573
 msgid "Dismiss"
 msgstr "Dismiss"
@@ -1785,7 +1792,7 @@ msgstr "Do not worry, your projects are safe in the basket."
 #: web/src/lib/features/media/ReorderableMedia.svelte:518
 #: web/src/lib/features/projects/ProjectEditor.svelte:2057
 #: web/src/lib/features/projects/ProjectLibrary.svelte:71
-#: web/src/lib/features/sharing/ShareDialog.svelte:360
+#: web/src/lib/features/sharing/ShareDialog.svelte:358
 #: web/src/lib/search-suggestions.ts:97
 msgid "Done"
 msgstr "Done"
@@ -1803,12 +1810,12 @@ msgstr "Download APK"
 msgid "Download failed."
 msgstr "Download failed."
 
-#: web/src/lib/components/GetAppCard.svelte:88
+#: web/src/lib/components/GetAppCard.svelte:89
 msgid "Download for Android"
 msgstr "Download for Android"
 
-#: web/src/lib/features/media/PhotoEditor.svelte:315
-#: web/src/lib/features/media/PhotoEditor.svelte:359
+#: web/src/lib/features/media/PhotoEditor.svelte:306
+#: web/src/lib/features/media/PhotoEditor.svelte:350
 msgid "Drag the corners to crop."
 msgstr "Drag the corners to crop."
 
@@ -1857,7 +1864,7 @@ msgstr "Dye lot"
 msgid "Each step needs a title of 256 characters or fewer."
 msgstr "Each step needs a title of 256 characters or fewer."
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:270
+#: web/src/lib/features/media/ProjectLightbox.svelte:271
 #: web/src/lib/features/projects/ProjectReader.svelte:1189
 #: web/src/lib/features/yarns/YarnDetail.svelte:587
 msgid "Edit"
@@ -1869,7 +1876,7 @@ msgid "Edit as Markdown"
 msgstr "Edit as Markdown"
 
 #: web/src/lib/features/media/PhotoEditor.svelte:302
-#: web/src/lib/features/media/ProjectLightbox.svelte:267
+#: web/src/lib/features/media/ProjectLightbox.svelte:268
 #: web/src/lib/features/media/ReorderableMedia.svelte:594
 #: web/src/lib/features/media/ReorderableMedia.svelte:595
 msgid "Edit photo"
@@ -1881,7 +1888,7 @@ msgstr "Edit photo"
 msgid "Edit project"
 msgstr "Edit project"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:722
+#: web/src/lib/features/projects/ProjectTimer.svelte:721
 msgid "Edit time"
 msgstr "Edit time"
 
@@ -1909,7 +1916,7 @@ msgstr "Effective date: 4 November 2026"
 msgid "Email"
 msgstr "Email"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:904
+#: web/src/lib/features/admin/AdminUsers.svelte:913
 msgid "Email address"
 msgstr "Email address"
 
@@ -1923,11 +1930,11 @@ msgstr "Empty list"
 msgid "Enable"
 msgstr "Enable"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1071
+#: web/src/lib/features/admin/AdminUsers.svelte:1080
 msgid "Enable account"
 msgstr "Enable account"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1026
+#: web/src/lib/features/admin/AdminUsers.svelte:1035
 msgid "Enable this account?"
 msgstr "Enable this account?"
 
@@ -2008,7 +2015,7 @@ msgstr "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
 msgid "Enter your current password."
 msgstr "Enter your current password."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:360
+#: web/src/lib/features/admin/AdminAudit.svelte:385
 msgid "Entity"
 msgstr "Entity"
 
@@ -2131,13 +2138,13 @@ msgstr "Fetching the page"
 msgid "File"
 msgstr "File"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:385
+#: web/src/lib/features/admin/AdminAudit.svelte:410
 #: web/src/lib/features/projects/ProjectLibrary.svelte:325
 #: web/src/lib/features/yarns/YarnLibrary.svelte:247
 msgid "Filter"
 msgstr "Filter"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:357
+#: web/src/lib/features/admin/AdminAudit.svelte:382
 msgid "Filter audit events"
 msgstr "Filter audit events"
 
@@ -2240,7 +2247,7 @@ msgstr "Gauge"
 #: web/src/lib/components/AuthFooter.svelte:20
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:218
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:232
-#: web/src/lib/nav-items.ts:27 web/src/routes/more/+page.svelte:39
+#: web/src/lib/nav-items.ts:28 web/src/routes/more/+page.svelte:39
 msgid "Gauge calculator"
 msgstr "Gauge calculator"
 
@@ -2261,7 +2268,7 @@ msgstr "German"
 msgid "German and English"
 msgstr "German and English"
 
-#: web/src/lib/components/GetAppCard.svelte:87
+#: web/src/lib/components/GetAppCard.svelte:88
 #: web/src/routes/about/+page.svelte:332
 msgid "Get it on Google Play"
 msgstr "Get it on Google Play"
@@ -2366,12 +2373,12 @@ msgstr ""
 "including shared timers, continue until stopped."
 
 #: web/src/lib/features/home/HomeDashboard.svelte:132
-#: web/src/lib/nav-items.ts:19
+#: web/src/lib/nav-items.ts:20
 msgid "Home"
 msgstr "Home"
 
+#: web/src/lib/features/projects/ProjectTimer.svelte:668
 #: web/src/lib/features/projects/ProjectTimer.svelte:669
-#: web/src/lib/features/projects/ProjectTimer.svelte:670
 msgid "Hours"
 msgstr "Hours"
 
@@ -2472,12 +2479,12 @@ msgstr "Image restored from trash"
 msgid "Images"
 msgstr "Images"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:835
-#: web/src/lib/features/admin/AdminUsers.svelte:1010
+#: web/src/lib/features/admin/AdminUsers.svelte:844
+#: web/src/lib/features/admin/AdminUsers.svelte:1019
 msgid "Impersonate"
 msgstr "Impersonate"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:967
+#: web/src/lib/features/admin/AdminUsers.svelte:976
 msgid "Impersonate this account?"
 msgstr "Impersonate this account?"
 
@@ -2512,7 +2519,7 @@ msgid "Impersonation stopped"
 msgstr "Impersonation stopped"
 
 #: web/src/lib/features/imports/ImportCard.svelte:557
-#: web/src/lib/features/imports/ImportDraftCards.svelte:78
+#: web/src/lib/features/imports/ImportDraftCards.svelte:79
 #: web/src/lib/features/projects/ProjectEditor.svelte:2628
 msgid "Import"
 msgstr "Import"
@@ -2557,8 +2564,8 @@ msgstr "Import this pattern?"
 msgid "Imported yarn"
 msgstr "Imported yarn"
 
-#: web/src/lib/features/imports/ImportDraftCards.svelte:84
-#: web/src/lib/features/imports/ImportDraftCards.svelte:156
+#: web/src/lib/features/imports/ImportDraftCards.svelte:85
+#: web/src/lib/features/imports/ImportDraftCards.svelte:155
 msgid "Importing…"
 msgstr "Importing…"
 
@@ -2689,7 +2696,7 @@ msgstr "Keep the current media files"
 msgid "Keep this page open. The result appears here."
 msgstr "Keep this page open. The result appears here."
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:652
+#: web/src/lib/features/projects/ProjectTimer.svelte:651
 msgid "Keep timing"
 msgstr "Keep timing"
 
@@ -2702,7 +2709,7 @@ msgstr "Keep token"
 msgid "Keep yarn"
 msgstr "Keep yarn"
 
-#: web/src/lib/components/GetAppCard.svelte:68
+#: web/src/lib/components/GetAppCard.svelte:69
 msgid "Knit offline with the Stricknani app for Android"
 msgstr "Knit offline with the Stricknani app for Android"
 
@@ -2731,7 +2738,7 @@ msgstr "Knitting project"
 #: web/src/lib/features/history/change-format.ts:140
 #: web/src/lib/features/projects/ProjectReader.svelte:1287
 #: web/src/lib/features/projects/ProjectTimer.svelte:591
-#: web/src/lib/features/projects/ProjectTimer.svelte:612
+#: web/src/lib/features/projects/ProjectTimer.svelte:611
 msgid "Knitting time"
 msgstr "Knitting time"
 
@@ -2764,7 +2771,7 @@ msgstr "Last updated"
 msgid "Last used"
 msgstr "Last used"
 
-#: web/src/lib/components/PwaUpdate.svelte:128
+#: web/src/lib/components/PwaUpdate.svelte:126
 msgid "Later"
 msgstr "Later"
 
@@ -2811,7 +2818,7 @@ msgstr "Leave without saving your yarn changes?"
 msgid "Left the shared item"
 msgstr "Left the shared item"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:54
+#: web/src/lib/features/admin/AdminAudit.svelte:59
 msgid "Legacy user"
 msgstr "Legacy user"
 
@@ -2837,7 +2844,7 @@ msgid "Link changed"
 msgstr "Link changed"
 
 #: web/src/lib/components/ShareMenuItem.svelte:35
-#: web/src/lib/features/sharing/ShareDialog.svelte:191
+#: web/src/lib/features/sharing/ShareDialog.svelte:190
 msgid "Link copied."
 msgstr "Link copied."
 
@@ -2937,7 +2944,7 @@ msgstr "Loading account details…"
 msgid "Loading archive status…"
 msgstr "Loading archive status…"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:391
+#: web/src/lib/features/admin/AdminAudit.svelte:434
 msgid "Loading audit events…"
 msgstr "Loading audit events…"
 
@@ -2983,7 +2990,7 @@ msgstr "Loading recorded changes…"
 msgid "Loading resource details…"
 msgstr "Loading resource details…"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:630
+#: web/src/lib/features/projects/ProjectTimer.svelte:629
 msgid "Loading timer…"
 msgstr "Loading timer…"
 
@@ -3007,7 +3014,7 @@ msgstr "Loading your home…"
 
 #: web/src/lib/features/history/HistorySection.svelte:386
 #: web/src/lib/features/sharing/PeoplePicker.svelte:157
-#: web/src/lib/features/sharing/ShareDialog.svelte:242
+#: web/src/lib/features/sharing/ShareDialog.svelte:240
 msgid "Loading…"
 msgstr "Loading…"
 
@@ -3044,7 +3051,7 @@ msgstr "Made with wool and love."
 msgid "Main photo"
 msgstr "Main photo"
 
-#: web/src/routes/more/+page.svelte:74
+#: web/src/routes/more/+page.svelte:80
 msgid "Manage accounts and review the audit log."
 msgstr "Manage accounts and review the audit log."
 
@@ -3078,7 +3085,7 @@ msgstr "Materials"
 msgid "Media files"
 msgstr "Media files"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:447
+#: web/src/lib/features/admin/AdminAudit.svelte:490
 msgid "Media files were kept"
 msgstr "Media files were kept"
 
@@ -3102,8 +3109,8 @@ msgstr "Member"
 msgid "Mine"
 msgstr "Mine"
 
+#: web/src/lib/features/projects/ProjectTimer.svelte:678
 #: web/src/lib/features/projects/ProjectTimer.svelte:679
-#: web/src/lib/features/projects/ProjectTimer.svelte:680
 msgid "Minutes"
 msgstr "Minutes"
 
@@ -3111,7 +3118,7 @@ msgstr "Minutes"
 msgid "Missing in the file"
 msgstr "Missing in the file"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:446
+#: web/src/lib/features/admin/AdminAudit.svelte:489
 msgid "Missing media files were added"
 msgstr "Missing media files were added"
 
@@ -3120,7 +3127,7 @@ msgid "Mooorning!"
 msgstr "Mooorning!"
 
 #: web/src/lib/components/AuthFooter.svelte:15
-#: web/src/routes/+layout.svelte:346 web/src/routes/+layout.svelte:459
+#: web/src/routes/+layout.svelte:347 web/src/routes/+layout.svelte:460
 #: web/src/routes/more/+page.svelte:13 web/src/routes/more/+page.svelte:19
 msgid "More"
 msgstr "More"
@@ -3149,7 +3156,7 @@ msgstr "More filters"
 msgid "More for {email}"
 msgstr "More for {email}"
 
-#: web/src/routes/+layout.svelte:347 web/src/routes/more/+page.svelte:78
+#: web/src/routes/+layout.svelte:348 web/src/routes/more/+page.svelte:84
 msgid "More navigation"
 msgstr "More navigation"
 
@@ -3200,6 +3207,11 @@ msgstr "Moved to the trash."
 msgid "Moved to trash"
 msgstr "Moved to trash"
 
+#: web/src/lib/nav-items.ts:30 web/src/routes/activity/+page.svelte:11
+#: web/src/routes/activity/+page.svelte:18 web/src/routes/more/+page.svelte:54
+msgid "My activity"
+msgstr "My activity"
+
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:537
 msgid "N/A"
 msgstr "N/A"
@@ -3212,7 +3224,7 @@ msgstr "Never used"
 msgid "New API token"
 msgstr "New API token"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:896
+#: web/src/lib/features/admin/AdminUsers.svelte:905
 msgid "New accounts are members unless you choose administrator access."
 msgstr "New accounts are members unless you choose administrator access."
 
@@ -3239,7 +3251,7 @@ msgstr "New password"
 msgid "New project"
 msgstr "New project"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1109
+#: web/src/lib/features/admin/AdminUsers.svelte:1118
 msgid "New temporary password"
 msgstr "New temporary password"
 
@@ -3251,7 +3263,7 @@ msgstr "New to Stricknani?"
 msgid "New token"
 msgstr "New token"
 
-#: web/src/lib/components/PwaUpdate.svelte:117
+#: web/src/lib/components/PwaUpdate.svelte:118
 msgid "New version ready"
 msgstr "New version ready"
 
@@ -3268,12 +3280,12 @@ msgstr "New yarn"
 msgid "Next"
 msgstr "Next"
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:349
+#: web/src/lib/features/media/ProjectLightbox.svelte:346
 msgid "Next image"
 msgstr "Next image"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:580
-#: web/src/lib/features/admin/AdminUsers.svelte:877
+#: web/src/lib/features/admin/AdminAudit.svelte:638
+#: web/src/lib/features/admin/AdminUsers.svelte:886
 msgid "Next page"
 msgstr "Next page"
 
@@ -3302,7 +3314,7 @@ msgstr ""
 "No Stricknani account is linked to this {name} login yet. Sign in with "
 "your password, then link {name} in your account settings."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:411
+#: web/src/lib/features/admin/AdminAudit.svelte:454
 msgid "No audit events match these filters."
 msgstr "No audit events match these filters."
 
@@ -3331,12 +3343,12 @@ msgstr "No changes are available for this event."
 msgid "No changes recorded yet"
 msgstr "No changes recorded yet"
 
-#: web/src/lib/components/PwaUpdate.svelte:16 web/src/lib/error-copy.ts:85
+#: web/src/lib/components/PwaUpdate.svelte:17 web/src/lib/error-copy.ts:85
 msgid "No connection"
 msgstr "No connection"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:534
-#: web/src/lib/features/admin/AdminAudit.svelte:536
+#: web/src/lib/features/admin/AdminAudit.svelte:592
+#: web/src/lib/features/admin/AdminAudit.svelte:594
 #: web/src/lib/features/history/HistoryEventDetail.svelte:35
 #: web/src/lib/features/history/HistoryEventDetail.svelte:58
 msgid "No details recorded"
@@ -3401,7 +3413,7 @@ msgstr "No steps have been added yet."
 msgid "No text was found in this photo."
 msgstr "No text was found in this photo."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:852
+#: web/src/lib/features/admin/AdminUsers.svelte:861
 msgid "No user accounts were found."
 msgstr "No user accounts were found."
 
@@ -3510,7 +3522,7 @@ msgstr "Now"
 msgid "Numbered list"
 msgstr "Numbered list"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:753
+#: web/src/lib/features/projects/ProjectTimer.svelte:752
 msgid "Off"
 msgstr "Off"
 
@@ -3545,6 +3557,11 @@ msgstr ""
 "On Android, deleting from the app also clears what the app stored on your"
 " phone. If you delete from the web instead, clear the app data or "
 "uninstall the app to remove the local copy."
+
+#: web/src/lib/features/admin/audit-user-role.ts:42
+#, python-brace-format
+msgid "On {user}'s account"
+msgstr "On {user}'s account"
 
 #: web/src/lib/features/account/AccountSettings.svelte:1653
 msgid "One-time display"
@@ -3647,7 +3664,7 @@ msgstr "Open your project library to continue."
 msgid "Opening your pattern…"
 msgstr "Opening your pattern…"
 
-#: web/src/routes/+layout.svelte:280
+#: web/src/routes/+layout.svelte:281
 msgid "Opening your workspace…"
 msgstr "Opening your workspace…"
 
@@ -3656,7 +3673,7 @@ msgstr "Opening your workspace…"
 msgid "Opening {name}…"
 msgstr "Opening {name}…"
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:220
+#: web/src/lib/features/sharing/ShareDialog.svelte:218
 msgid ""
 "Opens for people who already have access. Pick someone below to give them"
 " access."
@@ -3705,7 +3722,7 @@ msgstr "Owned by {name}"
 
 #: web/src/lib/features/admin/AdminResource.svelte:407
 #: web/src/lib/features/projects/ProjectLibrary.svelte:203
-#: web/src/lib/features/sharing/ShareDialog.svelte:258
+#: web/src/lib/features/sharing/ShareDialog.svelte:256
 #: web/src/lib/features/yarns/YarnLibrary.svelte:140
 msgid "Owner"
 msgstr "Owner"
@@ -3740,8 +3757,8 @@ msgstr "PDF"
 msgid "PDF link not attached"
 msgstr "PDF link not attached"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:571
-#: web/src/lib/features/admin/AdminUsers.svelte:869
+#: web/src/lib/features/admin/AdminAudit.svelte:629
+#: web/src/lib/features/admin/AdminUsers.svelte:878
 #: web/src/lib/features/projects/ProjectLibrary.svelte:460
 #: web/src/lib/features/yarns/YarnLibrary.svelte:346
 msgid "Page"
@@ -3797,7 +3814,7 @@ msgstr "Paste text to preview."
 msgid "Paste this into Claude Code, Codex or opencode. The prompt is in English."
 msgstr "Paste this into Claude Code, Codex or opencode. The prompt is in English."
 
-#: web/src/lib/features/imports/ImportDraftCards.svelte:77
+#: web/src/lib/features/imports/ImportDraftCards.svelte:78
 msgid "Pasted text"
 msgstr "Pasted text"
 
@@ -3844,11 +3861,11 @@ msgstr "People"
 msgid "People could not be loaded."
 msgstr "People could not be loaded."
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:253
+#: web/src/lib/features/sharing/ShareDialog.svelte:251
 msgid "People with access"
 msgstr "People with access"
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:229
+#: web/src/lib/features/sharing/ShareDialog.svelte:227
 msgid "People you share this with can also see its linked yarns, read-only."
 msgstr "People you share this with can also see its linked yarns, read-only."
 
@@ -3989,12 +4006,12 @@ msgstr "Preparing…"
 msgid "Previous"
 msgstr "Previous"
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:291
+#: web/src/lib/features/media/ProjectLightbox.svelte:288
 msgid "Previous image"
 msgstr "Previous image"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:569
-#: web/src/lib/features/admin/AdminUsers.svelte:867
+#: web/src/lib/features/admin/AdminAudit.svelte:627
+#: web/src/lib/features/admin/AdminUsers.svelte:876
 msgid "Previous page"
 msgstr "Previous page"
 
@@ -4056,8 +4073,8 @@ msgstr ""
 "account settings, and the instance operator can disable it for the whole "
 "instance."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:270
-#: web/src/lib/features/admin/AdminAudit.svelte:363
+#: web/src/lib/features/admin/AdminAudit.svelte:295
+#: web/src/lib/features/admin/AdminAudit.svelte:388
 #: web/src/lib/features/admin/AdminResource.svelte:233
 #: web/src/lib/features/admin/DiffPanel.svelte:92
 #: web/src/lib/features/trash/trash-kinds.ts:43
@@ -4092,7 +4109,7 @@ msgstr "Project detail cards"
 msgid "Project details"
 msgstr "Project details"
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:248
+#: web/src/lib/features/media/ProjectLightbox.svelte:249
 msgid "Project image viewer"
 msgstr "Project image viewer"
 
@@ -4191,7 +4208,7 @@ msgstr "Questions about the software itself are welcome on the"
 msgid "Queued"
 msgstr "Queued"
 
-#: web/src/lib/features/media/PhotoEditor.svelte:435
+#: web/src/lib/features/media/PhotoEditor.svelte:426
 msgid "Read aloud by screen readers and shown when the photo cannot load."
 msgstr "Read aloud by screen readers and shown when the photo cannot load."
 
@@ -4216,11 +4233,11 @@ msgstr "Reading the pattern"
 msgid "Reading the text"
 msgstr "Reading the text"
 
-#: web/src/lib/features/imports/ImportDraftCards.svelte:86
+#: web/src/lib/features/imports/ImportDraftCards.svelte:87
 msgid "Ready to review"
 msgstr "Ready to review"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:624
+#: web/src/lib/features/projects/ProjectTimer.svelte:623
 msgid "Ready when you are"
 msgstr "Ready when you are"
 
@@ -4237,6 +4254,10 @@ msgstr "Recent changes"
 #: web/src/lib/features/history/HistorySection.svelte:257
 msgid "Recent changes could not be loaded."
 msgstr "Recent changes could not be loaded."
+
+#: web/src/routes/more/+page.svelte:55
+msgid "Recent changes to your projects and yarns."
+msgstr "Recent changes to your projects and yarns."
 
 #: web/src/lib/components/CommandPalette.svelte:108
 #: web/src/lib/features/home/HomeDashboard.svelte:332
@@ -4311,7 +4332,7 @@ msgstr ""
 "Registrations are closed here, but you can set up your own private "
 "Stricknani!"
 
-#: web/src/lib/components/PwaUpdate.svelte:121
+#: web/src/lib/components/PwaUpdate.svelte:122
 #: web/src/lib/features/admin/RestoreBackupDialog.svelte:568
 msgid "Reload"
 msgstr "Reload"
@@ -4441,12 +4462,12 @@ msgstr ""
 msgid "Request a new archive"
 msgstr "Request a new archive"
 
-#: web/src/lib/features/media/PhotoEditor.svelte:418
+#: web/src/lib/features/media/PhotoEditor.svelte:409
 msgid "Reset"
 msgstr "Reset"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:820
-#: web/src/lib/features/admin/AdminUsers.svelte:1145
+#: web/src/lib/features/admin/AdminUsers.svelte:829
+#: web/src/lib/features/admin/AdminUsers.svelte:1154
 msgid "Reset password"
 msgstr "Reset password"
 
@@ -4455,7 +4476,7 @@ msgstr "Reset password"
 msgid "Reset text size"
 msgstr "Reset text size"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1093
+#: web/src/lib/features/admin/AdminUsers.svelte:1102
 msgid "Reset this password?"
 msgstr "Reset this password?"
 
@@ -4463,11 +4484,11 @@ msgstr "Reset this password?"
 msgid "Reset to default order"
 msgstr "Reset to default order"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1144
+#: web/src/lib/features/admin/AdminUsers.svelte:1153
 msgid "Resetting…"
 msgstr "Resetting…"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:275
+#: web/src/lib/features/admin/AdminAudit.svelte:300
 #: web/src/lib/features/admin/DiffPanel.svelte:97
 msgid "Resource"
 msgstr "Resource"
@@ -4605,12 +4626,12 @@ msgstr "Rise and knit!"
 
 #: web/src/lib/features/admin/AdminUsers.svelte:699
 #: web/src/lib/features/admin/AdminUsers.svelte:716
+#: web/src/lib/features/sharing/ShareDialog.svelte:314
 #: web/src/lib/features/sharing/ShareDialog.svelte:316
-#: web/src/lib/features/sharing/ShareDialog.svelte:318
 msgid "Role"
 msgstr "Role"
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:272
+#: web/src/lib/features/sharing/ShareDialog.svelte:270
 #, python-brace-format
 msgid "Role of {name}"
 msgstr "Role of {name}"
@@ -4620,16 +4641,16 @@ msgstr "Role of {name}"
 msgid "Role of {name} changed to {role}"
 msgstr "Role of {name} changed to {role}"
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:152
+#: web/src/lib/features/sharing/ShareDialog.svelte:151
 #, python-brace-format
 msgid "Role updated for {name}."
 msgstr "Role updated for {name}."
 
-#: web/src/lib/features/media/PhotoEditor.svelte:402
+#: web/src/lib/features/media/PhotoEditor.svelte:393
 msgid "Rotate left"
 msgstr "Rotate left"
 
-#: web/src/lib/features/media/PhotoEditor.svelte:410
+#: web/src/lib/features/media/PhotoEditor.svelte:401
 msgid "Rotate right"
 msgstr "Rotate right"
 
@@ -4646,18 +4667,18 @@ msgstr "Rows to knit"
 msgid "Rumour has it a cat was involved."
 msgstr "Rumour has it a cat was involved."
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:746
-#: web/src/lib/features/projects/ProjectTimer.svelte:748
+#: web/src/lib/features/projects/ProjectTimer.svelte:745
+#: web/src/lib/features/projects/ProjectTimer.svelte:747
 msgid "Running reminder"
 msgstr "Running reminder"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:440
+#: web/src/lib/features/admin/AdminAudit.svelte:483
 #, python-brace-format
 msgid "Safety copy: {name}"
 msgstr "Safety copy: {name}"
 
 #: web/src/lib/features/categories/CategoryManager.svelte:331
-#: web/src/lib/features/media/PhotoEditor.svelte:465
+#: web/src/lib/features/media/PhotoEditor.svelte:456
 msgid "Save"
 msgstr "Save"
 
@@ -4683,7 +4704,7 @@ msgstr "Save new password"
 msgid "Save this yarn first. You can add photos as soon as it has been created."
 msgstr "Save this yarn first. You can add photos as soon as it has been created."
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:712
+#: web/src/lib/features/projects/ProjectTimer.svelte:711
 msgid "Save time"
 msgstr "Save time"
 
@@ -4702,7 +4723,7 @@ msgstr "Save your changes first to add attachments."
 msgid "Save your changes first to add photos."
 msgstr "Save your changes first to add photos."
 
-#: web/src/lib/components/PwaUpdate.svelte:113
+#: web/src/lib/components/PwaUpdate.svelte:114
 msgid "Save your changes first, then reload."
 msgstr "Save your changes first, then reload."
 
@@ -4743,11 +4764,11 @@ msgstr "Saved, but some photos or files could not be removed. Save again to retr
 msgid "Saved. What you removed is in the trash for 90 days."
 msgstr "Saved. What you removed is in the trash for 90 days."
 
-#: web/src/lib/features/media/PhotoEditor.svelte:448
+#: web/src/lib/features/media/PhotoEditor.svelte:439
 msgid "Saving photo…"
 msgstr "Saving photo…"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1069
+#: web/src/lib/features/admin/AdminUsers.svelte:1078
 #: web/src/lib/features/categories/CategoryManager.svelte:273
 #: web/src/lib/features/categories/CategoryManager.svelte:331
 #: web/src/lib/features/projects/ProjectEditor.svelte:1677
@@ -4810,8 +4831,8 @@ msgstr "Search your yarn"
 msgid "Search your yarns"
 msgstr "Search your yarns"
 
+#: web/src/lib/features/projects/ProjectTimer.svelte:688
 #: web/src/lib/features/projects/ProjectTimer.svelte:689
-#: web/src/lib/features/projects/ProjectTimer.svelte:690
 msgid "Seconds"
 msgstr "Seconds"
 
@@ -4850,7 +4871,7 @@ msgstr ""
 "Sends technical details of errors, never your content, to the instance "
 "operator."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:366
+#: web/src/lib/features/admin/AdminAudit.svelte:391
 msgid "Server"
 msgstr "Server"
 
@@ -4875,16 +4896,16 @@ msgid "Settings"
 msgstr "Settings"
 
 #: web/src/lib/components/ShareMenuItem.svelte:54
-#: web/src/lib/features/sharing/ShareDialog.svelte:205
-#: web/src/lib/features/sharing/ShareDialog.svelte:336
+#: web/src/lib/features/sharing/ShareDialog.svelte:204
+#: web/src/lib/features/sharing/ShareDialog.svelte:334
 msgid "Share"
 msgstr "Share"
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:217
+#: web/src/lib/features/sharing/ShareDialog.svelte:215
 msgid "Share link"
 msgstr "Share link"
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:335
+#: web/src/lib/features/sharing/ShareDialog.svelte:333
 #, python-brace-format
 msgid "Share with {name}"
 msgstr "Share with {name}"
@@ -4908,7 +4929,7 @@ msgstr "Shared with me"
 msgid "Shared with {name} · {role}"
 msgstr "Shared with {name} · {role}"
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:119
+#: web/src/lib/features/sharing/ShareDialog.svelte:118
 #, python-brace-format
 msgid "Shared with {name}."
 msgstr "Shared with {name}."
@@ -4935,8 +4956,8 @@ msgstr "Show"
 msgid "Show all changes"
 msgstr "Show all changes"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:544
-#: web/src/lib/features/admin/AdminAudit.svelte:545
+#: web/src/lib/features/admin/AdminAudit.svelte:602
+#: web/src/lib/features/admin/AdminAudit.svelte:603
 msgid "Show diff"
 msgstr "Show diff"
 
@@ -4977,7 +4998,7 @@ msgstr ""
 #: web/src/lib/features/auth/SignupForm.svelte:281
 #: web/src/lib/features/home/HomeDashboard.svelte:172
 #: web/src/lib/features/projects/ProjectEditor.svelte:1624
-#: web/src/routes/+layout.svelte:264 web/src/routes/login/+page.svelte:8
+#: web/src/routes/+layout.svelte:265 web/src/routes/login/+page.svelte:8
 msgid "Sign in"
 msgstr "Sign in"
 
@@ -5091,7 +5112,7 @@ msgstr "Skein weight"
 msgid "Skein weight in grams"
 msgstr "Skein weight in grams"
 
-#: web/src/routes/+layout.svelte:251
+#: web/src/routes/+layout.svelte:252
 msgid "Skip to content"
 msgstr "Skip to content"
 
@@ -5149,7 +5170,7 @@ msgstr "Source code on GitHub"
 msgid "Sponsor on GitHub"
 msgstr "Sponsor on GitHub"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:738
+#: web/src/lib/features/projects/ProjectTimer.svelte:737
 msgid "Start"
 msgstr "Start"
 
@@ -5169,7 +5190,7 @@ msgstr "Start something new, or bring in a pattern you already have."
 msgid "Start with one project to keep its pattern and progress together."
 msgstr "Start with one project to keep its pattern and progress together."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1009
+#: web/src/lib/features/admin/AdminUsers.svelte:1018
 msgid "Starting…"
 msgstr "Starting…"
 
@@ -5284,7 +5305,7 @@ msgstr "Stitches"
 msgid "Stitches to cast on"
 msgstr "Stitches to cast on"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:730
+#: web/src/lib/features/projects/ProjectTimer.svelte:729
 msgid "Stop"
 msgstr "Stop"
 
@@ -5292,7 +5313,7 @@ msgstr "Stop"
 msgid "Stop impersonating"
 msgstr "Stop impersonating"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:647
+#: web/src/lib/features/projects/ProjectTimer.svelte:646
 msgid "Stop timer"
 msgstr "Stop timer"
 
@@ -5355,7 +5376,7 @@ msgstr ""
 "volume, keep the software and host updated, and configure backups "
 "securely."
 
-#: web/src/lib/components/PwaUpdate.svelte:76
+#: web/src/lib/components/PwaUpdate.svelte:77
 msgid "Stricknani was updated."
 msgstr "Stricknani was updated."
 
@@ -5376,7 +5397,7 @@ msgid "Swatch size"
 msgstr "Swatch size"
 
 #: web/src/lib/features/account/AccountSettings.svelte:137
-#: web/src/lib/features/admin/AdminAudit.svelte:251
+#: web/src/lib/features/admin/AdminAudit.svelte:276
 #: web/src/lib/features/admin/DiffPanel.svelte:146
 #: web/src/lib/features/admin/DiffPanel.svelte:152
 #: web/src/lib/features/admin/audit-client.ts:46
@@ -5411,7 +5432,7 @@ msgstr "Tap ♥ on a project or yarn to keep it here."
 msgid "Tell us what is in the ball and it is ready for your next project."
 msgstr "Tell us what is in the ball and it is ready for your next project."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:920
+#: web/src/lib/features/admin/AdminUsers.svelte:929
 msgid "Temporary password"
 msgstr "Temporary password"
 
@@ -5715,7 +5736,7 @@ msgid "The latest project could not be loaded."
 msgstr "The latest project could not be loaded."
 
 #: web/src/lib/components/ShareMenuItem.svelte:41
-#: web/src/lib/features/sharing/ShareDialog.svelte:193
+#: web/src/lib/features/sharing/ShareDialog.svelte:192
 msgid "The link could not be shared."
 msgstr "The link could not be shared."
 
@@ -5873,7 +5894,7 @@ msgstr ""
 msgid "The result appears automatically as soon as every field is filled in"
 msgstr "The result appears automatically as soon as every field is filled in"
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:158
+#: web/src/lib/features/sharing/ShareDialog.svelte:157
 msgid "The role could not be changed."
 msgstr "The role could not be changed."
 
@@ -5919,7 +5940,7 @@ msgid "The server returned an unexpected import response."
 msgstr "The server returned an unexpected import response."
 
 #: web/src/lib/api.ts:493 web/src/lib/features/account/account-api.ts:65
-#: web/src/lib/features/admin/admin-api.ts:213
+#: web/src/lib/features/admin/admin-api.ts:223
 #: web/src/lib/features/auth/oidc-api.ts:74
 #: web/src/lib/features/auth/signup-api.ts:46
 #: web/src/lib/features/categories/category-api.ts:20
@@ -5939,7 +5960,7 @@ msgstr ""
 "The server was restored from a backup. Changes on this device that had "
 "not been synced are gone."
 
-#: web/src/lib/session.svelte.ts:211 web/src/routes/+layout.svelte:293
+#: web/src/lib/session.svelte.ts:211 web/src/routes/+layout.svelte:294
 msgid "The session could not be loaded."
 msgstr "The session could not be loaded."
 
@@ -5947,11 +5968,11 @@ msgstr "The session could not be loaded."
 msgid "The session token is missing. Refresh and try again."
 msgstr "The session token is missing. Refresh and try again."
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:121
+#: web/src/lib/features/sharing/ShareDialog.svelte:120
 msgid "The share could not be added."
 msgstr "The share could not be added."
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:182
+#: web/src/lib/features/sharing/ShareDialog.svelte:181
 msgid "The share could not be removed."
 msgstr "The share could not be removed."
 
@@ -5991,15 +6012,15 @@ msgstr "The uploaded image could not be read. Choose it again."
 msgid "The user account could not be created."
 msgstr "The user account could not be created."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1041
+#: web/src/lib/features/admin/AdminUsers.svelte:1050
 msgid "The user will be able to sign in again."
 msgstr "The user will be able to sign in again."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1042
+#: web/src/lib/features/admin/AdminUsers.svelte:1051
 msgid "The user will be signed out and will not be able to sign in."
 msgstr "The user will be signed out and will not be able to sign in."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1104
+#: web/src/lib/features/admin/AdminUsers.svelte:1113
 msgid "The user will need to sign in with the new password."
 msgstr "The user will need to sign in with the new password."
 
@@ -6361,7 +6382,7 @@ msgstr "This yarn will not be added to the project."
 msgid "Three imports are already running. Wait until one is done."
 msgstr "Three imports are already running. Wait until one is done."
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:623
+#: web/src/lib/features/projects/ProjectTimer.svelte:622
 msgid "Time spent on this project"
 msgstr "Time spent on this project"
 
@@ -6406,7 +6427,7 @@ msgstr "Title image changed"
 msgid "Title image uploaded"
 msgstr "Title image uploaded"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:310
+#: web/src/lib/features/admin/AdminAudit.svelte:335
 #: web/src/lib/features/home/activity.ts:386
 msgid "Today"
 msgstr "Today"
@@ -6472,7 +6493,7 @@ msgstr "Top left corner"
 msgid "Top right corner"
 msgstr "Top right corner"
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:356
+#: web/src/lib/features/sharing/ShareDialog.svelte:354
 #: web/src/lib/features/sharing/TransferDialog.svelte:90
 #: web/src/lib/features/sharing/TransferDialog.svelte:144
 msgid "Transfer ownership"
@@ -6492,7 +6513,7 @@ msgstr "Transferred to {name}"
 #: web/src/lib/features/trash/TrashManager.svelte:230
 #: web/src/lib/features/trash/TrashManager.svelte:236
 #: web/src/lib/features/trash/TrashedBanner.svelte:118
-#: web/src/lib/nav-items.ts:28 web/src/lib/search-suggestions.ts:125
+#: web/src/lib/nav-items.ts:29 web/src/lib/search-suggestions.ts:125
 #: web/src/routes/more/+page.svelte:48
 msgid "Trash"
 msgstr "Trash"
@@ -6505,7 +6526,7 @@ msgstr "Try a different name, category, or tag."
 #: web/src/lib/features/account/AccountSettings.svelte:929
 #: web/src/lib/features/account/AccountSettings.svelte:1523
 #: web/src/lib/features/account/BackupsSection.svelte:436
-#: web/src/lib/features/admin/AdminAudit.svelte:406
+#: web/src/lib/features/admin/AdminAudit.svelte:449
 #: web/src/lib/features/admin/AdminBackups.svelte:131
 #: web/src/lib/features/admin/AdminResource.svelte:385
 #: web/src/lib/features/admin/AdminUsers.svelte:693
@@ -6523,12 +6544,12 @@ msgstr "Try a different name, category, or tag."
 #: web/src/lib/features/projects/ProjectLibrary.svelte:396
 #: web/src/lib/features/projects/ProjectReader.svelte:847
 #: web/src/lib/features/sharing/PeoplePicker.svelte:119
-#: web/src/lib/features/sharing/ShareDialog.svelte:247
+#: web/src/lib/features/sharing/ShareDialog.svelte:245
 #: web/src/lib/features/trash/TrashManager.svelte:296
 #: web/src/lib/features/yarns/YarnDetail.svelte:391
 #: web/src/lib/features/yarns/YarnForm.svelte:851
 #: web/src/lib/features/yarns/YarnLibrary.svelte:282
-#: web/src/routes/+layout.svelte:301
+#: web/src/routes/+layout.svelte:302
 msgid "Try again"
 msgstr "Try again"
 
@@ -6594,8 +6615,8 @@ msgstr "Undo the last restore"
 msgid "Unknown"
 msgstr "Unknown"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:255
-#: web/src/lib/features/admin/AdminAudit.svelte:262
+#: web/src/lib/features/admin/AdminAudit.svelte:280
+#: web/src/lib/features/admin/AdminAudit.svelte:287
 #: web/src/lib/features/admin/DiffPanel.svelte:147
 #: web/src/lib/features/admin/DiffPanel.svelte:153
 msgid "Unknown actor"
@@ -6750,7 +6771,7 @@ msgstr "User account disabled."
 msgid "User account enabled."
 msgstr "User account enabled."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:858
+#: web/src/lib/features/admin/AdminUsers.svelte:867
 msgid "User account pages"
 msgstr "User account pages"
 
@@ -6766,6 +6787,15 @@ msgstr "User accounts could not be loaded."
 msgid "User agent"
 msgstr "User agent"
 
+#: web/src/lib/features/admin/AdminAudit.svelte:201
+msgid "User was not found."
+msgstr "User was not found."
+
+#: web/src/lib/features/admin/AdminAudit.svelte:417
+#, python-brace-format
+msgid "User: {name}"
+msgstr "User: {name}"
+
 #: web/src/lib/features/admin/AdminTabs.svelte:16
 msgid "Users"
 msgstr "Users"
@@ -6775,7 +6805,7 @@ msgstr "Users"
 msgid "Version"
 msgstr "Version"
 
-#: web/src/routes/more/+page.svelte:83
+#: web/src/routes/more/+page.svelte:89
 msgid "Version, links and credits."
 msgstr "Version, links and credits."
 
@@ -6783,11 +6813,11 @@ msgstr "Version, links and credits."
 msgid "Visible through a shared project"
 msgstr "Visible through a shared project"
 
-#: web/src/lib/components/PwaUpdate.svelte:115
+#: web/src/lib/components/PwaUpdate.svelte:116
 msgid "Wait until the current action finishes, then reload."
 msgstr "Wait until the current action finishes, then reload."
 
-#: web/src/lib/features/imports/ImportDraftCards.svelte:113
+#: web/src/lib/features/imports/ImportDraftCards.svelte:114
 msgid "Waiting for review"
 msgstr "Waiting for review"
 
@@ -6807,7 +6837,7 @@ msgstr ""
 "We checked the whole basket: under the sofa, behind the cat, inside that "
 "suspiciously lumpy sock. Nothing. Whatever lived here has been frogged."
 
-#: web/src/lib/components/PwaUpdate.svelte:18
+#: web/src/lib/components/PwaUpdate.svelte:19
 msgid ""
 "We couldn’t reach Stricknani. Check your connection, because Wi-Fi loves "
 "hiding in the yarn basket. Your projects, yarn, photos, and edits are not"
@@ -6911,7 +6941,7 @@ msgstr "Width"
 msgid "Will be removed when you save"
 msgstr "Will be removed when you save"
 
-#: web/src/lib/components/PwaUpdate.svelte:17 web/src/lib/error-copy.ts:86
+#: web/src/lib/components/PwaUpdate.svelte:18 web/src/lib/error-copy.ts:86
 msgid "Winky lost the thread"
 msgstr "Winky lost the thread"
 
@@ -6974,8 +7004,8 @@ msgstr "Yarn pages"
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:69
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:304
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:340
-#: web/src/lib/features/yarns/YarnPhotoManager.svelte:356
-#: web/src/lib/features/yarns/YarnPhotoManager.svelte:366
+#: web/src/lib/features/yarns/YarnPhotoManager.svelte:349
+#: web/src/lib/features/yarns/YarnPhotoManager.svelte:359
 msgid "Yarn photo"
 msgstr "Yarn photo"
 
@@ -6996,7 +7026,7 @@ msgstr "Yarn specifications"
 msgid "Yarn weight"
 msgstr "Yarn weight"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:312
+#: web/src/lib/features/admin/AdminAudit.svelte:337
 #: web/src/lib/features/home/activity.ts:387
 msgid "Yesterday"
 msgstr "Yesterday"
@@ -7145,7 +7175,7 @@ msgstr "You deleted {name}"
 msgid "You deleted {name} permanently"
 msgstr "You deleted {name} permanently"
 
-#: web/src/routes/+layout.svelte:415
+#: web/src/routes/+layout.svelte:416
 msgid "You do not have access to this page."
 msgstr "You do not have access to this page."
 
@@ -7316,11 +7346,11 @@ msgstr "Your favourites and your profile picture."
 msgid "Your gauge (per 10cm)"
 msgstr "Your gauge (per 10cm)"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:639
+#: web/src/lib/features/projects/ProjectTimer.svelte:638
 msgid "Your knitting timer has been running for a while."
 msgstr "Your knitting timer has been running for a while."
 
-#: web/src/routes/+layout.svelte:329
+#: web/src/routes/+layout.svelte:330
 msgid "Your library"
 msgstr "Your library"
 
@@ -7340,7 +7370,7 @@ msgstr ""
 "Your photos and attachments, including the image files stored on the "
 "server."
 
-#: web/src/lib/components/GetAppCard.svelte:72
+#: web/src/lib/components/GetAppCard.svelte:73
 msgid "Your projects and yarn stay with you, even without a connection."
 msgstr "Your projects and yarn stay with you, even without a connection."
 
@@ -7382,7 +7412,7 @@ msgstr "Your sign-up session expired. Refresh and try again."
 msgid "Your stash is empty"
 msgstr "Your stash is empty"
 
-#: web/src/routes/+layout.svelte:289
+#: web/src/routes/+layout.svelte:290
 msgid "Your workspace is taking a moment."
 msgstr "Your workspace is taking a moment."
 
@@ -7597,7 +7627,7 @@ msgstr "{count} linked yarns"
 msgid "{name} left"
 msgstr "{name} left"
 
-#: web/src/lib/features/sharing/ShareDialog.svelte:177
+#: web/src/lib/features/sharing/ShareDialog.svelte:176
 #, python-brace-format
 msgid "{name} no longer has access."
 msgstr "{name} no longer has access."
@@ -7683,6 +7713,11 @@ msgstr "{trashed} in the trash"
 #, python-brace-format
 msgid "{users} accounts"
 msgstr "{users} accounts"
+
+#: web/src/lib/features/admin/audit-user-role.ts:38
+#, python-brace-format
+msgid "{user} acting as {actor}"
+msgstr "{user} acting as {actor}"
 
 #: web/src/lib/features/admin/AdminBackups.svelte:246
 #, python-brace-format

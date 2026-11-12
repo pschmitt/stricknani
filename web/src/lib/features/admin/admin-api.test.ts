@@ -164,13 +164,13 @@ describe("administrator API", () => {
       data: [withAvatar],
     });
     await expect(
-      listAuditEvents({ page: 1, entity: "all", action: "" }),
+      listAuditEvents({ page: 1, entity: "all", action: "", user: null }),
     ).resolves.toMatchObject({ data: [event] });
     await expect(listAdminUsers(1)).rejects.toMatchObject({
       code: "invalid_response",
     });
     await expect(
-      listAuditEvents({ page: 1, entity: "all", action: "" }),
+      listAuditEvents({ page: 1, entity: "all", action: "", user: null }),
     ).rejects.toMatchObject({ code: "invalid_response" });
   });
 
@@ -217,7 +217,7 @@ describe("administrator API", () => {
       data: [{ avatar_url: gravatar }],
     });
     await expect(
-      listAuditEvents({ page: 1, entity: "all", action: "" }),
+      listAuditEvents({ page: 1, entity: "all", action: "", user: null }),
     ).resolves.toMatchObject({ data: [event] });
     await expect(listAdminUsers(1)).rejects.toMatchObject({
       code: "invalid_response",
@@ -282,7 +282,7 @@ describe("administrator API", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
-      listAuditEvents({ page: 1, entity: "all", action: "" }),
+      listAuditEvents({ page: 1, entity: "all", action: "", user: null }),
     ).resolves.toMatchObject({
       data: [
         {
@@ -295,7 +295,7 @@ describe("administrator API", () => {
     });
     for (let index = 0; index < 3; index += 1) {
       await expect(
-        listAuditEvents({ page: 1, entity: "all", action: "" }),
+        listAuditEvents({ page: 1, entity: "all", action: "", user: null }),
       ).rejects.toMatchObject({ code: "invalid_response" });
     }
   });
@@ -392,15 +392,20 @@ describe("administrator API", () => {
         page: 3,
         entity: "yarn",
         action: " photo_added ",
+        user: 12,
       }),
-    ).toBe("page=3&entity=yarn&action=photo_added");
+    ).toBe("page=3&entity=yarn&action=photo_added&user=12");
     expect(
       auditFiltersFromSearch("?page=10001&entity=unknown&action=old_event"),
     ).toEqual({
       page: 1,
       entity: "all",
       action: "old_event",
+      user: null,
     });
+    expect(auditFiltersFromSearch("?user=12").user).toBe(12);
+    expect(auditFiltersFromSearch("?user=0").user).toBeNull();
+    expect(auditFiltersFromSearch("?user=abc").user).toBeNull();
 
     const fetchMock = vi.fn().mockResolvedValue(
       Response.json({
@@ -426,7 +431,9 @@ describe("administrator API", () => {
       page: 1,
       entity: "project",
       action: "updated",
+      user: null,
     });
+    expect(result.user).toBeNull();
     expect(result.data[0]?.actor_email).toBeNull();
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
       "/api/v2/admin/audit?entity=project&action=updated",
@@ -471,10 +478,10 @@ describe("administrator API", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
-      listAuditEvents({ page: 1, entity: "all", action: "" }),
+      listAuditEvents({ page: 1, entity: "all", action: "", user: null }),
     ).resolves.toMatchObject({ data: [historicEvent] });
     await expect(
-      listAuditEvents({ page: 1, entity: "all", action: "" }),
+      listAuditEvents({ page: 1, entity: "all", action: "", user: null }),
     ).rejects.toMatchObject({ code: "invalid_response" });
   });
 
@@ -590,7 +597,12 @@ describe("administrator API", () => {
         }),
       ),
     );
-    const page = await listAuditEvents({ page: 1, entity: "all", action: "" });
+    const page = await listAuditEvents({
+      page: 1,
+      entity: "all",
+      action: "",
+      user: null,
+    });
     expect(page.data[0]?.media_thumbnails).toEqual({
       "a.jpg": {
         url: "/api/v2/admin/resources/project/12/media/image/3",
@@ -645,7 +657,7 @@ describe("administrator API", () => {
       fields: { email: "Already used" },
     } satisfies Partial<ApiError>);
     await expect(
-      listAuditEvents({ page: 1, entity: "all", action: "" }),
+      listAuditEvents({ page: 1, entity: "all", action: "", user: null }),
     ).rejects.toMatchObject({
       code: "invalid_response",
     });
@@ -674,7 +686,8 @@ describe("administrator API", () => {
         data: [event],
         meta: { page: 1, per_page: 50, has_more: false },
       });
-    const list = () => listAuditEvents({ page: 1, entity: "all", action: "" });
+    const list = () =>
+      listAuditEvents({ page: 1, entity: "all", action: "", user: null });
 
     it("keeps old payloads without the new fields valid", async () => {
       vi.stubGlobal(
@@ -846,7 +859,12 @@ describe("server audit events", () => {
   it("keeps the server entity in the audit filters", () => {
     expect(auditFiltersFromSearch("?entity=server").entity).toBe("server");
     expect(
-      auditSearchFromFilters({ page: 1, entity: "server", action: "" }),
-    ).toBe("entity=server");
+      auditSearchFromFilters({
+        page: 1,
+        entity: "server",
+        action: "",
+        user: 4,
+      }),
+    ).toBe("entity=server&user=4");
   });
 });

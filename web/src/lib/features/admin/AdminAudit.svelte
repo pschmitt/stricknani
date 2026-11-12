@@ -1,5 +1,6 @@
 <script lang="ts">
   import SharedButton from "#lib/components/Button.svelte";
+  import FilterChip from "#lib/components/FilterChip.svelte";
   import { goto, snapshot } from "$app/navigation";
   import { page } from "$app/state";
   import { onDestroy, tick } from "svelte";
@@ -14,6 +15,7 @@
   import AuditMediaPreview from "./AuditMediaPreview.svelte";
   import ClientIcon from "./ClientIcon.svelte";
   import { clientLabel } from "./audit-client";
+  import { auditUserRoleText } from "./audit-user-role";
   import { knownAuditActions } from "./audit-action";
   import {
     actionLabel,
@@ -28,6 +30,7 @@
     listAuditEvents,
     type AuditEntity,
     type AuditEvent,
+    type AuditFilterUser,
   } from "./admin-api";
 
   type LoadState = "loading" | "ready" | "error";
@@ -49,6 +52,8 @@
   let retry = $state(0);
   let currentOwner: number | null | undefined;
   let actionDraft = $state("");
+  // The account the list is filtered to, as named by the server's answer.
+  let filterUser = $state<AuditFilterUser | null>(null);
 
   const locale = $derived(session.data?.locale ?? "en");
   const legacyUserMessage = msg("Legacy user");
@@ -166,6 +171,7 @@
           return;
         events = result.data;
         pageMeta = result.meta;
+        filterUser = result.user;
         loadState = "ready";
         if (result.meta.page !== currentFilters.page) {
           const next = auditSearchFromFilters({
@@ -186,13 +192,16 @@
         )
           return;
         events = [];
+        filterUser = null;
         loadState = "error";
         loadError =
           error instanceof ApiError && error.status === 403
             ? t("Administrator access is required.", locale)
-            : error instanceof Error
-              ? error.message
-              : t("Audit events could not be loaded.", locale);
+            : error instanceof ApiError && error.status === 404
+              ? t("User was not found.", locale)
+              : error instanceof Error
+                ? error.message
+                : t("Audit events could not be loaded.", locale);
       });
     return () => controller.abort();
   });
@@ -206,6 +215,7 @@
     page: number;
     entity: AuditEntity;
     action: string;
+    user: number | null;
   }) {
     const query = auditSearchFromFilters(next);
     await goto(`${page.url.pathname}${query ? `?${query}` : ""}`, {
@@ -219,6 +229,7 @@
       page: 1,
       entity: filters.entity,
       action: actionDraft.trim(),
+      user: filters.user,
     });
   }
 
@@ -233,7 +244,21 @@
       value === "server"
         ? value
         : "all";
-    void updateFilters({ page: 1, entity, action: actionDraft.trim() });
+    void updateFilters({
+      page: 1,
+      entity,
+      action: actionDraft.trim(),
+      user: filters.user,
+    });
+  }
+
+  function clearUserFilter() {
+    void updateFilters({
+      page: 1,
+      entity: filters.entity,
+      action: actionDraft.trim(),
+      user: null,
+    });
   }
 
   /** Whether the row has an owner or trash note to show on its note line. */
@@ -386,6 +411,24 @@
     </SharedButton>
   </form>
 
+  {#if filters.user !== null}
+    <div class="audit-user-filter" data-testid="audit-user-filter">
+      <FilterChip
+        label={t("User: {name}", locale).replace(
+          "{name}",
+          filterUser?.email ?? `#${filters.user}`,
+        )}
+        selected
+        onclick={clearUserFilter}
+        testid="audit-user-filter-chip"
+      >
+        {#snippet leading()}
+          <NavIcon name="close" />
+        {/snippet}
+      </FilterChip>
+    </div>
+  {/if}
+
   {#if loadState === "loading"}
     <p class="notice-panel" aria-live="polite">
       {t("Loading audit events…", locale)}
@@ -507,6 +550,21 @@
                         : actor}</span
                     >
                   </span>
+                  {#if filterUser}
+                    {@const roleText = auditUserRoleText(
+                      event,
+                      filterUser,
+                      actor,
+                      locale,
+                    )}
+                    {#if roleText}
+                      <span
+                        class="user-role"
+                        data-testid="audit-user-role"
+                        title={roleText}>{roleText}</span
+                      >
+                    {/if}
+                  {/if}
                   <span
                     class="client-chip"
                     data-audit-client={event.client.kind}
@@ -598,6 +656,21 @@
     align-items: end;
     gap: 0.6rem 0.75rem;
     margin: 0 0 1.5rem;
+  }
+  .audit-user-filter {
+    display: flex;
+    margin: -0.5rem 0 1rem;
+  }
+  .user-role {
+    display: block;
+    min-width: 0;
+    margin-top: 0.1rem;
+    overflow: hidden;
+    color: var(--ink-muted);
+    font-size: 0.78rem;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .filter-field {
     display: grid;

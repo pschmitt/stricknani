@@ -24,6 +24,19 @@ data class AdminPageMetaDto(
     val page: Int,
     @SerialName("per_page") val perPage: Int,
     @SerialName("has_more") val hasMore: Boolean,
+    /** The account an audit list was filtered to with `user`; absent otherwise. */
+    val user: AuditFilterUserDto? = null,
+)
+
+/** `meta.user` of the audit list: the account the list is filtered to. */
+@Serializable data class AuditFilterUserDto(val id: Long, val email: String)
+
+/** `impersonated_by` of an audit event: the administrator who acted as the actor. */
+@Serializable
+data class AuditImpersonatorDto(
+    val id: Long? = null,
+    val name: String? = null,
+    val email: String? = null,
 )
 
 @Serializable
@@ -132,6 +145,8 @@ data class AuditEventDto(
     val client: AuditClientDto? = null,
     /** What a server event (a backup restore) was about; absent on every other event. */
     val server: AuditServerEventDto? = null,
+    /** The administrator who made this change while acting as the actor. */
+    @SerialName("impersonated_by") val impersonatedBy: AuditImpersonatorDto? = null,
 )
 
 /**

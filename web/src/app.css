@@ -403,21 +403,11 @@ textarea.reading-input {
   font-size: 0.9rem;
 }
 
+/* Filled: the main action of a view or dialog. Touch screens have no hover, so the one
+   primary action keeps its shape. */
 .ui-button--primary {
   color: var(--on-accent);
   background: var(--accent);
-}
-
-.ui-button--secondary {
-  border-color: var(--control-border);
-  color: var(--accent-strong);
-  background: var(--surface);
-}
-
-.ui-button--ghost {
-  border-color: transparent;
-  color: var(--accent-strong);
-  background: transparent;
 }
 
 .ui-button--danger {
@@ -425,25 +415,60 @@ textarea.reading-input {
   background: var(--danger);
 }
 
-.ui-button:hover:not(:disabled) {
-  border-color: var(--control-border);
+/* Ghost family (secondary, ghost, danger-ghost): no shape at rest, only label and glyph in the
+   variant's colour. A soft fill appears on hover, keyboard focus and press. */
+.ui-button--secondary,
+.ui-button--ghost,
+.ui-button--danger-ghost {
+  --ghost-fill: var(--accent-wash);
+  border-color: transparent;
+  background: transparent;
 }
 
-.ui-button--secondary:hover:not(:disabled),
-.ui-button--ghost:hover:not(:disabled) {
-  background: var(--accent-wash);
+.ui-button--secondary {
+  color: var(--accent-strong);
 }
 
-.ui-button--primary:hover:not(:disabled),
-.ui-button--danger:hover:not(:disabled) {
-  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 38%, transparent);
+.ui-button--ghost {
+  color: var(--ink-muted);
 }
 
-.ui-button--primary:hover:not(:disabled) {
-  background: var(--accent-strong);
+.ui-button--danger-ghost {
+  --ghost-fill: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
 }
 
-@media (prefers-color-scheme: dark) {
+.ui-button--secondary:focus-visible,
+.ui-button--ghost:focus-visible,
+.ui-button--danger-ghost:focus-visible,
+.ui-button--secondary:active:not(:disabled),
+.ui-button--ghost:active:not(:disabled),
+.ui-button--danger-ghost:active:not(:disabled) {
+  background: var(--ghost-fill);
+}
+
+@media (hover: hover) {
+  .ui-button--secondary:hover:not(:disabled),
+  .ui-button--ghost:hover:not(:disabled),
+  .ui-button--danger-ghost:hover:not(:disabled) {
+    background: var(--ghost-fill);
+  }
+
+  .ui-button--ghost:hover:not(:disabled) {
+    color: var(--ink);
+  }
+
+  .ui-button--primary:hover:not(:disabled),
+  .ui-button--danger:hover:not(:disabled) {
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 38%, transparent);
+  }
+
+  .ui-button--primary:hover:not(:disabled) {
+    background: var(--accent-strong);
+  }
+}
+
+@media (hover: hover) and (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .ui-button--primary:hover:not(:disabled) {
     background: color-mix(in srgb, var(--accent) 85%, white);
   }
@@ -451,6 +476,64 @@ textarea.reading-input {
 
 :root[data-theme="dark"] .ui-button--primary:hover:not(:disabled) {
   background: color-mix(in srgb, var(--accent) 85%, white);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-button {
+    transition: none;
+  }
+
+  .ui-button:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* The one close control of every dialog, sheet, viewer and toast: a bare glyph in the muted
+   ink colour, a round fill on hover, focus and press. 44px target, 20px glyph. */
+.close-button {
+  display: inline-grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  padding: 0;
+  color: var(--ink-muted);
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.close-button > svg {
+  width: 20px;
+  height: 20px;
+}
+
+.close-button:focus-visible,
+.close-button:active:not(:disabled) {
+  color: var(--ink);
+  background: var(--accent-wash);
+}
+
+@media (hover: hover) {
+  .close-button:hover:not(:disabled) {
+    color: var(--ink);
+    background: var(--accent-wash);
+  }
+}
+
+.close-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .close-button {
+    transition: none;
+  }
 }
 
 .ui-button[aria-pressed="true"] {

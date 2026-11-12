@@ -171,9 +171,17 @@ export interface AdminPage {
   meta: PageMeta;
 }
 
+/** The account an audit list is filtered to. */
+export interface AuditFilterUser {
+  id: number;
+  email: string;
+}
+
 export interface AuditPage {
   data: AuditEvent[];
   meta: PageMeta;
+  /** Set when the list was filtered with `user`. */
+  user: AuditFilterUser | null;
 }
 
 export type AuditEntity = "all" | "project" | "yarn" | "category" | "server";
@@ -182,6 +190,8 @@ export interface AuditFilters {
   page: number;
   entity: AuditEntity;
   action: string;
+  /** Show only events this account took part in: as actor, subject or impersonator. */
+  user: number | null;
 }
 
 const record = (value: unknown): value is Record<string, unknown> =>
@@ -606,10 +616,18 @@ export function parseChangeSet(value: unknown): ChangeSetV1 {
   return { version: 1, items };
 }
 
+function parseFilterUser(value: unknown): AuditFilterUser | null {
+  if (value === undefined || value === null) return null;
+  if (!record(value) || !positiveInteger(value.id)) throw invalidResponse();
+  if (typeof value.email !== "string") throw invalidResponse();
+  return { id: value.id, email: value.email };
+}
+
 export function auditFiltersFromSearch(search: string): AuditFilters {
   const params = new URLSearchParams(search);
   const page = Number(params.get("page") ?? "1");
   const entity = params.get("entity");
+  const user = Number(params.get("user") ?? "");
   return {
     page: Number.isSafeInteger(page) && page >= 1 && page <= 10000 ? page : 1,
     entity:
@@ -620,6 +638,7 @@ export function auditFiltersFromSearch(search: string): AuditFilters {
         ? entity
         : "all",
     action: params.get("action") ?? "",
+    user: Number.isSafeInteger(user) && user > 0 ? user : null,
   };
 }
 
@@ -629,6 +648,7 @@ export function auditSearchFromFilters(filters: AuditFilters): string {
   if (filters.entity !== "all") params.set("entity", filters.entity);
   const action = filters.action.trim();
   if (action) params.set("action", action);
+  if (filters.user !== null) params.set("user", String(filters.user));
   return params.toString();
 }
 
@@ -735,6 +755,7 @@ export async function listAuditEvents(
   return {
     data: payload.data.map(parseAuditEvent),
     meta: parseMeta(payload.meta),
+    user: parseFilterUser(record(payload.meta) ? payload.meta.user : undefined),
   };
 }
 

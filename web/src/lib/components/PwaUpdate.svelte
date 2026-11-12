@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CloseButton from "#lib/components/CloseButton.svelte";
   import { onMount } from "svelte";
   import { beforeNavigate } from "$app/navigation";
   import { version as appVersion } from "$app/env";
@@ -120,12 +121,9 @@
     <SharedButton variant="primary" size="sm" type="button" onclick={reloadNow}>
       <ActionLabel icon="refresh">{t("Reload", locale)}</ActionLabel>
     </SharedButton>
-    <SharedButton
-      variant="ghost"
-      size="sm"
-      type="button"
-      icon="close"
-      aria-label={t("Later", locale)}
+    <CloseButton
+      {locale}
+      label={t("Later", locale)}
       onclick={() => (dismissed = true)}
     />
   </aside>
