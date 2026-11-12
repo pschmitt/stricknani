@@ -1061,6 +1061,13 @@
     <string name="admin_accounts_enable_text">The user will be able to sign in again.</string>
     <string name="admin_accounts_disabled">%1$s is disabled</string>
     <string name="admin_accounts_enabled">%1$s is enabled</string>
+    <string name="admin_accounts_activity">Activity</string>
+    <string name="admin_filter_user">User: %1$s</string>
+    <string name="admin_filter_user_remove">Remove user filter</string>
+    <string name="admin_role_actor">By %1$s</string>
+    <string name="admin_role_impersonator">%1$s acting as %2$s</string>
+    <string name="admin_role_subject_account">On %1$s\'s account</string>
+    <string name="admin_role_subject">Affects %1$s</string>
     <string name="admin_accounts_reset_password">Reset password</string>
     <string name="admin_accounts_reset_title">Reset password for %1$s?</string>
     <string name="admin_accounts_reset_text">The user will need to sign in with the new password.</string>
@@ -1274,7 +1281,8 @@
     </plurals>
     <string name="activity_show_more">Show more</string>
     <string name="activity_see_all">See all</string>
-    <string name="activity_page_title">Activity</string>
+    <string name="activity_page_title">My activity</string>
+    <string name="more_activity_subtitle">Recent changes to your projects and yarns.</string>
     <string name="activity_unavailable">Activity needs a connection</string>
     <string name="activity_empty">Nothing yet - your changes will show up here.</string>
     <string name="activity_more_failed">More activity could not be loaded.</string>

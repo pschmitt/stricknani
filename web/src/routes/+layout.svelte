@@ -176,6 +176,7 @@
     | "/categories"
     | "/gauge"
     | "/trash"
+    | "/activity"
     | "/privacy"
     | "/about"
     | "/delete-account"

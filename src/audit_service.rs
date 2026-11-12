@@ -42,11 +42,54 @@ impl AuditEntity {
     }
 }
 
+/// Which part a filtered user played in an event.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum AuditUserRole {
+    /// The user, or an administrator acting as the user, did it.
+    Any,
+    /// The user is `actor_user_id`.
+    Actor,
+    /// The user is `subject_user_id`: the other account of a share, role
+    /// change, transfer or impersonation.
+    Subject,
+}
+
+impl AuditUserRole {
+    fn parse(value: &str) -> Option<Self> {
+        match value {
+            "any" => Some(Self::Any),
+            "actor" => Some(Self::Actor),
+            "subject" => Some(Self::Subject),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub(crate) struct AuditFilter {
     page: Option<u32>,
     entity: AuditEntity,
     action: Option<String>,
+    user: Option<i64>,
+    role: AuditUserRole,
+}
+
+/// The account an audit list is filtered to, echoed so clients can label it.
+#[derive(Clone, Debug, Serialize)]
+pub(crate) struct AuditFilterUser {
+    pub(crate) id: i64,
+    pub(crate) email: String,
+}
+
+/// `user` and `role` as bound parameters: the user id, then a flag and the
+/// user id again for each of the actor, subject and impersonator columns.
+macro_rules! user_filter_sql {
+    () => {
+        "(? IS NULL \
+          OR (? AND e.actor_user_id = ?) \
+          OR (? AND e.subject_user_id = ?) \
+          OR (? AND e.impersonated_by_user_id = ?))"
+    };
 }
 
 impl AuditFilter {
@@ -56,6 +99,8 @@ impl AuditFilter {
                 page: None,
                 entity: AuditEntity::All,
                 action: None,
+                user: None,
+                role: AuditUserRole::Any,
             });
         };
         if raw.len() > MAX_QUERY_BYTES {
@@ -64,6 +109,8 @@ impl AuditFilter {
         let mut page = None;
         let mut entity = None;
         let mut action = None;
+        let mut user = None;
+        let mut role = None;
         let mut fields = 0;
         for (key, value) in form_urlencoded::parse(raw.as_bytes()) {
             fields += 1;
@@ -76,6 +123,8 @@ impl AuditFilter {
                 }
                 "entity" if entity.is_none() => entity = Some(value.into_owned()),
                 "action" if action.is_none() => action = Some(value.into_owned()),
+                "user" if user.is_none() => user = Some(value.into_owned()),
+                "role" if role.is_none() => role = Some(value.into_owned()),
                 _ => return Err(AuditError::InvalidQuery),
             }
         }
@@ -92,10 +141,24 @@ impl AuditFilter {
         if page.is_some_and(|page| page == 0 || page > MAX_PAGE) {
             return Err(AuditError::InvalidQuery);
         }
+        let user = user
+            .map(|user| {
+                user.parse::<i64>()
+                    .ok()
+                    .filter(|id| *id > 0)
+                    .ok_or(AuditError::InvalidUser)
+            })
+            .transpose()?;
+        let role = match role {
+            Some(role) => AuditUserRole::parse(&role).ok_or(AuditError::InvalidUser)?,
+            None => AuditUserRole::Any,
+        };
         Ok(Self {
             page,
             entity,
             action,
+            user,
+            role,
         })
     }
 
@@ -109,6 +172,10 @@ pub(crate) enum AuditError {
     Database,
     Forbidden,
     InvalidQuery,
+    /// `user` is not a positive id, or `role` is not `actor`, `subject` or `any`.
+    InvalidUser,
+    /// `user` names no account.
+    UserNotFound,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -249,6 +316,7 @@ pub(crate) struct AuditDetail {
 
 pub(crate) struct AuditPage {
     pub(crate) events: Vec<AuditEvent>,
+    pub(crate) user: Option<AuditFilterUser>,
     pub(crate) page: u32,
     pub(crate) per_page: u32,
     pub(crate) has_more: bool,
@@ -360,14 +428,40 @@ pub(crate) async fn list_events(
         })?;
     let entity = filter.entity.sql_value();
     let action = filter.action();
-    let total: i64 = sqlx::query_scalar(
-        "SELECT count(*) FROM audit_events \
-         WHERE (? IS NULL OR entity_type = ?) AND (? IS NULL OR action = ?)",
-    )
+    let user = match filter.user {
+        Some(id) => {
+            let email: Option<String> = sqlx::query_scalar("SELECT email FROM users WHERE id = ?")
+                .bind(id)
+                .fetch_optional(pool)
+                .await
+                .map_err(|_| AuditError::Database)?;
+            Some(AuditFilterUser {
+                id,
+                email: email.ok_or(AuditError::UserNotFound)?,
+            })
+        }
+        None => None,
+    };
+    let user_id = user.as_ref().map(|user| user.id);
+    let as_actor = matches!(filter.role, AuditUserRole::Any | AuditUserRole::Actor);
+    let as_subject = matches!(filter.role, AuditUserRole::Any | AuditUserRole::Subject);
+    let as_impersonator = filter.role == AuditUserRole::Any;
+    let total: i64 = sqlx::query_scalar(concat!(
+        "SELECT count(*) FROM audit_events AS e \
+         WHERE (? IS NULL OR e.entity_type = ?) AND (? IS NULL OR e.action = ?) AND ",
+        user_filter_sql!()
+    ))
     .bind(entity)
     .bind(entity)
     .bind(action)
     .bind(action)
+    .bind(user_id)
+    .bind(as_actor)
+    .bind(user_id)
+    .bind(as_subject)
+    .bind(user_id)
+    .bind(as_impersonator)
+    .bind(user_id)
     .fetch_one(pool)
     .await
     .map_err(|_| AuditError::Database)?;
@@ -385,13 +479,21 @@ pub(crate) async fn list_events(
          LEFT JOIN users AS u ON u.id = e.actor_user_id \
          LEFT JOIN user_avatars AS avatar ON avatar.user_id = e.actor_user_id ",
         media_event_join!(),
-        " WHERE (? IS NULL OR e.entity_type = ?) AND (? IS NULL OR e.action = ?) \
-         ORDER BY e.created_at DESC, e.id DESC LIMIT ? OFFSET ?"
+        " WHERE (? IS NULL OR e.entity_type = ?) AND (? IS NULL OR e.action = ?) AND ",
+        user_filter_sql!(),
+        " ORDER BY e.created_at DESC, e.id DESC LIMIT ? OFFSET ?"
     ))
     .bind(entity)
     .bind(entity)
     .bind(action)
     .bind(action)
+    .bind(user_id)
+    .bind(as_actor)
+    .bind(user_id)
+    .bind(as_subject)
+    .bind(user_id)
+    .bind(as_impersonator)
+    .bind(user_id)
     .bind(PAGE_SIZE)
     .bind(offset)
     .fetch_all(pool)
@@ -405,6 +507,7 @@ pub(crate) async fn list_events(
     attach_admin_media_thumbnails(pool, &mut events, &wanted).await?;
     Ok(AuditPage {
         events,
+        user,
         page,
         per_page: PAGE_SIZE as u32,
         has_more: page < page_count,
@@ -548,6 +651,7 @@ pub(crate) async fn list_resource_events(
         .map_err(|_| AuditError::Database)?;
     Ok(Some(AuditPage {
         events,
+        user: None,
         page,
         per_page: page_size as u32,
         has_more: page < page_count,

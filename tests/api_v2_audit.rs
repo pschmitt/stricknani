@@ -685,3 +685,221 @@ async fn audit_history_migration_preserves_existing_legacy_rows() {
     assert_eq!(row.get::<Option<i64>, _>("change_version"), None);
     assert_eq!(row.get::<Option<String>, _>("safe_changes"), None);
 }
+
+async fn insert_event(
+    pool: &SqlitePool,
+    actor: Option<i64>,
+    subject: Option<i64>,
+    impersonator: Option<i64>,
+    entity_id: i64,
+    created_at: &str,
+) {
+    sqlx::query(
+        "INSERT INTO audit_events \
+         (actor_user_id, subject_user_id, impersonated_by_user_id, entity_type, entity_id, \
+          action, created_at) \
+         VALUES (?, ?, ?, 'project', ?, 'created', ?)",
+    )
+    .bind(actor)
+    .bind(subject)
+    .bind(impersonator)
+    .bind(entity_id)
+    .bind(created_at)
+    .execute(pool)
+    .await
+    .unwrap();
+}
+
+async fn entity_ids(app: &Router, path: &str) -> (StatusCode, serde_json::Value, Vec<i64>) {
+    let response = app
+        .clone()
+        .oneshot(request(path, Some(ADMIN_TOKEN)))
+        .await
+        .unwrap();
+    let status = response.status();
+    let body = json(response).await;
+    let ids = body["data"]
+        .as_array()
+        .map(|events| {
+            events
+                .iter()
+                .map(|event| event["entity_id"].as_i64().unwrap())
+                .collect()
+        })
+        .unwrap_or_default();
+    (status, body, ids)
+}
+
+#[tokio::test]
+async fn audit_api_filters_by_user_across_actor_subject_and_impersonator() {
+    let fixture = fixture().await;
+    let other = db::create_user(
+        &fixture.pool,
+        "audit-other@example.test",
+        "other-password-long".into(),
+    )
+    .await
+    .unwrap();
+    let target = db::create_user(
+        &fixture.pool,
+        "audit-target@example.test",
+        "target-password-long".into(),
+    )
+    .await
+    .unwrap();
+    let admin = fixture.admin_id;
+    // 1: target acts. 2: target is the subject. 3: admin acts as target. 4, 5: unrelated.
+    insert_event(
+        &fixture.pool,
+        Some(target),
+        None,
+        None,
+        1,
+        "2026-04-01T00:00:01.000000Z",
+    )
+    .await;
+    insert_event(
+        &fixture.pool,
+        Some(other),
+        Some(target),
+        None,
+        2,
+        "2026-04-01T00:00:02.000000Z",
+    )
+    .await;
+    insert_event(
+        &fixture.pool,
+        Some(target),
+        None,
+        Some(admin),
+        3,
+        "2026-04-01T00:00:03.000000Z",
+    )
+    .await;
+    insert_event(
+        &fixture.pool,
+        Some(other),
+        None,
+        None,
+        4,
+        "2026-04-01T00:00:04.000000Z",
+    )
+    .await;
+    insert_event(
+        &fixture.pool,
+        Some(other),
+        Some(admin),
+        None,
+        5,
+        "2026-04-01T00:00:05.000000Z",
+    )
+    .await;
+    // The administrator is the impersonator of event 3 only.
+    let app = &fixture.app;
+
+    let (status, body, ids) = entity_ids(app, &format!("/admin/audit?user={target}")).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(ids, [3, 2, 1]);
+    assert_eq!(body["meta"]["user"]["id"], target);
+    assert_eq!(body["meta"]["user"]["email"], "audit-target@example.test");
+
+    let (_, _, ids) = entity_ids(app, &format!("/admin/audit?user={target}&role=any")).await;
+    assert_eq!(ids, [3, 2, 1]);
+    let (_, _, ids) = entity_ids(app, &format!("/admin/audit?user={target}&role=actor")).await;
+    assert_eq!(ids, [3, 1]);
+    let (_, _, ids) = entity_ids(app, &format!("/admin/audit?user={target}&role=subject")).await;
+    assert_eq!(ids, [2]);
+    // As the impersonator, the administrator is in events 3 (impersonator), 5 (subject).
+    let (_, _, ids) = entity_ids(app, &format!("/admin/audit?user={admin}&role=any")).await;
+    assert_eq!(ids, [5, 3]);
+    let (_, _, ids) = entity_ids(app, &format!("/admin/audit?user={admin}&role=actor")).await;
+    assert!(ids.is_empty());
+
+    // Combines with the other filters.
+    let (_, _, ids) = entity_ids(app, &format!("/admin/audit?user={target}&entity=yarn")).await;
+    assert!(ids.is_empty());
+    let (_, _, ids) = entity_ids(app, &format!("/admin/audit?user={target}&action=created")).await;
+    assert_eq!(ids, [3, 2, 1]);
+
+    // No user filter: no `user` in the meta and every event.
+    let (_, body, ids) = entity_ids(app, "/admin/audit").await;
+    assert_eq!(ids.len(), 5);
+    assert!(body["meta"].get("user").is_none());
+}
+
+#[tokio::test]
+async fn audit_api_user_filter_pages_and_reports_bad_ids() {
+    let fixture = fixture().await;
+    let target = db::create_user(
+        &fixture.pool,
+        "audit-paged@example.test",
+        "paged-password-long".into(),
+    )
+    .await
+    .unwrap();
+    for entity_id in 2000..2051 {
+        insert_event(
+            &fixture.pool,
+            Some(target),
+            None,
+            None,
+            entity_id,
+            "2026-05-01T00:00:00.000000Z",
+        )
+        .await;
+    }
+    insert_event(
+        &fixture.pool,
+        Some(fixture.admin_id),
+        None,
+        None,
+        3000,
+        "2026-05-02T00:00:00.000000Z",
+    )
+    .await;
+
+    let (_, body, ids) = entity_ids(&fixture.app, &format!("/admin/audit?user={target}")).await;
+    assert_eq!(ids.len(), 50);
+    assert_eq!(ids[0], 2050);
+    assert_eq!(body["meta"]["has_more"], true);
+    let (_, body, ids) =
+        entity_ids(&fixture.app, &format!("/admin/audit?user={target}&page=2")).await;
+    assert_eq!(ids, [2000]);
+    assert_eq!(body["meta"]["has_more"], false);
+    assert_eq!(body["meta"]["user"]["id"], target);
+
+    let (status, body, _) = entity_ids(&fixture.app, "/admin/audit?user=999999").await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    assert_eq!(body["error"]["code"], "user_not_found");
+    for query in [
+        "?user=0",
+        "?user=-3",
+        "?user=abc",
+        "?user=",
+        "?user=1&user=2",
+        "?user=1&role=owner",
+        "?role=actor&user=1&role=subject",
+    ] {
+        let (status, body, _) = entity_ids(&fixture.app, &format!("/admin/audit{query}")).await;
+        assert!(
+            status == StatusCode::UNPROCESSABLE_ENTITY || status == StatusCode::BAD_REQUEST,
+            "query: {query}"
+        );
+        if status == StatusCode::UNPROCESSABLE_ENTITY {
+            assert_eq!(
+                body["error"]["code"], "invalid_user_filter",
+                "query: {query}"
+            );
+        }
+    }
+
+    let member = fixture
+        .app
+        .oneshot(request(
+            &format!("/admin/audit?user={target}"),
+            Some(MEMBER_TOKEN),
+        ))
+        .await
+        .unwrap();
+    assert_eq!(member.status(), StatusCode::FORBIDDEN);
+}

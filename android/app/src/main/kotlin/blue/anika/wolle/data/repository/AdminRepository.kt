@@ -177,8 +177,13 @@ internal constructor(
         return admin
     }
 
-    suspend fun auditPage(page: Int, entity: String?, action: String?): AuditPageDto = call {
-        api.listAudit(page, entity, action?.trim()?.ifBlank { null })
+    suspend fun auditPage(
+        page: Int,
+        entity: String?,
+        action: String?,
+        user: Long? = null,
+    ): AuditPageDto = call {
+        api.listAudit(page, entity, action?.trim()?.ifBlank { null }, user)
     }
 
     suspend fun auditDetail(id: Long): AuditDetailDto = call { api.getAuditEvent(id).data }

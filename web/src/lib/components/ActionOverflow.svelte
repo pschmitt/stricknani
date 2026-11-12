@@ -184,13 +184,11 @@
     height: 44px;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--control-border);
+    border: 0;
     border-radius: 999px;
     color: var(--accent-strong);
-    background: var(--surface);
-    transition:
-      background-color 120ms ease,
-      border-color 120ms ease;
+    background: transparent;
+    transition: background-color 120ms ease;
     cursor: pointer;
     list-style: none;
     -webkit-tap-highlight-color: transparent;
@@ -204,9 +202,10 @@
     content: "";
   }
 
-  .action-overflow__trigger:hover {
-    border-color: var(--control-border);
-    background: var(--accent-wash);
+  @media (hover: hover) {
+    .action-overflow__trigger:hover {
+      background: var(--accent-wash);
+    }
   }
 
   .action-overflow__trigger:focus-visible {
@@ -220,8 +219,8 @@
     height: 22px;
   }
 
+  .action-overflow__trigger:active,
   .action-overflow[open] .action-overflow__trigger {
-    border-color: var(--accent);
     background: var(--accent-wash);
   }
 
