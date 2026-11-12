@@ -692,6 +692,38 @@ describe("administrator API", () => {
       });
     });
 
+    it("reads the client of an event; absent means unknown", async () => {
+      const client = {
+        kind: "web",
+        version: "1.7.1 (build abc123)",
+        label: "Firefox 159 · Linux",
+        user_agent: "Mozilla/5.0 Firefox/159.0",
+      };
+      vi.stubGlobal(
+        "fetch",
+        vi
+          .fn()
+          .mockResolvedValueOnce(
+            page({
+              ...base,
+              action: "deleted",
+              resource: projectResource(3),
+              client,
+            }),
+          )
+          .mockResolvedValueOnce(
+            page({ ...base, action: "deleted", resource: projectResource(3) }),
+          ),
+      );
+      expect((await list()).data[0].client).toEqual(client);
+      expect((await list()).data[0].client).toEqual({
+        kind: "unknown",
+        version: null,
+        label: null,
+        user_agent: null,
+      });
+    });
+
     it("reads a trashed entry that is still in the trash without a link", async () => {
       vi.stubGlobal(
         "fetch",

@@ -1599,6 +1599,14 @@
     <string name="admin_state_in_trash">In the trash · %1$s</string>
     <string name="admin_owner_line">Owner: %1$s</string>
     <string name="admin_actor_system">Automatic purge</string>
+    <string name="admin_client_system">System</string>
+    <string name="admin_client_unknown">Unknown client</string>
+    <string name="admin_client_web">Web</string>
+    <string name="admin_client_android">Android</string>
+    <string name="admin_client_api">API</string>
+    <string name="admin_detail_client">Client</string>
+    <string name="admin_detail_client_version">Version</string>
+    <string name="admin_detail_client_agent">User agent</string>
     <string name="admin_open_trash">Open the trash</string>
     <string name="activity_trashed">%1$s moved %2$s to the trash</string>
     <string name="activity_restored">%1$s restored %2$s from the trash</string>

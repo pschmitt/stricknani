@@ -64,6 +64,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -73,6 +74,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.dto.AuditClientDto
 import blue.anika.wolle.data.api.dto.AuditEventDto
 import blue.anika.wolle.data.api.dto.ChangeItemDto
 import blue.anika.wolle.data.api.dto.parseChangeValue
@@ -493,6 +495,7 @@ private fun AuditRow(
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
+                    AuditClientChip(event.client)
                 }
                 AuditMediaThumb(event.media, Modifier.padding(horizontal = 8.dp))
                 Column(
@@ -714,6 +717,61 @@ private fun AuditDetailHeader(event: AuditEventDto, avatarUrl: (String?) -> Stri
     }
     DetailLine(label = stringResource(R.string.admin_detail_when)) {
         Text(whenText, style = MaterialTheme.typography.bodyLarge)
+    }
+    DetailLine(label = stringResource(R.string.admin_detail_client)) {
+        AuditClientChip(event.client, large = true)
+    }
+    event.client
+        ?.version
+        ?.takeIf { it.isNotBlank() }
+        ?.let { version ->
+            DetailLine(label = stringResource(R.string.admin_detail_client_version)) {
+                Text(version, style = MaterialTheme.typography.bodyLarge)
+            }
+        }
+    event.client
+        ?.userAgent
+        ?.takeIf { it.isNotBlank() }
+        ?.let { agent ->
+            DetailLine(label = stringResource(R.string.admin_detail_client_agent)) {
+                Text(
+                    agent,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.testTag("admin-audit-detail-user-agent"),
+                )
+            }
+        }
+}
+
+/** The client of an event: its icon and label, the same chip as on the website. */
+@Composable
+private fun AuditClientChip(client: AuditClientDto?, large: Boolean = false) {
+    val kind = client.clientKind()
+    val resources = LocalResources.current
+    val label = client.clientLabel { resources.getString(it) }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.testTag("admin-audit-client"),
+    ) {
+        Icon(
+            kind.icon(),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(if (large) 18.dp else 14.dp),
+        )
+        Text(
+            label,
+            style =
+                if (large) MaterialTheme.typography.bodyLarge
+                else MaterialTheme.typography.labelSmall,
+            color =
+                if (large) MaterialTheme.colorScheme.onSurface
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

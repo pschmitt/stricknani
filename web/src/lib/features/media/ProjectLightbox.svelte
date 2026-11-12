@@ -48,6 +48,22 @@
     images.findIndex((image) => image.id === selectedId),
   );
   let activeImage = $derived(images[activeIndex]);
+  let fullLoaded = $state(false);
+
+  // Reset per photo: `{#key}` re-creates the node, which re-runs this action.
+  function markLoaded(node: HTMLImageElement) {
+    fullLoaded = false;
+    const done = () => (fullLoaded = true);
+    if (node.complete && node.naturalWidth > 0) done();
+    node.addEventListener("load", done);
+    node.addEventListener("error", done);
+    return {
+      destroy: () => {
+        node.removeEventListener("load", done);
+        node.removeEventListener("error", done);
+      },
+    };
+  }
 
   $effect(() => {
     if (!dialog) return;
@@ -287,12 +303,31 @@
             onpointercancel={onPointerEnd}
             ondblclick={onDoubleClick}
           >
-            <img
-              src={activeImage.url}
-              alt={activeImage.alt_text || title}
-              draggable="false"
-              style:transform="translate({zoom.x}px, {zoom.y}px) scale({zoom.scale})"
-            />
+            {#key activeImage.id}
+              <!-- The small thumbnail shows at once; the full picture fades in over
+                   it once decoded. Both are letterboxed, never cropped. -->
+              <div
+                class="zoom-content"
+                style:transform="translate({zoom.x}px, {zoom.y}px) scale({zoom.scale})"
+              >
+                {#if activeImage.thumbnail_url && !fullLoaded}
+                  <img
+                    class="placeholder"
+                    src={activeImage.thumbnail_url}
+                    alt=""
+                    draggable="false"
+                  />
+                {/if}
+                <img
+                  class="full"
+                  class:loaded={fullLoaded}
+                  src={activeImage.url}
+                  alt={activeImage.alt_text || title}
+                  draggable="false"
+                  use:markLoaded
+                />
+              </div>
+            {/key}
           </div>
           <figcaption>
             {activeImage.alt_text || title}
@@ -431,6 +466,9 @@
     height: 100%;
     max-width: 100%;
     min-height: 0;
+    /* Definite tracks, so the photo's percentage max-size resolves against the
+       frame instead of growing the row to the photo's natural height. */
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
     place-items: center;
     overflow: hidden;
     border-radius: 0.4rem;
@@ -445,24 +483,61 @@
     cursor: grabbing;
   }
 
-  figure img {
-    display: block;
-    max-width: 100%;
-    max-height: 100%;
-    border-radius: 0.4rem;
-    object-fit: contain;
+  /* The layer that zooms and pans; it is the frame's size and the picture inside
+     is letterboxed in it. */
+  .zoom-content {
+    position: relative;
+    display: grid;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+    place-items: center;
     transform-origin: center;
     transition: transform 90ms ease-out;
+  }
+
+  .zoom-frame.gesturing .zoom-content {
+    transition: none;
+  }
+
+  .zoom-content img {
+    display: block;
+    border-radius: 0.4rem;
+    object-fit: contain;
     user-select: none;
     -webkit-user-drag: none;
   }
 
-  .zoom-frame.gesturing img {
-    transition: none;
+  /* Natural size at most (no upscaling past 1x), shrunk to fit the frame with
+     the aspect ratio kept. */
+  .zoom-content img.full {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    max-height: 100%;
+    opacity: 0;
+    transition: opacity 120ms ease-out;
+  }
+
+  .zoom-content img.full.loaded {
+    opacity: 1;
+  }
+
+  /* The thumbnail fills the frame (contain) as a stand-in until the full photo
+     has loaded. */
+  .zoom-content img.placeholder {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    filter: blur(2px);
   }
 
   @media (prefers-reduced-motion: reduce) {
-    figure img {
+    .zoom-content,
+    .zoom-content img.full {
       transition: none;
     }
   }
@@ -489,21 +564,37 @@
     }
   }
 
-  @media (max-width: 420px) {
+  @media (max-width: 480px) {
     .lightbox {
       width: calc(100vw - 0.75rem);
     }
 
+    /* Phones: the photo takes the full stage width; the step buttons float over
+       its edges instead of using up two columns. */
     .lightbox-stage {
-      grid-template-columns: 44px minmax(0, 1fr) 44px;
-      gap: 0.15rem;
+      position: relative;
+      grid-template-columns: minmax(0, 1fr);
       padding: 0.45rem;
     }
 
+    .lightbox-stage figure,
+    .lightbox-stage figure.single-image {
+      grid-column: 1;
+    }
+
     :global(.lightbox-step) {
-      width: 44px;
-      height: 44px;
-      border-radius: var(--radius-xs);
+      position: absolute;
+      z-index: 1;
+      top: calc(50% - 22px);
+      opacity: 0.88;
+    }
+
+    :global(.lightbox-step.previous) {
+      left: 0.6rem;
+    }
+
+    :global(.lightbox-step.next) {
+      right: 0.6rem;
     }
   }
 </style>

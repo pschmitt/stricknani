@@ -128,6 +128,22 @@ data class AuditEventDto(
     @SerialName("media_thumbnails") val mediaThumbs: Map<String, HistoryMediaDto> = emptyMap(),
     /** True only for the automatic purge after 90 days: nobody did it, so there is no actor. */
     val system: Boolean = false,
+    /** The client that caused the event; absent on servers that do not record clients. */
+    val client: AuditClientDto? = null,
+)
+
+/**
+ * `AuditClient` in `audit_service.rs`: which client caused an event. [kind] is `web`, `android`,
+ * `api`, `system` (no request) or `unknown` (recorded before clients were kept). [label] is the
+ * server's short display text such as `Firefox 159 · Linux`, [version] the app version with its
+ * build parameters, [userAgent] the raw header (at most 256 characters).
+ */
+@Serializable
+data class AuditClientDto(
+    val kind: String = "unknown",
+    val version: String? = null,
+    val label: String? = null,
+    @SerialName("user_agent") val userAgent: String? = null,
 )
 
 /**
