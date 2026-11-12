@@ -569,6 +569,7 @@ msgid "Added an attachment"
 msgstr "Anhang hinzugefügt"
 
 #: web/src/lib/features/auth/PasskeysSection.svelte:308
+#, python-brace-format
 msgid "Added {date}"
 msgstr "Hinzugefügt am {date}"
 
@@ -2280,7 +2281,9 @@ msgstr ""
 
 #: web/src/lib/features/auth/PasskeysSection.svelte:414
 msgid "For your security, confirm your identity before changing your passkeys."
-msgstr "Bestätige zu deiner Sicherheit deine Identität, bevor du deine Passkeys änderst."
+msgstr ""
+"Bestätige zu deiner Sicherheit deine Identität, bevor du deine Passkeys "
+"änderst."
 
 #: web/src/lib/features/account/BackupsSection.svelte:326
 #: web/src/lib/features/account/BackupsSection.svelte:345
@@ -2856,6 +2859,7 @@ msgid "Last used"
 msgstr "Zuletzt verwendet"
 
 #: web/src/lib/features/auth/PasskeysSection.svelte:227
+#, python-brace-format
 msgid "Last used {date}"
 msgstr "Zuletzt verwendet am {date}"
 
@@ -3897,9 +3901,12 @@ msgstr "Die Anmeldung mit dem Passkey hat nicht funktioniert. Versuche es erneut
 
 #: web/src/lib/components/SignInForm.svelte:110
 msgid "Passkey sign-in was cancelled. Try again or use your password."
-msgstr "Die Anmeldung mit dem Passkey wurde abgebrochen. Versuche es erneut oder verwende dein Passwort."
+msgstr ""
+"Die Anmeldung mit dem Passkey wurde abgebrochen. Versuche es erneut oder "
+"verwende dein Passwort."
 
 #: web/src/lib/features/auth/PasskeysSection.svelte:121
+#, python-brace-format
 msgid "Passkey {number}"
 msgstr "Passkey {number}"
 
@@ -3913,7 +3920,9 @@ msgstr "Passkeys sind auf diesem Server nicht verfügbar."
 
 #: web/src/lib/components/SignInForm.svelte:122
 msgid "Passkeys do not work on this page right now. Use your password."
-msgstr "Passkeys funktionieren auf dieser Seite gerade nicht. Verwende dein Passwort."
+msgstr ""
+"Passkeys funktionieren auf dieser Seite gerade nicht. Verwende dein "
+"Passwort."
 
 #: web/src/lib/features/account/BackupsSection.svelte:277
 #: web/src/lib/features/account/BackupsSection.svelte:507
@@ -4546,6 +4555,7 @@ msgid "Remove this passkey?"
 msgstr "Diesen Passkey entfernen?"
 
 #: web/src/lib/features/auth/PasskeysSection.svelte:381
+#, python-brace-format
 msgid "Remove {name}?"
 msgstr "{name} entfernen?"
 
@@ -5243,7 +5253,10 @@ msgstr "Mit einem Passkey anmelden"
 msgid ""
 "Sign in with your fingerprint, face or screen lock instead of typing your"
 " password. A passkey stays on your devices and cannot be phished."
-msgstr "Melde dich mit Fingerabdruck, Gesicht oder Bildschirmsperre an, statt dein Passwort einzutippen. Ein Passkey bleibt auf deinen Geräten und lässt sich nicht abfangen."
+msgstr ""
+"Melde dich mit Fingerabdruck, Gesicht oder Bildschirmsperre an, statt "
+"dein Passwort einzutippen. Ein Passkey bleibt auf deinen Geräten und "
+"lässt sich nicht abfangen."
 
 #: web/src/lib/features/auth/OidcSignIn.svelte:106
 #, python-brace-format
@@ -5708,7 +5721,9 @@ msgstr "Dieser Passkey konnte nicht überprüft werden."
 msgid ""
 "That passkey is not registered for any account here. Use another passkey "
 "or your password."
-msgstr "Dieser Passkey ist hier für kein Konto registriert. Verwende einen anderen Passkey oder dein Passwort."
+msgstr ""
+"Dieser Passkey ist hier für kein Konto registriert. Verwende einen "
+"anderen Passkey oder dein Passwort."
 
 #: web/src/lib/features/account/BackupsSection.svelte:520
 msgid "That passphrase does not open this file."
@@ -6406,7 +6421,9 @@ msgstr "Dieser Browser kann hier keinen Passkey erstellen."
 msgid ""
 "This browser cannot create passkeys. Open Stricknani in a current browser"
 " to add one."
-msgstr "Dieser Browser kann keine Passkeys erstellen. Öffne Stricknani in einem aktuellen Browser, um einen hinzuzufügen."
+msgstr ""
+"Dieser Browser kann keine Passkeys erstellen. Öffne Stricknani in einem "
+"aktuellen Browser, um einen hinzuzufügen."
 
 #: web/src/lib/features/account/AccountSettings.svelte:1173
 msgid "This browser cannot show notifications."
@@ -7394,7 +7411,9 @@ msgstr ""
 #: web/src/lib/features/auth/PasskeysSection.svelte:361
 #, python-brace-format
 msgid "You can have up to {count} passkeys. Remove one to add another."
-msgstr "Du kannst bis zu {count} Passkeys haben. Entferne einen, um einen weiteren hinzuzufügen."
+msgstr ""
+"Du kannst bis zu {count} Passkeys haben. Entferne einen, um einen "
+"weiteren hinzuzufügen."
 
 #: web/src/lib/features/imports/ImportCard.svelte:407
 msgid ""
@@ -7596,7 +7615,9 @@ msgstr ""
 msgid ""
 "You will no longer be able to sign in with this passkey. You can add it "
 "again later. Your password keeps working."
-msgstr "Du kannst dich mit diesem Passkey nicht mehr anmelden. Du kannst ihn später wieder hinzufügen. Dein Passwort funktioniert weiterhin."
+msgstr ""
+"Du kannst dich mit diesem Passkey nicht mehr anmelden. Du kannst ihn "
+"später wieder hinzufügen. Dein Passwort funktioniert weiterhin."
 
 #: web/src/lib/features/account/AccountSettings.svelte:257
 #: web/src/lib/features/account/AccountSettings.svelte:365
