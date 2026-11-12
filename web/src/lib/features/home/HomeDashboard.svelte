@@ -233,7 +233,7 @@
                     {@const foreign = foreignOwner(item.owner, userId)}
                     {#if foreign}
                       <span class="owner-corner"
-                        ><OwnerBadge owner={foreign} {locale} /></span
+                        ><OwnerBadge owner={foreign} {locale} compact /></span
                       >
                     {/if}
                   {/if}
