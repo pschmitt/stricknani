@@ -204,7 +204,7 @@
       if (userId !== null)
         publishFeedback({
           ownerId: userId,
-          kind: "success",
+          kind: "deleted",
           message: t("Passkey removed.", locale),
         });
     });

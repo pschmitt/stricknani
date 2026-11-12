@@ -848,9 +848,9 @@ constructor(
                             removedImageIds = current.removedImageIds,
                         )
                 if (trashed.isEmpty()) {
-                    mutationFeedback.show(
-                        if (id == null) R.string.mutation_project_created_queued
-                        else R.string.mutation_project_updated_queued
+                    mutationFeedback.showSaved(
+                        if (id == null) R.string.mutation_project_created
+                        else R.string.mutation_project_updated
                     )
                 } else {
                     mutationFeedback.showTrashedBySave(

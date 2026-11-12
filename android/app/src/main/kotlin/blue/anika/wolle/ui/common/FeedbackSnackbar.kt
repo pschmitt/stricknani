@@ -47,8 +47,27 @@ enum class FeedbackKind {
     Success,
     Info,
     Error,
+    /** A genuinely queued write: the device is offline, so it syncs later. Styled as info. */
     Offline,
+    /** Something went to the trash (or was removed for good by the user); Undo may be offered. */
+    Deleted,
+    /** Something was deleted permanently; the trash icon in the destructive tint. */
+    Purged,
+    /** Something came back from the trash. */
+    Restored,
 }
+
+/** The badge glyph of [kind]: the same shared icon for every message of one kind. */
+internal fun feedbackIcon(kind: FeedbackKind): ImageVector =
+    when (kind) {
+        FeedbackKind.Success -> FeedbackIcons.Check
+        FeedbackKind.Info -> PhosphorIcons.Info
+        FeedbackKind.Error -> FeedbackIcons.Exclamation
+        FeedbackKind.Offline -> PhosphorIcons.CloudSlash
+        FeedbackKind.Deleted,
+        FeedbackKind.Purged -> PhosphorIcons.Trash
+        FeedbackKind.Restored -> PhosphorIcons.ClockCounterClockwise
+    }
 
 /**
  * How long a message of [kind] stays. Success, info and offline notes ("Project created." parked
@@ -62,7 +81,10 @@ internal fun feedbackDuration(kind: FeedbackKind, hasAction: Boolean): SnackbarD
         FeedbackKind.Error -> SnackbarDuration.Indefinite
         FeedbackKind.Success,
         FeedbackKind.Info,
-        FeedbackKind.Offline ->
+        FeedbackKind.Offline,
+        FeedbackKind.Deleted,
+        FeedbackKind.Purged,
+        FeedbackKind.Restored ->
             if (hasAction || kind == FeedbackKind.Offline) SnackbarDuration.Long
             else SnackbarDuration.Short
     }
@@ -110,18 +132,22 @@ private fun FeedbackSnackbar(data: SnackbarData) {
             badgeContainer = scheme.error
             badgeTint = scheme.onError
         }
+        // Offline is information (the write is safe and syncs later), not a failure.
         FeedbackKind.Offline -> {
-            badgeContainer = scheme.tertiaryContainer
-            badgeTint = scheme.onTertiaryContainer
+            badgeContainer = scheme.primaryContainer
+            badgeTint = scheme.onPrimaryContainer
+        }
+        FeedbackKind.Deleted,
+        FeedbackKind.Restored -> {
+            badgeContainer = scheme.secondaryContainer
+            badgeTint = scheme.onSecondaryContainer
+        }
+        FeedbackKind.Purged -> {
+            badgeContainer = scheme.errorContainer
+            badgeTint = scheme.onErrorContainer
         }
     }
-    val icon =
-        when (kind) {
-            FeedbackKind.Success -> FeedbackIcons.Check
-            FeedbackKind.Info -> PhosphorIcons.Info
-            FeedbackKind.Error -> FeedbackIcons.Exclamation
-            FeedbackKind.Offline -> PhosphorIcons.CloudSlash
-        }
+    val icon = feedbackIcon(kind)
 
     // A gentle spring up from below; users who switched animations off get no motion at all. The
     // host fades the snackbar out on its own.

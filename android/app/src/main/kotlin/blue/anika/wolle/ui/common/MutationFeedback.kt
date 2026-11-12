@@ -37,6 +37,8 @@ data class MutationFeedbackEvent(
      * which restores this item.
      */
     val undo: TrashUndo? = null,
+    /** What the message is about; null derives it from the message ([defaultFeedbackKind]). */
+    val kind: FeedbackKind? = null,
 )
 
 /**
@@ -53,14 +55,57 @@ class MutationFeedback @Inject constructor() {
 
     val events: SharedFlow<MutationFeedbackEvent> = _events.asSharedFlow()
 
+    /** True while the device has no working internet; replaceable in tests. */
+    internal var isOffline: () -> Boolean = { NetworkStatus.hasValidatedInternet == false }
+
+    /** A plain confirmation, or an error when the message is an `error_*` one. */
     fun show(@StringRes messageResId: Int, vararg formatArgs: Any) {
         _events.tryEmit(MutationFeedbackEvent(messageResId, formatArgs.toList()))
+    }
+
+    /**
+     * A write that was stored locally and sent right away: a confirmation, "[savedResId]". Only
+     * when the device is offline is it really parked for the next sync, and then it says so
+     * ([queuedResId]) with the offline kind. The later sync is silent.
+     */
+    fun showSaved(
+        @StringRes savedResId: Int,
+        @StringRes queuedResId: Int = R.string.mutation_saved_offline,
+    ) {
+        _events.tryEmit(savedFeedbackEvent(isOffline(), savedResId, queuedResId))
+    }
+
+    /** A write that is certainly queued (the send just failed offline): offline kind. */
+    fun showQueued(@StringRes messageResId: Int) {
+        _events.tryEmit(MutationFeedbackEvent(messageResId, kind = FeedbackKind.Offline))
+    }
+
+    /** Something came back from the trash. */
+    fun showRestored(@StringRes messageResId: Int) {
+        _events.tryEmit(MutationFeedbackEvent(messageResId, kind = FeedbackKind.Restored))
+    }
+
+    /** Something was deleted for good (trash icon, destructive tint). */
+    fun showPurged(@StringRes messageResId: Int) {
+        _events.tryEmit(MutationFeedbackEvent(messageResId, kind = FeedbackKind.Purged))
+    }
+
+    /** Something was removed without a trash to undo it from (a passkey, a linked login). */
+    fun showRemoved(@StringRes messageResId: Int, vararg formatArgs: Any) {
+        _events.tryEmit(
+            MutationFeedbackEvent(messageResId, formatArgs.toList(), kind = FeedbackKind.Deleted)
+        )
     }
 
     /** "Moved to the trash" with an Undo action that restores [item] (see `TrashUndoViewModel`). */
     fun showTrashed(@StringRes messageResId: Int, item: TrashRef, vararg formatArgs: Any) {
         _events.tryEmit(
-            MutationFeedbackEvent(messageResId, formatArgs.toList(), TrashUndo(listOf(item)))
+            MutationFeedbackEvent(
+                messageResId,
+                formatArgs.toList(),
+                TrashUndo(listOf(item)),
+                FeedbackKind.Deleted,
+            )
         )
     }
 
@@ -70,7 +115,14 @@ class MutationFeedback @Inject constructor() {
      */
     fun showTrashedBySave(@StringRes messageResId: Int, items: List<TrashRef>) {
         if (items.isEmpty()) return
-        _events.tryEmit(MutationFeedbackEvent(messageResId, emptyList(), TrashUndo(items, true)))
+        _events.tryEmit(
+            MutationFeedbackEvent(
+                messageResId,
+                emptyList(),
+                TrashUndo(items, true),
+                FeedbackKind.Deleted,
+            )
+        )
     }
 
     private companion object {
@@ -111,18 +163,30 @@ fun MutationFeedbackEffect(
     }
 }
 
+private fun Context.mutationFeedbackKind(event: MutationFeedbackEvent): FeedbackKind =
+    event.kind ?: defaultFeedbackKind(resources.getResourceEntryName(event.messageResId))
+
 /**
- * The catalogue already names its messages: `error_*` entries are failures and `*_queued` ones are
- * writes parked for the next sync, so the badge follows from the resource name.
+ * The kind of a message that names none: `error_*` entries are failures, `*_offline` ones only ever
+ * report "you're offline" and everything else is a confirmation. Never the name for "queued":
+ * whether a write waits for the network is decided by the connectivity when it is reported
+ * ([savedFeedbackEvent]).
  */
-private fun Context.mutationFeedbackKind(event: MutationFeedbackEvent): FeedbackKind {
-    val name = resources.getResourceEntryName(event.messageResId)
-    return when {
-        name.startsWith("error_") -> FeedbackKind.Error
-        name.endsWith("_queued") -> FeedbackKind.Offline
+internal fun defaultFeedbackKind(resourceEntryName: String): FeedbackKind =
+    when {
+        resourceEntryName.startsWith("error_") -> FeedbackKind.Error
+        resourceEntryName.endsWith("_offline") -> FeedbackKind.Offline
         else -> FeedbackKind.Success
     }
-}
+
+/** The confirmation of a stored write: offline wording and kind only when it truly waits. */
+internal fun savedFeedbackEvent(
+    offline: Boolean,
+    @StringRes savedResId: Int,
+    @StringRes queuedResId: Int,
+): MutationFeedbackEvent =
+    if (offline) MutationFeedbackEvent(queuedResId, kind = FeedbackKind.Offline)
+    else MutationFeedbackEvent(savedResId, kind = FeedbackKind.Success)
 
 private fun Context.localizedMutationMessage(event: MutationFeedbackEvent): String =
     getString(event.messageResId, *event.formatArgs.toTypedArray())

@@ -179,7 +179,7 @@ constructor(
                 val failure = oidc.unlink(next.identity.id, proof)
                 _state.update { it.copy(working = false) }
                 if (failure == null) {
-                    feedback.show(R.string.oidc_unlinked_done)
+                    feedback.showRemoved(R.string.oidc_unlinked_done)
                     // If this was the login the current token came from, the server revoked it;
                     // this very request then returns 401 session_expired, which raises the
                     // "sign in again" card with the offline data intact.

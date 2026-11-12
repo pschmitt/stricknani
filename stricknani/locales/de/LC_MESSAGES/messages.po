@@ -350,7 +350,7 @@ msgstr "Eine Wiederherstellung läuft bereits."
 msgid "A restore is already running."
 msgstr "Eine Wiederherstellung läuft bereits."
 
-#: web/src/lib/features/admin/AdminBackups.svelte:141
+#: web/src/lib/features/admin/AdminBackups.svelte:151
 #, python-brace-format
 msgid "A restore of {name} is waiting for the server to restart."
 msgstr "Die Wiederherstellung von {name} wartet auf den Neustart des Servers."
@@ -614,8 +614,8 @@ msgstr "Anzahl Maschen"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:366
 #: web/src/lib/features/admin/AdminAudit.svelte:375
-#: web/src/lib/features/admin/AdminBackups.svelte:108
-#: web/src/lib/features/admin/AdminBackups.svelte:116
+#: web/src/lib/features/admin/AdminBackups.svelte:118
+#: web/src/lib/features/admin/AdminBackups.svelte:126
 #: web/src/lib/features/admin/AdminUsers.svelte:650
 #: web/src/lib/features/admin/AdminUsers.svelte:657
 #: web/src/lib/palette/entries.ts:195 web/src/routes/+layout.svelte:394
@@ -638,8 +638,8 @@ msgstr "Administratorzugriff"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:159
 #: web/src/lib/features/admin/AdminAudit.svelte:199
-#: web/src/lib/features/admin/AdminBackups.svelte:50
-#: web/src/lib/features/admin/AdminBackups.svelte:65
+#: web/src/lib/features/admin/AdminBackups.svelte:54
+#: web/src/lib/features/admin/AdminBackups.svelte:70
 #: web/src/lib/features/admin/AdminResource.svelte:123
 #: web/src/lib/features/admin/AdminResource.svelte:151
 #: web/src/lib/features/admin/AdminUsers.svelte:160
@@ -943,13 +943,13 @@ msgstr "Zurück zu den Garnen"
 msgid "Backup restored"
 msgstr "Backup wiederhergestellt"
 
-#: web/src/lib/features/admin/AdminBackups.svelte:108
-#: web/src/lib/features/admin/AdminBackups.svelte:207
+#: web/src/lib/features/admin/AdminBackups.svelte:118
+#: web/src/lib/features/admin/AdminBackups.svelte:234
 #: web/src/lib/features/admin/AdminTabs.svelte:28
 msgid "Backups"
 msgstr "Backups"
 
-#: web/src/lib/features/admin/AdminBackups.svelte:136
+#: web/src/lib/features/admin/AdminBackups.svelte:146
 #: web/src/lib/features/admin/RestoreBackupDialog.svelte:188
 msgid "Backups are not available on this server."
 msgstr "Backups sind auf diesem Server nicht verfügbar."
@@ -962,25 +962,15 @@ msgstr "Basierend auf einem Anschlag laut Anleitung von"
 msgid "Before"
 msgstr "Zuvor"
 
-#: web/src/lib/features/admin/AdminBackups.svelte:185
-#, python-brace-format
-msgid ""
-"Before every restore the current data is saved as {name} ({time}). "
-"Restoring it brings that state back."
-msgstr ""
-"Vor jeder Wiederherstellung werden die aktuellen Daten als {name} "
-"({time}) gesichert. Wenn du diese Sicherung wiederherstellst, ist der "
-"alte Stand zurück."
-
-#: web/src/lib/features/admin/AdminBackups.svelte:82
+#: web/src/lib/features/admin/BackupKindBadge.svelte:19
 msgid "Before migration"
 msgstr "Vor Migration"
 
-#: web/src/lib/features/admin/AdminBackups.svelte:84
+#: web/src/lib/features/admin/BackupKindBadge.svelte:21
 msgid "Before restore"
 msgstr "Vor Wiederherstellung"
 
-#: web/src/lib/features/admin/AdminBackups.svelte:80
+#: web/src/lib/features/admin/BackupKindBadge.svelte:17
 msgid "Before update"
 msgstr "Vor Update"
 
@@ -1094,7 +1084,7 @@ msgstr "Kann ansehen"
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: web/src/lib/features/admin/AdminBackups.svelte:102
+#: web/src/lib/features/admin/AdminBackups.svelte:112
 msgid "Cannot be read"
 msgstr "Nicht lesbar"
 
@@ -1775,7 +1765,7 @@ msgstr "Diesen Passwortentwurf verwerfen?"
 msgid "Dismiss"
 msgstr "Ausblenden"
 
-#: web/src/lib/components/ActionFeedback.svelte:89
+#: web/src/lib/components/ActionFeedback.svelte:98
 msgid "Dismiss message"
 msgstr "Nachricht schließen"
 
@@ -2646,9 +2636,9 @@ msgstr "Im Papierkorb · noch {count} Tage"
 msgid "In yarn {name}"
 msgstr "Im Garn {name}"
 
-#: web/src/lib/features/admin/AdminBackups.svelte:231
-msgid "Includes media"
-msgstr "Mit Medien"
+#: web/src/lib/features/admin/AdminBackups.svelte:302
+msgid "Includes photos"
+msgstr "Mit Fotos"
 
 #: web/src/lib/features/projects/ProjectReader.svelte:1217
 #: web/src/lib/features/yarns/YarnDetail.svelte:615
@@ -2996,7 +2986,7 @@ msgstr "Archivstatus wird geladen…"
 msgid "Loading audit events…"
 msgstr "Audit-Ereignisse werden geladen …"
 
-#: web/src/lib/features/admin/AdminBackups.svelte:121
+#: web/src/lib/features/admin/AdminBackups.svelte:131
 msgid "Loading backups…"
 msgstr "Backups werden geladen …"
 
@@ -3115,7 +3105,7 @@ msgstr "Benutzer und Prüfprotokoll verwalten"
 msgid "Manage your profile and sign-in security."
 msgstr "Verwalte dein Profil und die Sicherheit deiner Anmeldung."
 
-#: web/src/lib/features/admin/AdminBackups.svelte:86
+#: web/src/lib/features/admin/BackupKindBadge.svelte:23
 msgid "Manual"
 msgstr "Manuell"
 
@@ -3354,7 +3344,7 @@ msgstr "Nächste Seite"
 msgid "Next project"
 msgstr "Nächstes Projekt"
 
-#: web/src/lib/features/admin/AdminBackups.svelte:78
+#: web/src/lib/features/admin/BackupKindBadge.svelte:15
 msgid "Nightly"
 msgstr "Nächtlich"
 
@@ -3385,7 +3375,7 @@ msgstr ""
 msgid "No audit events match these filters."
 msgstr "Keine Audit-Ereignisse entsprechen diesen Filtern."
 
-#: web/src/lib/features/admin/AdminBackups.svelte:205
+#: web/src/lib/features/admin/AdminBackups.svelte:232
 msgid "No backups found."
 msgstr "Keine Backups gefunden."
 
@@ -4720,7 +4710,7 @@ msgstr "Aus dem Papierkorb wiederhergestellt"
 msgid "Restored {name}."
 msgstr "{name} wurde wiederhergestellt."
 
-#: web/src/lib/features/admin/AdminBackups.svelte:265
+#: web/src/lib/features/admin/AdminBackups.svelte:319
 msgid "Restore…"
 msgstr "Wiederherstellen …"
 
@@ -4938,7 +4928,7 @@ msgstr "Mit der Stricknani-App scannen"
 msgid "Scan with your phone to get the app."
 msgstr "Mit dem Handy scannen, um die App zu holen."
 
-#: web/src/lib/features/admin/AdminBackups.svelte:225
+#: web/src/lib/features/admin/AdminBackups.svelte:262
 #, python-brace-format
 msgid "Schema {version}"
 msgstr "Schema {version}"
@@ -5283,7 +5273,8 @@ msgstr "Zum Inhalt springen"
 msgid "Small"
 msgstr "Klein"
 
-#: web/src/lib/features/admin/AdminBackups.svelte:171
+#: web/src/lib/features/admin/AdminBackups.svelte:181
+#: web/src/lib/features/admin/AdminBackups.svelte:213
 #, python-brace-format
 msgid "Some media files could not be added: {error}"
 msgstr "Einige Mediendateien konnten nicht hinzugefügt werden: {error}"
@@ -5834,7 +5825,7 @@ msgstr "Das Backup konnte nicht vorbereitet werden. Es wurde nichts verändert."
 msgid "The backup was restored and the server is running again."
 msgstr "Das Backup wurde wiederhergestellt und der Server läuft wieder."
 
-#: web/src/lib/features/admin/AdminBackups.svelte:66
+#: web/src/lib/features/admin/AdminBackups.svelte:71
 msgid "The backups could not be loaded."
 msgstr "Die Backups konnten nicht geladen werden."
 
@@ -5935,7 +5926,7 @@ msgstr ""
 "weil sich sonst niemand mehr darum kümmern könnte. Mache zuerst jemand "
 "anderen zum Administrator."
 
-#: web/src/lib/features/admin/AdminBackups.svelte:156
+#: web/src/lib/features/admin/AdminBackups.svelte:166
 #, python-brace-format
 msgid "The last restore did not work: {name}."
 msgstr "Die letzte Wiederherstellung hat nicht geklappt: {name}."
@@ -6702,6 +6693,7 @@ msgid "Title image uploaded"
 msgstr "Titelbild hochgeladen"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:335
+#: web/src/lib/features/admin/AdminBackups.svelte:99
 #: web/src/lib/features/home/activity.ts:399
 msgid "Today"
 msgstr "Heute"
@@ -6805,7 +6797,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:1525
 #: web/src/lib/features/account/BackupsSection.svelte:436
 #: web/src/lib/features/admin/AdminAudit.svelte:449
-#: web/src/lib/features/admin/AdminBackups.svelte:131
+#: web/src/lib/features/admin/AdminBackups.svelte:141
 #: web/src/lib/features/admin/AdminResource.svelte:385
 #: web/src/lib/features/admin/AdminUsers.svelte:693
 #: web/src/lib/features/admin/DiffPanel.svelte:133
@@ -6872,7 +6864,7 @@ msgstr "Gib zur Bestätigung den genauen Backup-Namen ein."
 msgid "Undo"
 msgstr "Rückgängig"
 
-#: web/src/lib/features/admin/AdminBackups.svelte:199
+#: web/src/lib/features/admin/AdminBackups.svelte:226
 msgid "Undo last restore…"
 msgstr "Letzte Wiederherstellung rückgängig machen …"
 
@@ -6885,7 +6877,7 @@ msgstr "Entfernen dieser Datei rückgängig machen"
 msgid "Undo removing this photo"
 msgstr "Entfernen dieses Fotos rückgängig machen"
 
-#: web/src/lib/features/admin/AdminBackups.svelte:183
+#: web/src/lib/features/admin/AdminBackups.svelte:200
 msgid "Undo the last restore"
 msgstr "Letzte Wiederherstellung rückgängig machen"
 
@@ -7241,7 +7233,7 @@ msgstr "Winky hat den Faden verloren"
 msgid "Working…"
 msgstr "Wird verarbeitet …"
 
-#: web/src/lib/features/admin/AdminBackups.svelte:101
+#: web/src/lib/features/admin/AdminBackups.svelte:111
 msgid "Written by a newer version of Stricknani"
 msgstr "Von einer neueren Stricknani-Version erstellt"
 
@@ -7317,6 +7309,7 @@ msgid "Yarn weight"
 msgstr "Garnstärke"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:337
+#: web/src/lib/features/admin/AdminBackups.svelte:100
 #: web/src/lib/features/home/activity.ts:400
 msgid "Yesterday"
 msgstr "Gestern"
@@ -7931,6 +7924,16 @@ msgstr "{count} Filtervorschläge"
 msgid "{count} linked yarns"
 msgstr "{count} verknüpfte Garne"
 
+#: web/src/lib/features/admin/AdminBackups.svelte:202
+#, python-brace-format
+msgid ""
+"{email} restored {name} on {time}. The data from before is saved as "
+"{saved}; restoring it brings that state back."
+msgstr ""
+"{email} hat {name} am {time} wiederhergestellt. Die Daten von vorher sind"
+" als {saved} gesichert; sie wiederherzustellen bringt diesen Stand "
+"zurück."
+
 #: web/src/lib/features/history/history-summary.ts:216
 #, python-brace-format
 msgid "{name} left"
@@ -7951,7 +7954,7 @@ msgstr "{name} besitzt dieses Projekt jetzt. Du bist Bearbeiter."
 msgid "{name} now owns this yarn. You are an editor."
 msgstr "{name} besitzt dieses Garn jetzt. Du bist Bearbeiter."
 
-#: web/src/lib/features/admin/AdminBackups.svelte:163
+#: web/src/lib/features/admin/AdminBackups.svelte:173
 #, python-brace-format
 msgid "{name} was restored on {time} by {email}."
 msgstr "{name} wurde am {time} von {email} wiederhergestellt."
@@ -7998,7 +8001,7 @@ msgstr "noch {n} Tage"
 msgid "{n} more"
 msgstr "{n} weitere"
 
-#: web/src/lib/features/admin/AdminBackups.svelte:241
+#: web/src/lib/features/admin/AdminBackups.svelte:276
 #, python-brace-format
 msgid "{projects} projects"
 msgstr "{projects} Projekte"
@@ -8010,12 +8013,12 @@ msgstr ""
 "{time} bisher. Öffne das Projekt, um den Timer zu stoppen oder "
 "weiterlaufen zu lassen."
 
-#: web/src/lib/features/admin/AdminBackups.svelte:251
+#: web/src/lib/features/admin/AdminBackups.svelte:291
 #, python-brace-format
 msgid "{trashed} in the trash"
 msgstr "{trashed} im Papierkorb"
 
-#: web/src/lib/features/admin/AdminBackups.svelte:236
+#: web/src/lib/features/admin/AdminBackups.svelte:270
 #, python-brace-format
 msgid "{users} accounts"
 msgstr "{users} Konten"
@@ -8025,7 +8028,7 @@ msgstr "{users} Konten"
 msgid "{user} acting as {actor}"
 msgstr "{user} als {actor}"
 
-#: web/src/lib/features/admin/AdminBackups.svelte:246
+#: web/src/lib/features/admin/AdminBackups.svelte:285
 #, python-brace-format
 msgid "{yarns} yarns"
 msgstr "{yarns} Garne"
@@ -8641,6 +8644,9 @@ msgstr "{yarns} Garne"
 
 #~ msgid "Recently updated projects could not be loaded."
 #~ msgstr "Zuletzt aktualisierte Projekte konnten nicht geladen werden."
+
+#~ msgid "Includes media"
+#~ msgstr "Mit Medien"
 
 #~ msgid "An admin added files to {name}"
 #~ msgstr "Ein Admin hat Dateien zu {name} hinzugefügt"

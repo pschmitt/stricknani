@@ -253,7 +253,7 @@ internal constructor(
                             else current.passkeys,
                     )
                 }
-                if (ok) feedback.show(R.string.passkey_removed_done)
+                if (ok) feedback.showRemoved(R.string.passkey_removed_done)
                 else result.passkeyFailure()?.let(feedback::showPasskeyFailure)
             }
             null -> Unit

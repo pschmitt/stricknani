@@ -37,7 +37,7 @@ describe("publishMovedToTrash", () => {
     });
     const event = get(feedback);
     expect(event).toMatchObject({
-      kind: "success",
+      kind: "deleted",
       message: "Moved to the trash.",
       action: { label: "Undo" },
     });
@@ -47,7 +47,7 @@ describe("publishMovedToTrash", () => {
     expect(restore).toHaveBeenCalledWith("project", 9, session);
     expect(onRestored).toHaveBeenCalledOnce();
     expect(get(feedback)).toMatchObject({
-      kind: "success",
+      kind: "restored",
       message: "Restored from the trash.",
     });
   });
@@ -87,7 +87,7 @@ describe("publishSavedWithRemovals", () => {
     publishSavedWithRemovals({ session, ownerId: 4, items, onRestored });
     const event = get(feedback);
     expect(event).toMatchObject({
-      kind: "success",
+      kind: "deleted",
       message: "Saved. What you removed is in the trash for 90 days.",
       action: { label: "Undo" },
     });

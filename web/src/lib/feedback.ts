@@ -1,6 +1,29 @@
 import { get, readonly, writable } from "svelte/store";
 
-export type FeedbackKind = "success" | "error";
+/**
+ * What a toast is about. Besides plain confirmations and errors there are kinds for what happened
+ * to something: sent to the trash or removed ("deleted"), deleted for good ("purged") and brought
+ * back ("restored"). Mirrors the Android app's feedback kinds.
+ */
+export type FeedbackKind =
+  "success" | "error" | "deleted" | "purged" | "restored";
+
+export type FeedbackIconName = "check" | "exclamation" | "trash" | "history";
+
+/** The badge glyph of a kind: one shared icon per kind, as on Android. */
+export function feedbackIconName(kind: FeedbackKind): FeedbackIconName {
+  switch (kind) {
+    case "success":
+      return "check";
+    case "error":
+      return "exclamation";
+    case "deleted":
+    case "purged":
+      return "trash";
+    case "restored":
+      return "history";
+  }
+}
 
 /** An optional button on a toast, such as "Undo". Dismisses the toast when it runs. */
 export interface FeedbackAction {

@@ -179,7 +179,7 @@
     staged = stageImageRemoval(staged, photo.id);
     publishFeedback({
       ownerId,
-      kind: "success",
+      kind: "deleted",
       message: t("Removed. It goes to the trash when you save.", locale),
       action: {
         label: t("Undo", locale),

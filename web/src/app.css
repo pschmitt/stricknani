@@ -83,6 +83,8 @@
   --tone-audit-wash: #eadcfb;
   --tone-more: #5e5268;
   --tone-more-wash: #ebe3f4;
+  --tone-backup-nightly: #1d4f99;
+  --tone-backup-nightly-wash: #dbe7fb;
   --danger: #b3261e;
   --on-danger: #ffffff;
   --info: #1d5fb8;
@@ -175,6 +177,8 @@
     --tone-audit-wash: #4d2f78;
     --tone-more: #c9bdd3;
     --tone-more-wash: #3d3446;
+    --tone-backup-nightly: #a8c8ff;
+    --tone-backup-nightly-wash: #1f3a66;
     --danger: #ffb4ab;
     --on-danger: #410e0b;
     --info: #a8c8ff;
@@ -232,6 +236,8 @@
   --tone-audit-wash: #4d2f78;
   --tone-more: #c9bdd3;
   --tone-more-wash: #3d3446;
+  --tone-backup-nightly: #a8c8ff;
+  --tone-backup-nightly-wash: #1f3a66;
   --danger: #ffb4ab;
   --on-danger: #410e0b;
   --info: #a8c8ff;

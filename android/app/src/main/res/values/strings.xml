@@ -819,10 +819,11 @@
     <string name="mutation_favorite_removed">Removed from favorites.</string>
     <string name="mutation_favorite_offline">You’re offline - try favouriting again in a moment.</string>
     <string name="mutation_category_renamed">Category “%1$s” renamed to “%2$s”.</string>
-    <string name="mutation_project_created_queued">Project created.</string>
-    <string name="mutation_project_updated_queued">Project saved.</string>
-    <string name="mutation_yarn_created_queued">Yarn created.</string>
-    <string name="mutation_yarn_updated_queued">Yarn saved.</string>
+    <string name="mutation_project_created">Project created.</string>
+    <string name="mutation_project_updated">Project saved.</string>
+    <string name="mutation_yarn_created">Yarn created.</string>
+    <string name="mutation_yarn_updated">Yarn saved.</string>
+    <string name="mutation_saved_offline">Saved on this device. It will sync when you’re online.</string>
 
     <!-- Onboarding errors -->
     <string name="onboarding_error_missing_url_token">Enter the Stricknani address and the access token</string>
@@ -1668,7 +1669,7 @@
     <string name="backups_last_succeeded">%1$s was restored on %2$s by %3$s.</string>
     <string name="backups_media_error">Some media files could not be added: %1$s</string>
     <string name="backups_undo_title">Undo the last restore</string>
-    <string name="backups_undo_text">Before every restore the current data is saved as %1$s (%2$s). Restoring it brings that state back.</string>
+    <string name="backups_undo_text">%1$s restored %2$s on %3$s. The data from before is saved as %4$s; restoring it brings that state back.</string>
     <string name="backups_undo_action">Undo last restore…</string>
     <string name="backups_restore_action">Restore…</string>
     <string name="backups_kind_nightly">Nightly</string>
@@ -1677,7 +1678,7 @@
     <string name="backups_kind_pre_restore">Before restore</string>
     <string name="backups_kind_manual">Manual</string>
     <string name="backups_schema">Schema %1$s</string>
-    <string name="backups_has_media">Includes media</string>
+    <string name="backups_has_media">Includes photos</string>
     <string name="backups_count_users">%1$s accounts</string>
     <string name="backups_count_projects">%1$s projects</string>
     <string name="backups_count_yarns">%1$s yarns</string>

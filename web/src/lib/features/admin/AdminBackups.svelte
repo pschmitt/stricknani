@@ -2,15 +2,16 @@
   import { onDestroy } from "svelte";
   import { ApiError } from "#lib/api.ts";
   import SharedButton from "#lib/components/Button.svelte";
+  import NavIcon from "#lib/components/NavIcon.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import AdminTabs from "./AdminTabs.svelte";
+  import BackupKindBadge from "./BackupKindBadge.svelte";
   import RestoreBackupDialog from "./RestoreBackupDialog.svelte";
   import {
     listBackups,
     type BackupEntry,
-    type BackupKind,
     type BackupList,
   } from "./backups-api.ts";
   import {
@@ -18,6 +19,12 @@
     formatBytes,
     formatCount,
   } from "./backups-format.ts";
+  import {
+    groupByDay,
+    relativeAge,
+    undoCandidate,
+    type DayLabel,
+  } from "./backups-present.ts";
 
   type LoadState = "loading" | "ready" | "error";
 
@@ -33,12 +40,9 @@
   const backups = $derived(
     list ? [...list.backups].sort(compareBackups) : ([] as BackupEntry[]),
   );
-  const undoTarget = $derived(
-    list?.latest_pre_restore
-      ? (backups.find((entry) => entry.name === list?.latest_pre_restore) ??
-          null)
-      : null,
-  );
+  const undoTarget = $derived(list ? undoCandidate(list, backups) : null);
+  let now = $state(new Date());
+  const groups = $derived(groupByDay(backups, now));
 
   $effect(() => {
     const ownerId = userId;
@@ -54,6 +58,7 @@
     void listBackups(controller.signal)
       .then((result) => {
         if (controller.signal.aborted || request !== loadGeneration) return;
+        now = new Date();
         list = result;
         loadState = "ready";
       })
@@ -72,21 +77,6 @@
     loadGeneration += 1;
   });
 
-  function kindLabel(kind: BackupKind): string {
-    switch (kind) {
-      case "nightly":
-        return t("Nightly", locale);
-      case "predeploy":
-        return t("Before update", locale);
-      case "pre_migrate":
-        return t("Before migration", locale);
-      case "pre_restore":
-        return t("Before restore", locale);
-      default:
-        return t("Manual", locale);
-    }
-  }
-
   function formatTime(value: string): string {
     const parsed = new Date(value);
     if (!Number.isFinite(parsed.valueOf())) return value;
@@ -94,6 +84,26 @@
       dateStyle: "medium",
       timeStyle: "short",
     }).format(parsed);
+  }
+
+  /** The time of day only: the day header above the row carries the date. */
+  function formatClock(value: string): string {
+    const parsed = new Date(value);
+    if (!Number.isFinite(parsed.valueOf())) return value;
+    return new Intl.DateTimeFormat(locale, { timeStyle: "short" }).format(
+      parsed,
+    );
+  }
+
+  function dayTitle(label: DayLabel): string {
+    if (label.kind === "today") return t("Today", locale);
+    if (label.kind === "yesterday") return t("Yesterday", locale);
+    return new Intl.DateTimeFormat(locale, {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(label.date);
   }
 
   function problem(entry: BackupEntry): string | null {
@@ -144,7 +154,7 @@
         ).replace("{name}", list.pending_restore.backup)}
       </p>
     {/if}
-    {#if list.last_restore}
+    {#if list.last_restore && !(undoTarget && list.last_restore.status === "succeeded")}
       <section
         class="banner"
         class:banner--problem={list.last_restore.status === "failed"}
@@ -177,18 +187,35 @@
       </section>
     {/if}
 
-    {#if undoTarget}
-      <section class="undo" aria-labelledby="undo-title">
-        <div>
+    {#if undoTarget && list.last_restore}
+      <section
+        class="undo"
+        aria-labelledby="undo-title"
+        data-testid="undo-card"
+      >
+        <span class="undo-icon" aria-hidden="true"
+          ><NavIcon name="reset" /></span
+        >
+        <div class="undo-text">
           <h2 id="undo-title">{t("Undo the last restore", locale)}</h2>
           <p>
             {t(
-              "Before every restore the current data is saved as {name} ({time}). Restoring it brings that state back.",
+              "{email} restored {name} on {time}. The data from before is saved as {saved}; restoring it brings that state back.",
               locale,
             )
-              .replace("{name}", undoTarget.name)
-              .replace("{time}", formatTime(undoTarget.created_at))}
+              .replace("{email}", list.last_restore.requested_by_email)
+              .replace("{name}", list.last_restore.backup)
+              .replace("{time}", formatTime(list.last_restore.finished_at))
+              .replace("{saved}", undoTarget.name)}
           </p>
+          {#if list.last_restore.media_error}
+            <p>
+              {t(
+                "Some media files could not be added: {error}",
+                locale,
+              ).replace("{error}", list.last_restore.media_error)}
+            </p>
+          {/if}
         </div>
         <SharedButton
           variant="secondary"
@@ -204,69 +231,100 @@
     {#if backups.length === 0}
       <p class="empty">{t("No backups found.", locale)}</p>
     {:else}
-      <ul class="backup-list" aria-label={t("Backups", locale)}>
-        {#each backups as entry (entry.name)}
-          {@const blocked = problem(entry)}
-          <li class="backup-row" data-backup={entry.name}>
-            <div class="backup-main">
-              <p class="backup-title">
-                <span class="chip chip--{entry.kind}"
-                  >{kindLabel(entry.kind)}</span
-                >
-                <time datetime={entry.created_at}
-                  >{formatTime(entry.created_at)}</time
-                >
-              </p>
-              <p class="backup-file"><code>{entry.name}</code></p>
-              <p class="backup-meta">
-                <span>{formatBytes(entry.size_bytes)}</span>
-                {#if entry.schema_version !== null}
-                  <span
-                    >{t("Schema {version}", locale).replace(
-                      "{version}",
-                      String(entry.schema_version),
-                    )}</span
-                  >
-                {/if}
-                {#if entry.has_media}<span>{t("Includes media", locale)}</span
-                  >{/if}
-              </p>
-              {#if entry.counts}
-                <p class="backup-counts">
-                  {t("{users} accounts", locale).replace(
-                    "{users}",
-                    formatCount(entry.counts.users),
-                  )}
-                  ·
-                  {t("{projects} projects", locale).replace(
-                    "{projects}",
-                    formatCount(entry.counts.projects),
-                  )}
-                  ·
-                  {t("{yarns} yarns", locale).replace(
-                    "{yarns}",
-                    formatCount(entry.counts.yarns),
-                  )}
-                  ·
-                  {t("{trashed} in the trash", locale).replace(
-                    "{trashed}",
-                    formatCount(entry.counts.trashed),
-                  )}
-                </p>
-              {/if}
-              {#if blocked}<p class="backup-problem">{blocked}</p>{/if}
-            </div>
-            <SharedButton
-              variant="secondary"
-              icon="reset"
-              disabled={!entry.restorable}
-              onclick={() => void restoreDialog?.open(entry)}
-            >
-              {t("Restore…", locale)}
-            </SharedButton>
-          </li>
+      <div class="backup-days" aria-label={t("Backups", locale)} role="group">
+        {#each groups as group (group.key)}
+          <section class="backup-day">
+            <h2 class="day-title">{dayTitle(group.label)}</h2>
+            <ul class="backup-list">
+              {#each group.entries as entry (entry.name)}
+                {@const blocked = problem(entry)}
+                {@const age = relativeAge(entry.created_at, now, locale)}
+                <li class="backup-row" data-backup={entry.name}>
+                  <div class="backup-head">
+                    <BackupKindBadge kind={entry.kind} {locale} />
+                    <time
+                      class="backup-time"
+                      datetime={entry.created_at}
+                      title={formatTime(entry.created_at)}
+                      >{formatClock(entry.created_at)}</time
+                    >
+                    {#if age}<span class="backup-age">{age}</span>{/if}
+                  </div>
+                  <p class="backup-file" title={entry.name}>
+                    <code>{entry.name}</code>
+                  </p>
+                  <ul class="facts">
+                    <li class="fact">
+                      <NavIcon name="package" />{formatBytes(entry.size_bytes)}
+                    </li>
+                    {#if entry.schema_version !== null}
+                      <li class="fact">
+                        <NavIcon name="hash" />{t(
+                          "Schema {version}",
+                          locale,
+                        ).replace("{version}", String(entry.schema_version))}
+                      </li>
+                    {/if}
+                    {#if entry.counts}
+                      <li class="fact">
+                        <NavIcon name="account" />{t(
+                          "{users} accounts",
+                          locale,
+                        ).replace("{users}", formatCount(entry.counts.users))}
+                      </li>
+                      <li class="fact">
+                        <NavIcon name="projects" />{t(
+                          "{projects} projects",
+                          locale,
+                        ).replace(
+                          "{projects}",
+                          formatCount(entry.counts.projects),
+                        )}
+                      </li>
+                      <li class="fact">
+                        <NavIcon name="yarns" />{t(
+                          "{yarns} yarns",
+                          locale,
+                        ).replace("{yarns}", formatCount(entry.counts.yarns))}
+                      </li>
+                      <li class="fact">
+                        <NavIcon name="trash" />{t(
+                          "{trashed} in the trash",
+                          locale,
+                        ).replace(
+                          "{trashed}",
+                          formatCount(entry.counts.trashed),
+                        )}
+                      </li>
+                    {/if}
+                    {#if entry.has_media}
+                      <li class="fact">
+                        <NavIcon name="image" />{t("Includes photos", locale)}
+                      </li>
+                    {/if}
+                  </ul>
+                  {#if blocked}
+                    <p class="backup-problem">
+                      <NavIcon name="info" />{blocked}
+                    </p>
+                  {/if}
+                  <div class="backup-action">
+                    <SharedButton
+                      variant="secondary"
+                      size="sm"
+                      icon="reset"
+                      disabled={!entry.restorable}
+                      onclick={() => void restoreDialog?.open(entry)}
+                    >
+                      {t("Restore…", locale)}
+                    </SharedButton>
+                  </div>
+                </li>
+              {/each}
+            </ul>
+          </section>
         {/each}
-      </ul>
+      </div>
     {/if}
   {/if}
 
@@ -303,15 +361,26 @@
   }
 
   .undo {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.8rem 1.2rem;
-    border: 1px solid var(--line);
+    gap: 0.75rem 1rem;
+    border: 1px solid var(--warning);
     border-radius: var(--radius-sm);
-    padding: 0.9rem 1rem;
+    padding: 1rem;
+    background: var(--warning-surface);
+    color: var(--ink);
+  }
+
+  .undo-icon {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 999px;
     background: var(--surface);
+    color: var(--warning);
+    font-size: 1.4rem;
   }
 
   .undo h2 {
@@ -321,12 +390,35 @@
 
   .undo p {
     margin: 0;
-    color: var(--ink-muted);
     overflow-wrap: anywhere;
+  }
+
+  .undo p + p {
+    margin-top: 0.25rem;
   }
 
   .empty {
     color: var(--ink-muted);
+  }
+
+  .backup-days {
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .backup-day {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .day-title {
+    margin: 0 0 0 0.25rem;
+    color: var(--ink-muted);
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
 
   .backup-list {
@@ -341,78 +433,132 @@
   }
 
   .backup-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.6rem 1rem;
-    padding: 0.8rem 1rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "head action"
+      "file action"
+      "facts action"
+      "problem action";
+    align-items: start;
+    column-gap: 1rem;
+    row-gap: 0.5rem;
+    padding: 1rem;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 7.5rem;
   }
 
   .backup-row + .backup-row {
     border-top: 1px solid var(--line);
   }
 
-  .backup-main {
-    min-width: 0;
-    flex: 1 1 16rem;
-  }
-
-  .backup-main p {
-    margin: 0;
-  }
-
-  .backup-title {
+  .backup-head {
+    grid-area: head;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.25rem 0.6rem;
+    min-width: 0;
+  }
+
+  .backup-time {
     font-weight: 650;
-  }
-
-  .backup-file {
-    margin-top: 0.15rem;
-    color: var(--ink-muted);
-    font-size: 0.85rem;
-    overflow-wrap: anywhere;
-  }
-
-  .backup-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.2rem 0.9rem;
-    margin-top: 0.25rem;
-    color: var(--ink-muted);
-    font-size: 0.88rem;
-  }
-
-  .backup-counts {
-    margin-top: 0.2rem;
-    font-size: 0.9rem;
     font-variant-numeric: tabular-nums;
   }
 
+  .backup-age {
+    color: var(--ink-muted);
+    font-size: 0.9rem;
+  }
+
+  .backup-file {
+    grid-area: file;
+    margin: 0;
+    min-width: 0;
+    color: var(--ink-muted);
+    font-size: 0.82rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .backup-file code {
+    font-family: var(--font-mono, ui-monospace, monospace);
+  }
+
+  .facts {
+    grid-area: facts;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .fact {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border-radius: 999px;
+    padding: 0.1rem 0.6rem 0.1rem 0.45rem;
+    background: var(--surface-raised);
+    color: var(--ink-muted);
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .fact :global(svg) {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+
   .backup-problem {
-    margin-top: 0.25rem;
+    grid-area: problem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0;
     color: var(--danger, #b3261e);
     font-weight: 650;
     font-size: 0.9rem;
   }
 
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    border-radius: 999px;
-    padding: 0.1rem 0.6rem;
-    background: var(--surface-raised);
-    color: var(--ink);
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 0.01em;
+  .backup-problem :global(svg) {
+    width: 1rem;
+    height: 1rem;
+    flex: none;
   }
 
-  .chip--pre_restore {
-    background: var(--accent-soft, var(--surface-raised));
-    color: var(--accent-strong);
+  .backup-action {
+    grid-area: action;
+    align-self: start;
+  }
+
+  @media (max-width: 40rem) {
+    .undo {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .undo :global(.ui-button) {
+      grid-column: 1 / -1;
+      justify-self: stretch;
+    }
+
+    .backup-row {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        "head"
+        "file"
+        "facts"
+        "problem"
+        "action";
+    }
+
+    .backup-action :global(.ui-button) {
+      width: 100%;
+      justify-content: center;
+    }
   }
 </style>

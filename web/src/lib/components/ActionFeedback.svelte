@@ -4,7 +4,11 @@
   import { fade, fly } from "svelte/transition";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import { t } from "#lib/i18n.svelte.ts";
-  import { dismissFeedback, feedback } from "#lib/feedback.ts";
+  import {
+    dismissFeedback,
+    feedback,
+    feedbackIconName,
+  } from "#lib/feedback.ts";
 
   let {
     ownerId,
@@ -37,6 +41,9 @@
     }
   }
 
+  const iconName = $derived(
+    $feedback ? feedbackIconName($feedback.kind) : "check",
+  );
   const currentEvent = $derived(
     ownerId !== null && $feedback?.ownerId === ownerId ? $feedback : null,
   );
@@ -47,6 +54,8 @@
     <div
       class="action-feedback"
       class:action-feedback--error={currentEvent.kind === "error"}
+      class:action-feedback--purged={currentEvent.kind === "purged"}
+      data-kind={currentEvent.kind}
       class:action-feedback--has-action={Boolean(currentEvent.action)}
       role={currentEvent.kind === "error" ? "alert" : "status"}
       aria-live={currentEvent.kind === "error" ? "assertive" : "polite"}
@@ -55,7 +64,7 @@
       out:fade|global={{ duration: motionMs(160) }}
     >
       <span class="action-feedback__badge" aria-hidden="true">
-        {#if currentEvent.kind === "error"}
+        {#if iconName === "exclamation"}
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -68,7 +77,7 @@
             <path d="M12 7v6.5M12 17.2v.1" />
           </svg>
         {:else}
-          <NavIcon name="check" />
+          <NavIcon name={iconName} />
         {/if}
       </span>
       <span class="action-feedback__text">{currentEvent.message}</span>
@@ -149,6 +158,13 @@
     --toast-tone-wash: var(--danger);
     border-color: var(--danger);
     border-radius: var(--radius-md);
+  }
+
+  /* Deleted for good: the trash glyph in the danger tint, without the
+     error toast's persistent alert behaviour. */
+  .action-feedback--purged {
+    --toast-tone: var(--on-danger);
+    --toast-tone-wash: var(--danger);
   }
 
   .action-feedback__badge {

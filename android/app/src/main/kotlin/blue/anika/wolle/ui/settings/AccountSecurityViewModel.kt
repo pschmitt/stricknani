@@ -514,8 +514,8 @@ constructor(
             }
             when (result) {
                 is RevokeResult.Revoked ->
-                    if (!result.currentToken) feedback.show(R.string.account_token_revoked)
-                RevokeResult.AlreadyGone -> feedback.show(R.string.account_token_revoked)
+                    if (!result.currentToken) feedback.showRemoved(R.string.account_token_revoked)
+                RevokeResult.AlreadyGone -> feedback.showRemoved(R.string.account_token_revoked)
                 is RevokeResult.Failed -> feedback.show(R.string.error_token_revoke_failed)
             }
         }

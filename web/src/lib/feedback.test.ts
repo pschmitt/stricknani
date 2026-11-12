@@ -7,6 +7,7 @@ import {
   dismissFeedback,
   feedback,
   feedbackDurationMs,
+  feedbackIconName,
   publishFeedback,
 } from "./feedback";
 
@@ -112,5 +113,25 @@ describe("owner-scoped feedback events", () => {
     publishFeedback({ ownerId: 7, kind: "success", message: "Saved" });
     vi.advanceTimersByTime(FEEDBACK_DISMISS_MS);
     expect(get(feedback)).toBeNull();
+  });
+});
+
+describe("feedback kind icons", () => {
+  it("maps each kind to its shared glyph", () => {
+    expect(feedbackIconName("success")).toBe("check");
+    expect(feedbackIconName("error")).toBe("exclamation");
+    expect(feedbackIconName("restored")).toBe("history");
+  });
+
+  it("uses the trash glyph for deletions and permanent deletions", () => {
+    expect(feedbackIconName("deleted")).toBe("trash");
+    expect(feedbackIconName("purged")).toBe("trash");
+  });
+
+  it("lets deletion and restore toasts leave on their own", () => {
+    for (const kind of ["deleted", "purged", "restored"] as const) {
+      expect(feedbackDurationMs(kind)).toBe(FEEDBACK_DISMISS_MS);
+      expect(feedbackDurationMs(kind, true)).toBe(FEEDBACK_ACTION_DISMISS_MS);
+    }
   });
 });

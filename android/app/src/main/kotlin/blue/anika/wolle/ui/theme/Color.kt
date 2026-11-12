@@ -65,3 +65,33 @@ internal val StickyPaperInkDark = Color(0xFFF4EDDA)
 /** The web's `--accent-wash`: the import card's tint (light and dark). */
 internal val RaspberryWash = Color(0xFFFFE3EC)
 internal val RaspberryNightWash = Color(0xFF44253D)
+
+// Backup kind badges (Admin -> Backups): ink on wash, the web's `--tone-backup-*` and `--tone-*`
+// pairs. Nightly is blue, before update teal, before migration violet, before restore marigold and
+// manual raspberry.
+internal val BackupNightlyInk = Color(0xFF1D4F99)
+internal val BackupNightlyWash = Color(0xFFDBE7FB)
+internal val BackupNightlyInkNight = Color(0xFFA8C8FF)
+internal val BackupNightlyWashNight = Color(0xFF1F3A66)
+internal val BackupUpdateInk = Color(0xFF17666C)
+internal val BackupUpdateWash = Color(0xFFC6EFEE)
+internal val BackupUpdateInkNight = Color(0xFF82D6D7)
+internal val BackupUpdateWashNight = Color(0xFF004F54)
+internal val BackupMigrationInk = Color(0xFF6B3FA0)
+internal val BackupMigrationWash = Color(0xFFEADCFB)
+internal val BackupMigrationInkNight = Color(0xFFDCC6FF)
+internal val BackupMigrationWashNight = Color(0xFF4D2F78)
+internal val BackupRestoreInk = Color(0xFF875A00)
+internal val BackupRestoreWash = Color(0xFFFFE2AE)
+internal val BackupRestoreInkNight = Color(0xFFFFC768)
+internal val BackupRestoreWashNight = Color(0xFF654300)
+internal val BackupManualInk = Color(0xFFA82C5B)
+internal val BackupManualWash = Color(0xFFFFD9E5)
+internal val BackupManualInkNight = Color(0xFFFFB0CB)
+internal val BackupManualWashNight = Color(0xFF7D1D49)
+
+/** The web's `--warning` and `--warning-surface`: the Undo card. */
+internal val WarningInk = Color(0xFF7A5200)
+internal val WarningSurface = Color(0xFFFFF1CF)
+internal val WarningInkNight = Color(0xFFFFC768)
+internal val WarningSurfaceNight = Color(0xFF4A3410)
