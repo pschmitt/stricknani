@@ -1,8 +1,7 @@
 name: Build
 
-# Nix produces the shared outputs before container publication, E2E and the
-# rolling release consume them. Main runs always produce release artifacts;
-# pull requests retain file filters.
+# Build produces and caches Nix outputs and the container image. The separate
+# E2E and Release workflows consume those outputs for the same source revision.
 # - nix and nix-aarch64: flake check, packages and the Nix server image
 #   (x86_64 also builds on nixbot), aarch64 natively, pushed to niks3.
 # - docker: loads the Nix image artifact, probes /healthz, then pushes to GHCR.
@@ -30,6 +29,8 @@ on:
       - "android/**"
       - "ci/run-*.sh"
       - "ci/verify-container.sh"
+      - "ci/wait-for-nix-producer.mjs"
+      - "ci/wait-for-nix-producer.test.mjs"
       - "docs/web-v2-contract.md"
       - "docs/rust-replay-ci.md"
       - ".github/workflows/build.yaml"
@@ -107,6 +108,12 @@ jobs:
               - 'flake.nix'
               - 'flake.lock'
               - 'justfile'
+              - 'android/**'
+              - 'ci/run-*.sh'
+              - 'ci/wait-for-nix-producer.mjs'
+              - 'ci/wait-for-nix-producer.test.mjs'
+              - 'docs/web-v2-contract.md'
+              - 'docs/rust-replay-ci.md'
               - '.github/workflows/build.yaml'
               - '.github/workflows/e2e.yaml'
               - '.github/workflows/release.yaml'
@@ -142,8 +149,8 @@ jobs:
       - name: Install just
         uses: extractions/setup-just@v4
 
-      # Substitutes what nixbot, the build hosts and the E2E server job pushed to niks3
-      # (crane's dependency build above all), and pushes the server back below.
+      # Substitutes what nixbot and the build hosts already pushed to niks3, then publishes
+      # the exact source's packages and crane dependency outputs for E2E and Release consumers.
       - name: Install Nix with the niks3 cache
         uses: pschmitt/ci-workflows/.github/actions/nix-niks3@main
         with:
@@ -185,6 +192,44 @@ jobs:
           pin-prefix: gh-stricknani-main
           server-url: ${{ vars.NIKS3_SERVER_URL }}
 
+      - name: Write producer source identity
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          source_sha="$(git rev-parse HEAD)"
+          if [[ "$source_sha" != "$GITHUB_SHA" ]]
+          then
+            echo 'Checked out source does not match the workflow event SHA.' >&2
+            exit 1
+          fi
+          node - "$GITHUB_EVENT_PATH" "$source_sha" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" \
+            > "$RUNNER_TEMP/nix-producer.json" <<'JS'
+          const { readFileSync } = require("node:fs");
+          const event = JSON.parse(readFileSync(process.argv[2], "utf8"));
+          const sha = process.argv[3];
+          const runId = Number(process.argv[4]);
+          const runAttempt = Number(process.argv[5]);
+          if (!/^[0-9a-f]{40}$/i.test(sha) || !Number.isSafeInteger(runId) || !Number.isSafeInteger(runAttempt)) {
+            console.error("Nix producer metadata inputs are invalid.");
+            process.exit(1);
+          }
+          const prHeadSha = event.pull_request?.head?.sha ?? null;
+          if (prHeadSha !== null && !/^[0-9a-f]{40}$/i.test(prHeadSha)) {
+            console.error("Nix producer pull request identity is invalid.");
+            process.exit(1);
+          }
+          process.stdout.write(JSON.stringify({ source_sha: sha, pr_head_sha: prHeadSha, run_id: runId, run_attempt: runAttempt }) + "\n");
+          JS
+
+      - name: Upload Nix producer metadata
+        uses: actions/upload-artifact@v7
+        with:
+          name: nix-producer-metadata
+          path: ${{ runner.temp }}/nix-producer.json
+          overwrite: true
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Upload the Nix container for verification and publishing
         uses: actions/upload-artifact@v7
         with:
@@ -193,6 +238,7 @@ jobs:
           compression-level: 0
           if-no-files-found: error
           retention-days: 1
+          overwrite: true
 
   # aarch64-linux packages and checks, built natively on GitHub's arm runners
   # (nixbot on x86_64 would have to emulate them) and pushed to the niks3 S3
@@ -241,25 +287,3 @@ jobs:
     secrets: inherit
     permissions:
       contents: read
-
-  e2e:
-    needs: [nix]
-    if: ${{ !cancelled() && (needs.nix.result == 'success' || needs.nix.result == 'skipped') }}
-    uses: ./.github/workflows/e2e.yaml
-    secrets: inherit
-    permissions:
-      actions: read
-      contents: read
-      pull-requests: read
-      id-token: write
-
-  release:
-    needs: [nix, nix-aarch64]
-    if: ${{ !cancelled() && github.event_name == 'push' && needs.nix.result == 'success' && needs.nix-aarch64.result == 'success' }}
-    uses: ./.github/workflows/release.yaml
-    secrets: inherit
-    permissions:
-      contents: write
-      actions: write
-      id-token: write
-      attestations: write

@@ -6,13 +6,17 @@ commands are in [install.md](install.md); contributor rules are in
 
 ## Checks before a release
 
-Run the full gate in the Rust development shell (`nix develop '.#rust'`):
+Run the local aggregate in the Rust development shell (`nix develop '.#rust'`):
 
 ```sh
 just check          # lint, Clippy, tests, i18n, web check, web tests, web build
 nix flake check     # package and container derivations
 just build-image    # the container image, as CI builds it
 ```
+
+CI splits these checks to reuse the Build workflow's Nix cache. The Checks workflow runs
+web/tooling, i18n, Nix lint and Android lint; Build runs cached Rust formatting, strict Clippy,
+all-target Rust tests and package builds. The local `just check` remains the full aggregate.
 
 Cargo, Gradle and Nix builds are heavy. Run them on a build host, not on a
 laptop, and keep the build directory outside the source tree. The Android
@@ -28,6 +32,16 @@ branch.
 | GitHub release assets | Push to `main`, or a `v*` / `X.Y.Z` tag | A push replaces the rolling `latest` prerelease; a tag publishes a permanent GitHub release. Both carry the same set, see below. |
 | Play Store bundle | A `vX.Y.Z` tag | A signed bundle goes to the internal and closed testing tracks. See [`android/docs/play-store-release.md`](../android/docs/play-store-release.md). |
 | Container image | Push to `main` that touches the crate (`src/`, `tests/`, `migrations/`, ...), `web/`, `nix/` or the flake | The Nix-built image is pushed to GHCR as `latest`, the branch, the tag and the commit, then started and probed on `/healthz`. |
+
+Build, E2E and Release are separate GitHub Actions workflows. Build produces the Nix packages
+and pushes their store paths to niks3 before uploading a small source-identity artifact. E2E
+keeps filtered push, pull request and manual-dispatch triggers; Release runs on `main` pushes,
+version tags and manual dispatches. Their Nix jobs use
+[`ci/wait-for-nix-producer.mjs`](../ci/wait-for-nix-producer.mjs) to find the Build run for the
+same source, verify the metadata and required producer jobs, then substitute those outputs.
+For pull requests the check matches the PR head identity separately from the merge SHA recorded
+by the producer. Tags and manual runs can build independently when no usable producer artifact
+exists. Android release and instrumentation jobs continue to run alongside Nix work.
 
 The release assets (tag releases and `latest` alike; `<tag>` is `latest` or the tag name):
 

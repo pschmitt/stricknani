@@ -38,12 +38,11 @@ name: Release
 
 on:
   push:
-    # Main pushes are routed here by Build through workflow_call. Keep direct pushes for version
-    # tags, where path-diff filtering has no meaningful previous commit and could skip a release.
+    branches:
+      - main
     tags:
       - v*
       - '*.*.*'
-  workflow_call:
   workflow_dispatch:
     inputs:
       lane:
@@ -313,7 +312,9 @@ jobs:
       group: release-web-${{ github.ref }}
       cancel-in-progress: ${{ github.ref_type != 'tag' }}
     permissions:
+      actions: read
       contents: read
+      pull-requests: read
     env:
       TAG: ${{ needs.params.outputs.tag_name }}
     steps:
@@ -328,6 +329,39 @@ jobs:
           s3-secret-key: ${{ secrets.NIKS3_S3_SECRET_KEY }}
           extra-conf: |
             nix-path = nixpkgs=channel:nixos-unstable
+
+      - name: Wait for the Build Nix producer
+        id: producer
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ github.sha }}
+          REF_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          PRODUCER_WORKFLOW: build.yaml
+          PRODUCER_JOBS: nix,nix-aarch64 / build
+          ALLOW_STANDALONE: ${{ github.ref_type == 'tag' || github.event_name == 'workflow_dispatch' }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node ci/wait-for-nix-producer.mjs
+
+      - name: Download producer source metadata
+        if: steps.producer.outputs.standalone != 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: nix-producer-metadata
+          run-id: ${{ steps.producer.outputs.producer_run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/nix-producer
+
+      - name: Verify producer source metadata
+        if: steps.producer.outputs.standalone != 'true'
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PRODUCER_RUN_ID: ${{ steps.producer.outputs.producer_run_id }}
+          PRODUCER_RUN_ATTEMPT: ${{ steps.producer.outputs.producer_run_attempt }}
+          PRODUCER_METADATA_FILE: ${{ runner.temp }}/nix-producer/nix-producer.json
+        run: node ci/wait-for-nix-producer.mjs --verify
 
       - name: Build the web app
         run: nix build --print-build-logs --out-link result-web '.#stricknani-web'

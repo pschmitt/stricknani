@@ -89,9 +89,11 @@ Use this file as the operational source of truth for working in Stricknani.
 - The Nix Rust packaging uses crane (`nix/rust-core-package.nix`): the dependency
   crates are their own derivation (`.#stricknani.cargoArtifacts`), so a source change
   rebuilds only the Stricknani crate (about 2 minutes). fmt, Clippy and the tests are
-  flake checks (`rust-fmt`, `rust-clippy`, `rust-test`), not part of the package. In CI
-  the E2E `server` job and Build's `nix` job push the server and its dependency build to
-  niks3 (`ci-workflows` actions `nix-niks3`, `niks3-push`); the emulator jobs substitute it.
+  flake checks (`rust-fmt`, `rust-clippy`, `rust-test`), not part of the package. In CI,
+  Build's `nix` job pushes the x86_64 server, static server, web app and dependency builds
+  to niks3; its `nix-aarch64 / build` job pushes the native ARM outputs. Separate E2E and
+  Release workflows wait for the exact Build run and source metadata before substituting
+  those outputs. E2E does not push a duplicate server build.
 - On every worker, `mkdir -p ~/tmp && export TMPDIR=~/tmp` before builds:
   older worker images keep `/tmp` on a small RAM disk, and Nix fails with a
   misleading error when `TMPDIR` points at a directory that does not exist.
@@ -376,7 +378,8 @@ Use this file as the operational source of truth for working in Stricknani.
 - TODO management:
   - When starting a task from `TODO.md`, mark it `wip` immediately.
   - If asked to "clean up", remove all `done` tasks from `TODO.md`.
-- Required checks (these are what CI runs; run them on the remote build host):
+- Required checks (the local aggregate and CI's split lanes; run build-heavy checks
+  on the remote build host):
   - Rust: `just rust-lint` (`cargo fmt --check`, strict Clippy) and
     `just rust-test` (`cargo test --all-targets`)
   - Web: `just web-check` (`svelte-check`, Prettier), `just web-test`
@@ -433,15 +436,17 @@ Use this file as the operational source of truth for working in Stricknani.
   workflow/action interface before editing callers. Use
   `pschmitt/ci-workflows/...@main`, preserving caller triggers, permissions,
   checks, artifacts and publish gates. Keep application-specific checks here.
-- `just check` runs Nix lint, strict Rust checks, the Rust suite,
+- `just check` locally runs Nix lint, strict Rust checks, the Rust suite,
   i18n checks and the web checks (including the e2e type check), tests and build. CI has
-  `checks.yaml` runs Checks (`just check`, Nix lint, Android lint).
-  `build.yaml` produces the native Nix outputs and caches them before calling
-  `e2e.yaml` (packaged-web browser acceptance, Android journeys and Room replay)
-  and the rolling main release in `release.yaml`. Container publication consumes
-  the producer's Nix image artifact through the shared `nix-image.yaml` workflow;
-  its application-specific health probe stays in `ci/verify-container.sh`.
-  Version tags and manual release dispatches still run `release.yaml` directly.
+  three separate workflows: `checks.yaml` runs web/tooling checks, i18n, Nix lint and Android lint;
+  `build.yaml` runs cached Nix Rust formatting, strict Clippy, all-target tests, produces the
+  native Nix outputs and container image; and
+  `e2e.yaml` runs packaged-web browser acceptance, Android journeys and Room replay.
+  E2E retains filtered push, pull request and dispatch triggers; Release runs on main pushes,
+  version tags and dispatches. Their Nix consumers use read-only Actions API checks and producer metadata to wait for the matching
+  Build source SHA and required jobs before using niks3, rather than rebuilding dependencies.
+  Container publication consumes the producer's Nix image artifact through the shared
+  `nix-image.yaml` workflow; its health probe stays in `ci/verify-container.sh`.
 - Before a release, merge the green Renovate pull requests (fix or comment
   on the rest) and triage the unresolved Sentry issues: fix, or comment and
   resolve. See `docs/maintaining.md`, "Releases".

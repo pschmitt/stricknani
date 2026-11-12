@@ -66,6 +66,12 @@ in
         cargoClippyExtraArgs = "--all-targets --all-features -- -D warnings";
       }
     );
-    rust-test = craneLib.cargoTest (commonArgs // { inherit cargoArtifacts; });
+    rust-test = craneLib.cargoTest (
+      commonArgs
+      // {
+        inherit cargoArtifacts;
+        cargoTestExtraArgs = "--all-targets";
+      }
+    );
   };
 }
