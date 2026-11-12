@@ -19,6 +19,7 @@ function fixture({
   runId = 321,
   includeArm = true,
   extraJobs = [],
+  jobs: providedJobs,
 } = {}) {
   const run = {
     id: runId,
@@ -35,6 +36,20 @@ function fixture({
         : [],
   };
   let pending = 0;
+  const jobs = providedJobs ?? [
+    { name: "nix", run_attempt: 1, status: "completed", conclusion },
+    ...(includeArm
+      ? [
+          {
+            name: "nix-aarch64 / build",
+            run_attempt: 1,
+            status: "completed",
+            conclusion,
+          },
+        ]
+      : []),
+    ...extraJobs,
+  ];
   const fetcher = async (url) => {
     const path = new URL(url).pathname;
     if (path.endsWith(`/workflows/${workflowId}/runs`)) {
@@ -44,16 +59,10 @@ function fixture({
       );
       return Response.json({ workflow_runs: pending-- > 0 ? [] : [run] });
     }
+    if (path.endsWith(`/runs/${run.id}`)) return Response.json(run);
     if (path.endsWith(`/runs/${run.id}/jobs`)) {
-      return Response.json({
-        jobs: [
-          { name: "nix", status: "completed", conclusion },
-          ...(includeArm
-            ? [{ name: "nix-aarch64 / build", status: "completed", conclusion }]
-            : []),
-          ...extraJobs,
-        ],
-      });
+      assert.equal(new URL(url).searchParams.get("filter"), "all");
+      return Response.json({ total_count: jobs.length, jobs });
     }
     if (path.endsWith(`/runs/${run.id}/artifacts`)) {
       return Response.json({
@@ -74,6 +83,7 @@ function fixture({
   return {
     fetcher,
     run,
+    jobs,
     setPending(count) {
       pending = count;
     },
@@ -142,6 +152,226 @@ test("uses the captured Build job names without waiting for unrelated jobs", asy
     sourceSha: sha("a"),
     prHeadSha: "",
   });
+});
+
+test("reuses attempt 1 producer outputs during an attempt 2 validation-only rerun", async () => {
+  const api = fixture({
+    jobs: [
+      {
+        id: 101,
+        name: "nix",
+        run_attempt: 1,
+        status: "completed",
+        conclusion: "success",
+      },
+      {
+        id: 102,
+        name: "nix-aarch64 / build",
+        run_attempt: 1,
+        status: "completed",
+        conclusion: "success",
+      },
+      {
+        id: 103,
+        name: "nix-checks",
+        run_attempt: 2,
+        status: "completed",
+        conclusion: "success",
+      },
+    ],
+  });
+  api.run.run_attempt = 2;
+
+  const result = await waitForProducer({
+    env: env(),
+    fetcher: api.fetcher,
+    sleep: async () => {},
+    log: () => {},
+  });
+
+  assert.equal(result.runId, 321);
+  assert.equal(result.runAttempt, 1);
+});
+
+test("a newer failed producer attempt does not fall back to an older success", async () => {
+  const api = fixture({
+    jobs: [
+      {
+        id: 101,
+        name: "nix",
+        run_attempt: 1,
+        status: "completed",
+        conclusion: "success",
+      },
+      {
+        id: 102,
+        name: "nix",
+        run_attempt: 2,
+        status: "completed",
+        conclusion: "failure",
+      },
+      {
+        id: 103,
+        name: "nix-aarch64 / build",
+        run_attempt: 1,
+        status: "completed",
+        conclusion: "success",
+      },
+    ],
+  });
+  api.run.run_attempt = 2;
+
+  await assert.rejects(
+    waitForProducer({
+      env: env(),
+      fetcher: api.fetcher,
+      sleep: async () => {},
+      log: () => {},
+    }),
+    /producer job nix concluded failure/,
+  );
+});
+
+test("finds a newer failed producer attempt on a later jobs page", async () => {
+  const api = fixture();
+  api.run.run_attempt = 2;
+  const noisyJobs = Array.from({ length: 98 }, (_, index) => ({
+    id: index + 1,
+    name: `unrelated ${index}`,
+    run_attempt: 1,
+    status: "completed",
+    conclusion: "success",
+  }));
+  const pageOne = [
+    {
+      id: 900,
+      name: "nix",
+      run_attempt: 1,
+      status: "completed",
+      conclusion: "success",
+    },
+    {
+      id: 901,
+      name: "nix-aarch64 / build",
+      run_attempt: 1,
+      status: "completed",
+      conclusion: "success",
+    },
+    ...noisyJobs,
+  ];
+  const fetcher = async (url, token) => {
+    const parsed = new URL(url);
+    if (parsed.pathname.endsWith(`/runs/${api.run.id}/jobs`)) {
+      const page = Number(parsed.searchParams.get("page"));
+      const jobs =
+        page === 1
+          ? pageOne
+          : [
+              {
+                id: 902,
+                name: "nix",
+                run_attempt: 2,
+                status: "completed",
+                conclusion: "failure",
+              },
+            ];
+      return Response.json({ total_count: 101, jobs });
+    }
+    return api.fetcher(url, token);
+  };
+
+  await assert.rejects(
+    waitForProducer({
+      env: env(),
+      fetcher,
+      sleep: async () => {},
+      log: () => {},
+    }),
+    /producer job nix concluded failure/,
+  );
+});
+
+test("selects the latest producer attempt from unsorted all-attempt job results", async () => {
+  const api = fixture({
+    jobs: [
+      {
+        id: 102,
+        name: "nix",
+        run_attempt: 2,
+        status: "completed",
+        conclusion: "success",
+      },
+      {
+        id: 101,
+        name: "nix",
+        run_attempt: 1,
+        status: "completed",
+        conclusion: "failure",
+      },
+      {
+        id: 103,
+        name: "nix-aarch64 / build",
+        run_attempt: 1,
+        status: "completed",
+        conclusion: "success",
+      },
+    ],
+  });
+  api.run.run_attempt = 2;
+
+  const result = await waitForProducer({
+    env: env(),
+    fetcher: api.fetcher,
+    sleep: async () => {},
+    log: () => {},
+  });
+
+  assert.equal(result.runAttempt, 2);
+});
+
+test("refreshes the pinned run before accepting a newly created producer attempt", async () => {
+  const api = fixture({
+    jobs: [
+      {
+        id: 101,
+        name: "nix",
+        run_attempt: 1,
+        status: "in_progress",
+        conclusion: null,
+      },
+      {
+        id: 103,
+        name: "nix-aarch64 / build",
+        run_attempt: 1,
+        status: "completed",
+        conclusion: "success",
+      },
+    ],
+  });
+  api.run.status = "in_progress";
+  api.run.conclusion = null;
+  let sleeps = 0;
+  const result = await waitForProducer({
+    env: env(),
+    fetcher: api.fetcher,
+    sleep: async () => {
+      sleeps += 1;
+      api.run.run_attempt = 2;
+      api.run.status = "completed";
+      api.run.conclusion = "success";
+      api.jobs.push({
+        id: 102,
+        name: "nix",
+        run_attempt: 2,
+        status: "completed",
+        conclusion: "success",
+      });
+    },
+    log: () => {},
+  });
+
+  assert.equal(sleeps, 1);
+  assert.equal(result.runAttempt, 2);
 });
 
 test("fails immediately when a completed producer omitted a required job", async () => {
@@ -284,6 +514,22 @@ test("rejects unexpected metadata fields and run identity", () => {
   );
 });
 
+test("rejects older metadata after a newer producer attempt succeeded", () => {
+  assert.throws(
+    () =>
+      verifyProducerMetadata(
+        {
+          source_sha: sha("a"),
+          pr_head_sha: null,
+          run_id: 321,
+          run_attempt: 1,
+        },
+        { sourceSha: sha("a"), prHeadSha: "", runId: 321, runAttempt: 2 },
+      ),
+    /does not match its workflow run/,
+  );
+});
+
 test("sanitizes API fetch failures and applies a timeout signal", async () => {
   const previousFetch = globalThis.fetch;
   let signal;
@@ -366,4 +612,16 @@ test("bounds retries when a matching producer run never appears", async () => {
   );
   assert.equal(requests, 3);
   assert.equal(sleeps, 2);
+});
+
+test("requires the x86 producer job used for metadata attempt identity", async () => {
+  await assert.rejects(
+    waitForProducer({
+      env: env({ PRODUCER_JOBS: "nix-aarch64 / build" }),
+      fetcher: async () => assert.fail("must validate producer names first"),
+      sleep: async () => {},
+      log: () => {},
+    }),
+    /must include the nix producer job/,
+  );
 });

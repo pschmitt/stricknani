@@ -10,7 +10,8 @@ is now `SIGNUP_ENABLED`); the database, media and Sentry variables use the
 ## Container
 
 Requirements: Docker. Pull the published image and start it with a persistent
-data volume:
+data volume. The published image has native `linux/amd64` and `linux/arm64`
+variants; Docker selects the matching platform:
 
 ```sh
 docker pull ghcr.io/pschmitt/stricknani:latest
@@ -25,9 +26,10 @@ docker run -d \
   ghcr.io/pschmitt/stricknani:latest
 ```
 
-To build the same Nix image from a repository checkout, run
-`nix build .#stricknani-docker` and load the resulting `result` symlink with
-`docker load --input result`.
+To build a Nix image from a repository checkout, run `nix build .#stricknani-docker`
+and load the resulting host-native archive with `docker load --input result`.
+The CI publication combines the native x86_64 and aarch64 archives into the
+multi-platform image reference.
 
 This example binds to loopback for local HTTP use. The container stores its
 SQLite database and uploads under `/var/lib/stricknani`; keep that volume
@@ -77,10 +79,10 @@ Passwords keep working and a passkey never replaces them. Adding or removing a
 passkey asks for a fresh confirmation (password, linked login or another
 passkey), and a passkey can confirm sensitive actions the same way.
 
-* **HTTPS and a DNS name.** Browsers only offer WebAuthn on HTTPS (and on
+- **HTTPS and a DNS name.** Browsers only offer WebAuthn on HTTPS (and on
   `localhost` for development). Passkeys are off on an instance whose
   `TRUSTED_HOSTS` holds only IP addresses.
-* **RP ID.** The relying-party ID is `PASSKEY_RP_ID` (a trusted host or a parent
+- **RP ID.** The relying-party ID is `PASSKEY_RP_ID` (a trusted host or a parent
   domain of one). Unset, it is the first real DNS name in `TRUSTED_HOSTS` in the
   order written; `localhost` and names without a dot are skipped unless nothing else
   is trusted. The NixOS module sets it to `hostName`.
@@ -92,7 +94,7 @@ passkey), and a passkey can confirm sensitive actions the same way.
   for browsers on them (use the main address or a parent-domain RP ID). In
   non-secure development with the RP ID `localhost`, `127.0.0.1` and `[::1]`
   are equivalent loopback addresses, on any port.
-* **Android.** The app signs in and registers through Credential Manager. It needs
+- **Android.** The app signs in and registers through Credential Manager. It needs
   `ANDROID_APP_LINK_FINGERPRINTS` (see above): the server then adds
   `delegate_permission/common.get_login_creds` to `/.well-known/assetlinks.json`
   so Android lets the app use this site's passkeys, and accepts the app's origin
@@ -100,9 +102,9 @@ passkey), and a passkey can confirm sensitive actions the same way.
   fingerprint. The app and the web app therefore share the same passkeys.
   Android's Credential Manager reads `assetlinks.json` on the RP ID host, so a
   parent-domain RP ID works only if that host serves the file.
-* **Switch off.** `PASSKEYS_ENABLED=false` hides the buttons and answers
+- **Switch off.** `PASSKEYS_ENABLED=false` hides the buttons and answers
   `404 passkeys_unavailable`; registered passkeys stay in the database.
-* An account holds at most 10 passkeys, which are removed with the account. A
+- An account holds at most 10 passkeys, which are removed with the account. A
   disabled account cannot sign in with a passkey. Hardware keys that cannot store
   a discoverable credential can confirm sensitive actions but not sign in without
   an email address.

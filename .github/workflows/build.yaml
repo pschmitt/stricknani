@@ -2,9 +2,9 @@ name: Build
 
 # Build produces and caches Nix outputs and the container image. The separate
 # E2E and Release workflows consume those outputs for the same source revision.
-# - nix and nix-aarch64: flake check, packages and the Nix server image
-#   (x86_64 also builds on nixbot), aarch64 natively, pushed to niks3.
-# - docker: loads the Nix image artifact, probes /healthz, then pushes to GHCR.
+# - nix and nix-aarch64: native package and image producers; package outputs go to niks3.
+# - nix-checks: full x86_64 flake validation and cache publication for its check outputs.
+# - docker: loads both native Nix image artifacts, probes /healthz, then publishes a manifest.
 # - android: unit tests and the debug APKs (shared ci-workflows build).
 on:
   push:
@@ -160,9 +160,6 @@ jobs:
           extra-conf: |
             nix-path = nixpkgs=channel:nixos-unstable
 
-      - name: Run nix flake check
-        run: nix flake check
-
       - name: Build shared packages, dependencies and the container
         id: built
         shell: bash
@@ -233,12 +230,67 @@ jobs:
       - name: Upload the Nix container for verification and publishing
         uses: actions/upload-artifact@v7
         with:
-          name: nix-container
+          name: nix-container-amd64
           path: ${{ runner.temp }}/stricknani-image.tar.gz
           compression-level: 0
           if-no-files-found: error
           retention-days: 1
           overwrite: true
+
+  nix-checks:
+    needs: [changes, nix]
+    if: ${{ needs.nix.result == 'success' && (github.event_name == 'push' || needs.changes.outputs.nix == 'true' || needs.changes.outputs.docker == 'true') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Nix with the niks3 cache
+        uses: pschmitt/ci-workflows/.github/actions/nix-niks3@main
+        with:
+          s3-store: ${{ secrets.NIKS3_S3_STORE }}
+          s3-access-key: ${{ secrets.NIKS3_S3_ACCESS_KEY }}
+          s3-secret-key: ${{ secrets.NIKS3_S3_SECRET_KEY }}
+          extra-conf: |
+            nix-path = nixpkgs=channel:nixos-unstable
+
+      - name: Run full x86_64 Nix validation
+        run: nix flake check
+
+      - name: Collect validated check outputs
+        id: checks
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          checks_file="$RUNNER_TEMP/check-names"
+          paths_file="$RUNNER_TEMP/check-paths"
+          nix eval --json .#checks.x86_64-linux --apply builtins.attrNames \
+            | jq -r '.[]' > "$checks_file"
+          declare -A seen_paths=()
+          : > "$paths_file"
+          while IFS= read -r check
+          do
+            path="$(nix build --no-link --print-out-paths ".#checks.x86_64-linux.$check")"
+            if [[ -z "${seen_paths[$path]:-}" ]]
+            then
+              seen_paths["$path"]=1
+              printf 'check-%s %s\n' "$check" "$path" >> "$paths_file"
+            fi
+          done < "$checks_file"
+          {
+            echo 'paths<<EOF'
+            cat "$paths_file"
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Push validated check outputs to niks3
+        uses: pschmitt/ci-workflows/.github/actions/niks3-push@main
+        with:
+          paths: ${{ steps.checks.outputs.paths }}
+          pin-prefix: gh-stricknani-main
+          server-url: ${{ vars.NIKS3_SERVER_URL }}
 
   # aarch64-linux packages and checks, built natively on GitHub's arm runners
   # (nixbot on x86_64 would have to emulate them) and pushed to the niks3 S3
@@ -247,20 +299,23 @@ jobs:
 
   nix-aarch64:
     needs: changes
-    if: ${{ github.event_name == 'push' || needs.changes.outputs.nix == 'true' }}
+    if: ${{ github.event_name == 'push' || needs.changes.outputs.nix == 'true' || needs.changes.outputs.docker == 'true' }}
     permissions:
       contents: read
       id-token: write
     uses: pschmitt/ci-workflows/.github/workflows/nix-aarch64.yaml@main
     with:
       pin-prefix: gh-stricknani-main
+      image-package: stricknani-docker
+      image-artifact: nix-container-arm64
+      image-archive-file: stricknani-image.tar.gz
     secrets:
       s3_store: ${{ secrets.NIKS3_S3_STORE }}
       s3_access_key: ${{ secrets.NIKS3_S3_ACCESS_KEY }}
       s3_secret_key: ${{ secrets.NIKS3_S3_SECRET_KEY }}
 
   docker:
-    needs: [changes, nix]
+    needs: [changes, nix, nix-checks, nix-aarch64]
     if: ${{ needs.changes.outputs.docker == 'true' }}
     permissions:
       contents: read
@@ -268,7 +323,8 @@ jobs:
     uses: pschmitt/ci-workflows/.github/workflows/nix-image.yaml@main
     with:
       image-name: ghcr.io/pschmitt/stricknani
-      prebuilt-artifact: nix-container
+      platforms: linux/amd64,linux/arm64
+      prebuilt-artifacts: '{"linux/amd64":"nix-container-amd64","linux/arm64":"nix-container-arm64"}'
       archive-file: stricknani-image.tar.gz
       test-script: ci/verify-container.sh
       publish: ${{ github.event_name != 'pull_request' }}

@@ -5,6 +5,8 @@ import { readFileSync, statSync } from "node:fs";
 const API = "https://api.github.com";
 const DEFAULT_ATTEMPTS = 90;
 const DEFAULT_INTERVAL_MS = 30_000;
+const JOBS_PER_PAGE = 100;
+const MAX_JOB_PAGES = 20;
 
 function fail(message) {
   throw new Error(message);
@@ -71,7 +73,29 @@ function chooseRun(runs, context) {
 
 function currentJobStates(jobs, requiredNames, run) {
   const producerFinished = run.status === "completed" || run.conclusion != null;
-  const states = new Map(jobs.map((job) => [job.name, job]));
+  if (!Number.isSafeInteger(run.run_attempt) || run.run_attempt < 1) {
+    fail("Producer run has no valid attempt number.");
+  }
+  const states = new Map();
+  for (const job of jobs) {
+    if (!requiredNames.includes(job.name)) continue;
+    if (!Number.isSafeInteger(job.run_attempt) || job.run_attempt < 1) {
+      fail(`Producer job ${job.name} has no valid attempt number.`);
+    }
+    if (job.run_attempt > run.run_attempt) {
+      fail(
+        `Producer job ${job.name} has an attempt newer than its workflow run.`,
+      );
+    }
+    const current = states.get(job.name);
+    if (
+      !current ||
+      job.run_attempt > current.run_attempt ||
+      (job.run_attempt === current.run_attempt && job.id > current.id)
+    ) {
+      states.set(job.name, job);
+    }
+  }
   for (const name of requiredNames) {
     const job = states.get(name);
     if (!job) {
@@ -116,7 +140,7 @@ function currentJobStates(jobs, requiredNames, run) {
         reason: `producer job ${name} has no successful conclusion`,
       };
   }
-  return { ready: true, failed: false };
+  return { ready: true, failed: false, jobs: states };
 }
 
 export async function defaultFetch(url, token) {
@@ -155,6 +179,53 @@ async function getProducerRun(fetcher, token, repo, runId) {
     `${API}/repos/${repo}/actions/runs/${runId}`,
     "Producer run status lookup",
   );
+}
+
+async function getAllProducerJobs(fetcher, token, repo, runId) {
+  const endpoint = `${API}/repos/${repo}/actions/runs/${runId}/jobs`;
+  const query = new URLSearchParams({
+    filter: "all",
+    per_page: String(JOBS_PER_PAGE),
+    page: "1",
+  });
+  const firstPage = await apiJson(
+    fetcher,
+    token,
+    `${endpoint}?${query}`,
+    "Producer job lookup",
+  );
+  const totalCount = firstPage.total_count;
+  if (!Number.isSafeInteger(totalCount) || totalCount < 0) {
+    fail("Producer job lookup returned an invalid total count.");
+  }
+  const pageCount = Math.ceil(totalCount / JOBS_PER_PAGE);
+  if (pageCount > MAX_JOB_PAGES) {
+    fail("Producer job history exceeds the supported pagination limit.");
+  }
+  if (!Array.isArray(firstPage.jobs))
+    fail("Producer job lookup returned an invalid page.");
+  const jobs = [...firstPage.jobs];
+  for (let page = 2; page <= pageCount; page += 1) {
+    const pageQuery = new URLSearchParams({
+      filter: "all",
+      per_page: String(JOBS_PER_PAGE),
+      page: String(page),
+    });
+    const response = await apiJson(
+      fetcher,
+      token,
+      `${endpoint}?${pageQuery}`,
+      "Producer job lookup",
+    );
+    if (response.total_count !== totalCount || !Array.isArray(response.jobs)) {
+      fail("Producer job history changed during pagination.");
+    }
+    jobs.push(...response.jobs);
+  }
+  if (jobs.length !== totalCount) {
+    fail("Producer job history pagination was incomplete.");
+  }
+  return jobs;
 }
 
 async function hasProducerMetadata(fetcher, token, repo, run) {
@@ -226,6 +297,9 @@ export async function waitForProducer({
     .split(",")
     .map((name) => name.trim())
     .filter(Boolean);
+  if (!requiredNames.includes("nix")) {
+    fail("PRODUCER_JOBS must include the nix producer job.");
+  }
   const standalone = env.ALLOW_STANDALONE === "true";
   const attempts = parsePositiveInteger(
     env.MAX_ATTEMPTS,
@@ -300,17 +374,11 @@ export async function waitForProducer({
       }
     }
 
-    const jobsResponse = await apiJson(
-      fetcher,
-      token,
-      `${API}/repos/${repo}/actions/runs/${run.id}/jobs?per_page=100`,
-      "Producer job lookup",
-    );
-    let states = currentJobStates(jobsResponse.jobs ?? [], requiredNames, run);
-    if (states.missing && !states.failed) {
-      run = await getProducerRun(fetcher, token, repo, run.id);
-      states = currentJobStates(jobsResponse.jobs ?? [], requiredNames, run);
-    }
+    // Refresh the pinned run before reading all attempts. A workflow can be
+    // rerun while consumers are waiting; do not reuse a stale run_attempt.
+    run = await getProducerRun(fetcher, token, repo, run.id);
+    const jobs = await getAllProducerJobs(fetcher, token, repo, run.id);
+    let states = currentJobStates(jobs, requiredNames, run);
     if (states.failed) fail(states.reason);
     if (states.ready) {
       const metadataExists = await hasProducerMetadata(
@@ -319,10 +387,11 @@ export async function waitForProducer({
         repo,
         run,
       );
-      if (metadataExists)
+      const producerAttempt = states.jobs.get("nix")?.run_attempt;
+      if (metadataExists && producerAttempt)
         return {
           runId: run.id,
-          runAttempt: run.run_attempt,
+          runAttempt: producerAttempt,
           sourceSha,
           prHeadSha,
         };

@@ -15,8 +15,9 @@ just build-image    # the container image, as CI builds it
 ```
 
 CI splits these checks to reuse the Build workflow's Nix cache. The Checks workflow runs
-web/tooling, i18n, Nix lint and Android lint; Build runs cached Rust formatting, strict Clippy,
-all-target Rust tests and package builds. The local `just check` remains the full aggregate.
+web/tooling, i18n, Nix lint and Android lint. Build produces and caches packages first; its
+`nix-checks` job then runs full x86_64 flake validation and pushes the check outputs for later
+source-identical checks. The local `just check` remains the full aggregate.
 
 Cargo, Gradle and Nix builds are heavy. Run them on a build host, not on a
 laptop, and keep the build directory outside the source tree. The Android
@@ -27,14 +28,17 @@ checks are described in [`android/AGENTS.md`](../android/AGENTS.md).
 The repository has three release outputs. All of them start from the default
 branch.
 
-| Output | Trigger | Result |
-| --- | --- | --- |
-| GitHub release assets | Push to `main`, or a `v*` / `X.Y.Z` tag | A push replaces the rolling `latest` prerelease; a tag publishes a permanent GitHub release. Both carry the same set, see below. |
-| Play Store bundle | A `vX.Y.Z` tag | A signed bundle goes to the internal and closed testing tracks. See [`android/docs/play-store-release.md`](../android/docs/play-store-release.md). |
-| Container image | Push to `main` that touches the crate (`src/`, `tests/`, `migrations/`, ...), `web/`, `nix/` or the flake | The Nix-built image is pushed to GHCR as `latest`, the branch, the tag and the commit, then started and probed on `/healthz`. |
+| Output                | Trigger                                                                                                   | Result                                                                                                                                                                                  |
+| --------------------- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GitHub release assets | Push to `main`, or a `v*` / `X.Y.Z` tag                                                                   | A push replaces the rolling `latest` prerelease; a tag publishes a permanent GitHub release. Both carry the same set, see below.                                                        |
+| Play Store bundle     | A `vX.Y.Z` tag                                                                                            | A signed bundle goes to the internal and closed testing tracks. See [`android/docs/play-store-release.md`](../android/docs/play-store-release.md).                                      |
+| Container image       | Push to `main` that touches the crate (`src/`, `tests/`, `migrations/`, ...), `web/`, `nix/` or the flake | CI tests native amd64 and arm64 Nix images, then publishes one GHCR multi-platform manifest with `latest`, branch and commit tags. A Build dispatch from a tag also publishes that tag. |
 
-Build, E2E and Release are separate GitHub Actions workflows. Build produces the Nix packages
-and pushes their store paths to niks3 before uploading a small source-identity artifact. E2E
+Build, E2E and Release are separate GitHub Actions workflows. Build's x86_64 `nix` job quickly
+produces the server, web app and container package and pushes their store paths to niks3 before
+uploading a small source-identity artifact. Its `nix-checks` job runs the full flake validation
+after the producer and pushes validated check outputs for reuse. The native aarch64 job also
+exports the ARM container archive. E2E
 keeps filtered push, pull request and manual-dispatch triggers; Release runs on `main` pushes,
 version tags and manual dispatches. Their Nix jobs use
 [`ci/wait-for-nix-producer.mjs`](../ci/wait-for-nix-producer.mjs) to find the Build run for the
@@ -42,6 +46,9 @@ same source, verify the metadata and required producer jobs, then substitute tho
 For pull requests the check matches the PR head identity separately from the merge SHA recorded
 by the producer. Tags and manual runs can build independently when no usable producer artifact
 exists. Android release and instrumentation jobs continue to run alongside Nix work.
+Container publication waits for both native image producers and `nix-checks`, then probes and
+publishes one multi-platform GHCR image. E2E waits only for the x86_64 package producer, so it
+can use the completed package while validation continues.
 
 The release assets (tag releases and `latest` alike; `<tag>` is `latest` or the tag name):
 
@@ -106,7 +113,6 @@ The release workflow needs the repository secrets `CI_KEYSTORE_BASE64`,
 APKs are not signed with the release key and upgrades over an installed app
 fail. The Play workflow also needs `PLAY_SERVICE_ACCOUNT_JSON` and the
 repository variable `PLAY_PUBLISH_ENABLED=true`.
-
 
 ## Deploying
 
