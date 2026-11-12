@@ -1,4 +1,4 @@
-//! Migration 0038 adds the `passkeys` table and widens the step-up purposes and auth-audit actions
+//! Migration 0038 (on top of 0037) adds the `passkeys` table and widens the step-up purposes and auth-audit actions
 //! (two tables rebuilt because SQLite cannot alter a CHECK): the rows that exist before it survive,
 //! the new values are accepted and unknown ones still are not.
 
@@ -81,6 +81,28 @@ async fn migration_0038_keeps_existing_auth_rows_and_accepts_passkey_values() {
     .await
     .unwrap();
 
+    // What 0037 added: a restore proof, and a restore audit row with its bounded details.
+    sqlx::query(
+        "INSERT INTO auth_reauth_proofs (proof_hash, user_id, api_token_id, purpose, \
+         target_user_id, expires_at) VALUES (?, ?, ?, 'restore_backup', ?, 4000000000)",
+    )
+    .bind("12".repeat(32))
+    .bind(user_id)
+    .bind(token_id)
+    .bind(user_id)
+    .execute(&pool)
+    .await
+    .unwrap();
+    sqlx::query(
+        "INSERT INTO auth_audit_events (action, actor_user_id, target_user_id, created_at, details) \
+         VALUES ('backup_restored', ?, ?, 7, '{\"backup\":\"predeploy-1.7.0\"}')",
+    )
+    .bind(user_id)
+    .bind(user_id)
+    .execute(&pool)
+    .await
+    .unwrap();
+
     sqlx::migrate!().run(&pool).await.unwrap();
 
     let proofs: i64 = sqlx::query_scalar(
@@ -96,6 +118,24 @@ async fn migration_0038_keeps_existing_auth_rows_and_accepts_passkey_values() {
     .await
     .unwrap();
     assert_eq!((proofs, audits), (1, 1), "existing rows are carried over");
+    let details: Option<String> = sqlx::query_scalar(
+        "SELECT details FROM auth_audit_events WHERE action = 'backup_restored' AND created_at = 7",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        details.as_deref(),
+        Some("{\"backup\":\"predeploy-1.7.0\"}"),
+        "0037's audit details are copied, not dropped"
+    );
+    let restore_proofs: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM auth_reauth_proofs WHERE purpose = 'restore_backup'",
+    )
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(restore_proofs, 1, "restore_backup proofs survive");
 
     sqlx::query(
         "INSERT INTO auth_reauth_proofs (proof_hash, user_id, api_token_id, purpose, \
@@ -113,6 +153,7 @@ async fn migration_0038_keeps_existing_auth_rows_and_accepts_passkey_values() {
         "passkey_removed",
         "passkey_login_succeeded",
         "passkey_reauthenticated",
+        "backup_restored",
     ] {
         sqlx::query("INSERT INTO auth_audit_events (action, created_at) VALUES (?, 6)")
             .bind(action)

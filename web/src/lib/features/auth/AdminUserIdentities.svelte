@@ -170,7 +170,7 @@
             {/if}
           </div>
           <SharedButton
-            variant="danger"
+            variant="danger-ghost"
             size="sm"
             disabled={busy || !identity.can_unlink}
             aria-describedby={identity.can_unlink

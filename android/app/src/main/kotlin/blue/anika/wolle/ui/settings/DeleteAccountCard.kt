@@ -151,6 +151,7 @@ internal fun DeleteAccountCard(
             state = it,
             onSubmitPassword = viewModel::submitPassword,
             onUseProvider = viewModel::confirmWithProvider,
+            onUsePasskey = viewModel::confirmWithPasskey,
             onDismiss = viewModel::dismissSheet,
             message = R.string.delete_account_reauth_text,
         )

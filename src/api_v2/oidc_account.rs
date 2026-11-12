@@ -235,6 +235,7 @@ pub(super) enum ActionName {
     RevokeApiToken,
     DeleteAccount,
     ManagePasskeys,
+    RestoreBackup,
 }
 
 #[derive(Clone, Deserialize)]
@@ -255,6 +256,7 @@ pub(super) enum OwnedAction {
     RevokeApiToken(i64),
     DeleteAccount,
     ManagePasskeys,
+    RestoreBackup,
 }
 
 impl OwnedAction {
@@ -278,6 +280,7 @@ impl OwnedAction {
             },
             Self::DeleteAccount => RecentAction::DeleteAccount,
             Self::ManagePasskeys => RecentAction::ManagePasskeys,
+            Self::RestoreBackup => RecentAction::RestoreBackup,
         }
     }
 
@@ -298,6 +301,7 @@ impl OwnedAction {
             Self::RevokeApiToken(_) => ReauthAction::RevokeApiToken,
             Self::DeleteAccount => ReauthAction::DeleteAccount,
             Self::ManagePasskeys => ReauthAction::ManagePasskeys,
+            Self::RestoreBackup => ReauthAction::RestoreBackup,
         }
     }
 
@@ -326,7 +330,8 @@ impl OwnedAction {
             Self::ChangePassword
             | Self::CreateApiToken
             | Self::DeleteAccount
-            | Self::ManagePasskeys => OidcActionTarget::default(),
+            | Self::ManagePasskeys
+            | Self::RestoreBackup => OidcActionTarget::default(),
         }
     }
 }
@@ -427,6 +432,10 @@ pub(super) fn parse_action(
         ActionName::ManagePasskeys => {
             none_target(target)?;
             Ok(OwnedAction::ManagePasskeys)
+        }
+        ActionName::RestoreBackup => {
+            none_target(target)?;
+            Ok(OwnedAction::RestoreBackup)
         }
         ActionName::RevokeApiToken => {
             let Some(target) = target else {
@@ -1180,7 +1189,8 @@ fn target_matches_reauth_action(target: &OidcActionTarget, action: ReauthAction)
         ReauthAction::ChangePassword
         | ReauthAction::CreateApiToken
         | ReauthAction::DeleteAccount
-        | ReauthAction::ManagePasskeys => {
+        | ReauthAction::ManagePasskeys
+        | ReauthAction::RestoreBackup => {
             target.provider.is_none()
                 && target.identity_id.is_none()
                 && target.user_id.is_none()
@@ -1546,6 +1556,7 @@ fn action_from_context(action: ReauthAction, context: &OidcFlowContext) -> Resul
         ReauthAction::CreateApiToken if empty => Ok(OwnedAction::CreateApiToken),
         ReauthAction::DeleteAccount if empty => Ok(OwnedAction::DeleteAccount),
         ReauthAction::ManagePasskeys if empty => Ok(OwnedAction::ManagePasskeys),
+        ReauthAction::RestoreBackup if empty => Ok(OwnedAction::RestoreBackup),
         ReauthAction::RevokeApiToken
             if target.token_id.is_some()
                 && target.provider.is_none()
@@ -1575,6 +1586,7 @@ fn reauth_action_name(action: ReauthAction) -> &'static str {
         ReauthAction::RevokeApiToken => "revoke_api_token",
         ReauthAction::DeleteAccount => "delete_account",
         ReauthAction::ManagePasskeys => "manage_passkeys",
+        ReauthAction::RestoreBackup => "restore_backup",
     }
 }
 

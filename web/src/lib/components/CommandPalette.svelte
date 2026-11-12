@@ -17,6 +17,7 @@
   import { session } from "#lib/session.svelte.ts";
   import { setTheme, theme } from "#lib/theme.svelte.ts";
   import { buildStaticEntries, isDarkNow } from "#lib/palette/entries.ts";
+  import { shouldRefocusSearch } from "#lib/palette/focus.ts";
   import type { PaletteEntry } from "#lib/palette/entries.ts";
   import {
     detectUrl,
@@ -229,6 +230,25 @@
     }
   }
 
+  // SvelteKit blurs the active element when a navigation starts; one still
+  // running when the palette opens (the redirect after signing in) would leave
+  // the field without focus, and Enter would go to the page behind the dialog.
+  function onInputFocusout(event: FocusEvent) {
+    if (
+      !dialog?.open ||
+      !shouldRefocusSearch({
+        open: palette.open,
+        relatedTarget: event.relatedTarget,
+        contains: (target) =>
+          target instanceof Node && (dialog?.contains(target) ?? false),
+      })
+    )
+      return;
+    queueMicrotask(() => {
+      if (palette.open && dialog?.open) input?.focus();
+    });
+  }
+
   function onWindowKeydown(event: KeyboardEvent) {
     if (!user) return;
     if (
@@ -301,6 +321,7 @@
           enterkeyhint="go"
           oninput={() => (active = 0)}
           onkeydown={onInputKeydown}
+          onfocusout={onInputFocusout}
         />
         <kbd class="palette__esc">esc</kbd>
       </div>

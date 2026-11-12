@@ -22,9 +22,10 @@ CREATE INDEX passkeys_user ON passkeys(user_id, created_at);
 
 -- Passkey management is a step-up purpose and passkey use an auth-audit action.
 -- SQLite cannot alter a CHECK constraint, so the two tables that enumerate them
--- are rebuilt (the same way 0022 did). The sets below already include the
--- backup-restore additions of the same kind; the audit table keeps the bounded
--- `details` column those additions introduced. Rows are copied as they are.
+-- are rebuilt (the same way 0022 and 0037 did). The sets below keep every
+-- earlier value, including 0037's `restore_backup` and `backup_restored`, and
+-- the audit table keeps its bounded `details` column with its data. Rows are
+-- copied as they are.
 CREATE TABLE auth_reauth_proofs_new (
     proof_hash TEXT PRIMARY KEY CHECK (
         length(proof_hash) = 64 AND proof_hash NOT GLOB '*[^0-9a-f]*'
@@ -86,8 +87,8 @@ CREATE TABLE auth_audit_events_new (
     details TEXT CHECK (details IS NULL OR length(details) <= 2048)
 );
 INSERT INTO auth_audit_events_new
-    (id, action, actor_user_id, target_user_id, identity_id, provider_id, created_at)
-    SELECT id, action, actor_user_id, target_user_id, identity_id, provider_id, created_at
+    (id, action, actor_user_id, target_user_id, identity_id, provider_id, created_at, details)
+    SELECT id, action, actor_user_id, target_user_id, identity_id, provider_id, created_at, details
     FROM auth_audit_events;
 DROP TABLE auth_audit_events;
 ALTER TABLE auth_audit_events_new RENAME TO auth_audit_events;

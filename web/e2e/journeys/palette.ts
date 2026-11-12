@@ -1,7 +1,7 @@
 import { check, closeBrowser } from "../lib/common";
 // Command palette journey: Ctrl+K opens it, a seeded project is found and opened,
 // a pasted link offers the two imports, Escape closes it and gives focus back.
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 import {
   launchBrowser,
@@ -44,17 +44,19 @@ export async function runPaletteJourney(
       await page.keyboard.press("Control+k");
       await dialog.waitFor({ state: "visible" });
       const input = dialog.getByRole("combobox");
-      check(
-        await input.evaluate((el) => el === document.activeElement),
-        "the search field is not focused",
-      );
+      await expect(input, "the search field is not focused").toBeFocused();
 
       stage.mark("find a project");
       await input.fill(PROJECT_NAME.slice(0, 7).toLowerCase());
       const row = dialog.getByRole("option", { name: PROJECT_NAME });
       await row.first().waitFor({ state: "visible" });
+      // Enter opens the highlighted row: wait until that is the intended one,
+      // and watch for the navigation from before the key is pressed.
+      await expect(row.first()).toHaveAttribute("aria-selected", "true");
+      await expect(input).toBeFocused();
+      const opened = page.waitForURL(/\/app\/projects\/\d+/);
       await page.keyboard.press("Enter");
-      await page.waitForURL(/\/app\/projects\/\d+/);
+      await opened;
       await dialog.waitFor({ state: "hidden" });
 
       stage.mark("a pasted link offers both imports");

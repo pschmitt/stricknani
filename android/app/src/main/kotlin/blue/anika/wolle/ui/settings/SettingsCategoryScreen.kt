@@ -15,6 +15,7 @@ fun SettingsCategoryScreen(
     onShowLibraries: () -> Unit = {},
     onOpenAdminActivity: () -> Unit = {},
     onOpenAdminAccounts: () -> Unit = {},
+    onOpenAdminBackups: () -> Unit = {},
     onOpenCategory: (SettingsCategory) -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -45,6 +46,7 @@ fun SettingsCategoryScreen(
                 onBack = onBack,
                 onOpenActivity = onOpenAdminActivity,
                 onOpenAccounts = onOpenAdminAccounts,
+                onOpenBackups = onOpenAdminBackups,
             )
         SettingsCategory.About ->
             AboutSettingsScreen(

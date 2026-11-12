@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CloseButton from "#lib/components/CloseButton.svelte";
   import { tick, type Snippet } from "svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import {
@@ -692,16 +693,11 @@
           >
           {@render children?.()}
         </div>
-        <button
-          type="button"
+        <CloseButton
           class="notes__close"
-          aria-label={closeLabel}
+          label={closeLabel}
           onclick={() => disclosure.close()}
-        >
-          <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
-            <path d="M7 7l10 10M17 7L7 17" />
-          </svg>
-        </button>
+        />
       </div>
     </section>
   </div>
@@ -1244,42 +1240,10 @@
     height: auto;
   }
 
-  .notes__close {
+  :global(.notes__close) {
     position: absolute;
-    top: 0.45rem;
-    right: 0.5rem;
-    display: grid;
-    width: 2.75rem;
-    height: 2.75rem;
-    margin: 0;
-    border: 0;
-    border-radius: 50%;
-    padding: 0;
-    place-items: center;
-    color: var(--sticky-ink);
-    background: none;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .notes__close svg {
-    width: 1.1rem;
-    height: 1.1rem;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    opacity: 0.55;
-  }
-
-  .notes__close:hover svg,
-  .notes__close:focus-visible svg {
-    opacity: 1;
-  }
-
-  .notes__close:focus-visible {
-    outline: 3px solid var(--focus);
-    outline-offset: -2px;
+    top: 0.3rem;
+    right: 0.35rem;
   }
 
   @media (hover: hover) and (prefers-reduced-motion: no-preference) {
@@ -1364,7 +1328,7 @@
     .notes__scrim,
     .notes__paper,
     .notes__pin,
-    .notes__close {
+    :global(.notes__close) {
       display: none !important;
     }
 

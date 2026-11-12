@@ -137,6 +137,7 @@ const ACTIONS = new Set([
   "revoke_api_token",
   "delete_account",
   "manage_passkeys",
+  "restore_backup",
 ]);
 
 /**

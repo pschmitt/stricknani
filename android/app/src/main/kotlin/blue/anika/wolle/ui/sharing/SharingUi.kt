@@ -58,6 +58,7 @@ import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.SegmentedControl
 import blue.anika.wolle.ui.common.SegmentedOption
+import blue.anika.wolle.ui.common.rememberDangerousActionGuard
 
 /** Maximum avatars on the Share row before "+N". */
 private const val MAX_STACKED_AVATARS = 4
@@ -464,6 +465,7 @@ fun TransferDialog(
 ) {
     val transfer by controller.transfer.collectAsStateWithLifecycle()
     val search by controller.transferPeople.state.collectAsStateWithLifecycle()
+    val guard = rememberDangerousActionGuard()
     AlertDialog(
         onDismissRequest = { if (!transfer.submitting) onDismiss() },
         title = { Text(stringResource(R.string.sharing_transfer_title)) },
@@ -592,7 +594,10 @@ fun TransferDialog(
         confirmButton = {
             val target = transfer.selected
             Button(
-                onClick = controller::confirmTransfer,
+                // Handing the item over cannot be undone by the previous owner: unlock first.
+                onClick = {
+                    guard.confirm(R.string.unlock_reason_transfer) { controller.confirmTransfer() }
+                },
                 enabled = target != null && !offline && !transfer.submitting,
                 modifier = Modifier.testTag("transfer-confirm"),
             ) {

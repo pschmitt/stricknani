@@ -23,6 +23,9 @@ const MAX_OIDC_NATIVE_REDIRECTS_BYTES: usize = 16 * 2048;
 pub struct Config {
     pub database_url: String,
     pub media_root: PathBuf,
+    /// Directory for database backups (`STRICKNANI_BACKUP_DIR`, default
+    /// `backups` next to the database file); `None` for in-memory databases.
+    pub backup_dir: Option<PathBuf>,
     pub bind_address: SocketAddr,
     pub secure_cookies: bool,
     pub external_imports: bool,
@@ -52,6 +55,7 @@ impl fmt::Debug for Config {
             .debug_struct("Config")
             .field("database_url", &"[REDACTED]")
             .field("media_root", &self.media_root)
+            .field("backup_dir", &self.backup_dir)
             .field("bind_address", &self.bind_address)
             .field("trusted_hosts", &"[CONFIGURED]")
             .finish()
@@ -231,7 +235,15 @@ impl Config {
             ));
         }
 
+        let backup_dir =
+            if database_url.contains(":memory:") || database_url.contains("mode=memory") {
+                None
+            } else {
+                database_path(&database_url)
+                    .map(|path| crate::pre_migrate_backup::backup_dir_from(&mut get, &path))
+            };
         Ok(Self {
+            backup_dir,
             database_url,
             media_root,
             bind_address: SocketAddr::new(bind_ip, port),
@@ -392,7 +404,7 @@ fn callback_authority_is_trusted(callback_uri: &str, trusted_hosts: &str) -> boo
     })
 }
 
-fn database_path(url: &str) -> Option<PathBuf> {
+pub(crate) fn database_path(url: &str) -> Option<PathBuf> {
     use std::str::FromStr;
     let options = sqlx::sqlite::SqliteConnectOptions::from_str(url).ok()?;
     Some(resolved_path(options.get_filename()))

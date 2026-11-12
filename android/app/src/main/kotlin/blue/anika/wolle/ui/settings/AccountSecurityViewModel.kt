@@ -21,6 +21,7 @@ import blue.anika.wolle.data.oidc.OidcProvider
 import blue.anika.wolle.data.oidc.ReauthAction
 import blue.anika.wolle.data.oidc.ReauthProof
 import blue.anika.wolle.data.oidc.ReauthTarget
+import blue.anika.wolle.ui.common.DangerousActionGuard
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.oidc.DEFAULT_PROVIDER_NAME
 import blue.anika.wolle.ui.oidc.ReauthRequest
@@ -143,6 +144,7 @@ constructor(
     private val capabilities: ApiCapabilities,
     private val feedback: MutationFeedback,
     private val oidc: OidcCoordinator,
+    private val guard: DangerousActionGuard,
 ) : ViewModel() {
     private val _state = MutableStateFlow(AccountSecurityState())
     val state: StateFlow<AccountSecurityState> = _state.asStateFlow()
@@ -391,6 +393,9 @@ constructor(
 
     fun confirmWithProvider() = stepUp.useProvider()
 
+    /** Confirms with one of the account's passkeys (offered by the sheet when it has one). */
+    fun confirmWithPasskey(host: blue.anika.wolle.data.passkey.PasskeyHost) = stepUp.usePasskey(host)
+
     private suspend fun createWithProof(proof: ReauthProof) {
         if (_state.value.createBusy) return
         _state.update { it.copy(createBusy = true, createErrors = TokenFormErrors()) }
@@ -481,7 +486,12 @@ constructor(
 
     fun confirmRevoke() {
         val token = _state.value.confirmRevoke ?: return
-        _state.update { it.copy(confirmRevoke = null, revokingId = token.id) }
+        _state.update { it.copy(confirmRevoke = null) }
+        guard.confirm(R.string.unlock_reason_revoke_token) { revoke(token) }
+    }
+
+    private fun revoke(token: ApiTokenDto) {
+        _state.update { it.copy(revokingId = token.id) }
         viewModelScope.launch {
             val result = gateway.revokeToken(token.id)
             _state.update { state ->

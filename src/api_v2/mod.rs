@@ -30,6 +30,7 @@ mod access;
 mod account;
 mod activity;
 mod admin;
+mod admin_backups;
 mod admin_resources;
 mod archive;
 mod audit;
@@ -205,6 +206,7 @@ fn router_with_context(
         .merge(tools::router())
         .merge(account::router())
         .merge(admin::router())
+        .merge(admin_backups::router())
         .merge(admin_resources::router())
         .merge(audit::router())
         .merge(signup::router())
@@ -212,6 +214,8 @@ fn router_with_context(
             state.app.clone(),
             crate::impersonation::guard,
         ))
+        // Audit events record which client caused them (administrators only).
+        .layer(middleware::from_fn(crate::client_info::record_client))
         .with_state(state)
         .layer(middleware::from_fn(no_store))
 }
@@ -231,6 +235,10 @@ struct SessionData {
     /// Present while an administrator is acting as the signed-in account.
     #[serde(skip_serializing_if = "Option::is_none")]
     impersonation: Option<crate::impersonation::ImpersonationInfo>,
+    /// Changes when an administrator restored a backup (see `/meta`); signed-in sessions only,
+    /// so browsers learn of a restore without another request.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    data_epoch: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -388,6 +396,11 @@ async fn session(State(state): State<ApiV2State>, headers: HeaderMap) -> Respons
                     error_reporting,
                     locale: locale(&headers),
                     impersonation,
+                    data_epoch: state
+                        .app
+                        .backups
+                        .as_ref()
+                        .map(|backups| backups.data_epoch().to_owned()),
                 },
             })
             .into_response();
@@ -419,6 +432,7 @@ async fn session(State(state): State<ApiV2State>, headers: HeaderMap) -> Respons
             error_reporting,
             locale: locale(&headers),
             impersonation: None,
+            data_epoch: None,
         },
     })
     .into_response();
@@ -560,6 +574,11 @@ async fn login_session_response(
             error_reporting,
             locale: locale(headers),
             impersonation: None,
+            data_epoch: state
+                .app
+                .backups
+                .as_ref()
+                .map(|backups| backups.data_epoch().to_owned()),
         },
     })
     .into_response();

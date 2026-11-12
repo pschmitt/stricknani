@@ -131,7 +131,8 @@ the tests.
 | shares, leave, transfer, `yarn-candidates`, `/people` | `SharingV2Api` | **match, pinned elsewhere** (`api_v2_sharing.rs`) |
 | `GET /api/v2/{projects,yarns}/{id}/history[/{eventId}]`, `GET /activity` | `HistoryApi`, `ActivityV2Api` | **match, pinned elsewhere** (`api_v2_resource_history.rs`, `api_v2_activity.rs`) |
 | `/api/v2/admin/audit`, `/admin/users*`, identities of other users | `AdminApi`, `OidcAccountApi` | **match, pinned elsewhere** (`api_v2_admin*.rs`, `api_v2_audit.rs`) |
-| `/api/v2/admin/resources/...`, impersonation, `POST /telemetry/sentry` | none | server-only |
+| `/api/v2/admin/resources/...`, `POST /telemetry/sentry` | none | server-only |
+| `POST /api/v2/admin/users/{id}/impersonation-token`, `POST /admin/impersonation/stop` | `AdminApi` | **match** (`api_v2_native_impersonation.rs`; the web keeps its cookie flow, `/admin/users/{id}/impersonate`) |
 
 ## Differences the client has to know (v1 to v2)
 

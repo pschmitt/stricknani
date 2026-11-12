@@ -289,6 +289,16 @@ describe("same-origin API client", () => {
     });
   });
 
+  it("tells the server which client it is on every request", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(Response.json(sessionFixture));
+    vi.stubGlobal("fetch", fetchMock);
+    await getSession();
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(new Headers(init.headers).get("x-stricknani-client")).toMatch(
+      /^web\/\S+/,
+    );
+  });
+
   it("passes AbortSignal through to fetch", async () => {
     const controller = new AbortController();
     const fetchMock = vi.fn().mockResolvedValue(Response.json(sessionFixture));

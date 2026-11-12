@@ -22,6 +22,8 @@ integration are implemented; see [TODO.md](TODO.md) for verified milestones and 
   call is only ever a best-effort background refresh, never a requirement for browsing saved data
 - Full Material You theming (dynamic, wallpaper-derived color on Android 12+)
 - Gauge calculator, ported natively (no network dependency)
+- Administrators: Admin, Accounts, Impersonate acts as another account inside the app (own cache,
+  online-only, banner on every screen with Stop; the web does the same with its own session)
 
 ## Rust backend and new website
 

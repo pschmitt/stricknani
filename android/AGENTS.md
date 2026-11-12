@@ -116,6 +116,29 @@ data flow, PAT auth (backend: `T74`/`stricknani/routes/api/`), delta-sync (`T77`
 approach, and Material 3 Expressive theming. That section is kept up to date as the app is built
 out - treat it as the living architecture doc, this file as the operational/workflow one.
 
+## Dangerous actions
+
+Every destructive or irreversible action goes through the device-unlock guard
+([DangerousActionGuard.kt](app/src/main/kotlin/blue/anika/wolle/ui/common/DangerousActionGuard.kt)):
+fingerprint, face or the screen lock, per-device setting "Unlock to confirm dangerous actions"
+(Settings -> Account, on by default, for every user, never synced). Examples: permanent deletion
+(purge), account deletion, restoring a backup over live data, transferring ownership, revoking
+tokens, unlinking logins, disabling or impersonating a user, resetting a password. Not guarded:
+moving to the trash, editing, and anything an undo or a re-share trivially reverts.
+
+- The guard runs **after** the action's own confirmation dialog, never instead of it.
+- Usage, one line: `guard.confirm(R.string.unlock_reason_xxx) { performAction() }`. Add a
+  lower-case reason ("delete permanently") to `values/` and `values-de/` as
+  `unlock_reason_xxx`; the prompt title reads "Confirm: <reason>".
+- In a ViewModel inject `DangerousActionGuard` and wrap the function that sends the request (this
+  is unit-testable with `FakeDangerousActionGuard`); in a composable use
+  `val guard = rememberDangerousActionGuard()`.
+- A cancelled prompt does nothing and shows nothing. With the setting off, or on a device without a
+  screen lock, the action just runs (after its dialog).
+- Queued/offline writes: guard the user's tap, not the replay; the unlock must never gate
+  `WriteReplayWorker` or sync.
+- A new guarded action needs a test that it does not run when the unlock is refused.
+
 ## Notifications
 
 - Every notification is clickable: set a content intent (`setContentIntent`) that opens the

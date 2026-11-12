@@ -17,7 +17,7 @@ import blue.anika.wolle.data.api.v2.ImportJobDto
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.notify.NotificationImages
 import blue.anika.wolle.notify.applyBrand
-import blue.anika.wolle.sync.canPostNotifications
+import blue.anika.wolle.sync.canPostAccountNotifications
 import blue.anika.wolle.ui.common.importImagePath
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.net.URI
@@ -109,7 +109,7 @@ constructor(
                     Manifest.permission.POST_NOTIFICATIONS,
                 ) == PackageManager.PERMISSION_GRANTED
         val enabled = NotificationManagerCompat.from(context).areNotificationsEnabled()
-        if (!canPostNotifications(Build.VERSION.SDK_INT, permissionGranted, enabled)) return
+        if (!canPostAccountNotifications(Build.VERSION.SDK_INT, permissionGranted, enabled)) return
         try {
             NotificationManagerCompat.from(context).notify(id, builder.build())
         } catch (_: SecurityException) {

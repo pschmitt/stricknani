@@ -104,4 +104,5 @@ pub enum ReauthAction {
     RevokeApiToken,
     DeleteAccount,
     ManagePasskeys,
+    RestoreBackup,
 }

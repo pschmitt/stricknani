@@ -37,7 +37,7 @@ import blue.anika.wolle.data.api.v2.ProjectsV2Api
 import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.notify.applyBrand
-import blue.anika.wolle.sync.canPostNotifications
+import blue.anika.wolle.sync.canPostAccountNotifications
 import dagger.Binds
 import dagger.Module
 import dagger.assisted.Assisted
@@ -168,7 +168,7 @@ constructor(
                     Manifest.permission.POST_NOTIFICATIONS,
                 ) == PackageManager.PERMISSION_GRANTED
         if (
-            !canPostNotifications(
+            !canPostAccountNotifications(
                 Build.VERSION.SDK_INT,
                 granted,
                 NotificationManagerCompat.from(context).areNotificationsEnabled(),

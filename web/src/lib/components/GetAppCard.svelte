@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CloseButton from "#lib/components/CloseButton.svelte";
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { resolve } from "$app/paths";
@@ -94,12 +95,10 @@
     </div>
   </div>
   {#if ondismiss}
-    <Button
+    <CloseButton
       class="app-card__dismiss"
-      variant="ghost"
-      size="sm"
-      icon="close"
-      aria-label={t("Dismiss", locale)}
+      {locale}
+      label={t("Dismiss", locale)}
       onclick={() => dismissable?.dismiss()}
     />
   {/if}

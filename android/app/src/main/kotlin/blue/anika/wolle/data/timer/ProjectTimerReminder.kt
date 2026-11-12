@@ -39,7 +39,7 @@ import blue.anika.wolle.data.util.DateTimeUtils
 import blue.anika.wolle.notify.NotificationImages
 import blue.anika.wolle.notify.applyBrand
 import blue.anika.wolle.notify.elapsedParts
-import blue.anika.wolle.sync.canPostNotifications
+import blue.anika.wolle.sync.canPostAccountNotifications
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -454,7 +454,7 @@ constructor(
                     Manifest.permission.POST_NOTIFICATIONS,
                 ) == PackageManager.PERMISSION_GRANTED
         if (
-            !canPostNotifications(
+            !canPostAccountNotifications(
                 Build.VERSION.SDK_INT,
                 granted,
                 NotificationManagerCompat.from(context).areNotificationsEnabled(),

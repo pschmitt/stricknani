@@ -15,6 +15,7 @@ import blue.anika.wolle.data.passkey.PasskeyFailure
 import blue.anika.wolle.data.passkey.PasskeyOutcome
 import blue.anika.wolle.data.passkey.PasskeyRepository
 import blue.anika.wolle.data.passkey.passkey
+import blue.anika.wolle.ui.common.FakeDangerousActionGuard
 import blue.anika.wolle.ui.common.MutationFeedback
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +39,7 @@ class PasskeysViewModelTest {
     private val gateway = FakeGateway()
     private val accountApi = FakeAccountApi()
     private val feedback = MutationFeedback()
+    private val guard = FakeDangerousActionGuard()
     private val coordinator =
         OidcCoordinator(
             FakeOidcLoginApi(),
@@ -71,6 +73,7 @@ class PasskeysViewModelTest {
             ),
             coordinator,
             feedback,
+            guard,
             newPasskeyName = { "Pixel 9" },
         )
 
@@ -271,5 +274,27 @@ class PasskeysViewModelTest {
         assertFalse(vm.state.value.canAdd)
         vm.onAddClicked()
         assertNull(vm.sheet.value)
+    }
+
+    @Test
+    fun `a refused device unlock does not even ask for the confirmation`() {
+        guard.unlocked = false
+        val vm = viewModel()
+        val pixel = vm.state.value.passkeys.single()
+
+        vm.onRemoveClicked(pixel)
+        vm.confirmRemove()
+
+        assertNull(vm.sheet.value)
+        assertFalse(api.calls.contains("delete"))
+        assertEquals(1, vm.state.value.passkeys.size)
+    }
+
+    @Test
+    fun `adding a passkey is not behind the device unlock`() {
+        guard.unlocked = false
+        val vm = viewModel()
+        vm.onAddClicked()
+        assertNotNull(vm.sheet.value)
     }
 }

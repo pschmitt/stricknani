@@ -17,6 +17,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** What the user is asked to confirm, and the ways they can do it. */
@@ -50,7 +51,7 @@ class StepUp(
     private val scope: CoroutineScope,
     private val onProof: suspend (ReauthProof) -> Unit,
     private val onFailure: (OidcFailure) -> Unit,
-    private val passkeys: PasskeyService? = null,
+    private val passkeys: PasskeyService? = oidc.passkeys,
 ) {
     private val _sheet = MutableStateFlow<ReauthUiState?>(null)
 
@@ -62,7 +63,18 @@ class StepUp(
 
     fun begin(request: ReauthRequest) {
         awaiting = null
-        _sheet.value = ReauthUiState(request)
+        // The passkey option is decided here for every sheet: the device can do passkeys and the
+        // account has one. It appears a moment later, once the account's passkeys are known.
+        _sheet.value = ReauthUiState(request.copy(canUsePasskey = false))
+        val service = passkeys ?: return
+        scope.launch {
+            if (!service.canConfirm()) return@launch
+            _sheet.update { sheet ->
+                if (sheet != null && sheet.request.action == request.action)
+                    sheet.copy(request = sheet.request.copy(canUsePasskey = true))
+                else sheet
+            }
+        }
     }
 
     fun dismiss() {

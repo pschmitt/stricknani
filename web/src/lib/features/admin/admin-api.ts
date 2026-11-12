@@ -1,5 +1,6 @@
 import { ApiError, apiRequest, type SessionData } from "#lib/api.ts";
 import { t } from "#lib/i18n.svelte.ts";
+import { parseAuditClient, type AuditClient } from "./audit-client";
 import {
   parseChangeMedia,
   type ChangeMedia,
@@ -44,6 +45,10 @@ export interface AuditEvent {
   system: boolean;
   /** The owner of the resource, named on events an administrator or the system caused. */
   subject: LifecycleSubject | null;
+  /** The client that caused the event; `unknown` for events recorded before clients were kept. */
+  client: AuditClient;
+  /** What a server event (a backup restore) was about; absent on other events. */
+  server?: AuditServerEvent | null;
 }
 
 export interface Impersonator {
@@ -59,6 +64,31 @@ export function parseImpersonator(value: unknown): Impersonator | null {
     id: safeInteger(value.id) ? value.id : null,
     name: typeof value.name === "string" ? value.name : null,
     email: typeof value.email === "string" ? value.email : null,
+  };
+}
+
+export interface AuditServerEvent {
+  backup: string;
+  pre_restore: string;
+  media: "none" | "add_missing";
+  /** The requesting administrator, also when that account is not in the restored data. */
+  actor_email: string | null;
+}
+
+/** The `server` block of a backup-restore event; malformed values read as none. */
+export function parseAuditServerEvent(value: unknown): AuditServerEvent | null {
+  if (
+    !record(value) ||
+    typeof value.backup !== "string" ||
+    typeof value.pre_restore !== "string"
+  )
+    return null;
+  return {
+    backup: value.backup,
+    pre_restore: value.pre_restore,
+    media: value.media === "add_missing" ? "add_missing" : "none",
+    actor_email:
+      typeof value.actor_email === "string" ? value.actor_email : null,
   };
 }
 
@@ -141,17 +171,27 @@ export interface AdminPage {
   meta: PageMeta;
 }
 
+/** The account an audit list is filtered to. */
+export interface AuditFilterUser {
+  id: number;
+  email: string;
+}
+
 export interface AuditPage {
   data: AuditEvent[];
   meta: PageMeta;
+  /** Set when the list was filtered with `user`. */
+  user: AuditFilterUser | null;
 }
 
-export type AuditEntity = "all" | "project" | "yarn" | "category";
+export type AuditEntity = "all" | "project" | "yarn" | "category" | "server";
 
 export interface AuditFilters {
   page: number;
   entity: AuditEntity;
   action: string;
+  /** Show only events this account took part in: as actor, subject or impersonator. */
+  user: number | null;
 }
 
 const record = (value: unknown): value is Record<string, unknown> =>
@@ -262,6 +302,8 @@ function parseAuditEvent(value: unknown): AuditEvent {
     impersonated_by: parseImpersonator(value.impersonated_by),
     system: value.system === true,
     subject: parseLifecycleSubject(value.subject),
+    client: parseAuditClient(value.client),
+    server: parseAuditServerEvent(value.server),
   };
 }
 
@@ -574,17 +616,29 @@ export function parseChangeSet(value: unknown): ChangeSetV1 {
   return { version: 1, items };
 }
 
+function parseFilterUser(value: unknown): AuditFilterUser | null {
+  if (value === undefined || value === null) return null;
+  if (!record(value) || !positiveInteger(value.id)) throw invalidResponse();
+  if (typeof value.email !== "string") throw invalidResponse();
+  return { id: value.id, email: value.email };
+}
+
 export function auditFiltersFromSearch(search: string): AuditFilters {
   const params = new URLSearchParams(search);
   const page = Number(params.get("page") ?? "1");
   const entity = params.get("entity");
+  const user = Number(params.get("user") ?? "");
   return {
     page: Number.isSafeInteger(page) && page >= 1 && page <= 10000 ? page : 1,
     entity:
-      entity === "project" || entity === "yarn" || entity === "category"
+      entity === "project" ||
+      entity === "yarn" ||
+      entity === "category" ||
+      entity === "server"
         ? entity
         : "all",
     action: params.get("action") ?? "",
+    user: Number.isSafeInteger(user) && user > 0 ? user : null,
   };
 }
 
@@ -594,6 +648,7 @@ export function auditSearchFromFilters(filters: AuditFilters): string {
   if (filters.entity !== "all") params.set("entity", filters.entity);
   const action = filters.action.trim();
   if (action) params.set("action", action);
+  if (filters.user !== null) params.set("user", String(filters.user));
   return params.toString();
 }
 
@@ -700,6 +755,7 @@ export async function listAuditEvents(
   return {
     data: payload.data.map(parseAuditEvent),
     meta: parseMeta(payload.meta),
+    user: parseFilterUser(record(payload.meta) ? payload.meta.user : undefined),
   };
 }
 

@@ -10,6 +10,7 @@ import blue.anika.wolle.data.account.AccountV2Api
 import blue.anika.wolle.data.api.AdminApi
 import blue.anika.wolle.data.api.AuthInterceptor
 import blue.anika.wolle.data.api.CategoriesApi
+import blue.anika.wolle.data.api.ClientHeaderInterceptor
 import blue.anika.wolle.data.api.DynamicBaseUrlInterceptor
 import blue.anika.wolle.data.api.HistoryApi
 import blue.anika.wolle.data.api.MetaApi
@@ -17,6 +18,7 @@ import blue.anika.wolle.data.api.ProjectsApi
 import blue.anika.wolle.data.api.SessionExpiryInterceptor
 import blue.anika.wolle.data.api.SyncApi
 import blue.anika.wolle.data.api.YarnsApi
+import blue.anika.wolle.data.api.clientHeaderValue
 import blue.anika.wolle.data.api.v2.ActivityV2Api
 import blue.anika.wolle.data.api.v2.ArchiveV2Api
 import blue.anika.wolle.data.api.v2.CategoriesV2Api
@@ -28,6 +30,12 @@ import blue.anika.wolle.data.api.v2.SharingV2Api
 import blue.anika.wolle.data.api.v2.SyncV2Api
 import blue.anika.wolle.data.api.v2.TrashV2Api
 import blue.anika.wolle.data.api.v2.YarnsV2Api
+import blue.anika.wolle.data.backups.BackupsApi
+import blue.anika.wolle.data.backups.BackupsGateway
+import blue.anika.wolle.data.backups.BackupsRepository
+import blue.anika.wolle.data.backups.HealthApi
+import blue.anika.wolle.data.backups.RestartProbe
+import blue.anika.wolle.data.backups.RetrofitRestartProbe
 import blue.anika.wolle.data.errorreporting.ErrorReportingApi
 import blue.anika.wolle.data.export.DataExportApi
 import blue.anika.wolle.data.export.DataRestoreApi
@@ -99,6 +107,16 @@ object NetworkModule {
             // see the real request.
             .addInterceptor(dynamicBaseUrlInterceptor)
             .addInterceptor(authInterceptor)
+            // Names this app build on the server's admin audit log.
+            .addInterceptor(
+                ClientHeaderInterceptor(
+                    clientHeaderValue(
+                        BuildConfig.VERSION_NAME,
+                        BuildConfig.VERSION_CODE,
+                        BuildConfig.DEBUG,
+                    )
+                )
+            )
             // After auth, so it sees which token a request carried.
             .addInterceptor(sessionExpiryInterceptor)
             .addInterceptor(loggingInterceptor())
@@ -137,6 +155,18 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideAdminApi(retrofit: Retrofit): AdminApi = retrofit.create(AdminApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideBackupsApi(retrofit: Retrofit): BackupsApi = retrofit.create(BackupsApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideHealthApi(retrofit: Retrofit): HealthApi = retrofit.create(HealthApi::class.java)
+
+    @Provides fun provideBackupsGateway(repository: BackupsRepository): BackupsGateway = repository
+
+    @Provides fun provideRestartProbe(probe: RetrofitRestartProbe): RestartProbe = probe
 
     @Provides
     @Singleton

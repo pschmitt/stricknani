@@ -58,6 +58,7 @@ pub(crate) enum RecentAction<'a> {
     DeleteAccount,
     /// Add or remove a passkey.
     ManagePasskeys,
+    RestoreBackup,
 }
 
 #[derive(Clone, Copy)]
@@ -151,6 +152,7 @@ impl<'a> RecentAction<'a> {
             Self::RevokeApiToken { .. } => "revoke_api_token",
             Self::DeleteAccount => "delete_account",
             Self::ManagePasskeys => "manage_passkeys",
+            Self::RestoreBackup => "restore_backup",
         }
     }
 
@@ -191,7 +193,8 @@ impl<'a> RecentAction<'a> {
             Self::ChangePassword
             | Self::CreateApiToken
             | Self::DeleteAccount
-            | Self::ManagePasskeys => actor_user_id,
+            | Self::ManagePasskeys
+            | Self::RestoreBackup => actor_user_id,
             Self::RevokeApiToken { token_id } => {
                 if token_id <= 0 {
                     return Err(OidcIdentityError::InvalidIdentity);
@@ -215,7 +218,8 @@ impl<'a> RecentAction<'a> {
             Self::ChangePassword
             | Self::CreateApiToken
             | Self::DeleteAccount
-            | Self::ManagePasskeys => (None, None, None),
+            | Self::ManagePasskeys
+            | Self::RestoreBackup => (None, None, None),
         }
     }
 }
@@ -918,7 +922,8 @@ async fn validate_action_target_tx(
         | RecentAction::ChangePassword
         | RecentAction::CreateApiToken
         | RecentAction::DeleteAccount
-        | RecentAction::ManagePasskeys => true,
+        | RecentAction::ManagePasskeys
+        | RecentAction::RestoreBackup => true,
     };
     if visible {
         Ok(())

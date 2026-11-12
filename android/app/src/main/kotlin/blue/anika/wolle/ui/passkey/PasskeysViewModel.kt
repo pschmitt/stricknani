@@ -14,6 +14,7 @@ import blue.anika.wolle.data.passkey.PasskeyFailure
 import blue.anika.wolle.data.passkey.PasskeyHost
 import blue.anika.wolle.data.passkey.PasskeyService
 import blue.anika.wolle.data.passkey.passkeyFailure
+import blue.anika.wolle.ui.common.DangerousActionGuard
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.oidc.ReauthRequest
 import blue.anika.wolle.ui.oidc.ReauthUiState
@@ -77,6 +78,7 @@ internal constructor(
     private val passkeys: PasskeyService,
     private val oidc: OidcCoordinator,
     private val feedback: MutationFeedback,
+    private val guard: DangerousActionGuard,
     /** What a new passkey is called until its owner renames it: this phone's name. */
     private val newPasskeyName: () -> String,
 ) : ViewModel() {
@@ -85,8 +87,9 @@ internal constructor(
         passkeys: PasskeyService,
         oidc: OidcCoordinator,
         feedback: MutationFeedback,
+        guard: DangerousActionGuard,
         deviceNames: DeviceNameProvider,
-    ) : this(passkeys, oidc, feedback, { deviceNames.deviceName() })
+    ) : this(passkeys, oidc, feedback, guard, { deviceNames.deviceName() })
 
     private val _state = MutableStateFlow(PasskeysState())
     val state: StateFlow<PasskeysState> = _state.asStateFlow()
@@ -155,8 +158,11 @@ internal constructor(
     fun confirmRemove() {
         val passkey = _state.value.confirmRemove ?: return
         _state.update { it.copy(confirmRemove = null) }
-        afterProof = AfterProof.Remove(passkey)
-        stepUp.begin(request())
+        // After the dialog, before the confirmation: a refused unlock does nothing.
+        guard.confirm(R.string.unlock_reason_remove_passkey) {
+            afterProof = AfterProof.Remove(passkey)
+            stepUp.begin(request())
+        }
     }
 
     fun onRenameClicked(passkey: PasskeyDto) = _state.update { it.copy(renaming = passkey) }
@@ -224,7 +230,6 @@ internal constructor(
             target = ReauthTarget.None,
             canUsePassword = current.passwordEnabled,
             oidcProvider = null,
-            canUsePasskey = current.passkeys.isNotEmpty(),
         )
     }
 

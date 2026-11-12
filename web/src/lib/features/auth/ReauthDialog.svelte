@@ -34,6 +34,8 @@
     passwordEnabled = true,
     passkeyAvailable = false,
     message,
+    returnTo,
+    oncancel,
     onconfirmed,
   }: {
     locale: Locale;
@@ -44,6 +46,10 @@
     passkeyAvailable?: boolean;
     /** Replaces the default explanation above the password field. */
     message?: string;
+    /** In-app path a provider confirmation returns to (default: the Account page). */
+    returnTo?: string;
+    /** The person closed the dialog without confirming. */
+    oncancel?: () => void;
     onconfirmed: (request: ReauthRequest) => void | Promise<void>;
   } = $props();
 
@@ -58,7 +64,9 @@
   );
 
   function dispatch(event: ReauthEvent): void {
+    const before = reauth.phase;
     reauth = reauthReducer(reauth, event);
+    if (event.type === "cancel" && before === "prompt") oncancel?.();
     if (reauth.phase === "closed") dialog?.close();
   }
 
@@ -73,6 +81,7 @@
 
   function reset(): void {
     password = "";
+    if (reauth.phase === "prompt") oncancel?.();
     if (reauth.phase === "prompt" || reauth.phase === "confirmed")
       reauth = CLOSED;
   }
@@ -121,6 +130,7 @@
         oidcProvider.id,
         request,
         session.data?.csrf_token ?? "",
+        returnTo,
       );
       savePendingReauth(
         typeof sessionStorage === "undefined" ? undefined : sessionStorage,

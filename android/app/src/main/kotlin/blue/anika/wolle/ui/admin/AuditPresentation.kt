@@ -3,13 +3,19 @@ package blue.anika.wolle.ui.admin
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Undo
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.RemoveCircle
+import androidx.compose.material.icons.outlined.Android
+import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.dto.AuditClientDto
 import blue.anika.wolle.data.api.dto.AuditEventDto
 import blue.anika.wolle.data.api.dto.AuditMediaDto
 import blue.anika.wolle.data.api.dto.AuditResourceDto
@@ -107,6 +113,7 @@ private val knownActions: Map<String, Pair<AuditActionKind, Int>> =
         "share_left" to (AuditActionKind.Remove to R.string.admin_action_share_left),
         "ownership_transferred" to
             (AuditActionKind.Update to R.string.admin_action_ownership_transferred),
+        "backup_restored" to (AuditActionKind.Update to R.string.admin_action_backup_restored),
         "impersonation_started" to
             (AuditActionKind.Impersonate to R.string.admin_action_impersonation_started),
         "impersonation_stopped" to
@@ -173,7 +180,7 @@ val AddedGreenLight = Color(0xFF1B6E3A)
 val AddedGreenDark = Color(0xFF8FD9A6)
 
 /** The entity filter values the API accepts besides "all". */
-val auditEntityTypes: List<String> = listOf("project", "yarn", "category")
+val auditEntityTypes: List<String> = listOf("project", "yarn", "category", "server")
 
 @StringRes
 fun entityTypeLabelRes(entityType: String): Int? =
@@ -181,6 +188,7 @@ fun entityTypeLabelRes(entityType: String): Int? =
         "project" -> R.string.admin_entity_project
         "yarn" -> R.string.admin_entity_yarn
         "category" -> R.string.admin_entity_category
+        "server" -> R.string.admin_entity_server
         else -> null
     }
 
@@ -489,3 +497,44 @@ fun safeAuditFileName(media: AuditMediaDto): String {
             .take(80)
     return "${media.id}-$base"
 }
+
+// --- Client of an event -----------------------------------------------------------------------
+
+enum class AuditClientKind {
+    Web,
+    Android,
+    Api,
+    System,
+    Unknown,
+}
+
+/** Events without a client block, or with a kind this app does not know, read as unknown. */
+fun AuditClientDto?.clientKind(): AuditClientKind =
+    when (this?.kind) {
+        "web" -> AuditClientKind.Web
+        "android" -> AuditClientKind.Android
+        "api" -> AuditClientKind.Api
+        "system" -> AuditClientKind.System
+        else -> AuditClientKind.Unknown
+    }
+
+private fun String?.clean(): String? = this?.trim()?.ifEmpty { null }
+
+/** The chip text; the same rules as the web app (`clientLabel` in `audit-client.ts`). */
+fun AuditClientDto?.clientLabel(string: (Int) -> String): String =
+    when (clientKind()) {
+        AuditClientKind.System -> string(R.string.admin_client_system)
+        AuditClientKind.Unknown -> string(R.string.admin_client_unknown)
+        AuditClientKind.Web -> this?.label.clean() ?: string(R.string.admin_client_web)
+        AuditClientKind.Android -> this?.label.clean() ?: string(R.string.admin_client_android)
+        AuditClientKind.Api -> this?.label.clean() ?: string(R.string.admin_client_api)
+    }
+
+fun AuditClientKind.icon(): ImageVector =
+    when (this) {
+        AuditClientKind.Web -> Icons.Outlined.Language
+        AuditClientKind.Android -> Icons.Outlined.Android
+        AuditClientKind.Api -> Icons.Outlined.Terminal
+        AuditClientKind.System -> Icons.Outlined.Settings
+        AuditClientKind.Unknown -> Icons.AutoMirrored.Outlined.HelpOutline
+    }

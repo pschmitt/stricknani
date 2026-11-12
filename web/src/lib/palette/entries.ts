@@ -193,7 +193,7 @@ export function buildStaticEntries(
       id: "page:/admin/users",
       group: "pages",
       title: t("Admin", locale),
-      keywords: ["users accounts audit log"],
+      keywords: ["users accounts audit log backups restore"],
       icon: "admin",
       href: resolvePath("/admin/users"),
     });

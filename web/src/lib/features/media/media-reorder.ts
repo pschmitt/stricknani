@@ -170,7 +170,87 @@ export const projectStepOrderPath = (
 export const yarnPhotoOrderPath = (yarnId: number): string =>
   `/api/v2/yarns/${yarnId}/photos/order`;
 
-/** A photo can become the cover when it is not already first. */
-export function canMakeCover(index: number, length: number): boolean {
+/** A photo can move to the first position (the cover) when it is not first yet. */
+export function canMoveToFirst(index: number, length: number): boolean {
   return Number.isInteger(index) && index > 0 && index < length;
+}
+
+/** Press time in ms before a tile enters reorder mode or lifts (Android: long press). */
+export const LONG_PRESS_MS = 400;
+/** Pointer travel in px that cancels a pending long press. */
+export const MOVE_SLOP = 8;
+/** Pointer travel in px that lifts a tile at once with a mouse in reorder mode. */
+export const MOUSE_DRAG_SLOP = 4;
+
+/** Order items by a list of ids; ids that are unknown are skipped, missing items are appended. */
+export function orderByIds<T extends OrderedItem>(
+  items: readonly T[],
+  ids: readonly number[],
+): T[] {
+  const byId = new Map(items.map((item) => [item.id, item]));
+  const ordered = ids.flatMap((id) => {
+    const item = byId.get(id);
+    return item ? [item] : [];
+  });
+  const seen = new Set(ordered.map((item) => item.id));
+  return [...ordered, ...items.filter((item) => !seen.has(item.id))];
+}
+
+/** How many columns a grid has, from the top offsets of its tiles in order. */
+export function gridColumns(tops: readonly number[]): number {
+  if (tops.length === 0) return 1;
+  const first = tops[0] as number;
+  const end = tops.findIndex((top) => Math.abs(top - first) > 1);
+  return end === -1 ? tops.length : Math.max(end, 1);
+}
+
+export interface ReorderKey {
+  key: string;
+  altKey?: boolean;
+  ctrlKey?: boolean;
+  metaKey?: boolean;
+}
+
+/**
+ * The index a focused tile moves to for an arrow key: left and right move by one
+ * (mirrored in right-to-left), up and down by one row of the grid. Clamped to
+ * the list; null for any other key or a modified key.
+ */
+export function keyboardMoveTarget(
+  event: ReorderKey,
+  index: number,
+  length: number,
+  columns: number,
+  rtl = false,
+): number | null {
+  if (event.altKey || event.ctrlKey || event.metaKey) return null;
+  const rows = Math.max(columns, 1);
+  let delta: number | null;
+  if (event.key === "ArrowUp") delta = -rows;
+  else if (event.key === "ArrowDown") delta = rows;
+  else delta = deltaForKey(event.key, rtl);
+  if (delta === null) return null;
+  return keyboardTarget(index, delta, length);
+}
+
+/**
+ * Pixels to scroll per frame while a dragged tile is near the top or bottom edge
+ * of the scroll area: zero in the middle, growing to maxSpeed at the edge.
+ */
+export function edgeScrollDelta(
+  pointerY: number,
+  top: number,
+  bottom: number,
+  zone = 72,
+  maxSpeed = 18,
+): number {
+  if (pointerY < top + zone) {
+    const depth = Math.min((top + zone - pointerY) / zone, 1);
+    return -Math.ceil(depth * maxSpeed);
+  }
+  if (pointerY > bottom - zone) {
+    const depth = Math.min((pointerY - (bottom - zone)) / zone, 1);
+    return Math.ceil(depth * maxSpeed);
+  }
+  return 0;
 }

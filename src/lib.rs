@@ -10,7 +10,9 @@ mod audit;
 pub(crate) mod audit_service;
 pub mod auth;
 pub(crate) mod auth_stepup_service;
+pub mod backups;
 pub mod categories;
+pub(crate) mod client_info;
 pub mod config;
 pub mod db;
 pub(crate) mod detail_order;
@@ -45,6 +47,7 @@ pub(crate) mod oidc_identity_service;
 pub mod operator_account;
 pub mod operator_avatar;
 pub mod passkeys;
+pub mod pre_migrate_backup;
 pub mod projects;
 pub mod pwa;
 pub(crate) mod resource_access;
@@ -148,6 +151,7 @@ fn app_with_services_and_web_root(
     web_root: Option<PathBuf>,
 ) -> Router {
     let state = state.with_external_imports(external_imports);
+    let write_guard_state = state.clone();
     let ai = ai.map(Arc::new);
     let core = Router::new()
         .nest(
@@ -201,6 +205,13 @@ fn app_with_services_and_web_root(
             ai,
         ))
         .merge(core)
+        // A staged backup restore rejects writes until the server restarts.
+        .layer(axum::middleware::from_fn_with_state(
+            write_guard_state,
+            backups::guard_writes,
+        ))
+        // Audit events record which client caused them (administrators only).
+        .layer(axum::middleware::from_fn(client_info::record_client))
         .layer(axum::middleware::from_fn(security::security_headers))
 }
 

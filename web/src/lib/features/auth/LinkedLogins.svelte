@@ -100,7 +100,7 @@
     resume = takePendingReauth(
       typeof sessionStorage === "undefined" ? undefined : sessionStorage,
       Date.now(),
-      (action) => action !== "delete_account",
+      (action) => action !== "delete_account" && action !== "restore_backup",
     );
     const controller = new AbortController();
     void getAuthOptions(controller.signal)

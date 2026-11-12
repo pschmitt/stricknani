@@ -1,6 +1,7 @@
 package blue.anika.wolle.data.oidc
 
 import blue.anika.wolle.data.device.DeviceNameProvider
+import blue.anika.wolle.data.passkey.PasskeyService
 import blue.anika.wolle.data.device.deviceTokenName
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.sync.SyncScheduler
@@ -62,6 +63,8 @@ internal constructor(
     private val deviceName: () -> String? = { null },
     private val newState: () -> String = { Pkce.newAppState() },
     private val newVerifier: () -> String = { Pkce.newCodeVerifier() },
+    /** Lets every step-up sheet offer "confirm with a passkey" (see `StepUp`); null in tests. */
+    val passkeys: PasskeyService? = null,
 ) {
     @Inject
     constructor(
@@ -71,6 +74,7 @@ internal constructor(
         settings: SettingsRepository,
         syncScheduler: SyncScheduler,
         deviceNames: DeviceNameProvider,
+        passkeys: PasskeyService,
     ) : this(
         loginApi,
         accountApi,
@@ -80,6 +84,7 @@ internal constructor(
         { syncScheduler.replayThenSyncNow() },
         { deviceTokenName(deviceNames.deviceName()) },
         { deviceNames.deviceName() },
+        passkeys = passkeys,
     )
 
     private val _browserRequests =

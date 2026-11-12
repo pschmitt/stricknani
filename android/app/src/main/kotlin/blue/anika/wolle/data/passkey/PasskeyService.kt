@@ -16,6 +16,12 @@ import kotlinx.serialization.json.jsonObject
  * their flows are tested with a fake.
  */
 interface PasskeyService {
+    /**
+     * Whether "confirm with a passkey" can be offered now: this device can do passkeys at all and
+     * the account has at least one. Quiet about why not (the option simply stays hidden).
+     */
+    suspend fun canConfirm(): Boolean
+
     /** The server advertises passkeys in its public metadata. */
     suspend fun available(serverUrl: String): Boolean
 
@@ -54,6 +60,9 @@ constructor(
     private val gateway: PasskeyGateway,
     private val json: Json,
 ) : PasskeyService {
+
+    override suspend fun canConfirm(): Boolean =
+        gateway.isSupported() && list().getOrNull()?.passkeys?.isNotEmpty() == true
 
     override suspend fun available(serverUrl: String): Boolean = loginApi.available(serverUrl)
 

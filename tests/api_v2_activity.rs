@@ -523,3 +523,79 @@ async fn activity_keeps_deleted_resources_for_their_actor_only() {
     let (_, admin) = get(&f, "/activity", ADMIN_PAT).await;
     assert_eq!(admin["data"].as_array().unwrap().len(), 0);
 }
+
+#[tokio::test]
+async fn my_activity_page_works_for_a_non_admin_member_and_never_exposes_client_info() {
+    let f = fixture().await;
+    let own = project(&f.pool, f.owner_id, "Mine").await;
+    let foreign = project(&f.pool, f.other_id, "Theirs").await;
+    for minute in 0..25 {
+        let at = format!("2026-06-01T00:{minute:02}:00Z");
+        ev(&f, "project", own, "updated", &at, Some(f.owner_id)).await;
+        // Far enough apart that autosave coalescing keeps them separate.
+        sqlx::query(
+            "UPDATE audit_events SET created_at = ? WHERE id = (SELECT max(id) FROM audit_events)",
+        )
+        .bind(format!("2026-06-{:02}T00:00:00Z", minute + 1))
+        .execute(&f.pool)
+        .await
+        .unwrap();
+    }
+    ev(
+        &f,
+        "project",
+        foreign,
+        "created",
+        "2026-07-01T00:00:00Z",
+        Some(f.other_id),
+    )
+    .await;
+    // The audit table does hold client info; the feed must not carry it.
+    sqlx::query(
+        "UPDATE audit_events SET client_kind = 'web', client_label = 'Firefox 1 · Linux', \
+         client_user_agent = 'Mozilla/5.0 secret-agent'",
+    )
+    .execute(&f.pool)
+    .await
+    .unwrap();
+
+    // OWNER_PAT and OWNER_SESSION belong to a member, not an administrator.
+    let is_admin: i64 = sqlx::query_scalar("SELECT is_admin FROM users WHERE id = ?")
+        .bind(f.owner_id)
+        .fetch_one(&f.pool)
+        .await
+        .unwrap();
+    assert_eq!(is_admin, 0);
+
+    let session = f
+        .app
+        .clone()
+        .oneshot(cookie("/activity?limit=20", OWNER_SESSION))
+        .await
+        .unwrap();
+    assert_eq!(session.status(), StatusCode::OK);
+    let first = json(session).await;
+    assert_eq!(first["data"].as_array().unwrap().len(), 20);
+    assert_eq!(first["meta"]["has_more"], true);
+    let before = first["meta"]["next_before"].as_i64().unwrap();
+    let (status, second) = get(
+        &f,
+        &format!("/activity?limit=20&before={before}"),
+        OWNER_PAT,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(second["data"].as_array().unwrap().len(), 5);
+    assert_eq!(second["meta"]["has_more"], false);
+
+    for body in [&first, &second] {
+        let text = serde_json::to_string(body).unwrap();
+        assert!(!text.contains("client"), "no client field: {text}");
+        assert!(!text.contains("secret-agent") && !text.contains("Firefox"));
+        assert!(!text.contains("Theirs"));
+        assert!(!text.contains("example.test"));
+        for item in body["data"].as_array().unwrap() {
+            assert_eq!(item["entity_id"], own);
+        }
+    }
+}

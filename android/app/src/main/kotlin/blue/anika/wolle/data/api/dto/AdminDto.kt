@@ -24,6 +24,19 @@ data class AdminPageMetaDto(
     val page: Int,
     @SerialName("per_page") val perPage: Int,
     @SerialName("has_more") val hasMore: Boolean,
+    /** The account an audit list was filtered to with `user`; absent otherwise. */
+    val user: AuditFilterUserDto? = null,
+)
+
+/** `meta.user` of the audit list: the account the list is filtered to. */
+@Serializable data class AuditFilterUserDto(val id: Long, val email: String)
+
+/** `impersonated_by` of an audit event: the administrator who acted as the actor. */
+@Serializable
+data class AuditImpersonatorDto(
+    val id: Long? = null,
+    val name: String? = null,
+    val email: String? = null,
 )
 
 @Serializable
@@ -59,6 +72,30 @@ data class ResetPasswordDataDto(
 )
 
 @Serializable data class ResetPasswordEnvelopeDto(val data: ResetPasswordDataDto)
+
+/** `ImpersonatedUser` in `impersonation.rs`. */
+@Serializable data class ImpersonatedUserDto(val id: Long, val email: String, val name: String)
+
+/** `ImpersonatingAdmin` in `impersonation.rs`. */
+@Serializable data class ImpersonatingAdminDto(val id: Long, val email: String)
+
+/**
+ * `POST /api/v2/admin/users/{id}/impersonation-token`: the short-lived `sni_` credential (shown
+ * once) plus who acts as whom. [expiresAt] is epoch seconds.
+ */
+@Serializable
+data class ImpersonationStartDto(
+    val token: String,
+    val user: ImpersonatedUserDto,
+    val admin: ImpersonatingAdminDto,
+    @SerialName("expires_at") val expiresAt: Long,
+)
+
+@Serializable data class ImpersonationStartEnvelopeDto(val data: ImpersonationStartDto)
+
+@Serializable data class ImpersonationStopDto(val stopped: Boolean = false)
+
+@Serializable data class ImpersonationStopEnvelopeDto(val data: ImpersonationStopDto)
 
 /** `AuditResource` in `audit_service.rs`: what the event was about, resolved by the server. */
 @Serializable
@@ -128,6 +165,38 @@ data class AuditEventDto(
     @SerialName("media_thumbnails") val mediaThumbs: Map<String, HistoryMediaDto> = emptyMap(),
     /** True only for the automatic purge after 90 days: nobody did it, so there is no actor. */
     val system: Boolean = false,
+    /** The client that caused the event; absent on servers that do not record clients. */
+    val client: AuditClientDto? = null,
+    /** What a server event (a backup restore) was about; absent on every other event. */
+    val server: AuditServerEventDto? = null,
+    /** The administrator who made this change while acting as the actor. */
+    @SerialName("impersonated_by") val impersonatedBy: AuditImpersonatorDto? = null,
+)
+
+/**
+ * `AuditServerEvent` in `audit_service.rs`: a backup restore. [actorEmail] names the requesting
+ * administrator even when that account is not part of the restored data.
+ */
+@Serializable
+data class AuditServerEventDto(
+    val backup: String,
+    @SerialName("pre_restore") val preRestore: String,
+    val media: String = "none",
+    @SerialName("actor_email") val actorEmail: String? = null,
+)
+
+/**
+ * `AuditClient` in `audit_service.rs`: which client caused an event. [kind] is `web`, `android`,
+ * `api`, `system` (no request) or `unknown` (recorded before clients were kept). [label] is the
+ * server's short display text such as `Firefox 159 · Linux`, [version] the app version with its
+ * build parameters, [userAgent] the raw header (at most 256 characters).
+ */
+@Serializable
+data class AuditClientDto(
+    val kind: String = "unknown",
+    val version: String? = null,
+    val label: String? = null,
+    @SerialName("user_agent") val userAgent: String? = null,
 )
 
 /**

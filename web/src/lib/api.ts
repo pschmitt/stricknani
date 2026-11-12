@@ -1,5 +1,6 @@
 import type { DetailCardOrders } from "./detail-order";
 import type { ErrorReportingInfo } from "./error-reporting";
+import { clientHeader, clientHeaderName } from "./client-header";
 import { t } from "./i18n.svelte";
 
 export type Capability =
@@ -48,6 +49,8 @@ export interface SessionData {
   locale: "en" | "de";
   /** Present while an administrator is acting as the signed-in account. */
   impersonation?: Impersonation;
+  /** Changes when an administrator restored a backup; signed-in sessions only. */
+  data_epoch?: string;
 }
 
 export interface RequestOptions {
@@ -187,7 +190,10 @@ async function performApiRequest<T = unknown>(
 ): Promise<T> {
   const method = options.method ?? "GET";
   const requestAuthEpoch = authEpoch;
-  const headers = new Headers({ accept: "application/json" });
+  const headers = new Headers({
+    accept: "application/json",
+    [clientHeaderName]: clientHeader,
+  });
   let body: BodyInit | undefined;
   if (options.body instanceof FormData) {
     body = options.body;

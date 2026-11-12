@@ -37,6 +37,20 @@ struct MetaData {
     current_token_id: Option<i64>,
     auth: AuthDiscovery,
     error_reporting: super::telemetry::ErrorReportingInfo,
+    /// Changes whenever an administrator restored a backup. Clients that
+    /// remember another value discard their caches and queued changes.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    data_epoch: Option<String>,
+    /// Outcome of the last backup restore, so a client that waited for the
+    /// restart can tell success from failure.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    last_restore: Option<LastRestore>,
+}
+
+#[derive(Serialize)]
+struct LastRestore {
+    status: String,
+    finished_at: i64,
 }
 
 #[derive(Serialize)]
@@ -131,6 +145,20 @@ async fn meta(State(state): State<ApiV2State>, headers: axum::http::HeaderMap) -
         .collect();
 
     let error_reporting = super::telemetry::ErrorReportingInfo::load(&state, user_id).await;
+    let data_epoch = state
+        .app
+        .backups
+        .as_ref()
+        .map(|backups| backups.data_epoch().to_owned());
+    let last_restore = state
+        .app
+        .backups
+        .as_ref()
+        .and_then(|backups| backups.last_restore())
+        .map(|outcome| LastRestore {
+            status: outcome.status.clone(),
+            finished_at: outcome.finished_at,
+        });
     Json(MetaEnvelope {
         data: MetaData {
             version: env!("CARGO_PKG_VERSION"),
@@ -155,6 +183,8 @@ async fn meta(State(state): State<ApiV2State>, headers: axum::http::HeaderMap) -
                 passkeys: state.app.passkeys.is_some(),
             },
             error_reporting,
+            data_epoch,
+            last_restore,
         },
     })
     .into_response()

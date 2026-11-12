@@ -20,6 +20,7 @@
 //! With WAL the live database consists of the main file plus `-wal` and
 //! `-shm`, so backups must use `sqlite3 .backup` (or `VACUUM INTO`), never a
 //! raw copy of the main file.
+use crate::pre_migrate_backup::{self, PreMigrateBackup};
 use sqlx::{
     Executor, Sqlite, SqlitePool, Transaction,
     sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions, SqliteSynchronous},
@@ -43,6 +44,8 @@ pub struct AppState {
     pub oidc: Option<Arc<crate::oidc_http_state::OidcRuntime>>,
     /// The passkey (WebAuthn) relying party; passkeys are unavailable without it.
     pub passkeys: Option<Arc<crate::passkeys::PasskeyRuntime>>,
+    /// Administrator backups and restore; absent for in-memory databases.
+    pub backups: Option<Arc<crate::backups::BackupService>>,
 }
 
 impl AppState {
@@ -116,6 +119,12 @@ impl AppState {
         self
     }
 
+    /// Enable the administrator backup listing and restore.
+    pub fn with_backups(mut self, backups: Arc<crate::backups::BackupService>) -> Self {
+        self.backups = Some(backups);
+        self
+    }
+
     pub fn new(pool: SqlitePool) -> Self {
         Self {
             pool,
@@ -132,6 +141,7 @@ impl AppState {
             image_fetcher: Arc::new(crate::image_import::HttpImageFetcher),
             oidc: None,
             passkeys: None,
+            backups: None,
         }
     }
 }
@@ -146,6 +156,8 @@ pub enum DatabaseError {
     Connect(#[source] sqlx::Error),
     #[error("Rust database migration failed")]
     Migration(#[source] sqlx::migrate::MigrateError),
+    #[error("pre-migration backup failed, the database was not migrated: {0}")]
+    Backup(#[from] crate::pre_migrate_backup::BackupError),
     #[error("invalid account email or password")]
     InvalidAccount,
     #[error("account already exists or cannot be stored")]
@@ -174,7 +186,31 @@ pub async fn connect(url: &str) -> Result<SqlitePool, DatabaseError> {
         return Err(DatabaseError::InvalidUrl);
     }
     let options = SqliteConnectOptions::from_str(url).map_err(|_| DatabaseError::InvalidUrl)?;
-    connect_options(options, url_is_in_memory(url)).await
+    connect_options(options, url_is_in_memory(url), BackupChoice::FromEnv).await
+}
+
+/// Like [`connect`], with explicit pre-migration backup settings instead of
+/// the environment (`None` disables the backup).
+pub async fn connect_with_backup(
+    url: &str,
+    backup: Option<PreMigrateBackup>,
+) -> Result<SqlitePool, DatabaseError> {
+    if !url.starts_with("sqlite:") {
+        return Err(DatabaseError::InvalidUrl);
+    }
+    let options = SqliteConnectOptions::from_str(url).map_err(|_| DatabaseError::InvalidUrl)?;
+    connect_options(
+        options,
+        url_is_in_memory(url),
+        BackupChoice::Explicit(backup),
+    )
+    .await
+}
+
+/// Where the pre-migration backup settings come from.
+enum BackupChoice {
+    FromEnv,
+    Explicit(Option<PreMigrateBackup>),
 }
 
 /// Open a database that is later published as a single file (the snapshot
@@ -191,7 +227,7 @@ pub(crate) async fn connect_file(path: &std::path::Path) -> Result<SqlitePool, D
         .connect_with(options)
         .await
         .map_err(DatabaseError::Connect)?;
-    prepare(pool).await
+    prepare(pool, None).await
 }
 
 const BUSY_TIMEOUT: Duration = Duration::from_secs(10);
@@ -227,8 +263,17 @@ fn options_are_in_memory(options: &SqliteConnectOptions) -> bool {
 async fn connect_options(
     options: SqliteConnectOptions,
     in_memory_url: bool,
+    backup: BackupChoice,
 ) -> Result<SqlitePool, DatabaseError> {
     let in_memory = in_memory_url || options_are_in_memory(&options);
+    let backup = if in_memory {
+        None
+    } else {
+        match backup {
+            BackupChoice::FromEnv => PreMigrateBackup::from_env(options.get_filename())?,
+            BackupChoice::Explicit(settings) => settings,
+        }
+    };
     let options = options
         .create_if_missing(true)
         .foreign_keys(true)
@@ -251,11 +296,15 @@ async fn connect_options(
         .connect_with(options)
         .await
         .map_err(DatabaseError::Connect)?;
-    prepare(pool).await
+    prepare(pool, backup.as_ref()).await
 }
 
-/// Check ownership of the database and run the migrations.
-async fn prepare(pool: SqlitePool) -> Result<SqlitePool, DatabaseError> {
+/// Check ownership of the database, snapshot it when migrations are pending
+/// (see [`pre_migrate_backup`]) and run the migrations.
+async fn prepare(
+    pool: SqlitePool,
+    backup: Option<&PreMigrateBackup>,
+) -> Result<SqlitePool, DatabaseError> {
     let tables: Vec<String> = sqlx::query_scalar(
         "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
     )
@@ -283,11 +332,24 @@ async fn prepare(pool: SqlitePool) -> Result<SqlitePool, DatabaseError> {
             return Err(DatabaseError::ForeignDatabase);
         }
     }
-    sqlx::migrate!()
-        .run(&pool)
-        .await
-        .map_err(DatabaseError::Migration)?;
+    if let Err(error) = migrate_with_backup(&pool, &sqlx::migrate!(), backup).await {
+        pool.close().await;
+        return Err(error);
+    }
     Ok(pool)
+}
+
+/// Back up first when migrations are pending, then migrate. A failed backup
+/// aborts before the database is touched.
+pub(crate) async fn migrate_with_backup(
+    pool: &SqlitePool,
+    migrator: &sqlx::migrate::Migrator,
+    backup: Option<&PreMigrateBackup>,
+) -> Result<(), DatabaseError> {
+    if let Some(settings) = backup {
+        pre_migrate_backup::backup_if_pending(pool, migrator, settings).await?;
+    }
+    migrator.run(pool).await.map_err(DatabaseError::Migration)
 }
 
 pub async fn create_user(

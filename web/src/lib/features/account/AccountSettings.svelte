@@ -1009,7 +1009,7 @@
           />
           {#if profile.avatar_url && profile.avatar_source !== "gravatar"}
             <SharedButton
-              variant="ghost"
+              variant="danger-ghost"
               size="sm"
               class="quiet-danger"
               type="button"
@@ -1554,7 +1554,7 @@
               {/if}
             </div>
             <SharedButton
-              variant="ghost"
+              variant="danger-ghost"
               size="sm"
               class="quiet-danger"
               type="button"
@@ -1592,7 +1592,7 @@
       >
     </p>
     <SharedButton
-      variant="danger"
+      variant="danger-ghost"
       type="button"
       disabled={signOutBusy ||
         session.status !== "ready" ||
@@ -2185,24 +2185,10 @@
     justify-self: start;
   }
 
-  :global(.quiet-danger) {
-    color: var(--ink-muted);
-  }
-
   /* Icon-only revoke: a 20px glyph inside the 44px target. */
   .token-row :global(.quiet-danger.ui-button.ui-button > svg) {
     width: 20px;
     height: 20px;
-  }
-
-  :global(.quiet-danger:hover:not(:disabled)) {
-    border-color: transparent;
-    color: var(--danger);
-    background: color-mix(in srgb, var(--danger) 10%, transparent);
-  }
-
-  :global(.quiet-danger:focus-visible) {
-    color: var(--danger);
   }
 
   /* Rows */

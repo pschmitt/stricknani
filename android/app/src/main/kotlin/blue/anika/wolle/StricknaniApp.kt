@@ -5,7 +5,11 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import blue.anika.wolle.crash.CrashReportInstaller
 import blue.anika.wolle.data.errorreporting.ErrorReportingController
+import blue.anika.wolle.data.impersonation.SessionMode
+import blue.anika.wolle.data.impersonation.SessionNamespace
+import blue.anika.wolle.data.impersonation.isRestartProcess
 import blue.anika.wolle.data.settings.AppPreferencesRepository
+import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.data.timer.RunningTimerNotifier
 import blue.anika.wolle.data.timer.RunningTimers
 import blue.anika.wolle.data.update.UpdateAvailableNotifier
@@ -51,6 +55,9 @@ class StricknaniApp : Application(), Configuration.Provider, SingletonImageLoade
     @Inject lateinit var appPreferences: AppPreferencesRepository
     @Inject lateinit var errorReporting: ErrorReportingController
     @Inject @MediaClient lateinit var mediaOkHttpClient: OkHttpClient
+    // Injected here so it runs first: it fixes, before anything else asks, whether this process is
+    // an impersonation (see SessionMode).
+    @Inject lateinit var settingsRepository: SettingsRepository
 
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder().setWorkerFactory(workerFactory).build()
@@ -60,7 +67,9 @@ class StricknaniApp : Application(), Configuration.Provider, SingletonImageLoade
             .components { add(OkHttpNetworkFetcherFactory(callFactory = { mediaOkHttpClient })) }
             .diskCache {
                 DiskCache.Builder()
-                    .directory(context.cacheDir.resolve("image_cache").toOkioPath())
+                    .directory(
+                        context.cacheDir.resolve(SessionMode.imageCacheDirectory).toOkioPath()
+                    )
                     .maxSizeBytes(MAX_IMAGE_CACHE_BYTES)
                     .build()
             }
@@ -68,6 +77,8 @@ class StricknaniApp : Application(), Configuration.Provider, SingletonImageLoade
 
     override fun onCreate() {
         super.onCreate()
+        // The `:restart` process only hands the app over to a fresh process; it starts nothing.
+        if (isRestartProcess()) return
         CrashReportInstaller.install(this)
         if (BuildConfig.DEBUG) {
             Timber.plant(Timber.DebugTree())
@@ -75,6 +86,13 @@ class StricknaniApp : Application(), Configuration.Provider, SingletonImageLoade
         // Optional error reporting: inert unless this is a GitHub APK build, the server offers it
         // and the user has not switched it off.
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch { errorReporting.run() }
+        if (!SessionMode.impersonating) {
+            // An impersonation that ended (or died) leaves its database and queued uploads behind:
+            // they belong to no administrator's data and never outlive the session.
+            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+                SessionNamespace.wipeImpersonationData(::getDatabasePath, filesDir, cacheDir)
+            }
+        }
         NetworkStatus.start(this)
         syncNotifier.ensureChannel()
         runningTimerNotifier.ensureChannel()

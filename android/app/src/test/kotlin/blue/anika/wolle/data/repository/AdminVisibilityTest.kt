@@ -8,6 +8,8 @@ import blue.anika.wolle.data.api.dto.AdminUsersPageDto
 import blue.anika.wolle.data.api.dto.AuditDetailEnvelopeDto
 import blue.anika.wolle.data.api.dto.AuditPageDto
 import blue.anika.wolle.data.api.dto.CreateAdminUserRequest
+import blue.anika.wolle.data.api.dto.ImpersonationStartEnvelopeDto
+import blue.anika.wolle.data.api.dto.ImpersonationStopEnvelopeDto
 import blue.anika.wolle.data.api.dto.ResetPasswordEnvelopeDto
 import blue.anika.wolle.data.api.dto.ResetPasswordRequest
 import blue.anika.wolle.data.api.dto.SetUserActiveRequest
@@ -49,8 +51,12 @@ class AdminVisibilityTest {
     private class FakeAdminApi(val listUsersResult: () -> AdminUsersPageDto) : AdminApi {
         var listUsersCalls = 0
 
-        override suspend fun listAudit(page: Int, entity: String?, action: String?): AuditPageDto =
-            error("unused")
+        override suspend fun listAudit(
+            page: Int,
+            entity: String?,
+            action: String?,
+            user: Long?,
+        ): AuditPageDto = error("unused")
 
         override suspend fun getAuditEvent(id: Long): AuditDetailEnvelopeDto = error("unused")
 
@@ -71,6 +77,11 @@ class AdminVisibilityTest {
             id: Long,
             request: ResetPasswordRequest,
         ): ResetPasswordEnvelopeDto = error("unused")
+
+        override suspend fun startImpersonation(id: Long): ImpersonationStartEnvelopeDto =
+            error("unused")
+
+        override suspend fun stopImpersonation(): ImpersonationStopEnvelopeDto = error("unused")
     }
 
     private fun repo(

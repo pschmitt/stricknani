@@ -199,9 +199,8 @@ async fn token_user(
     allow_impersonation: bool,
 ) -> Result<i64, AuthError> {
     let hash = token_hash(token.as_bytes());
-    let (mut user_id, token_id, last_used_at, token_purpose, mut error_reporting, impersonated) =
-        sqlx::query_as::<_, (i64, i64, Option<i64>, String, i64, Option<i64>)>(
-            "SELECT users.id, api_tokens.id, api_tokens.last_used_at, api_tokens.purpose, \
+    let row = sqlx::query_as::<_, (i64, i64, Option<i64>, String, i64, Option<i64>)>(
+        "SELECT users.id, api_tokens.id, api_tokens.last_used_at, api_tokens.purpose, \
          users.error_reporting, \
          CASE WHEN api_tokens.impersonation_expires_at > unixepoch() \
               THEN api_tokens.impersonated_user_id END \
@@ -217,13 +216,33 @@ async fn token_user(
              WHERE identity.id = api_tokens.oidc_identity_id \
                AND identity.user_id = api_tokens.user_id \
                AND identity.provider_id = api_tokens.oidc_provider_id))",
-        )
-        .bind(hash)
-        .bind(purpose.is_some())
-        .bind(purpose)
-        .fetch_optional(pool)
-        .await?
-        .ok_or(AuthError::Unauthorized)?;
+    )
+    .bind(hash)
+    .bind(purpose.is_some())
+    .bind(purpose)
+    .fetch_optional(pool)
+    .await?;
+    let Some((
+        mut user_id,
+        token_id,
+        last_used_at,
+        token_purpose,
+        mut error_reporting,
+        impersonated,
+    )) = row
+    else {
+        // A bearer request may carry a native impersonation credential, which
+        // acts as the target account. Browser cookies never do.
+        if purpose != Some("browser")
+            && crate::impersonation::is_native_token(token)
+            && let Some((target_id, reporting)) =
+                crate::impersonation::native_target(pool, token).await?
+        {
+            crate::error_reporting::bind_user(target_id, reporting != 0);
+            return Ok(target_id);
+        }
+        return Err(AuthError::Unauthorized);
+    };
     if token_purpose == "api" {
         touch_last_used(pool, token_id, last_used_at);
     }

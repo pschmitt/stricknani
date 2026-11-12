@@ -16,6 +16,9 @@ struct AuditMeta {
     page: u32,
     per_page: u32,
     has_more: bool,
+    /// The account the list is filtered to, when `user` was given.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    user: Option<crate::audit_service::AuditFilterUser>,
 }
 
 #[derive(Serialize)]
@@ -85,6 +88,7 @@ async fn list_events(
                 "Audit filters are invalid",
             );
         }
+        Err(crate::audit_service::AuditError::InvalidUser) => return invalid_user(),
         Err(_) => return internal_error(),
     };
     match crate::audit_service::list_events(
@@ -101,6 +105,7 @@ async fn list_events(
                 page: page.page,
                 per_page: page.per_page,
                 has_more: page.has_more,
+                user: page.user,
             },
         })
         .into_response(),
@@ -114,8 +119,22 @@ async fn list_events(
             "invalid_query",
             "Audit filters are invalid",
         ),
+        Err(crate::audit_service::AuditError::InvalidUser) => invalid_user(),
+        Err(crate::audit_service::AuditError::UserNotFound) => api_error(
+            StatusCode::NOT_FOUND,
+            "user_not_found",
+            "User was not found",
+        ),
         Err(crate::audit_service::AuditError::Database) => internal_error(),
     }
+}
+
+fn invalid_user() -> Response {
+    api_error(
+        StatusCode::UNPROCESSABLE_ENTITY,
+        "invalid_user_filter",
+        "The user filter is invalid",
+    )
 }
 
 fn internal_error() -> Response {

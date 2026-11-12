@@ -138,6 +138,7 @@ fun AdminIdentitiesSheet(viewModel: AdminIdentitiesViewModel) {
             state = it,
             onSubmitPassword = viewModel::submitPassword,
             onUseProvider = viewModel::confirmWithProvider,
+            onUsePasskey = viewModel::confirmWithPasskey,
             onDismiss = viewModel::dismissSheet,
         )
     }

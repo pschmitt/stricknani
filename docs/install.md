@@ -28,7 +28,14 @@ docker run -d \
 This example binds to loopback for local HTTP use. The container stores its
 SQLite database and uploads under `/var/lib/stricknani`; keep that volume
 across restarts (the database runs in WAL mode: back it up with `sqlite3 .backup`,
-not by copying the file alone). Check `http://localhost:7674/healthz`, then create the first
+not by copying the file alone). On startup, before applying pending schema
+migrations to an existing database, the server writes a verified snapshot to
+`/var/lib/stricknani/backups/pre-migrate-<from>-to-<to>-<timestamp>.sqlite3`
+(`STRICKNANI_BACKUP_DIR` changes the directory,
+`STRICKNANI_PRE_MIGRATE_BACKUP=false` turns it off,
+`STRICKNANI_PRE_MIGRATE_BACKUP_RETENTION` keeps the newest 10 by default) and
+refuses to start if that fails. The NixOS module additionally backs up before
+every package change; see `docs/rust-nixos.md`. Check `http://localhost:7674/healthz`, then create the first
 administrator with a password from standard input:
 
 ```sh

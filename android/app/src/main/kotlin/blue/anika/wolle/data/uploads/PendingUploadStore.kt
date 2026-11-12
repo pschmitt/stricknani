@@ -4,6 +4,7 @@ import android.content.Context
 import android.database.Cursor
 import android.net.Uri
 import android.provider.OpenableColumns
+import blue.anika.wolle.data.impersonation.SessionMode
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import java.util.UUID
@@ -24,7 +25,8 @@ class PendingUploadStore @Inject constructor(@ApplicationContext private val con
             val resolver = context.contentResolver
             val fileName = queryFileName(uri) ?: "photo-${UUID.randomUUID()}.jpg"
             val contentType = resolver.getType(uri) ?: "application/octet-stream"
-            val targetDirectory = File(context.filesDir, UPLOAD_DIRECTORY).apply { mkdirs() }
+            val targetDirectory =
+                File(context.filesDir, SessionMode.uploadsDirectory).apply { mkdirs() }
             val target = File(targetDirectory, "${UUID.randomUUID()}-${safeName(fileName)}")
             resolver.openInputStream(uri).use { input ->
                 requireNotNull(input) { "Unable to read selected file" }
@@ -43,7 +45,7 @@ class PendingUploadStore @Inject constructor(@ApplicationContext private val con
 
     /** Picked files still waiting for their upload (they belong to the signed-in account). */
     fun hasPending(): Boolean =
-        File(context.filesDir, UPLOAD_DIRECTORY).list()?.isNotEmpty() == true
+        File(context.filesDir, SessionMode.uploadsDirectory).list()?.isNotEmpty() == true
 
     fun multipart(upload: PendingUpload): MultipartBody.Part {
         val file = File(upload.path)
@@ -72,7 +74,6 @@ class PendingUploadStore @Inject constructor(@ApplicationContext private val con
         name.substringAfterLast('/').replace(UNSAFE_FILENAME, "_").take(MAX_FILENAME_LENGTH)
 
     private companion object {
-        const val UPLOAD_DIRECTORY = "pending-uploads"
         const val MAX_FILENAME_LENGTH = 120
         val UNSAFE_FILENAME = Regex("[^A-Za-z0-9._-]")
     }

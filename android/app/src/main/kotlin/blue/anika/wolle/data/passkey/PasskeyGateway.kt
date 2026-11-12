@@ -1,6 +1,7 @@
 package blue.anika.wolle.data.passkey
 
 import android.content.Context
+import android.os.Build
 import androidx.credentials.CreatePublicKeyCredentialRequest
 import androidx.credentials.CreatePublicKeyCredentialResponse
 import androidx.credentials.CredentialManager
@@ -35,6 +36,9 @@ fun interface PasskeyHost {
     fun activityContext(): Context
 }
 
+/** Credential Manager passkeys need Android 9 (API 28) with Google Play services below Android 14. */
+private const val PASSKEY_MIN_SDK = 28
+
 /** The result of one Credential Manager call. */
 sealed interface PasskeyOutcome {
     /** The response JSON the server verifies (`registrationResponseJson` or the assertion). */
@@ -49,6 +53,9 @@ sealed interface PasskeyOutcome {
  * is.
  */
 interface PasskeyGateway {
+    /** This device can do passkeys at all (Android 9+; the provider may still say no later). */
+    fun isSupported(): Boolean
+
     suspend fun create(host: PasskeyHost, requestJson: String): PasskeyOutcome
 
     suspend fun get(host: PasskeyHost, requestJson: String): PasskeyOutcome
@@ -56,6 +63,8 @@ interface PasskeyGateway {
 
 @Singleton
 class CredentialManagerGateway @Inject constructor() : PasskeyGateway {
+
+    override fun isSupported(): Boolean = Build.VERSION.SDK_INT >= PASSKEY_MIN_SDK
 
     override suspend fun create(host: PasskeyHost, requestJson: String): PasskeyOutcome {
         val context = host.activityContext()

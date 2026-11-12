@@ -74,6 +74,17 @@
             android:exported="false"
             android:permission="android.permission.BIND_JOB_SERVICE" />
 
+        <!-- Restarts the app in a new process when an impersonation starts or ends (the app's
+             identity is fixed per process). Own process, no UI, never in Recents. -->
+        <activity
+            android:name=".data.impersonation.ProcessRestartActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:process=":restart"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

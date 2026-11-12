@@ -95,6 +95,7 @@ const knownActions: Record<
     icon: "action-update",
     messageKey: msg("Title image changed"),
   },
+  backup_restored: { icon: "reset", messageKey: msg("Backup restored") },
   impersonation_started: {
     icon: "action-default",
     messageKey: msg("Impersonation started"),

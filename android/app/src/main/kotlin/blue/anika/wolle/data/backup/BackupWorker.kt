@@ -8,6 +8,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import blue.anika.wolle.data.export.DataExportNotifier
 import blue.anika.wolle.data.export.ExportResult
+import blue.anika.wolle.data.impersonation.SessionMode
 import blue.anika.wolle.data.settings.AppPreferencesRepository
 import blue.anika.wolle.data.settings.SettingsRepository
 import dagger.assisted.Assisted
@@ -45,6 +46,8 @@ constructor(
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
+        // Never back up the data of an account the administrator is only acting as.
+        if (SessionMode.impersonating) return Result.success()
         val folderUriString = appPreferencesRepository.scheduledBackupFolderUri.first()
         if (folderUriString.isNullOrBlank()) return Result.failure()
         val treeUri = Uri.parse(folderUriString)

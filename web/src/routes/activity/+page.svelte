@@ -8,13 +8,14 @@
   const userId = $derived(session.data?.user?.id ?? null);
 </script>
 
-<svelte:head><title>Stricknani · {t("Activity", locale)}</title></svelte:head>
+<svelte:head><title>Stricknani · {t("My activity", locale)}</title></svelte:head
+>
 
 <section
   class="page-container page-container--compact"
   aria-labelledby="activity-title"
 >
-  <PageHeader title={t("Activity", locale)} titleId="activity-title" />
+  <PageHeader title={t("My activity", locale)} titleId="activity-title" />
   {#if userId !== null}
     <ActivityFeed ownerId={userId} {locale} full />
   {/if}

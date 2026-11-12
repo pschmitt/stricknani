@@ -50,6 +50,7 @@ import blue.anika.wolle.data.api.dto.ProjectStatus
 import blue.anika.wolle.data.api.v2.ImportJobDto
 import blue.anika.wolle.ui.admin.AdminAccountsScreen
 import blue.anika.wolle.ui.admin.AdminAuditScreen
+import blue.anika.wolle.ui.admin.AdminBackupsScreen
 import blue.anika.wolle.ui.categories.CategoriesScreen
 import blue.anika.wolle.ui.common.AccountAvatar
 import blue.anika.wolle.ui.common.MutationFeedback
@@ -485,6 +486,7 @@ fun StricknaniNavHost(
                         onCreateClick = { navController.navigate(Route.Create) },
                         onGaugeClick = { navController.navigate(Route.Gauge) },
                         onTrashClick = { navController.navigate(Route.Trash) },
+                        onActivityClick = { navController.navigate(Route.Activity) },
                         onSearchClick = { paletteOpen = true },
                     )
                 }
@@ -501,8 +503,9 @@ fun StricknaniNavHost(
                         category = SettingsCategory.valueOf(route.categoryName),
                         onBack = { navController.navigateUp() },
                         onShowLibraries = { navController.navigate(Route.Libraries) },
-                        onOpenAdminActivity = { navController.navigate(Route.AdminAudit) },
+                        onOpenAdminActivity = { navController.navigate(Route.AdminAudit()) },
                         onOpenAdminAccounts = { navController.navigate(Route.AdminAccounts) },
+                        onOpenAdminBackups = { navController.navigate(Route.AdminBackups) },
                         onOpenCategory = {
                             navController.navigate(Route.SettingsCategoryRoute(it.name))
                         },
@@ -542,6 +545,9 @@ fun StricknaniNavHost(
                         onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
                     )
                 }
+                screen<Route.AdminBackups>(motion) {
+                    AdminBackupsScreen(onBack = { navController.navigateUp() })
+                }
                 screen<Route.AdminAccounts>(motion) {
                     AdminAccountsScreen(
                         onBack = { navController.navigateUp() },
@@ -549,6 +555,9 @@ fun StricknaniNavHost(
                             navController.navigate(projectsOwnedByRoute(id))
                         },
                         onOpenUserYarns = { id -> navController.navigate(yarnsOwnedByRoute(id)) },
+                        onOpenUserActivity = { id ->
+                            navController.navigate(Route.AdminAudit(userId = id))
+                        },
                     )
                 }
                 screen<Route.Libraries>(motion) {

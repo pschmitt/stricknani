@@ -226,6 +226,39 @@ internal fun GravatarToggleRow(checked: Boolean, enabled: Boolean, onChange: (Bo
 }
 
 /**
+ * "Unlock to confirm dangerous actions": the whole row toggles. A per-device choice (on by
+ * default); the supporting line says what it covers, or asks for a screen lock when there is none.
+ */
+@Composable
+internal fun DeviceUnlockToggleRow(
+    checked: Boolean,
+    needsScreenLock: Boolean,
+    onChange: (Boolean) -> Unit,
+) {
+    SettingsListItem(
+        modifier =
+            Modifier.fillMaxWidth()
+                .testTag("device-unlock-toggle")
+                .toggleable(value = checked, role = Role.Switch, onValueChange = onChange),
+        headlineContent = { Text(stringResource(R.string.device_unlock_toggle)) },
+        supportingContent = {
+            Column {
+                Text(stringResource(R.string.device_unlock_toggle_help))
+                if (needsScreenLock) {
+                    Text(
+                        stringResource(R.string.device_unlock_no_screen_lock),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(top = 4.dp).testTag("device-unlock-hint"),
+                    )
+                }
+            }
+        },
+        trailingContent = { Switch(checked = checked, onCheckedChange = null) },
+    )
+}
+
+/**
  * "Remove location and camera data from new photos": the whole row toggles. The server removes the
  * EXIF/XMP metadata of photos the account uploads from now on; stored photos are never changed.
  */

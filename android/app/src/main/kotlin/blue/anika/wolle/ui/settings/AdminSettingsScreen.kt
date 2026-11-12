@@ -28,13 +28,17 @@ import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.common.PhosphorIcons
 
-/** Settings -> Admin: the two administrator tools. Only reachable when the server says admin. */
+/**
+ * Settings -> Admin: the administrator tools (accounts, audit log, backups). Only reachable when
+ * the server says admin.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun AdminSettingsScreen(
     onBack: () -> Unit,
     onOpenActivity: () -> Unit,
     onOpenAccounts: () -> Unit,
+    onOpenBackups: () -> Unit,
 ) {
     Scaffold(
         topBar = {
@@ -71,6 +75,13 @@ internal fun AdminSettingsScreen(
                         subtitle = stringResource(R.string.admin_activity_subtitle),
                         tag = "admin-open-activity",
                         onClick = onOpenActivity,
+                    )
+                    AdminRow(
+                        icon = PhosphorIcons.FloppyDisk,
+                        title = stringResource(R.string.backups_title),
+                        subtitle = stringResource(R.string.admin_backups_subtitle),
+                        tag = "admin-open-backups",
+                        onClick = onOpenBackups,
                     )
                 }
             }

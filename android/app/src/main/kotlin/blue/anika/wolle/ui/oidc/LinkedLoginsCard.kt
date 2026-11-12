@@ -123,6 +123,7 @@ fun LinkedLoginsCard(viewModel: LinkedLoginsViewModel = hiltViewModel()) {
             state = it,
             onSubmitPassword = viewModel::submitPassword,
             onUseProvider = viewModel::confirmWithProvider,
+            onUsePasskey = viewModel::confirmWithPasskey,
             onDismiss = viewModel::dismissSheet,
         )
     }

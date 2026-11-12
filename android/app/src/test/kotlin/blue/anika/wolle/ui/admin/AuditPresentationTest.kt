@@ -3,6 +3,7 @@ package blue.anika.wolle.ui.admin
 import androidx.compose.ui.graphics.Color
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.AdminUserDto
+import blue.anika.wolle.data.api.dto.AuditClientDto
 import blue.anika.wolle.data.api.dto.AuditEventDto
 import blue.anika.wolle.data.api.dto.AuditMediaDto
 import blue.anika.wolle.data.api.dto.AuditResourceDto
@@ -450,5 +451,67 @@ class AuditPresentationTest {
         assertNull(file.inTrashState())
         assertNull(file.restoreRef())
         assertEquals(AuditTarget.InTrash(false), file.target())
+    }
+
+    private val strings =
+        mapOf(
+            R.string.admin_client_system to "System",
+            R.string.admin_client_unknown to "Unknown client",
+            R.string.admin_client_web to "Web",
+            R.string.admin_client_android to "Android",
+            R.string.admin_client_api to "API",
+        )
+
+    private fun label(client: AuditClientDto?) = client.clientLabel { strings.getValue(it) }
+
+    @Test
+    fun `the client chip shows the server label, like the website`() {
+        val firefox =
+            AuditClientDto(kind = "web", label = "Firefox 159 \u00b7 Linux", userAgent = "Mozilla")
+        assertEquals("Firefox 159 \u00b7 Linux", label(firefox))
+        assertEquals(AuditClientKind.Web, firefox.clientKind())
+        val app = AuditClientDto(kind = "android", label = "Android 1.7.1 (debug)")
+        assertEquals("Android 1.7.1 (debug)", label(app))
+        assertEquals(AuditClientKind.Android, app.clientKind())
+    }
+
+    @Test
+    fun `the client chip names the kind when there is no label`() {
+        assertEquals("Web", label(AuditClientDto(kind = "web")))
+        assertEquals("Android", label(AuditClientDto(kind = "android", label = "  ")))
+        assertEquals("API", label(AuditClientDto(kind = "api")))
+        assertEquals("System", label(AuditClientDto(kind = "system")))
+    }
+
+    @Test
+    fun `old events and unknown kinds read as an unknown client`() {
+        assertEquals("Unknown client", label(null))
+        assertEquals("Unknown client", label(AuditClientDto(kind = "unknown")))
+        assertEquals("Unknown client", label(AuditClientDto(kind = "toaster", label = "x")))
+        assertEquals(AuditClientKind.Unknown, null.clientKind())
+    }
+
+    @Test
+    fun `a backup restore is a server event with its details`() {
+        val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+        val event =
+            json.decodeFromString<AuditEventDto>(
+                """{"id":7,"actor_email":null,"entity_type":"server","entity_id":0,
+                "action":"backup_restored","created_at":"2026-01-02T03:04:05.000000Z",
+                "resource":{"name":"stricknani-20260101-020000.tar.gz"},
+                "server":{"backup":"stricknani-20260101-020000.tar.gz",
+                "pre_restore":"pre-restore-20260102-030000.sqlite3","media":"add_missing",
+                "actor_email":"admin@example.invalid"}}"""
+            )
+        assertEquals("add_missing", event.server?.media)
+        assertEquals("pre-restore-20260102-030000.sqlite3", event.server?.preRestore)
+        assertEquals("admin@example.invalid", event.server?.actorEmail)
+        assertEquals(
+            R.string.admin_action_backup_restored,
+            auditActionPresentation(event.action).labelRes,
+        )
+        assertEquals(R.string.admin_entity_server, entityTypeLabelRes("server"))
+        assertTrue("server" in auditEntityTypes)
+        assertNull(event.copy(server = null).server)
     }
 }

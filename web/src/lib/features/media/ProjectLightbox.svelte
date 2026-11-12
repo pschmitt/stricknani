@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CloseButton from "#lib/components/CloseButton.svelte";
   import Button from "#lib/components/Button.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import PhotoEditor from "./PhotoEditor.svelte";
@@ -270,13 +271,9 @@
             <span class="lightbox-edit-label">{t("Edit", locale)}</span>
           </Button>
         {/if}
-        <Button
-          class="lightbox-close"
-          variant="secondary"
-          size="md"
-          icon="close"
-          type="button"
-          aria-label={t("Close image viewer", locale)}
+        <CloseButton
+          {locale}
+          label={t("Close image viewer", locale)}
           onclick={close}
         />
       </header>
@@ -415,7 +412,6 @@
     align-self: center;
   }
 
-  :global(.lightbox-close),
   :global(.lightbox-step) {
     width: 44px;
     height: 44px;

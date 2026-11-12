@@ -12,6 +12,7 @@ import blue.anika.wolle.data.oidc.ReauthAction
 import blue.anika.wolle.data.oidc.ReauthProof
 import blue.anika.wolle.data.oidc.ReauthTarget
 import blue.anika.wolle.data.settings.SettingsRepository
+import blue.anika.wolle.ui.common.DangerousActionGuard
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.oidc.DEFAULT_PROVIDER_NAME
 import blue.anika.wolle.ui.oidc.ReauthRequest
@@ -54,6 +55,7 @@ constructor(
     private val oidc: OidcCoordinator,
     private val settings: SettingsRepository,
     private val feedback: MutationFeedback,
+    private val guard: DangerousActionGuard,
 ) : ViewModel() {
     private val _state = MutableStateFlow(AdminIdentitiesState())
     val state: StateFlow<AdminIdentitiesState> = _state.asStateFlow()
@@ -115,6 +117,10 @@ constructor(
         val identity = _state.value.confirmUnlink ?: return
         val user = _state.value.user ?: return
         _state.update { it.copy(confirmUnlink = null) }
+        guard.confirm(R.string.unlock_reason_unlink_login) { beginAdminUnlink(identity, user) }
+    }
+
+    private fun beginAdminUnlink(identity: OidcIdentity, user: AdminUserDto) {
         pendingUnlink = identity
         viewModelScope.launch {
             // What the administrator can confirm with is about *their own* account.
@@ -139,6 +145,9 @@ constructor(
     fun submitPassword(password: String) = stepUp.submitPassword(password)
 
     fun confirmWithProvider() = stepUp.useProvider()
+
+    /** Confirms with one of the account's passkeys (offered by the sheet when it has one). */
+    fun confirmWithPasskey(host: blue.anika.wolle.data.passkey.PasskeyHost) = stepUp.usePasskey(host)
 
     private suspend fun unlinkWith(proof: ReauthProof) {
         val identity = pendingUnlink ?: return

@@ -98,6 +98,98 @@ PostgreSQL URLs are rejected (the legacy module's PostgreSQL backup went away
 with the Python backend). A backup does not make legacy Python data usable in
 the Rust schema.
 
+## Backups and upgrades
+
+All backups go to `backup.dir` (default `<dataDir>/backups`). The module also
+passes it to the server as `STRICKNANI_BACKUP_DIR`, and the service may write
+there. Three kinds of files live in it:
+
+| File | Written by | When |
+| --- | --- | --- |
+| `stricknani-<YYYYmmdd-HHMMSS>.tar.gz` | scheduled job (`backup.schedule`, `backup.retention`) | nightly; database and media |
+| `predeploy-<version>-<YYYYmmdd-HHMMSS>.sqlite3` | module, `ExecStartPre` | the service starts with a different package |
+| `pre-migrate-<from>-to-<to>-<YYYYmmdd-HHMMSS>.sqlite3` | server | startup finds pending schema migrations |
+
+So bumping the pin needs no manual backup; check that a `predeploy-*` file
+appeared after the rollout. All times are UTC and the files are mode 0600.
+
+**Pre-deploy backup** (`backup.beforeUpgrade.enable`, default `true`;
+`backup.beforeUpgrade.retention`, default 10). Before every start the module
+compares the store path of `services.stricknani.package` with the one recorded
+in `<dataDir>/.predeploy-backup-package`. If they differ and the database
+exists, it runs `sqlite3 .backup`, checks the copy with
+`PRAGMA integrity_check`, prunes `predeploy-*` beyond the retention (nothing
+else) and records the new path. If the backup fails, the service does not start
+and the next attempt retries. The record is written right after the backup, not
+after a successful start: a new version that crash-loops therefore does not take
+a backup per attempt and push the real pre-upgrade copy out of the retention.
+Restarts with the same package, and configuration-only changes, take no backup.
+A first installation (no database yet) takes none either.
+
+**Pre-migration backup** (`backup.beforeMigration.enable`, default `true`;
+`backup.beforeMigration.retention`, default 10; environment
+`STRICKNANI_PRE_MIGRATE_BACKUP`, `STRICKNANI_PRE_MIGRATE_BACKUP_RETENTION`).
+This is done by the server itself, so it also protects container and manual
+installs, and a NixOS deployment that disabled the pre-deploy backup. At startup
+the server compares the migrations recorded in `_sqlx_migrations` with the
+embedded ones. A new, empty database or an up-to-date one needs no backup. With
+pending migrations the server writes a `VACUUM INTO` snapshot (consistent with
+the WAL), verifies it with `PRAGMA integrity_check` and only then migrates. If
+the snapshot cannot be written or verified, startup fails with an error and the
+database is not changed. It logs one info line with the path and size, never
+contents. Pruning only touches `pre-migrate-*.sqlite3`. Outside NixOS the
+directory is `STRICKNANI_BACKUP_DIR`, default `backups` next to the database
+file.
+
+Both layers complement each other: the module covers every version bump, the
+server guarantees a copy right before a schema change on any installation.
+
+To restore a snapshot, stop the service and replace the database file with the
+copy (remove stale `-wal` and `-shm` files next to it).
+
+`nix flake check` includes `predeploy-backup`, a NixOS VM test with a stub
+server package that checks: no backup on first start or on a same-package
+restart, and exactly one verified backup after a package change.
+
+## Admin backups and restore
+
+Administrators get a Backups view (web `/app/admin/backups`, the Android
+Admin screen; API `GET /api/v2/admin/backups`). It lists the files in the
+backup directory, `STRICKNANI_BACKUP_DIR` (the module sets it to
+`services.stricknani.backup.dir`; elsewhere it defaults to `backups` next to the
+database file): the nightly `stricknani-<ts>.tar.gz` (`database.sqlite3` plus
+`media/`), `predeploy-*`, `pre-migrate-*` and `pre-restore-*` database copies,
+and any other `*.sqlite3` / `*.tar.gz` file (shown as "manual"). Only regular
+files of that directory are listed; symlinks and hidden files are ignored.
+Downloading backups is deliberately not offered: they contain every account's
+data.
+
+A restore needs an administrator, a recent re-authentication (action
+`restore_backup` of `POST /api/v2/account/reauth`) and the exact backup name.
+The server first writes `pre-restore-<ts>.sqlite3` (`VACUUM INTO` plus an
+integrity check; the restore aborts if that fails), then stages the chosen
+database next to it and persists `.restore-request.json`. It rejects writes
+from then on and stops with exit status 75. On the next start, before the
+database pool opens, the swap runs: the live database and its `-wal`/`-shm`
+move aside, the staged file takes its place, the migrations run (a backup of an
+older schema is migrated forward; one from a newer server is refused), the
+audit event `backup_restored` is recorded and the aside files are deleted. If
+the restored database cannot be opened or migrated the original files are put
+back and the failure is shown in the Backups view. A request older than an hour
+is discarded.
+
+The module's unit has `RestartForceExitStatus = [ 75 ]`, so systemd restarts the
+server within `RestartSec`. Without a supervisor (for example `just run`) the
+server exits and the restore completes the next time you start it; set
+`STRICKNANI_RESTORE_AUTO_RESTART=false` to keep it running after staging and
+restart it yourself. A container needs a restart policy.
+
+Restoring an archive can add the media files that are missing
+(`media: "add_missing"`); it never overwrites or deletes a file. After a
+restore the server's data epoch (`data_epoch` in `GET /api/v2/meta`) changes,
+and the web and Android apps discard their caches and queued offline changes:
+changes made on a device but not yet synced are lost.
+
 ## Web Push
 
 Timer reminders reach browsers through Web Push when a user turns on

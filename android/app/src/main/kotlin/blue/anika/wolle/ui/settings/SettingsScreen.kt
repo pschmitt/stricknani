@@ -55,6 +55,7 @@ fun SettingsScreen(
     onCreateClick: () -> Unit,
     onGaugeClick: () -> Unit,
     onTrashClick: () -> Unit = {},
+    onActivityClick: () -> Unit = {},
     onSearchClick: () -> Unit = {},
     adminAccess: AdminAccessViewModel = hiltViewModel(),
     accountAvatar: AccountAvatarViewModel = hiltViewModel(),
@@ -121,6 +122,17 @@ fun SettingsScreen(
                                     tag = "more-trash",
                                     onClick = onTrashClick,
                                 )
+                            // The feed comes from the server: nothing to show in local mode.
+                            MoreLink.Activity ->
+                                if (!accountAvatar.isLocalMode) {
+                                    MoreActionRow(
+                                        icon = PhosphorIcons.ClockCounterClockwise,
+                                        title = stringResource(R.string.activity_page_title),
+                                        subtitle = stringResource(R.string.more_activity_subtitle),
+                                        tag = "more-activity",
+                                        onClick = onActivityClick,
+                                    )
+                                }
                             is MoreLink.Category ->
                                 SettingsCategoryRow(link.category, profile, onCategoryClick)
                         }

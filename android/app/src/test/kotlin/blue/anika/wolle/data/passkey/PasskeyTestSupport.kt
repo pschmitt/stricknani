@@ -12,6 +12,10 @@ internal val NoWindow = PasskeyHost { error("unit tests have no window") }
 
 /** A recording [PasskeyGateway]: the sheet shows what the test scripts. */
 internal class FakeGateway : PasskeyGateway {
+    var supported = true
+
+    override fun isSupported() = supported
+
     var created: PasskeyOutcome = PasskeyOutcome.Success("""{"id":"new","type":"public-key"}""")
     var got: PasskeyOutcome = PasskeyOutcome.Success("""{"id":"sig","type":"public-key"}""")
     val createRequests = mutableListOf<String>()
