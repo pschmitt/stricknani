@@ -6,13 +6,14 @@ import org.junit.Test
 
 class MoreLayoutTest {
     @Test
-    fun `links start with Create, then Categories, the gauge calculator and the Trash`() {
+    fun `links start with Create, then Categories, the gauge calculator, the Trash and My activity`() {
         assertEquals(
             listOf(
                 MoreLink.Create,
                 MoreLink.Category(SettingsCategory.Categories),
                 MoreLink.Gauge,
                 MoreLink.Trash,
+                MoreLink.Activity,
             ),
             moreLayout(isAdmin = true).links,
         )

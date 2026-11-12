@@ -26,6 +26,7 @@ describe("static entries", () => {
       "Categories",
       "Gauge calculator",
       "Trash",
+      "My activity",
       "Account",
       "About",
     ]);

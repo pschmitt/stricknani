@@ -1,10 +1,13 @@
 package blue.anika.wolle.ui.admin
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.toRoute
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.AuditDetailDto
 import blue.anika.wolle.data.api.dto.AuditEventDto
+import blue.anika.wolle.data.api.dto.AuditFilterUserDto
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.AdminException
 import blue.anika.wolle.data.repository.AdminFailure
@@ -13,6 +16,7 @@ import blue.anika.wolle.data.repository.TrashRepository
 import blue.anika.wolle.data.repository.toTrashFailure
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.common.MutationFeedback
+import blue.anika.wolle.ui.navigation.Route
 import blue.anika.wolle.ui.trash.restoreFailureRes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -24,10 +28,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** The filters the audit API supports: `entity` (project/yarn/category) and an exact `action`. */
-data class AuditFilter(val entity: String? = null, val action: String? = null) {
+/**
+ * The filters the audit API supports: `entity` (project/yarn/category), an exact `action` and the
+ * `user` whose events to show (as actor, subject or impersonator).
+ */
+data class AuditFilter(
+    val entity: String? = null,
+    val action: String? = null,
+    val userId: Long? = null,
+) {
     val isActive: Boolean
-        get() = entity != null || action != null
+        get() = entity != null || action != null || userId != null
 }
 
 /** What the list area shows. */
@@ -51,6 +62,8 @@ data class AuditListState(
     val isLoadingMore: Boolean = false,
     /** Paging failed; the rows already loaded stay visible with a "try again" row. */
     val loadMoreFailure: AdminFailure? = null,
+    /** The account the list is filtered to, as the server names it. */
+    val user: AuditFilterUserDto? = null,
 )
 
 sealed interface AuditDetailState {
@@ -73,8 +86,14 @@ constructor(
     private val trashRepository: TrashRepository,
     private val syncScheduler: SyncScheduler,
     private val feedback: MutationFeedback,
+    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(AuditListState())
+    private val _state =
+        MutableStateFlow(
+            AuditListState(
+                filter = AuditFilter(userId = savedStateHandle.toRoute<Route.AdminAudit>().userId)
+            )
+        )
     val state: StateFlow<AuditListState> = _state.asStateFlow()
 
     private val _detail = MutableStateFlow<AuditDetailState>(AuditDetailState.Closed)
@@ -107,6 +126,9 @@ constructor(
 
     fun clearFilters() = setFilter(AuditFilter())
 
+    /** Removes the user chip, keeping the entity and action filters. */
+    fun clearUser() = setFilter(_state.value.filter.copy(userId = null))
+
     private fun setFilter(filter: AuditFilter) {
         if (filter == _state.value.filter) return
         _state.update { AuditListState(filter = filter) }
@@ -131,12 +153,13 @@ constructor(
         }
         listJob = viewModelScope.launch {
             try {
-                val result = repository.auditPage(page, filter.entity, filter.action)
+                val result = repository.auditPage(page, filter.entity, filter.action, filter.userId)
                 _state.update {
                     it.copy(
                         events = if (reset) result.data else it.events + result.data,
                         page = result.meta.page,
                         hasMore = result.meta.hasMore,
+                        user = result.meta.user,
                         phase = AuditPhase.Ready,
                         isRefreshing = false,
                         isLoadingMore = false,

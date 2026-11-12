@@ -41,8 +41,8 @@ msgstr "Revoke"
 msgid "Import a pattern"
 msgstr ""
 
-#: src/import_service.rs:703 web/src/routes/+layout.svelte:290
-#: web/src/routes/+layout.svelte:387
+#: src/import_service.rs:703 web/src/routes/+layout.svelte:291
+#: web/src/routes/+layout.svelte:388
 msgid "Main navigation"
 msgstr "Main navigation"
 
@@ -52,7 +52,7 @@ msgstr "Main navigation"
 #: web/src/lib/features/admin/AdminUsers.svelte:797
 #: web/src/lib/features/projects/ProjectLibrary.svelte:291
 #: web/src/lib/features/projects/ProjectLibrary.svelte:302
-#: web/src/lib/nav-items.ts:20
+#: web/src/lib/nav-items.ts:21
 msgid "Projects"
 msgstr "Projects"
 
@@ -63,7 +63,7 @@ msgstr "Projects"
 #: web/src/lib/features/yarns/YarnDetail.svelte:359
 #: web/src/lib/features/yarns/YarnLibrary.svelte:213
 #: web/src/lib/features/yarns/YarnLibrary.svelte:224
-#: web/src/lib/nav-items.ts:21
+#: web/src/lib/nav-items.ts:22
 msgid "Yarns"
 msgstr "Yarns"
 
@@ -112,8 +112,8 @@ msgstr "Create yarn"
 msgid "Content fingerprint"
 msgstr ""
 
-#: src/import_service.rs:716 web/src/lib/features/admin/AdminAudit.svelte:270
-#: web/src/lib/features/admin/AdminAudit.svelte:361
+#: src/import_service.rs:716 web/src/lib/features/admin/AdminAudit.svelte:295
+#: web/src/lib/features/admin/AdminAudit.svelte:386
 #: web/src/lib/features/admin/AdminResource.svelte:237
 #: web/src/lib/features/admin/AdminResource.svelte:433
 #: web/src/lib/features/admin/DiffPanel.svelte:96
@@ -149,8 +149,8 @@ msgstr "Stitch sample"
 msgid "Other materials"
 msgstr "Other materials"
 
-#: src/import_service.rs:720 web/src/lib/features/admin/AdminAudit.svelte:268
-#: web/src/lib/features/admin/AdminAudit.svelte:360
+#: src/import_service.rs:720 web/src/lib/features/admin/AdminAudit.svelte:293
+#: web/src/lib/features/admin/AdminAudit.svelte:385
 #: web/src/lib/features/admin/AdminResource.svelte:235
 #: web/src/lib/features/admin/AdminResource.svelte:437
 #: web/src/lib/features/admin/DiffPanel.svelte:94
@@ -330,7 +330,7 @@ msgstr "A newer version was saved"
 msgid "A place for your projects and yarn."
 msgstr "A place for your projects and yarn."
 
-#: web/src/routes/+layout.svelte:205
+#: web/src/routes/+layout.svelte:206
 msgid "A quiet place to keep your knitting projects and yarn close."
 msgstr "A quiet place to keep your knitting projects and yarn close."
 
@@ -366,7 +366,7 @@ msgstr ""
 msgid "AI import is turned off on this server."
 msgstr "AI import is turned off on this server."
 
-#: web/src/lib/features/admin/audit-client.ts:59
+#: web/src/lib/features/admin/audit-client.ts:54
 msgid "API"
 msgstr "API"
 
@@ -378,8 +378,8 @@ msgstr "API access"
 msgid "API token revoked."
 msgstr "API token revoked."
 
-#: web/src/lib/palette/entries.ts:204 web/src/routes/+layout.svelte:361
-#: web/src/routes/about/+page.svelte:201 web/src/routes/more/+page.svelte:82
+#: web/src/lib/palette/entries.ts:204 web/src/routes/+layout.svelte:362
+#: web/src/routes/about/+page.svelte:201 web/src/routes/more/+page.svelte:88
 msgid "About"
 msgstr "About"
 
@@ -390,12 +390,12 @@ msgstr "About this policy"
 #: web/src/lib/features/account/AccountSettings.svelte:877
 #: web/src/lib/features/account/AccountSettings.svelte:885
 #: web/src/lib/palette/entries.ts:186 web/src/lib/palette/entries.ts:215
-#: web/src/routes/+layout.svelte:324 web/src/routes/+layout.svelte:327
-#: web/src/routes/+layout.svelte:335 web/src/routes/more/+page.svelte:54
+#: web/src/routes/+layout.svelte:325 web/src/routes/+layout.svelte:328
+#: web/src/routes/+layout.svelte:336 web/src/routes/more/+page.svelte:60
 msgid "Account"
 msgstr "Account"
 
-#: web/src/routes/+layout.svelte:371
+#: web/src/routes/+layout.svelte:372
 msgid "Account access"
 msgstr "Account access"
 
@@ -416,7 +416,7 @@ msgstr "Account registration"
 msgid "Account registration is unavailable."
 msgstr "Account registration is unavailable."
 
-#: web/src/routes/more/+page.svelte:57 web/src/routes/more/+page.svelte:58
+#: web/src/routes/more/+page.svelte:63 web/src/routes/more/+page.svelte:64
 msgid "Account settings"
 msgstr "Account settings"
 
@@ -424,12 +424,12 @@ msgstr "Account settings"
 msgid "Acknowledge that you saved the token before closing this dialog."
 msgstr "Acknowledge that you saved the token before closing this dialog."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:984
+#: web/src/lib/features/admin/AdminUsers.svelte:993
 #, python-brace-format
 msgid "Act as {email}? Everything you do is recorded as done by them and logged."
 msgstr "Act as {email}? Everything you do is recorded as done by them and logged."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:365
+#: web/src/lib/features/admin/AdminAudit.svelte:390
 msgid "Action"
 msgstr "Action"
 
@@ -446,8 +446,7 @@ msgstr "Active"
 msgid "Active API tokens"
 msgstr "Active API tokens"
 
-#: web/src/routes/activity/+page.svelte:11
-#: web/src/routes/activity/+page.svelte:17
+#: web/src/lib/features/admin/AdminUsers.svelte:815
 msgid "Activity"
 msgstr "Activity"
 
@@ -563,12 +562,12 @@ msgstr "Adjusted rows"
 msgid "Adjusted stitches"
 msgstr "Adjusted stitches"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:337
-#: web/src/lib/features/admin/AdminAudit.svelte:346
+#: web/src/lib/features/admin/AdminAudit.svelte:362
+#: web/src/lib/features/admin/AdminAudit.svelte:371
 #: web/src/lib/features/admin/AdminUsers.svelte:650
 #: web/src/lib/features/admin/AdminUsers.svelte:657
-#: web/src/lib/palette/entries.ts:195 web/src/routes/+layout.svelte:351
-#: web/src/routes/more/+page.svelte:69 web/src/routes/more/+page.svelte:73
+#: web/src/lib/palette/entries.ts:195 web/src/routes/+layout.svelte:352
+#: web/src/routes/more/+page.svelte:75 web/src/routes/more/+page.svelte:79
 msgid "Admin"
 msgstr "Admin"
 
@@ -581,12 +580,12 @@ msgstr "Admin sections"
 msgid "Administrator"
 msgstr "Administrator"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:940
+#: web/src/lib/features/admin/AdminUsers.svelte:949
 msgid "Administrator access"
 msgstr "Administrator access"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:154
-#: web/src/lib/features/admin/AdminAudit.svelte:192
+#: web/src/lib/features/admin/AdminAudit.svelte:159
+#: web/src/lib/features/admin/AdminAudit.svelte:199
 #: web/src/lib/features/admin/AdminResource.svelte:123
 #: web/src/lib/features/admin/AdminResource.svelte:151
 #: web/src/lib/features/admin/AdminUsers.svelte:160
@@ -598,6 +597,11 @@ msgstr "Administrator access"
 #: web/src/lib/features/projects/ProjectReader.svelte:300
 msgid "Administrator access is required."
 msgstr "Administrator access is required."
+
+#: web/src/lib/features/admin/audit-user-role.ts:43
+#, python-brace-format
+msgid "Affects {user}"
+msgstr "Affects {user}"
 
 #: web/src/lib/features/history/ChangeList.svelte:132
 msgid "After"
@@ -630,7 +634,7 @@ msgstr "All"
 msgid "All changes saved"
 msgstr "All changes saved"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:358
+#: web/src/lib/features/admin/AdminAudit.svelte:383
 msgid "All entities"
 msgstr "All entities"
 
@@ -705,7 +709,7 @@ msgstr "An admin updated {name}"
 msgid "An archived copy is ready."
 msgstr "An archived copy is ready."
 
-#: web/src/lib/features/admin/audit-client.ts:57
+#: web/src/lib/features/admin/audit-client.ts:52
 msgid "Android"
 msgstr "Android"
 
@@ -713,7 +717,7 @@ msgstr "Android"
 msgid "Android app and offline data"
 msgstr "Android app and offline data"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:372
+#: web/src/lib/features/admin/AdminAudit.svelte:397
 msgid "Any action"
 msgstr "Any action"
 
@@ -780,7 +784,7 @@ msgstr "Archiving is unavailable right now."
 msgid "Ask AI to improve extraction"
 msgstr "Ask AI to improve extraction"
 
-#: web/src/routes/+layout.svelte:375
+#: web/src/routes/+layout.svelte:376
 msgid "Ask an administrator if you need access."
 msgstr "Ask an administrator if you need access."
 
@@ -834,21 +838,21 @@ msgstr "Attachment uploaded"
 msgid "Attachments"
 msgstr "Attachments"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:409
+#: web/src/lib/features/admin/AdminAudit.svelte:452
 msgid "Audit events"
 msgstr "Audit events"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:195
+#: web/src/lib/features/admin/AdminAudit.svelte:204
 #: web/src/lib/features/admin/DiffPanel.svelte:80
 msgid "Audit events could not be loaded."
 msgstr "Audit events could not be loaded."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:337
+#: web/src/lib/features/admin/AdminAudit.svelte:362
 #: web/src/lib/features/admin/AdminTabs.svelte:20
 msgid "Audit log"
 msgstr "Audit log"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:540
+#: web/src/lib/features/admin/AdminAudit.svelte:598
 msgid "Audit pages"
 msgstr "Audit pages"
 
@@ -864,7 +868,7 @@ msgstr ""
 "only when they are created; the server stores a hash for later "
 "verification."
 
-#: web/src/routes/+layout.svelte:283
+#: web/src/routes/+layout.svelte:284
 msgid "Back"
 msgstr "Back"
 
@@ -889,7 +893,7 @@ msgstr "Back to More"
 #: web/src/lib/features/projects/ProjectReader.svelte:815
 #: web/src/lib/features/projects/ProjectReader.svelte:826
 #: web/src/lib/features/projects/ProjectReader.svelte:832
-#: web/src/routes/+layout.svelte:377
+#: web/src/routes/+layout.svelte:378
 msgid "Back to projects"
 msgstr "Back to projects"
 
@@ -957,9 +961,14 @@ msgstr ""
 msgid "Bulleted list"
 msgstr "Bulleted list"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:478
+#: web/src/lib/features/admin/AdminAudit.svelte:521
 msgid "By"
 msgstr "By"
+
+#: web/src/lib/features/admin/audit-user-role.ts:36
+#, python-brace-format
+msgid "By {user}"
+msgstr "By {user}"
 
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:221
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:241
@@ -1000,10 +1009,10 @@ msgstr "Can view"
 #: web/src/lib/features/account/AccountSettings.svelte:1495
 #: web/src/lib/features/account/BackupsSection.svelte:490
 #: web/src/lib/features/account/BackupsSection.svelte:526
-#: web/src/lib/features/admin/AdminUsers.svelte:948
-#: web/src/lib/features/admin/AdminUsers.svelte:999
-#: web/src/lib/features/admin/AdminUsers.svelte:1059
-#: web/src/lib/features/admin/AdminUsers.svelte:1135
+#: web/src/lib/features/admin/AdminUsers.svelte:957
+#: web/src/lib/features/admin/AdminUsers.svelte:1008
+#: web/src/lib/features/admin/AdminUsers.svelte:1068
+#: web/src/lib/features/admin/AdminUsers.svelte:1144
 #: web/src/lib/features/auth/ReauthDialog.svelte:177
 #: web/src/lib/features/categories/CategoryManager.svelte:341
 #: web/src/lib/features/gauge/SwatchSizeDialog.svelte:114
@@ -1031,7 +1040,7 @@ msgstr "Cannot get in?"
 #: web/src/lib/features/categories/CategoryManager.svelte:225
 #: web/src/lib/features/projects/ProjectLibrary.svelte:201
 #: web/src/lib/features/yarns/YarnLibrary.svelte:138
-#: web/src/lib/nav-items.ts:26 web/src/routes/more/+page.svelte:30
+#: web/src/lib/nav-items.ts:27 web/src/routes/more/+page.svelte:30
 msgid "Categories"
 msgstr "Categories"
 
@@ -1232,7 +1241,7 @@ msgstr "Clipboard access is unavailable. Select and copy the text manually."
 msgid "Close"
 msgstr "Close"
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:263
+#: web/src/lib/features/media/ProjectLightbox.svelte:279
 msgid "Close image viewer"
 msgstr "Close image viewer"
 
@@ -1383,12 +1392,12 @@ msgstr "Cover photo changed"
 msgid "Cover picture"
 msgstr "Cover picture"
 
-#: web/src/lib/nav-items.ts:22 web/src/routes/create/+page.svelte:41
+#: web/src/lib/nav-items.ts:23 web/src/routes/create/+page.svelte:41
 #: web/src/routes/more/+page.svelte:24 web/src/routes/share/+page.svelte:88
 msgid "Create"
 msgstr "Create"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:894
+#: web/src/lib/features/admin/AdminUsers.svelte:903
 msgid "Create a user account"
 msgstr "Create a user account"
 
@@ -1411,7 +1420,7 @@ msgid "Create token"
 msgstr "Create token"
 
 #: web/src/lib/features/admin/AdminUsers.svelte:666
-#: web/src/lib/features/admin/AdminUsers.svelte:958
+#: web/src/lib/features/admin/AdminUsers.svelte:967
 msgid "Create user"
 msgstr "Create user"
 
@@ -1430,7 +1439,7 @@ msgstr "Created"
 msgid "Creating account…"
 msgstr "Creating account…"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:957
+#: web/src/lib/features/admin/AdminUsers.svelte:966
 msgid "Creating…"
 msgstr "Creating…"
 
@@ -1642,11 +1651,11 @@ msgstr "Difficulty"
 msgid "Disable"
 msgstr "Disable"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1072
+#: web/src/lib/features/admin/AdminUsers.svelte:1081
 msgid "Disable account"
 msgstr "Disable account"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1027
+#: web/src/lib/features/admin/AdminUsers.svelte:1036
 msgid "Disable this account?"
 msgstr "Disable this account?"
 
@@ -1754,7 +1763,7 @@ msgstr "Dye lot"
 msgid "Each step needs a title of 256 characters or fewer."
 msgstr "Each step needs a title of 256 characters or fewer."
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:254
+#: web/src/lib/features/media/ProjectLightbox.svelte:270
 #: web/src/lib/features/projects/ProjectReader.svelte:1189
 #: web/src/lib/features/yarns/YarnDetail.svelte:587
 msgid "Edit"
@@ -1766,7 +1775,7 @@ msgid "Edit as Markdown"
 msgstr "Edit as Markdown"
 
 #: web/src/lib/features/media/PhotoEditor.svelte:302
-#: web/src/lib/features/media/ProjectLightbox.svelte:251
+#: web/src/lib/features/media/ProjectLightbox.svelte:267
 #: web/src/lib/features/media/ReorderableMedia.svelte:420
 #: web/src/lib/features/media/ReorderableMedia.svelte:421
 msgid "Edit photo"
@@ -1806,7 +1815,7 @@ msgstr "Effective date: 4 November 2026"
 msgid "Email"
 msgstr "Email"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:904
+#: web/src/lib/features/admin/AdminUsers.svelte:913
 msgid "Email address"
 msgstr "Email address"
 
@@ -1820,11 +1829,11 @@ msgstr "Empty list"
 msgid "Enable"
 msgstr "Enable"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1071
+#: web/src/lib/features/admin/AdminUsers.svelte:1080
 msgid "Enable account"
 msgstr "Enable account"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1026
+#: web/src/lib/features/admin/AdminUsers.svelte:1035
 msgid "Enable this account?"
 msgstr "Enable this account?"
 
@@ -1905,7 +1914,7 @@ msgstr "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
 msgid "Enter your current password."
 msgstr "Enter your current password."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:356
+#: web/src/lib/features/admin/AdminAudit.svelte:381
 msgid "Entity"
 msgstr "Entity"
 
@@ -2028,13 +2037,13 @@ msgstr "Fetching the page"
 msgid "File"
 msgstr "File"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:380
+#: web/src/lib/features/admin/AdminAudit.svelte:405
 #: web/src/lib/features/projects/ProjectLibrary.svelte:325
 #: web/src/lib/features/yarns/YarnLibrary.svelte:247
 msgid "Filter"
 msgstr "Filter"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:353
+#: web/src/lib/features/admin/AdminAudit.svelte:378
 msgid "Filter audit events"
 msgstr "Filter audit events"
 
@@ -2133,7 +2142,7 @@ msgstr "Gauge"
 #: web/src/lib/components/AuthFooter.svelte:20
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:218
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:232
-#: web/src/lib/nav-items.ts:27 web/src/routes/more/+page.svelte:39
+#: web/src/lib/nav-items.ts:28 web/src/routes/more/+page.svelte:39
 msgid "Gauge calculator"
 msgstr "Gauge calculator"
 
@@ -2259,7 +2268,7 @@ msgstr ""
 "including shared timers, continue until stopped."
 
 #: web/src/lib/features/home/HomeDashboard.svelte:132
-#: web/src/lib/nav-items.ts:19
+#: web/src/lib/nav-items.ts:20
 msgid "Home"
 msgstr "Home"
 
@@ -2365,12 +2374,12 @@ msgstr "Image restored from trash"
 msgid "Images"
 msgstr "Images"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:835
-#: web/src/lib/features/admin/AdminUsers.svelte:1010
+#: web/src/lib/features/admin/AdminUsers.svelte:844
+#: web/src/lib/features/admin/AdminUsers.svelte:1019
 msgid "Impersonate"
 msgstr "Impersonate"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:967
+#: web/src/lib/features/admin/AdminUsers.svelte:976
 msgid "Impersonate this account?"
 msgstr "Impersonate this account?"
 
@@ -2691,7 +2700,7 @@ msgstr "Leave without saving your yarn changes?"
 msgid "Left the shared item"
 msgstr "Left the shared item"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:54
+#: web/src/lib/features/admin/AdminAudit.svelte:59
 msgid "Legacy user"
 msgstr "Legacy user"
 
@@ -2817,7 +2826,7 @@ msgstr "Loading account details…"
 msgid "Loading archive status…"
 msgstr "Loading archive status…"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:386
+#: web/src/lib/features/admin/AdminAudit.svelte:429
 msgid "Loading audit events…"
 msgstr "Loading audit events…"
 
@@ -2925,7 +2934,7 @@ msgstr "Main photo"
 msgid "Make cover"
 msgstr "Make cover"
 
-#: web/src/routes/more/+page.svelte:74
+#: web/src/routes/more/+page.svelte:80
 msgid "Manage accounts and review the audit log."
 msgstr "Manage accounts and review the audit log."
 
@@ -2985,7 +2994,7 @@ msgid "Mooorning!"
 msgstr "Mooorning!"
 
 #: web/src/lib/components/AuthFooter.svelte:15
-#: web/src/routes/+layout.svelte:308 web/src/routes/+layout.svelte:417
+#: web/src/routes/+layout.svelte:309 web/src/routes/+layout.svelte:418
 #: web/src/routes/more/+page.svelte:13 web/src/routes/more/+page.svelte:19
 msgid "More"
 msgstr "More"
@@ -3014,7 +3023,7 @@ msgstr "More filters"
 msgid "More for {email}"
 msgstr "More for {email}"
 
-#: web/src/routes/+layout.svelte:309 web/src/routes/more/+page.svelte:78
+#: web/src/routes/+layout.svelte:310 web/src/routes/more/+page.svelte:84
 msgid "More navigation"
 msgstr "More navigation"
 
@@ -3060,6 +3069,11 @@ msgstr "Moved to the trash."
 msgid "Moved to trash"
 msgstr "Moved to trash"
 
+#: web/src/lib/nav-items.ts:30 web/src/routes/activity/+page.svelte:11
+#: web/src/routes/activity/+page.svelte:18 web/src/routes/more/+page.svelte:54
+msgid "My activity"
+msgstr "My activity"
+
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:537
 msgid "N/A"
 msgstr "N/A"
@@ -3072,7 +3086,7 @@ msgstr "Never used"
 msgid "New API token"
 msgstr "New API token"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:896
+#: web/src/lib/features/admin/AdminUsers.svelte:905
 msgid "New accounts are members unless you choose administrator access."
 msgstr "New accounts are members unless you choose administrator access."
 
@@ -3099,7 +3113,7 @@ msgstr "New password"
 msgid "New project"
 msgstr "New project"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1109
+#: web/src/lib/features/admin/AdminUsers.svelte:1118
 msgid "New temporary password"
 msgstr "New temporary password"
 
@@ -3128,12 +3142,12 @@ msgstr "New yarn"
 msgid "Next"
 msgstr "Next"
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:314
+#: web/src/lib/features/media/ProjectLightbox.svelte:349
 msgid "Next image"
 msgstr "Next image"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:560
-#: web/src/lib/features/admin/AdminUsers.svelte:877
+#: web/src/lib/features/admin/AdminAudit.svelte:618
+#: web/src/lib/features/admin/AdminUsers.svelte:886
 msgid "Next page"
 msgstr "Next page"
 
@@ -3158,7 +3172,7 @@ msgstr ""
 "No Stricknani account is linked to this {name} login yet. Sign in with "
 "your password, then link {name} in your account settings."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:406
+#: web/src/lib/features/admin/AdminAudit.svelte:449
 msgid "No audit events match these filters."
 msgstr "No audit events match these filters."
 
@@ -3187,8 +3201,8 @@ msgstr "No changes recorded yet"
 msgid "No connection"
 msgstr "No connection"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:514
-#: web/src/lib/features/admin/AdminAudit.svelte:516
+#: web/src/lib/features/admin/AdminAudit.svelte:572
+#: web/src/lib/features/admin/AdminAudit.svelte:574
 #: web/src/lib/features/history/HistoryEventDetail.svelte:35
 #: web/src/lib/features/history/HistoryEventDetail.svelte:58
 msgid "No details recorded"
@@ -3253,7 +3267,7 @@ msgstr "No steps have been added yet."
 msgid "No text was found in this photo."
 msgstr "No text was found in this photo."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:852
+#: web/src/lib/features/admin/AdminUsers.svelte:861
 msgid "No user accounts were found."
 msgstr "No user accounts were found."
 
@@ -3394,6 +3408,11 @@ msgstr ""
 " phone. If you delete from the web instead, clear the app data or "
 "uninstall the app to remove the local copy."
 
+#: web/src/lib/features/admin/audit-user-role.ts:42
+#, python-brace-format
+msgid "On {user}'s account"
+msgstr "On {user}'s account"
+
 #: web/src/lib/features/account/AccountSettings.svelte:1653
 msgid "One-time display"
 msgstr "One-time display"
@@ -3495,7 +3514,7 @@ msgstr "Open your project library to continue."
 msgid "Opening your pattern…"
 msgstr "Opening your pattern…"
 
-#: web/src/routes/+layout.svelte:242
+#: web/src/routes/+layout.svelte:243
 msgid "Opening your workspace…"
 msgstr "Opening your workspace…"
 
@@ -3588,8 +3607,8 @@ msgstr "PDF"
 msgid "PDF link not attached"
 msgstr "PDF link not attached"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:551
-#: web/src/lib/features/admin/AdminUsers.svelte:869
+#: web/src/lib/features/admin/AdminAudit.svelte:609
+#: web/src/lib/features/admin/AdminUsers.svelte:878
 #: web/src/lib/features/projects/ProjectLibrary.svelte:460
 #: web/src/lib/features/yarns/YarnLibrary.svelte:346
 msgid "Page"
@@ -3829,12 +3848,12 @@ msgstr "Preparing your review"
 msgid "Previous"
 msgstr "Previous"
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:275
+#: web/src/lib/features/media/ProjectLightbox.svelte:291
 msgid "Previous image"
 msgstr "Previous image"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:549
-#: web/src/lib/features/admin/AdminUsers.svelte:867
+#: web/src/lib/features/admin/AdminAudit.svelte:607
+#: web/src/lib/features/admin/AdminUsers.svelte:876
 msgid "Previous page"
 msgstr "Previous page"
 
@@ -3896,8 +3915,8 @@ msgstr ""
 "account settings, and the instance operator can disable it for the whole "
 "instance."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:266
-#: web/src/lib/features/admin/AdminAudit.svelte:359
+#: web/src/lib/features/admin/AdminAudit.svelte:291
+#: web/src/lib/features/admin/AdminAudit.svelte:384
 #: web/src/lib/features/admin/AdminResource.svelte:233
 #: web/src/lib/features/admin/DiffPanel.svelte:92
 #: web/src/lib/features/trash/trash-kinds.ts:43
@@ -3932,7 +3951,7 @@ msgstr "Project detail cards"
 msgid "Project details"
 msgstr "Project details"
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:232
+#: web/src/lib/features/media/ProjectLightbox.svelte:248
 msgid "Project image viewer"
 msgstr "Project image viewer"
 
@@ -4077,6 +4096,10 @@ msgstr "Recent changes"
 #: web/src/lib/features/history/HistorySection.svelte:257
 msgid "Recent changes could not be loaded."
 msgstr "Recent changes could not be loaded."
+
+#: web/src/routes/more/+page.svelte:55
+msgid "Recent changes to your projects and yarns."
+msgstr "Recent changes to your projects and yarns."
 
 #: web/src/lib/components/CommandPalette.svelte:108
 #: web/src/lib/features/home/HomeDashboard.svelte:332
@@ -4284,8 +4307,8 @@ msgstr "Request a new archive"
 msgid "Reset"
 msgstr "Reset"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:820
-#: web/src/lib/features/admin/AdminUsers.svelte:1145
+#: web/src/lib/features/admin/AdminUsers.svelte:829
+#: web/src/lib/features/admin/AdminUsers.svelte:1154
 msgid "Reset password"
 msgstr "Reset password"
 
@@ -4294,7 +4317,7 @@ msgstr "Reset password"
 msgid "Reset text size"
 msgstr "Reset text size"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1093
+#: web/src/lib/features/admin/AdminUsers.svelte:1102
 msgid "Reset this password?"
 msgstr "Reset this password?"
 
@@ -4302,11 +4325,11 @@ msgstr "Reset this password?"
 msgid "Reset to default order"
 msgstr "Reset to default order"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1144
+#: web/src/lib/features/admin/AdminUsers.svelte:1153
 msgid "Resetting…"
 msgstr "Resetting…"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:271
+#: web/src/lib/features/admin/AdminAudit.svelte:296
 #: web/src/lib/features/admin/DiffPanel.svelte:97
 msgid "Resource"
 msgstr "Resource"
@@ -4564,7 +4587,7 @@ msgstr "Saved. What you removed is in the trash for 90 days."
 msgid "Saving photo…"
 msgstr "Saving photo…"
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1069
+#: web/src/lib/features/admin/AdminUsers.svelte:1078
 #: web/src/lib/features/categories/CategoryManager.svelte:273
 #: web/src/lib/features/categories/CategoryManager.svelte:331
 #: web/src/lib/features/projects/ProjectEditor.svelte:1677
@@ -4743,8 +4766,8 @@ msgstr "Show"
 msgid "Show all changes"
 msgstr "Show all changes"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:524
-#: web/src/lib/features/admin/AdminAudit.svelte:525
+#: web/src/lib/features/admin/AdminAudit.svelte:582
+#: web/src/lib/features/admin/AdminAudit.svelte:583
 msgid "Show diff"
 msgstr "Show diff"
 
@@ -4785,7 +4808,7 @@ msgstr ""
 #: web/src/lib/features/auth/SignupForm.svelte:281
 #: web/src/lib/features/home/HomeDashboard.svelte:172
 #: web/src/lib/features/projects/ProjectEditor.svelte:1624
-#: web/src/routes/+layout.svelte:226 web/src/routes/login/+page.svelte:8
+#: web/src/routes/+layout.svelte:227 web/src/routes/login/+page.svelte:8
 msgid "Sign in"
 msgstr "Sign in"
 
@@ -4899,7 +4922,7 @@ msgstr "Skein weight"
 msgid "Skein weight in grams"
 msgstr "Skein weight in grams"
 
-#: web/src/routes/+layout.svelte:213
+#: web/src/routes/+layout.svelte:214
 msgid "Skip to content"
 msgstr "Skip to content"
 
@@ -4972,7 +4995,7 @@ msgstr "Start something new, or bring in a pattern you already have."
 msgid "Start with one project to keep its pattern and progress together."
 msgstr "Start with one project to keep its pattern and progress together."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1009
+#: web/src/lib/features/admin/AdminUsers.svelte:1018
 msgid "Starting…"
 msgstr "Starting…"
 
@@ -5179,10 +5202,10 @@ msgid "Swatch size"
 msgstr "Swatch size"
 
 #: web/src/lib/features/account/AccountSettings.svelte:137
-#: web/src/lib/features/admin/AdminAudit.svelte:248
+#: web/src/lib/features/admin/AdminAudit.svelte:273
 #: web/src/lib/features/admin/DiffPanel.svelte:146
 #: web/src/lib/features/admin/DiffPanel.svelte:152
-#: web/src/lib/features/admin/audit-client.ts:51
+#: web/src/lib/features/admin/audit-client.ts:46
 msgid "System"
 msgstr "System"
 
@@ -5214,7 +5237,7 @@ msgstr "Tap ♥ on a project or yarn to keep it here."
 msgid "Tell us what is in the ball and it is ready for your next project."
 msgstr "Tell us what is in the ball and it is ready for your next project."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:920
+#: web/src/lib/features/admin/AdminUsers.svelte:929
 msgid "Temporary password"
 msgstr "Temporary password"
 
@@ -5664,7 +5687,7 @@ msgid "The server returned an unexpected import response."
 msgstr "The server returned an unexpected import response."
 
 #: web/src/lib/api.ts:493 web/src/lib/features/account/account-api.ts:65
-#: web/src/lib/features/admin/admin-api.ts:186
+#: web/src/lib/features/admin/admin-api.ts:196
 #: web/src/lib/features/auth/oidc-api.ts:73
 #: web/src/lib/features/auth/signup-api.ts:46
 #: web/src/lib/features/categories/category-api.ts:20
@@ -5676,7 +5699,7 @@ msgstr "The server returned an unexpected import response."
 msgid "The server returned an unexpected response."
 msgstr "The server returned an unexpected response."
 
-#: web/src/lib/session.svelte.ts:211 web/src/routes/+layout.svelte:255
+#: web/src/lib/session.svelte.ts:211 web/src/routes/+layout.svelte:256
 msgid "The session could not be loaded."
 msgstr "The session could not be loaded."
 
@@ -5728,15 +5751,15 @@ msgstr "The uploaded image could not be read. Choose it again."
 msgid "The user account could not be created."
 msgstr "The user account could not be created."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1041
+#: web/src/lib/features/admin/AdminUsers.svelte:1050
 msgid "The user will be able to sign in again."
 msgstr "The user will be able to sign in again."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1042
+#: web/src/lib/features/admin/AdminUsers.svelte:1051
 msgid "The user will be signed out and will not be able to sign in."
 msgstr "The user will be signed out and will not be able to sign in."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:1104
+#: web/src/lib/features/admin/AdminUsers.svelte:1113
 msgid "The user will need to sign in with the new password."
 msgstr "The user will need to sign in with the new password."
 
@@ -6118,7 +6141,7 @@ msgstr "Title image changed"
 msgid "Title image uploaded"
 msgstr "Title image uploaded"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:306
+#: web/src/lib/features/admin/AdminAudit.svelte:331
 #: web/src/lib/features/home/activity.ts:386
 msgid "Today"
 msgstr "Today"
@@ -6204,7 +6227,7 @@ msgstr "Transferred to {name}"
 #: web/src/lib/features/trash/TrashManager.svelte:230
 #: web/src/lib/features/trash/TrashManager.svelte:236
 #: web/src/lib/features/trash/TrashedBanner.svelte:118
-#: web/src/lib/nav-items.ts:28 web/src/lib/search-suggestions.ts:125
+#: web/src/lib/nav-items.ts:29 web/src/lib/search-suggestions.ts:125
 #: web/src/routes/more/+page.svelte:48
 msgid "Trash"
 msgstr "Trash"
@@ -6217,7 +6240,7 @@ msgstr "Try a different name, category, or tag."
 #: web/src/lib/features/account/AccountSettings.svelte:929
 #: web/src/lib/features/account/AccountSettings.svelte:1523
 #: web/src/lib/features/account/BackupsSection.svelte:436
-#: web/src/lib/features/admin/AdminAudit.svelte:401
+#: web/src/lib/features/admin/AdminAudit.svelte:444
 #: web/src/lib/features/admin/AdminResource.svelte:385
 #: web/src/lib/features/admin/AdminUsers.svelte:693
 #: web/src/lib/features/admin/DiffPanel.svelte:133
@@ -6239,7 +6262,7 @@ msgstr "Try a different name, category, or tag."
 #: web/src/lib/features/yarns/YarnDetail.svelte:391
 #: web/src/lib/features/yarns/YarnForm.svelte:851
 #: web/src/lib/features/yarns/YarnLibrary.svelte:282
-#: web/src/routes/+layout.svelte:263
+#: web/src/routes/+layout.svelte:264
 msgid "Try again"
 msgstr "Try again"
 
@@ -6289,14 +6312,14 @@ msgstr "Undo removing this photo"
 msgid "Unknown"
 msgstr "Unknown"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:251
-#: web/src/lib/features/admin/AdminAudit.svelte:258
+#: web/src/lib/features/admin/AdminAudit.svelte:276
+#: web/src/lib/features/admin/AdminAudit.svelte:283
 #: web/src/lib/features/admin/DiffPanel.svelte:147
 #: web/src/lib/features/admin/DiffPanel.svelte:153
 msgid "Unknown actor"
 msgstr "Unknown actor"
 
-#: web/src/lib/features/admin/audit-client.ts:53
+#: web/src/lib/features/admin/audit-client.ts:48
 msgid "Unknown client"
 msgstr "Unknown client"
 
@@ -6445,7 +6468,7 @@ msgstr "User account disabled."
 msgid "User account enabled."
 msgstr "User account enabled."
 
-#: web/src/lib/features/admin/AdminUsers.svelte:858
+#: web/src/lib/features/admin/AdminUsers.svelte:867
 msgid "User account pages"
 msgstr "User account pages"
 
@@ -6461,6 +6484,15 @@ msgstr "User accounts could not be loaded."
 msgid "User agent"
 msgstr "User agent"
 
+#: web/src/lib/features/admin/AdminAudit.svelte:201
+msgid "User was not found."
+msgstr "User was not found."
+
+#: web/src/lib/features/admin/AdminAudit.svelte:412
+#, python-brace-format
+msgid "User: {name}"
+msgstr "User: {name}"
+
 #: web/src/lib/features/admin/AdminTabs.svelte:14
 msgid "Users"
 msgstr "Users"
@@ -6470,7 +6502,7 @@ msgstr "Users"
 msgid "Version"
 msgstr "Version"
 
-#: web/src/routes/more/+page.svelte:83
+#: web/src/routes/more/+page.svelte:89
 msgid "Version, links and credits."
 msgstr "Version, links and credits."
 
@@ -6520,7 +6552,7 @@ msgstr ""
 "We pulled and pulled, but there is no project at the end of this thread. "
 "It may have been frogged, or it lives in someone else’s basket."
 
-#: web/src/lib/features/admin/audit-client.ts:55
+#: web/src/lib/features/admin/audit-client.ts:50
 msgid "Web"
 msgstr "Web"
 
@@ -6687,7 +6719,7 @@ msgstr "Yarn specifications"
 msgid "Yarn weight"
 msgstr "Yarn weight"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:308
+#: web/src/lib/features/admin/AdminAudit.svelte:333
 #: web/src/lib/features/home/activity.ts:387
 msgid "Yesterday"
 msgstr "Yesterday"
@@ -6832,7 +6864,7 @@ msgstr "You deleted {name}"
 msgid "You deleted {name} permanently"
 msgstr "You deleted {name} permanently"
 
-#: web/src/routes/+layout.svelte:373
+#: web/src/routes/+layout.svelte:374
 msgid "You do not have access to this page."
 msgstr "You do not have access to this page."
 
@@ -7003,7 +7035,7 @@ msgstr "Your gauge (per 10cm)"
 msgid "Your knitting timer has been running for a while."
 msgstr "Your knitting timer has been running for a while."
 
-#: web/src/routes/+layout.svelte:291
+#: web/src/routes/+layout.svelte:292
 msgid "Your library"
 msgstr "Your library"
 
@@ -7065,7 +7097,7 @@ msgstr "Your sign-up session expired. Refresh and try again."
 msgid "Your stash is empty"
 msgstr "Your stash is empty"
 
-#: web/src/routes/+layout.svelte:251
+#: web/src/routes/+layout.svelte:252
 msgid "Your workspace is taking a moment."
 msgstr "Your workspace is taking a moment."
 
@@ -7346,6 +7378,11 @@ msgstr "{n} more"
 #, python-brace-format
 msgid "{time} spent so far. Open the project to stop the timer or keep timing."
 msgstr "{time} spent so far. Open the project to stop the timer or keep timing."
+
+#: web/src/lib/features/admin/audit-user-role.ts:38
+#, python-brace-format
+msgid "{user} acting as {actor}"
+msgstr "{user} acting as {actor}"
 
 #~ msgid "Favorite"
 #~ msgstr "Favorite"
