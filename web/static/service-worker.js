@@ -28,6 +28,8 @@ const OFFLINE_PATH = `${APP_PREFIX}offline.html`;
 // is gone there too, SvelteKit reloads the tab into the current version.
 const MAX_RETAINED_CACHES = 3;
 let cacheWriteQueue = Promise.resolve();
+// Concurrent tabs can request the same uncached immutable chunk; queue its quota scan once.
+const queuedImmutableWrites = new Map();
 
 // No message makes this worker wait for or ask other tabs: frozen background
 // tabs never answer, which used to block every update.
@@ -251,11 +253,23 @@ async function cacheImmutableResponse(cache, url, response) {
 }
 
 function queueImmutableCacheWrite(cache, url, response) {
+  const existing = queuedImmutableWrites.get(url.href);
+  if (existing) {
+    void response.body?.cancel().catch(() => undefined);
+    return existing;
+  }
+
   const write = cacheWriteQueue.then(() =>
     cacheImmutableResponse(cache, url, response),
   );
-  cacheWriteQueue = write.catch(() => undefined);
-  return write;
+  const trackedWrite = write.finally(() => {
+    if (queuedImmutableWrites.get(url.href) === trackedWrite) {
+      queuedImmutableWrites.delete(url.href);
+    }
+  });
+  queuedImmutableWrites.set(url.href, trackedWrite);
+  cacheWriteQueue = trackedWrite.catch(() => undefined);
+  return trackedWrite;
 }
 
 self.addEventListener("install", (event) => {
