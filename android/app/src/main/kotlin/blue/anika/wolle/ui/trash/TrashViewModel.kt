@@ -1,6 +1,5 @@
 package blue.anika.wolle.ui.trash
 
-import blue.anika.wolle.ui.common.DangerousActionGuard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
@@ -20,6 +19,7 @@ import blue.anika.wolle.data.repository.TrashRepository
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.repository.toTrashFailure
 import blue.anika.wolle.sync.SyncScheduler
+import blue.anika.wolle.ui.common.DangerousActionGuard
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.TrashUndo
 import dagger.hilt.android.lifecycle.HiltViewModel

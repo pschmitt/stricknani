@@ -1,6 +1,5 @@
 package blue.anika.wolle.ui.oidc
 
-import blue.anika.wolle.ui.common.DangerousActionGuard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
@@ -13,6 +12,7 @@ import blue.anika.wolle.data.oidc.ReauthAction
 import blue.anika.wolle.data.oidc.ReauthProof
 import blue.anika.wolle.data.oidc.ReauthTarget
 import blue.anika.wolle.data.settings.SettingsRepository
+import blue.anika.wolle.ui.common.DangerousActionGuard
 import blue.anika.wolle.ui.common.MutationFeedback
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject

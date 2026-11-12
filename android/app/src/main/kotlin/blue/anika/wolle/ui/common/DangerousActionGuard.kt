@@ -12,6 +12,7 @@ import androidx.compose.runtime.compositionLocalOf
  * ```
  * guard.confirm(R.string.unlock_reason_purge) { performAction() }
  * ```
+ *
  * In a composable get the guard with [rememberDangerousActionGuard]; in a ViewModel inject
  * [DangerousActionGuard]. See `android/AGENTS.md` ("Dangerous actions").
  */
@@ -38,7 +39,8 @@ private object PassThroughGuard : DangerousActionGuard {
 val LocalDangerousActionGuard = compositionLocalOf<DangerousActionGuard> { PassThroughGuard }
 
 /** The app's guard, provided by `MainActivity`; tests can provide a fake. */
-@Composable fun rememberDangerousActionGuard(): DangerousActionGuard = LocalDangerousActionGuard.current
+@Composable
+fun rememberDangerousActionGuard(): DangerousActionGuard = LocalDangerousActionGuard.current
 
 /** Whether the device has a secure lock screen (or biometrics) the unlock prompt can use. */
 enum class DeviceLockState {

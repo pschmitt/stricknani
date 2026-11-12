@@ -35,9 +35,13 @@ internal constructor(
     constructor(
         preferences: AppPreferencesRepository,
         unlock: DeviceUnlock,
-    ) : this(preferences, unlock, object : DeviceLockProbe {
-        override fun lockState() = unlock.lockState()
-    })
+    ) : this(
+        preferences,
+        unlock,
+        object : DeviceLockProbe {
+            override fun lockState() = unlock.lockState()
+        },
+    )
 
     val enabled: StateFlow<Boolean> =
         preferences.deviceUnlockEnabled.stateIn(

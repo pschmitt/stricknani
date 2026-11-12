@@ -158,9 +158,7 @@ internal constructor(
     private fun loadSignInMethods() {
         viewModelScope.launch {
             // Unknown (older server, offline): assume a password, which is what most accounts have.
-            providers =
-                runCatching { oidc.providers(serverUrl()) }
-                    .getOrDefault(emptyList())
+            providers = runCatching { oidc.providers(serverUrl()) }.getOrDefault(emptyList())
             if (providers.isEmpty()) {
                 identities = emptyList()
                 passwordEnabled = true

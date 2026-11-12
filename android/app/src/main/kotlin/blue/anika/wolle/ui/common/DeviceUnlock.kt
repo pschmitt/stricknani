@@ -118,7 +118,10 @@ constructor(
         DangerousActionGate(
             isEnabled = { enabled },
             authenticator = {
-                activity?.get()?.takeUnless { it.isFinishing }?.let { BiometricDeviceAuthenticator(it) }
+                activity
+                    ?.get()
+                    ?.takeUnless { it.isFinishing }
+                    ?.let { BiometricDeviceAuthenticator(it) }
             },
         )
 

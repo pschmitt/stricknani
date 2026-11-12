@@ -1,6 +1,5 @@
 package blue.anika.wolle.ui.admin
 
-import blue.anika.wolle.ui.common.DangerousActionGuard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
@@ -10,6 +9,7 @@ import blue.anika.wolle.data.repository.AdminException
 import blue.anika.wolle.data.repository.AdminFailure
 import blue.anika.wolle.data.repository.AdminRepository
 import blue.anika.wolle.data.settings.SettingsRepository
+import blue.anika.wolle.ui.common.DangerousActionGuard
 import blue.anika.wolle.ui.common.MutationFeedback
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.security.SecureRandom

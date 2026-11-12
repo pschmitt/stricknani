@@ -1,6 +1,5 @@
 package blue.anika.wolle.ui.sharing
 
-import blue.anika.wolle.ui.common.rememberDangerousActionGuard
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,6 +58,7 @@ import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.SegmentedControl
 import blue.anika.wolle.ui.common.SegmentedOption
+import blue.anika.wolle.ui.common.rememberDangerousActionGuard
 
 /** Maximum avatars on the Share row before "+N". */
 private const val MAX_STACKED_AVATARS = 4

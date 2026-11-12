@@ -1,6 +1,5 @@
 package blue.anika.wolle.ui.admin
 
-import blue.anika.wolle.ui.common.rememberDangerousActionGuard
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -86,6 +85,7 @@ import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.YarnLoader
+import blue.anika.wolle.ui.common.rememberDangerousActionGuard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -205,7 +205,9 @@ fun AdminAccountsScreen(
                                         onImpersonate =
                                             viewModel.impersonationLink(user)?.let { url ->
                                                 {
-                                                    guard.confirm(R.string.unlock_reason_impersonate) {
+                                                    guard.confirm(
+                                                        R.string.unlock_reason_impersonate
+                                                    ) {
                                                         runCatching { uriHandler.openUri(url) }
                                                     }
                                                 }
