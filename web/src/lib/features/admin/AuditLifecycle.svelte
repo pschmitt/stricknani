@@ -72,7 +72,7 @@
       if (session.data?.user?.id !== ownerId) return;
       publishFeedback({
         ownerId,
-        kind: "success",
+        kind: "restored",
         message: t("Restored from the trash.", locale),
       });
       onChanged();

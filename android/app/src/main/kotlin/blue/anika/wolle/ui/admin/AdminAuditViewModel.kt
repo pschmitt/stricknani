@@ -214,7 +214,7 @@ constructor(
             try {
                 trashRepository.restore(ref)
                 syncScheduler.syncNow()
-                feedback.show(R.string.mutation_trash_restored)
+                feedback.showRestored(R.string.mutation_trash_restored)
                 closeEvent()
                 load(reset = true, userInitiated = false)
             } catch (cancellation: CancellationException) {

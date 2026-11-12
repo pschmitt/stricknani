@@ -93,7 +93,7 @@
       if (session.data?.user)
         publishFeedback({
           ownerId: session.data.user.id,
-          kind: "success",
+          kind: "deleted",
           message: t("The login was unlinked.", locale),
         });
       await refresh();

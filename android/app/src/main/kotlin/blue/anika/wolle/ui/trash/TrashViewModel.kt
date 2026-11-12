@@ -157,7 +157,7 @@ constructor(
                         restored = item,
                     )
                 }
-                feedback.show(R.string.mutation_trash_restored)
+                feedback.showRestored(R.string.mutation_trash_restored)
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (failure: Exception) {
@@ -184,7 +184,7 @@ constructor(
                 _state.update { s ->
                     s.copy(items = s.items.filterNot { it.kind == item.kind && it.id == item.id })
                 }
-                feedback.show(R.string.mutation_trash_purged)
+                feedback.showPurged(R.string.mutation_trash_purged)
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (failure: Exception) {
@@ -232,7 +232,10 @@ constructor(
             try {
                 items.forEach { QueuedDeleteUndo.queueRestore(pendingMutationDao, json, it) }
                 syncScheduler.replayThenSyncNow()
-                feedback.show(R.string.mutation_trash_restore_queued)
+                feedback.showSaved(
+                    R.string.mutation_trash_restored,
+                    R.string.mutation_trash_restore_queued,
+                )
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (failure: Exception) {
@@ -246,7 +249,7 @@ constructor(
             try {
                 if (cancelQueuedDelete(ref)) {
                     syncScheduler.syncNow()
-                    feedback.show(R.string.mutation_trash_restored)
+                    feedback.showRestored(R.string.mutation_trash_restored)
                 } else if (hasQueuedDelete(ref)) {
                     // Queued by an older app version, without a snapshot to put back: restore
                     // behind the delete once both have reached the server.
@@ -285,13 +288,13 @@ constructor(
             return
         }
         syncScheduler.syncNow()
-        feedback.show(R.string.mutation_trash_restored)
+        feedback.showRestored(R.string.mutation_trash_restored)
     }
 
     private suspend fun queueRestore(ref: TrashRef) {
         QueuedDeleteUndo.queueRestore(pendingMutationDao, json, ref)
         syncScheduler.replayThenSyncNow()
-        feedback.show(R.string.mutation_trash_restore_queued)
+        feedback.showQueued(R.string.mutation_trash_restore_queued)
     }
 
     /**

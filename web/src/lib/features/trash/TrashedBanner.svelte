@@ -71,7 +71,7 @@
       if (session.data?.user?.id !== ownerId) return;
       publishFeedback({
         ownerId,
-        kind: "success",
+        kind: "restored",
         message: t("Restored from the trash.", locale),
       });
       onrestored();
@@ -95,7 +95,7 @@
       purgeDialog?.close();
       publishFeedback({
         ownerId,
-        kind: "success",
+        kind: "purged",
         message: t("Deleted permanently.", locale),
       });
       await goto(resolve("/trash"));

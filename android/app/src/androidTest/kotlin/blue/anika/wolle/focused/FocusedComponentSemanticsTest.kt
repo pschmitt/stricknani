@@ -146,8 +146,8 @@ class FocusedComponentSemanticsTest {
         germanConfiguration.setLocale(java.util.Locale.GERMAN)
         val german = context.createConfigurationContext(germanConfiguration)
 
-        assertTrue(english.getString(R.string.mutation_project_created_queued).contains("Project"))
-        assertTrue(german.getString(R.string.mutation_project_created_queued).contains("Projekt"))
+        assertTrue(english.getString(R.string.mutation_project_created).contains("Project"))
+        assertTrue(german.getString(R.string.mutation_project_created).contains("Projekt"))
         assertTrue(english.getString(R.string.mutation_favorite_offline).contains("offline"))
         assertTrue(german.getString(R.string.mutation_favorite_offline).contains("offline"))
     }

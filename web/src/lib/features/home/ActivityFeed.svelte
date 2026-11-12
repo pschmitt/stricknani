@@ -104,7 +104,7 @@
       await restoreTrashItem(item.entity_type, item.entity_id, currentSession);
       publishFeedback({
         ownerId: currentSession.user.id,
-        kind: "success",
+        kind: "restored",
         message: t("Restored from the trash.", locale),
       });
       attempt += 1;

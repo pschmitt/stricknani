@@ -32,7 +32,7 @@ export function publishMovedToTrash(options: TrashedFeedback): number {
   const { session, ownerId, locale, kind, id, onRestored } = options;
   return publishFeedback({
     ownerId,
-    kind: "success",
+    kind: "deleted",
     message: t("Moved to the trash.", locale),
     action: {
       label: t("Undo", locale),
@@ -49,7 +49,7 @@ export function publishMovedToTrash(options: TrashedFeedback): number {
         }
         publishFeedback({
           ownerId,
-          kind: "success",
+          kind: "restored",
           message: t("Restored from the trash.", locale),
         });
         try {
@@ -82,7 +82,7 @@ export function publishSavedWithRemovals(
   const { session, ownerId, locale, items, onRestored } = options;
   return publishFeedback({
     ownerId,
-    kind: "success",
+    kind: "deleted",
     message: t("Saved. What you removed is in the trash for 90 days.", locale),
     action: {
       label: t("Undo", locale),
@@ -101,7 +101,7 @@ export function publishSavedWithRemovals(
         }
         publishFeedback({
           ownerId,
-          kind: "success",
+          kind: "restored",
           message: t("Restored from the trash.", locale),
         });
         try {

@@ -184,7 +184,7 @@
       if (userId !== null)
         publishFeedback({
           ownerId: userId,
-          kind: "success",
+          kind: "deleted",
           message: t(
             "{name} was unlinked from your account.",
             locale,

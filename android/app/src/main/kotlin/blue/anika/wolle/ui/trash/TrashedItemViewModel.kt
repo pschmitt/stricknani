@@ -167,7 +167,7 @@ constructor(
             try {
                 repository.restore(ref)
                 syncScheduler.syncNow()
-                feedback.show(R.string.mutation_trash_restored)
+                feedback.showRestored(R.string.mutation_trash_restored)
                 _result.value = TrashedItemResult.Restored
             } catch (cancellation: CancellationException) {
                 throw cancellation
@@ -188,7 +188,7 @@ constructor(
         viewModelScope.launch {
             try {
                 repository.purge(ref)
-                feedback.show(R.string.mutation_trash_purged)
+                feedback.showPurged(R.string.mutation_trash_purged)
                 _result.value = TrashedItemResult.Purged
             } catch (cancellation: CancellationException) {
                 throw cancellation

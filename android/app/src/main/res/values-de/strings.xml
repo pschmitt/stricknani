@@ -818,10 +818,11 @@
     <string name="mutation_favorite_removed">Aus Favoriten entfernt.</string>
     <string name="mutation_favorite_offline">Du bist offline - versuch es gleich nochmal.</string>
     <string name="mutation_category_renamed">Kategorie „%1$s“ in „%2$s“ umbenannt.</string>
-    <string name="mutation_project_created_queued">Projekt erstellt.</string>
-    <string name="mutation_project_updated_queued">Projekt gespeichert.</string>
-    <string name="mutation_yarn_created_queued">Garn angelegt.</string>
-    <string name="mutation_yarn_updated_queued">Garn gespeichert.</string>
+    <string name="mutation_project_created">Projekt erstellt.</string>
+    <string name="mutation_project_updated">Projekt gespeichert.</string>
+    <string name="mutation_yarn_created">Garn angelegt.</string>
+    <string name="mutation_yarn_updated">Garn gespeichert.</string>
+    <string name="mutation_saved_offline">Auf diesem Gerät gespeichert. Wird synchronisiert, sobald du online bist.</string>
 
     <!-- Onboarding errors -->
     <string name="onboarding_error_missing_url_token">Gib die Stricknani-Adresse und den Zugangstoken ein</string>

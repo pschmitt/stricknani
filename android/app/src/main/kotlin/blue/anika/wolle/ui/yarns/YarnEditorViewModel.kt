@@ -431,9 +431,9 @@ constructor(
                 val trashed =
                     if (id == null) emptyList() else trashedByYarnSave(current.removedPhotoIds)
                 if (trashed.isEmpty()) {
-                    mutationFeedback.show(
-                        if (id == null) R.string.mutation_yarn_created_queued
-                        else R.string.mutation_yarn_updated_queued
+                    mutationFeedback.showSaved(
+                        if (id == null) R.string.mutation_yarn_created
+                        else R.string.mutation_yarn_updated
                     )
                 } else {
                     mutationFeedback.showTrashedBySave(

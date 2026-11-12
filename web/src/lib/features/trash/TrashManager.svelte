@@ -128,7 +128,7 @@
       restored = item;
       publishFeedback({
         ownerId,
-        kind: "success",
+        kind: "restored",
         message: t("Restored from the trash.", locale),
       });
     } catch (error) {
@@ -163,7 +163,7 @@
       purgeTarget = null;
       publishFeedback({
         ownerId,
-        kind: "success",
+        kind: "purged",
         message: t("Deleted permanently.", locale),
       });
     } catch (error) {

@@ -159,7 +159,7 @@ constructor(
         _state.update { it.copy(working = false) }
         when (failure) {
             null -> {
-                feedback.show(R.string.oidc_unlinked_done)
+                feedback.showRemoved(R.string.oidc_unlinked_done)
                 load()
             }
             OidcFailure.LastLoginMethod ->

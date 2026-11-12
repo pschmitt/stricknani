@@ -819,10 +819,11 @@
     <string name="mutation_favorite_removed">Removed from favorites.</string>
     <string name="mutation_favorite_offline">You’re offline - try favouriting again in a moment.</string>
     <string name="mutation_category_renamed">Category “%1$s” renamed to “%2$s”.</string>
-    <string name="mutation_project_created_queued">Project created.</string>
-    <string name="mutation_project_updated_queued">Project saved.</string>
-    <string name="mutation_yarn_created_queued">Yarn created.</string>
-    <string name="mutation_yarn_updated_queued">Yarn saved.</string>
+    <string name="mutation_project_created">Project created.</string>
+    <string name="mutation_project_updated">Project saved.</string>
+    <string name="mutation_yarn_created">Yarn created.</string>
+    <string name="mutation_yarn_updated">Yarn saved.</string>
+    <string name="mutation_saved_offline">Saved on this device. It will sync when you’re online.</string>
 
     <!-- Onboarding errors -->
     <string name="onboarding_error_missing_url_token">Enter the Stricknani address and the access token</string>
