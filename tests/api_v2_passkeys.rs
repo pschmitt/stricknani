@@ -56,11 +56,25 @@ fn runtime() -> Arc<PasskeyRuntime> {
     Arc::new(PasskeyRuntime::new(&config).unwrap())
 }
 
-async fn fixture() -> Fixture {
+fn local_runtime() -> Arc<PasskeyRuntime> {
+    let config = PasskeyConfig::from_settings(
+        true,
+        None,
+        &TrustedHosts::parse("localhost").unwrap(),
+        false,
+        7674,
+        None,
+    )
+    .unwrap()
+    .unwrap();
+    Arc::new(PasskeyRuntime::new(&config).unwrap())
+}
+
+async fn fixture_with_runtime(runtime: Arc<PasskeyRuntime>, secure_cookies: bool) -> Fixture {
     let pool = db::connect("sqlite::memory:").await.unwrap();
     let state = db::AppState::new(pool.clone())
-        .with_secure_cookies(true)
-        .with_passkeys(runtime());
+        .with_secure_cookies(secure_cookies)
+        .with_passkeys(runtime);
     let user_id = db::create_user(&pool, EMAIL, PASSWORD.to_owned())
         .await
         .unwrap();
@@ -69,6 +83,10 @@ async fn fixture() -> Fixture {
         pool,
         user_id,
     }
+}
+
+async fn fixture() -> Fixture {
+    fixture_with_runtime(runtime(), true).await
 }
 
 async fn json(response: axum::response::Response) -> serde_json::Value {
@@ -93,8 +111,12 @@ async fn send(f: &Fixture, request: Request<Body>) -> axum::response::Response {
 
 /// An anonymous browser: the login CSRF cookie and token from `GET /session`.
 async fn anonymous(f: &Fixture) -> (String, String) {
+    anonymous_with_cookie_prefix(f, "__Host-stricknani_v2_login_csrf=").await
+}
+
+async fn anonymous_with_cookie_prefix(f: &Fixture, prefix: &str) -> (String, String) {
     let response = send(f, Request::get("/session").body(Body::empty()).unwrap()).await;
-    let cookie = set_cookie(&response, "__Host-stricknani_v2_login_csrf=").unwrap();
+    let cookie = set_cookie(&response, prefix).unwrap();
     let csrf = json(response).await["data"]["csrf_token"]
         .as_str()
         .unwrap()
@@ -1303,4 +1325,46 @@ async fn options_for_a_host_outside_the_rp_id_fail_clearly() {
         json(response).await["error"]["code"],
         "passkey_host_unsupported"
     );
+}
+
+#[tokio::test]
+async fn localhost_rp_accepts_only_exact_loopback_alias_hosts_on_any_port() {
+    let f = fixture_with_runtime(local_runtime(), false).await;
+    let (cookie, csrf) = anonymous_with_cookie_prefix(&f, "stricknani_v2_login_csrf=").await;
+
+    for host in ["127.0.0.1:41234", "[::1]:41234"] {
+        let request = Request::post("/auth/passkey/options")
+            .header("host", host)
+            .header("origin", format!("http://{host}"))
+            .header("sec-fetch-site", "same-origin")
+            .header("cookie", format!("stricknani_v2_login_csrf={cookie}"))
+            .header("x-csrf-token", &csrf)
+            .header("content-type", "application/json")
+            .body(Body::from("{}"))
+            .unwrap();
+        let response = send(&f, request).await;
+        assert_eq!(response.status(), StatusCode::OK, "host {host}");
+        assert!(json(response).await["data"]["challenge_id"].is_string());
+    }
+
+    for host in [
+        "127.0.0.1.attacker.test:41234",
+        "localhost.attacker.test:41234",
+    ] {
+        let request = Request::post("/auth/passkey/options")
+            .header("host", host)
+            .header("origin", format!("http://{host}"))
+            .header("sec-fetch-site", "same-origin")
+            .header("cookie", format!("stricknani_v2_login_csrf={cookie}"))
+            .header("x-csrf-token", &csrf)
+            .header("content-type", "application/json")
+            .body(Body::from("{}"))
+            .unwrap();
+        let response = send(&f, request).await;
+        assert_eq!(response.status(), StatusCode::CONFLICT, "host {host}");
+        assert_eq!(
+            json(response).await["error"]["code"],
+            "passkey_host_unsupported"
+        );
+    }
 }

@@ -48,6 +48,7 @@
   let removeDialog = $state<ReturnType<typeof ConfirmDialog>>();
   let reauthDialog = $state<ReturnType<typeof ReauthDialog>>();
   let generation = 0;
+  let refreshController: AbortController | null = null;
 
   const locale = $derived(session.data?.locale ?? "en");
   const userId = $derived(session.data?.user?.id ?? null);
@@ -57,20 +58,42 @@
   );
   const canAdd = $derived(supported && passkeys.length < limit);
 
-  async function refresh(): Promise<void> {
-    const request = ++generation;
+  async function refresh(
+    signal: AbortSignal,
+    request: number,
+    requestUserId: number,
+  ): Promise<void> {
     try {
-      const result = await listPasskeys();
-      if (request !== generation) return;
+      const result = await listPasskeys(signal);
+      if (signal.aborted || request !== generation || requestUserId !== userId)
+        return;
       passkeys = result.passkeys;
       limit = result.limit;
       load = "ready";
       loadError = "";
     } catch (error) {
-      if (request !== generation) return;
+      if (signal.aborted || request !== generation || requestUserId !== userId)
+        return;
       load = "error";
       loadError = describe(error);
     }
+  }
+
+  function startRefresh(requestUserId: number): AbortController {
+    refreshController?.abort();
+    const controller = new AbortController();
+    const request = ++generation;
+    refreshController = controller;
+    void refresh(controller.signal, request, requestUserId).finally(() => {
+      if (refreshController === controller) refreshController = null;
+    });
+    return controller;
+  }
+
+  function retryRefresh(): void {
+    const requestUserId = userId;
+    if (!enabled || requestUserId === null) return;
+    startRefresh(requestUserId);
   }
 
   onMount(() => {
@@ -79,8 +102,30 @@
     void listIdentities()
       .then((result) => (passwordEnabled = result.passwordEnabled))
       .catch(() => undefined);
-    void refresh();
     return () => {
+      refreshController?.abort();
+      refreshController = null;
+      generation += 1;
+    };
+  });
+
+  $effect(() => {
+    const requestUserId = userId;
+    if (!enabled || requestUserId === null) {
+      refreshController?.abort();
+      refreshController = null;
+      generation += 1;
+      passkeys = [];
+      limit = 10;
+      load = "loading";
+      loadError = "";
+      return;
+    }
+
+    const controller = startRefresh(requestUserId);
+    return () => {
+      controller.abort();
+      if (refreshController === controller) refreshController = null;
       generation += 1;
     };
   });
@@ -254,11 +299,7 @@
       <p class="muted">{t("Loading passkeys…", locale)}</p>
     {:else if load === "error"}
       <p class="notice-error" role="alert">{loadError}</p>
-      <SharedButton
-        variant="ghost"
-        onclick={() => void refresh()}
-        icon="refresh"
-      >
+      <SharedButton variant="ghost" onclick={retryRefresh} icon="refresh">
         {t("Try again", locale)}
       </SharedButton>
     {:else}

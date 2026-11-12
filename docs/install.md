@@ -85,7 +85,9 @@ passkey), and a passkey can confirm sensitive actions the same way.
   trusted DNS names under the RP ID, over `https` when `SESSION_COOKIE_SECURE=true`.
   Aliases outside the RP ID cannot use passkeys: the server logs a warning at
   startup and answers the options endpoints with `409 passkey_host_unsupported`
-  for browsers on them (use the main address or a parent-domain RP ID).
+  for browsers on them (use the main address or a parent-domain RP ID). In
+  non-secure development with the RP ID `localhost`, `127.0.0.1` and `[::1]`
+  are equivalent loopback addresses, on any port.
 * **Android.** The app signs in and registers through Credential Manager. It needs
   `ANDROID_APP_LINK_FINGERPRINTS` (see above): the server then adds
   `delegate_permission/common.get_login_creds` to `/.well-known/assetlinks.json`

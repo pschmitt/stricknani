@@ -56,6 +56,8 @@ pub struct PasskeyConfig {
     origins: Vec<Url>,
     /// Trusted DNS names outside the RP ID: passkeys cannot work on them.
     uncovered_hosts: Vec<String>,
+    /// In non-secure development with the `localhost` RP ID, loopback origins are aliases too.
+    loopback_aliases: bool,
 }
 
 /// Whether `host` is the RP ID or a subdomain of it.
@@ -111,12 +113,18 @@ impl PasskeyConfig {
         if rp_id.parse::<std::net::IpAddr>().is_ok() || rp_id.contains(['/', ':', '@']) {
             return Err("PASSKEY_RP_ID must be a DNS name");
         }
+        let loopback_aliases = !secure
+            && rp_id == "localhost"
+            && authorities.iter().any(|(host, _)| host == "localhost");
         let scheme = if secure { "https" } else { "http" };
         let mut origins = Vec::new();
         let mut uncovered_hosts: Vec<String> = Vec::new();
         for (host, port) in authorities {
             if !host_under(&host, &rp_id) {
-                if !is_local_name(&host) && !uncovered_hosts.contains(&host) {
+                if !is_local_name(&host)
+                    && !(loopback_aliases && host == "127.0.0.1")
+                    && !uncovered_hosts.contains(&host)
+                {
                     uncovered_hosts.push(host);
                 }
                 continue;
@@ -128,6 +136,10 @@ impl PasskeyConfig {
             };
             origins.push(Url::parse(&origin).map_err(|_| "passkey origin is invalid")?);
         }
+        if loopback_aliases {
+            origins.push(Url::parse("http://127.0.0.1").map_err(|_| "passkey origin is invalid")?);
+            origins.push(Url::parse("http://[::1]").map_err(|_| "passkey origin is invalid")?);
+        }
         if origins.is_empty() {
             return Err("PASSKEY_RP_ID must be a trusted host or a parent domain of one");
         }
@@ -138,6 +150,7 @@ impl PasskeyConfig {
             rp_id,
             origins,
             uncovered_hosts,
+            loopback_aliases,
         }))
     }
 
@@ -245,6 +258,7 @@ pub(crate) struct Started<T> {
 pub struct PasskeyRuntime {
     webauthn: Webauthn,
     rp_id: String,
+    loopback_aliases: bool,
     pending: Mutex<HashMap<String, Pending>>,
 }
 
@@ -265,7 +279,8 @@ impl PasskeyRuntime {
             .ok_or("passkey origins are missing")?;
         let mut builder = WebauthnBuilder::new(&config.rp_id, first)
             .map_err(|_| "passkey relying party is invalid")?
-            .rp_name(RP_NAME);
+            .rp_name(RP_NAME)
+            .allow_any_port(config.loopback_aliases);
         for origin in rest {
             builder = builder.append_allowed_origin(origin);
         }
@@ -274,6 +289,7 @@ impl PasskeyRuntime {
                 .build()
                 .map_err(|_| "passkey relying party is invalid")?,
             rp_id: config.rp_id.clone(),
+            loopback_aliases: config.loopback_aliases,
             pending: Mutex::default(),
         })
     }
@@ -283,7 +299,8 @@ impl PasskeyRuntime {
     }
 
     /// Whether a browser on this `Host` header can use passkeys: the host (port ignored) is the
-    /// RP ID or under it. Browsers reject options for any other host.
+    /// RP ID or under it. Browsers reject options for any other host. In non-secure development
+    /// with the RP ID `localhost`, `127.0.0.1` and `[::1]` are aliases on any port.
     pub fn covers_host(&self, host: &str) -> bool {
         let name = host
             .rsplit_once(':')
@@ -291,6 +308,7 @@ impl PasskeyRuntime {
             .map_or(host, |(name, _)| name)
             .to_ascii_lowercase();
         host_under(&name, &self.rp_id)
+            || (self.loopback_aliases && matches!(name.as_str(), "127.0.0.1" | "[::1]"))
     }
 
     /// Store a ceremony and return its id.
@@ -949,7 +967,60 @@ mod tests {
         .unwrap()
         .unwrap();
         assert_eq!(config.rp_id(), "localhost");
-        assert_eq!(config.origins()[0].as_str(), "http://localhost:7674/");
+        assert!(config.uncovered_hosts().is_empty());
+        let origins: Vec<_> = config.origins().iter().map(Url::as_str).collect();
+        assert_eq!(
+            origins,
+            [
+                "http://localhost:7674/",
+                "http://127.0.0.1/",
+                "http://[::1]/",
+            ]
+        );
+        let runtime = PasskeyRuntime::new(&config).unwrap();
+        assert!(runtime.covers_host("localhost:7674"));
+        assert!(runtime.covers_host("127.0.0.1"));
+        assert!(runtime.covers_host("127.0.0.1:41234"));
+        assert!(runtime.covers_host("[::1]:41234"));
+        assert!(runtime.covers_host("[::1]"));
+        assert!(!runtime.covers_host("127.0.0.2:41234"));
+        assert!(!runtime.covers_host("127.0.0.1.attacker.test:41234"));
+        assert!(!runtime.covers_host("localhost.attacker.test:41234"));
+
+        let production = PasskeyConfig::from_settings(
+            true,
+            None,
+            &hosts("wolle.example.org,localhost"),
+            true,
+            7674,
+            None,
+        )
+        .unwrap()
+        .unwrap();
+        let production_runtime = PasskeyRuntime::new(&production).unwrap();
+        assert_eq!(production.origins().len(), 1);
+        assert!(production_runtime.covers_host("wolle.example.org:443"));
+        assert!(!production_runtime.covers_host("127.0.0.1:41234"));
+
+        let secure_localhost =
+            PasskeyConfig::from_settings(true, None, &hosts("localhost"), true, 7674, None)
+                .unwrap()
+                .unwrap();
+        let secure_runtime = PasskeyRuntime::new(&secure_localhost).unwrap();
+        assert_eq!(secure_localhost.origins().len(), 1);
+        assert!(!secure_runtime.covers_host("127.0.0.1:41234"));
+
+        assert!(
+            PasskeyConfig::from_settings(
+                true,
+                Some("localhost"),
+                &hosts("wolle.example.org"),
+                false,
+                7674,
+                None,
+            )
+            .is_err()
+        );
     }
 
     #[test]

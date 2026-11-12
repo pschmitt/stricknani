@@ -12,7 +12,12 @@ import { PasskeyCeremonyError } from "./passkey-api";
 export const CONDITIONAL_RENEW_MS = 8 * 60 * 1000;
 
 export type PasskeyLoginFailure =
-  "cancelled" | "not_recognized" | "rate_limited" | "unavailable" | "unknown";
+  | "cancelled"
+  | "not_recognized"
+  | "rate_limited"
+  | "unavailable"
+  | "host_unsupported"
+  | "unknown";
 
 export function classifyPasskeyLoginFailure(
   error: unknown,
@@ -29,6 +34,7 @@ export function classifyPasskeyLoginFailure(
     if (error.code === "invalid_passkey") return "not_recognized";
     if (error.code === "rate_limited") return "rate_limited";
     if (error.code === "passkeys_unavailable") return "unavailable";
+    if (error.code === "passkey_host_unsupported") return "host_unsupported";
   }
   return "unknown";
 }
@@ -42,7 +48,6 @@ export interface ConditionalLoginDeps {
   /** Renew the login CSRF token before the next ceremony. */
   renew: () => Promise<void>;
   onSignedIn: () => void | Promise<void>;
-  onFailure: (failure: PasskeyLoginFailure) => void;
   signal: AbortSignal;
   renewAfterMs?: number;
   /** Test hook. */
@@ -75,18 +80,9 @@ export async function runConditionalSignIn(
     } catch (error) {
       if (deps.signal.aborted) return;
       const failure = classifyPasskeyLoginFailure(error);
-      // The autofill request is background work the person never asked for: a browser or device
-      // that cannot do it (no authenticator, unsupported) just stops quietly. Only the server
-      // turning down a passkey they picked is worth saying.
-      if (
-        error instanceof PasskeyCeremonyError &&
-        error.failure !== "cancelled"
-      )
-        return;
-      if (failure !== "cancelled") {
-        deps.onFailure(failure);
-        if (failure === "rate_limited" || failure === "unavailable") return;
-      }
+      // Conditional mediation runs in the background. Any failure, including a host mismatch or
+      // a server/network error, must stay quiet; only the explicit button reports errors.
+      if (failure !== "cancelled") return;
       quickEnds = now() - started < 2000 ? quickEnds + 1 : 0;
       if (quickEnds >= 2) return;
     } finally {

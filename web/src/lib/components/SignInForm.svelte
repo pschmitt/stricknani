@@ -78,7 +78,6 @@
         signIn: signInWithPasskey,
         renew: () => renewLoginCsrf(controller.signal),
         onSignedIn: () => goto(resolve("/projects")),
-        onFailure: (reason) => (passkeyFailure = reason),
         signal: controller.signal,
       });
     });
@@ -119,6 +118,7 @@
       case "rate_limited":
         return t("Too many attempts. Wait a moment and try again.", locale);
       case "unavailable":
+      case "host_unsupported":
         return t(
           "Passkeys do not work on this page right now. Use your password.",
           locale,

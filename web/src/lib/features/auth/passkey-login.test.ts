@@ -19,6 +19,7 @@ describe("classifyPasskeyLoginFailure", () => {
     [new ApiError("x", 401, "invalid_passkey"), "not_recognized"],
     [new ApiError("x", 429, "rate_limited"), "rate_limited"],
     [new ApiError("x", 404, "passkeys_unavailable"), "unavailable"],
+    [new ApiError("x", 409, "passkey_host_unsupported"), "host_unsupported"],
     [new ApiError("x", 500, "internal_error"), "unknown"],
     [new Error("x"), "unknown"],
   ])("maps %s to %s", (error, expected) => {
@@ -30,7 +31,6 @@ describe("runConditionalSignIn", () => {
   const base = () => ({
     renew: vi.fn().mockResolvedValue(undefined),
     onSignedIn: vi.fn(),
-    onFailure: vi.fn(),
   });
 
   it("signs in once a passkey is chosen", async () => {
@@ -44,7 +44,6 @@ describe("runConditionalSignIn", () => {
     expect(signIn).toHaveBeenCalledTimes(1);
     expect(signIn.mock.calls[0][0].conditional).toBe(true);
     expect(deps.onSignedIn).toHaveBeenCalledTimes(1);
-    expect(deps.onFailure).not.toHaveBeenCalled();
   });
 
   it("restarts after the CSRF renewal interval and keeps listening", async () => {
@@ -76,38 +75,34 @@ describe("runConditionalSignIn", () => {
       expect(deps.renew).toHaveBeenCalledTimes(1);
       expect(signIn).toHaveBeenCalledTimes(2);
       expect(deps.onSignedIn).toHaveBeenCalledTimes(1);
-      expect(deps.onFailure).not.toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
     }
   });
 
-  it("reports a rejected passkey and listens again", async () => {
-    const deps = base();
-    const signIn = vi
-      .fn()
-      .mockRejectedValueOnce(new ApiError("x", 401, "invalid_passkey"))
-      .mockResolvedValueOnce(undefined);
-    await runConditionalSignIn({
-      ...deps,
-      signIn,
-      signal: new AbortController().signal,
-    });
-    expect(deps.onFailure).toHaveBeenCalledWith("not_recognized");
-    expect(deps.renew).toHaveBeenCalledTimes(1);
-    expect(deps.onSignedIn).toHaveBeenCalledTimes(1);
+  it("silently stops on any autofill-time error", async () => {
+    for (const error of [
+      new ApiError("x", 409, "passkey_host_unsupported"),
+      new ApiError("x", 401, "invalid_passkey"),
+      new ApiError("x", 429, "rate_limited"),
+      new ApiError("x", 500, "internal_error"),
+      new PasskeyCeremonyError("unavailable"),
+      new Error("network"),
+    ]) {
+      const deps = base();
+      const signIn = vi.fn().mockRejectedValue(error);
+      await runConditionalSignIn({
+        ...deps,
+        signIn,
+        signal: new AbortController().signal,
+      });
+      expect(signIn).toHaveBeenCalledTimes(1);
+      expect(deps.renew).not.toHaveBeenCalled();
+      expect(deps.onSignedIn).not.toHaveBeenCalled();
+    }
   });
 
-  it("stops on rate limiting and when the page goes away", async () => {
-    const deps = base();
-    await runConditionalSignIn({
-      ...deps,
-      signIn: vi.fn().mockRejectedValue(new ApiError("x", 429, "rate_limited")),
-      signal: new AbortController().signal,
-    });
-    expect(deps.onFailure).toHaveBeenCalledWith("rate_limited");
-    expect(deps.onSignedIn).not.toHaveBeenCalled();
-
+  it("stops when the page goes away", async () => {
     const controller = new AbortController();
     const quiet = base();
     const signIn = vi
@@ -127,7 +122,6 @@ describe("runConditionalSignIn", () => {
     });
     controller.abort();
     await running;
-    expect(quiet.onFailure).not.toHaveBeenCalled();
     expect(quiet.renew).not.toHaveBeenCalled();
   });
 
@@ -157,7 +151,6 @@ describe("runConditionalSignIn", () => {
         signal: new AbortController().signal,
       });
       expect(signIn).toHaveBeenCalledTimes(1);
-      expect(deps.onFailure).not.toHaveBeenCalled();
       expect(deps.onSignedIn).not.toHaveBeenCalled();
     }
   });
