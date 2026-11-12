@@ -13,7 +13,6 @@ import blue.anika.wolle.data.backups.RestoreErrorKind
 import blue.anika.wolle.data.backups.RestoreEvent
 import blue.anika.wolle.data.backups.RestoreState
 import blue.anika.wolle.data.backups.backupOrder
-import blue.anika.wolle.data.backups.canRestore
 import blue.anika.wolle.data.backups.reduceRestore
 import blue.anika.wolle.data.backups.toBackupsException
 import blue.anika.wolle.data.backups.waitForRestart
