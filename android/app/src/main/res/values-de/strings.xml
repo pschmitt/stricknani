@@ -1667,7 +1667,7 @@
     <string name="backups_last_succeeded">%1$s wurde am %2$s von %3$s wiederhergestellt.</string>
     <string name="backups_media_error">Einige Mediendateien konnten nicht hinzugefügt werden: %1$s</string>
     <string name="backups_undo_title">Letzte Wiederherstellung rückgängig machen</string>
-    <string name="backups_undo_text">Vor jeder Wiederherstellung werden die aktuellen Daten als %1$s (%2$s) gesichert. Wenn du diese Sicherung wiederherstellst, ist der alte Stand zurück.</string>
+    <string name="backups_undo_text">%1$s hat %2$s am %3$s wiederhergestellt. Die Daten von vorher sind als %4$s gesichert; sie wiederherzustellen bringt diesen Stand zurück.</string>
     <string name="backups_undo_action">Letzte Wiederherstellung rückgängig machen …</string>
     <string name="backups_restore_action">Wiederherstellen …</string>
     <string name="backups_kind_nightly">Nächtlich</string>
@@ -1676,7 +1676,7 @@
     <string name="backups_kind_pre_restore">Vor Wiederherstellung</string>
     <string name="backups_kind_manual">Manuell</string>
     <string name="backups_schema">Schema %1$s</string>
-    <string name="backups_has_media">Mit Medien</string>
+    <string name="backups_has_media">Mit Fotos</string>
     <string name="backups_count_users">%1$s Konten</string>
     <string name="backups_count_projects">%1$s Projekte</string>
     <string name="backups_count_yarns">%1$s Garne</string>
