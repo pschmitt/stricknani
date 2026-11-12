@@ -144,4 +144,19 @@ describe("runConditionalSignIn", () => {
     expect(signIn).toHaveBeenCalledTimes(2);
     expect(deps.onSignedIn).not.toHaveBeenCalled();
   });
+
+  it("stops quietly when the browser cannot do autofill passkeys", async () => {
+    for (const failure of ["unknown", "unsupported", "unavailable"] as const) {
+      const deps = base();
+      const signIn = vi.fn().mockRejectedValue(new PasskeyCeremonyError(failure));
+      await runConditionalSignIn({
+        ...deps,
+        signIn,
+        signal: new AbortController().signal,
+      });
+      expect(signIn).toHaveBeenCalledTimes(1);
+      expect(deps.onFailure).not.toHaveBeenCalled();
+      expect(deps.onSignedIn).not.toHaveBeenCalled();
+    }
+  });
 });

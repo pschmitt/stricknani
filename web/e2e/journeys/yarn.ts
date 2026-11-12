@@ -384,7 +384,7 @@ export async function runYarnJourney(
     );
     await page.locator("#email").fill(email);
     await page.locator("#password").fill(password);
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
     markStage("waiting for signed-in project library");
     await page.waitForURL("**/app/projects");
     await page

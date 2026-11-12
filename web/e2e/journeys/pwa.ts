@@ -1057,7 +1057,7 @@ async function runAcceptance(
     await page.locator("#email").fill(email);
     await page.locator("#password").fill(password);
     markStage("submitting recovered sign-in form");
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
     markStage("waiting for authenticated shell after offline recovery");
     await page
       .locator(".app-shell")

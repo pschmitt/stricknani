@@ -204,7 +204,7 @@ async function signIn(
   await page.locator("#email").waitFor({ state: "visible" });
   await page.locator("#email").fill(email);
   await page.locator("#password").fill(password);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.getByRole("heading", { name: "Projects" }).waitFor({
     state: "visible",
   });
@@ -259,7 +259,7 @@ async function signInAccount(
   await page.goto(`${origin}/app/login`, { waitUntil: "networkidle" });
   await page.locator("#email").fill(email);
   await page.locator("#password").fill(password);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.getByRole("heading", { name: "Projects" }).waitFor({
     state: "visible",
   });
@@ -3002,7 +3002,7 @@ async function runAcceptance(
     mark("fill member sign-in");
     await page.locator("#email").fill(memberEmail);
     await page.locator("#password").fill(resetPassword);
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
     mark("wait for member sign-in");
     await page.getByRole("heading", { name: "Projects" }).waitFor({
       state: "visible",
@@ -3044,7 +3044,7 @@ async function runAcceptance(
     mark("fill administrator sign-in");
     await page.locator("#email").fill(adminEmail);
     await page.locator("#password").fill(adminPassword);
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
     mark("wait for administrator sign-in");
     await page.getByRole("heading", { name: "Projects" }).waitFor({
       state: "visible",
@@ -3070,7 +3070,7 @@ async function runAcceptance(
     );
     await page.locator("#email").fill(adminEmail);
     await page.locator("#password").fill(adminPassword);
-    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await page.getByRole("heading", { name: "Projects" }).waitFor({
       state: "visible",
     });

@@ -211,7 +211,7 @@ export async function runImportJourney(
     await page.locator("#password").fill(password);
     markStage("submitting disposable login");
     try {
-      await page.getByRole("button", { name: "Sign in" }).click();
+      await page.getByRole("button", { name: "Sign in", exact: true }).click();
     } catch (error) {
       if (!(error instanceof errors.TimeoutError)) {
         throw error;

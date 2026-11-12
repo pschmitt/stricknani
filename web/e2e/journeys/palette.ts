@@ -16,7 +16,7 @@ async function signIn(page: Page, f: LiveFixture): Promise<void> {
   await page.locator("#email").waitFor({ state: "visible" });
   await page.locator("#email").fill(f.env.STRICKNANI_TEST_EMAIL);
   await page.locator("#password").fill(f.env.STRICKNANI_TEST_PASSWORD);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.getByRole("heading", { name: "Projects" }).waitFor({
     state: "visible",
   });

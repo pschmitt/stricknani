@@ -100,7 +100,7 @@ async function signIn(
   await page.getByRole("radio", { name: /^(English|Englisch)$/ }).click();
   await page.locator("#email").fill(email);
   await page.locator("#password").fill(password);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.waitForURL("**/app/projects");
   await page
     .getByRole("heading", { name: "Projects", exact: true })

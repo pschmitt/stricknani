@@ -16,7 +16,7 @@ test("project timer edits, runs, persists, and reminds", async () => {
       await page
         .locator("#password")
         .fill(fixture.env.STRICKNANI_TEST_PASSWORD);
-      await page.getByRole("button", { name: "Sign in" }).click();
+      await page.getByRole("button", { name: "Sign in", exact: true }).click();
       await page
         .getByRole("heading", { name: "Projects" })
         .waitFor({ state: "visible" });

@@ -75,6 +75,14 @@ export async function runConditionalSignIn(
     } catch (error) {
       if (deps.signal.aborted) return;
       const failure = classifyPasskeyLoginFailure(error);
+      // The autofill request is background work the person never asked for: a browser or device
+      // that cannot do it (no authenticator, unsupported) just stops quietly. Only the server
+      // turning down a passkey they picked is worth saying.
+      if (
+        error instanceof PasskeyCeremonyError &&
+        error.failure !== "cancelled"
+      )
+        return;
       if (failure !== "cancelled") {
         deps.onFailure(failure);
         if (failure === "rate_limited" || failure === "unavailable") return;

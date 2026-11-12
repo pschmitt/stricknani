@@ -727,7 +727,7 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
   markStage("real password login and session cookie");
   await page.locator("#email").fill(browserEmail);
   await page.locator("#password").fill(browserPassword);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   markStage("waiting for project library URL after login");
   await page.waitForURL("**/app/projects", { timeout: 10_000 });
   markStage("waiting for authenticated app shell");

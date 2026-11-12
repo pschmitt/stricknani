@@ -129,7 +129,7 @@ async function signIn(
   await page.locator("#email").waitFor({ state: "visible" });
   await page.locator("#email").fill(email);
   await page.locator("#password").fill(password);
-  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.getByRole("heading", { name: "Projects" }).waitFor({
     state: "visible",
   });
