@@ -2502,18 +2502,21 @@
               <span aria-hidden="true" class="action-status"
                 >{statusMessage}</span
               >
-            {:else if isDirty}
-              <span class="dirty-note" role="status"
-                >{stagedRemovalCount(staged) > 0
-                  ? t(
-                      "Unsaved changes. Removed items go to the trash when you save.",
-                      locale,
-                    )
-                  : t("Unsaved changes", locale)}</span
-              >
-            {:else if !isCreating}
-              <span class="dirty-note" role="status" data-testid="saved-state"
-                >{t("All changes saved", locale)}</span
+            {:else if isDirty || !isCreating}
+              <!-- One span for both states: replacing the element on the first
+                   keystroke splits the browser's undo of the name field. -->
+              <span
+                class="dirty-note"
+                role="status"
+                data-testid={isDirty ? undefined : "saved-state"}
+                >{isDirty
+                  ? stagedRemovalCount(staged) > 0
+                    ? t(
+                        "Unsaved changes. Removed items go to the trash when you save.",
+                        locale,
+                      )
+                    : t("Unsaved changes", locale)
+                  : t("All changes saved", locale)}</span
               >
             {/if}
           {/snippet}

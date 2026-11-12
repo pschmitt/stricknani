@@ -53,10 +53,10 @@
     transition: background-color 120ms ease;
   }
 
-  /* The visible chip is 36px; the hit area reaches 44px without moving the layout. */
+  /* The visible chip is 36px; the hit area (padding box plus 5px each side) reaches 44px without moving the layout. */
   .filter-chip::after {
     position: absolute;
-    inset: -4px -2px;
+    inset: -5px -2px;
     content: "";
   }
 

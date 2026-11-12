@@ -757,7 +757,19 @@ export async function measureLibraryDensity(
         : null,
       titleWidth: titleRect?.width ?? null,
       thumbnailWidth: image?.getBoundingClientRect().width ?? null,
-      targetHeights: targets.map((el) => el.getBoundingClientRect().height),
+      targetHeights: targets.map((el) => {
+        // A compact chip reaches 44px through its absolutely positioned
+        // ::after hit area; count it as the target (as visibleHeights does).
+        const after = getComputedStyle(el, "::after");
+        const reach =
+          after.content !== "none" && after.position === "absolute"
+            ? parseFloat(after.height)
+            : 0;
+        return Math.max(
+          el.getBoundingClientRect().height,
+          Number.isFinite(reach) ? reach : 0,
+        );
+      }),
       controlsBeforeFirstItem:
         row && rect
           ? Math.max(
