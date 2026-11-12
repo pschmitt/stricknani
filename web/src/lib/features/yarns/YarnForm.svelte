@@ -1352,7 +1352,7 @@
         </div>
         <Button
           class="danger-button"
-          variant="danger"
+          variant="danger-ghost"
           icon="action-delete"
           type="button"
           disabled={isDirty || saving || mediaBusy || deleting}

@@ -362,7 +362,7 @@
               </Button>
               <Button
                 class="quiet-button destructive"
-                variant="danger"
+                variant="danger-ghost"
                 icon="action-delete"
                 type="button"
                 onclick={() => askDelete(category)}
