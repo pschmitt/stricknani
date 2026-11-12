@@ -283,15 +283,15 @@ private fun TrashRow(
                     )
                     row.parentKind?.let { parentKind ->
                         row.parentName?.let { parentName ->
-                            val openParent =
-                                when (parentKind) {
-                                    "project" -> parentId?.let { id -> { onOpenProject(id.toInt()) } }
-                                    "yarn" -> parentId?.let { id -> { onOpenYarn(id.toInt()) } }
-                                    else -> null
-                                }
-                            if (openParent != null) {
+                            if (
+                                parentId != null &&
+                                    (parentKind == "project" || parentKind == "yarn")
+                            ) {
                                 TextButton(
-                                    onClick = openParent,
+                                    onClick = {
+                                        if (parentKind == "project") onOpenProject(parentId.toInt())
+                                        else onOpenYarn(parentId.toInt())
+                                    },
                                     contentPadding = PaddingValues(0.dp),
                                     colors =
                                         ButtonDefaults.textButtonColors(
