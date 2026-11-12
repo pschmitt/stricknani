@@ -3020,4 +3020,7 @@ The web reorder grid scrolls the page while a lifted photo is held near the top 
 auto-scroll: a long grid in a short window needs a second drag after scrolling by hand. Needs the
 editor's scroll state passed into `EditorPhotoStrip`.
 
-- [ ] Scroll the editor while a lifted photo is within about 72dp of the top or bottom edge.
+- [x] Scroll the editor while a lifted photo is within about 72dp of the top or bottom edge
+      (`edgeScrollDelta`, same zone and curve as the web; `Modifier.photoAutoScroll` on the editors'
+      LazyColumn registers the scroller with `PhotoEditHost`; the held photo keeps its place under
+      the finger and the slot is looked up again each frame).
