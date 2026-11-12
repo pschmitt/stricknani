@@ -3013,11 +3013,14 @@ web (`web/src/lib/features/trash`).
 - [x] Trash rows show the item's cover or picture (`thumbnail_url`), an icon for categories, steps
       and attachments.
 
-## SNA-109: Photo reorder grid auto-scroll (web parity)
+## SNA-111: Photo reorder grid auto-scroll (web parity)
 
 The web reorder grid scrolls the page while a lifted photo is held near the top or bottom edge
 (`edgeScrollDelta` in `web/src/lib/features/media/media-reorder.ts`). `PhotoReorderGrid` has no
 auto-scroll: a long grid in a short window needs a second drag after scrolling by hand. Needs the
 editor's scroll state passed into `EditorPhotoStrip`.
 
-- [ ] Scroll the editor while a lifted photo is within about 72dp of the top or bottom edge.
+- [x] Scroll the editor while a lifted photo is within about 72dp of the top or bottom edge
+      (`edgeScrollDelta`, same zone and curve as the web; `Modifier.photoAutoScroll` on the editors'
+      LazyColumn registers the scroller with `PhotoEditHost`; the held photo keeps its place under
+      the finger and the slot is looked up again each frame).

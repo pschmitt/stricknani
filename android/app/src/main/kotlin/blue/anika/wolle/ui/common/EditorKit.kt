@@ -14,6 +14,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.ScrollableState
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -92,6 +93,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
@@ -179,6 +181,9 @@ fun rememberPhotoRemovalAnnouncer(host: SnackbarHostState): (PhotoRemoval) -> Un
  * strip registers itself while editing, and [photoEditHost] on the screen's root watches touches.
  */
 class PhotoEditHost {
+    /** The screen's vertical scroller, if it registered one with [photoAutoScroll]. */
+    internal var scroller: PhotoAutoScroller? = null
+
     private var dismiss: (() -> Unit)? = null
     private var bounds: () -> Rect? = { null }
 
@@ -197,6 +202,34 @@ class PhotoEditHost {
         val strip = bounds()
         if (strip == null || !strip.contains(positionInWindow)) stop()
     }
+}
+
+/**
+ * What [PhotoReorderGrid] scrolls while a lifted photo is held at an edge: [viewport] is the
+ * visible area of the scroll container in window coordinates, [scrollBy] scrolls it by a number of
+ * pixels (positive: further down) and returns how much it actually scrolled.
+ */
+internal class PhotoAutoScroller(val viewport: () -> Rect?, val scrollBy: (Float) -> Float)
+
+/**
+ * Put on a screen's vertical scroll container: registers it with the surrounding
+ * [PhotoEditHostProvider] so a photo dragged to the top or bottom edge scrolls it.
+ */
+@Composable
+fun Modifier.photoAutoScroll(state: ScrollableState): Modifier {
+    val host = LocalPhotoEditHost.current
+    val currentState by rememberUpdatedState(state)
+    val coords = remember { arrayOfNulls<LayoutCoordinates>(1) }
+    DisposableEffect(host) {
+        val scroller =
+            PhotoAutoScroller(
+                viewport = { coords[0]?.takeIf { it.isAttached }?.boundsInWindow() },
+                scrollBy = { currentState.dispatchRawDelta(it) },
+            )
+        host?.scroller = scroller
+        onDispose { if (host?.scroller === scroller) host.scroller = null }
+    }
+    return onGloballyPositioned { coords[0] = it }
 }
 
 val LocalPhotoEditHost = compositionLocalOf<PhotoEditHost?> { null }

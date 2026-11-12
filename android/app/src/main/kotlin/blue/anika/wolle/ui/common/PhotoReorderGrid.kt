@@ -26,12 +26,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,6 +50,9 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -69,6 +74,38 @@ import kotlin.math.floor
 private const val GRID_MIN_TILE_DP = 110
 private const val GRID_MIN_COLUMNS = 3
 private const val GRID_GAP_DP = 10
+
+/** Web parity (`edgeScrollDelta` in `media-reorder.ts`): the edge zone and the top speed. */
+internal const val EDGE_SCROLL_ZONE_DP = 72f
+internal const val EDGE_SCROLL_MAX_SPEED_DP = 18f
+
+/** One 60 Hz frame; the speed is per such frame and scaled by the real frame time. */
+private const val EDGE_SCROLL_FRAME_MILLIS = 1000f / 60f
+
+/**
+ * Scroll step for one frame while a lifted photo is held at [pointerY], inside the visible span
+ * [top]..[bottom] of the scroll container: zero in the middle, negative (scroll up) within [zone]
+ * of the top and positive (scroll down) within [zone] of the bottom, growing linearly with the
+ * depth into the zone up to [maxSpeed]. The same curve as the web's `edgeScrollDelta`.
+ */
+internal fun edgeScrollDelta(
+    pointerY: Float,
+    top: Float,
+    bottom: Float,
+    zone: Float,
+    maxSpeed: Float,
+): Float {
+    if (zone <= 0f) return 0f
+    if (pointerY < top + zone) {
+        val depth = ((top + zone - pointerY) / zone).coerceAtMost(1f)
+        return -ceil(depth * maxSpeed)
+    }
+    if (pointerY > bottom - zone) {
+        val depth = ((pointerY - (bottom - zone)) / zone).coerceAtMost(1f)
+        return ceil(depth * maxSpeed)
+    }
+    return 0f
+}
 
 /** How many columns fit [widthDp]: at least three, more on wider screens. */
 internal fun photoGridColumns(widthDp: Float): Int =
@@ -116,6 +153,10 @@ internal fun PhotoReorderGrid(
     var heldKey by remember { mutableStateOf<String?>(null) }
     var startPos by remember { mutableStateOf(Offset.Zero) }
     var delta by remember { mutableStateOf(Offset.Zero) }
+    // Where inside the tile the finger grabbed it, to know the finger's place while scrolling.
+    var grab by remember { mutableStateOf(Offset.Zero) }
+    val gridCoords = remember { arrayOfNulls<LayoutCoordinates>(1) }
+    val scrollHost = LocalPhotoEditHost.current
     BackHandler(onBack = onDone)
 
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -155,11 +196,12 @@ internal fun PhotoReorderGrid(
                 }
             }
 
-            fun startDrag(key: String) {
+            fun startDrag(key: String, grabOffset: Offset) {
                 val index = currentPhotos.indexOfFirst { it.key == key }
                 if (index < 0 || index >= currentReorder.count) return
                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                 heldKey = key
+                grab = grabOffset
                 startPos = slotOffset(index)
                 delta = Offset.Zero
             }
@@ -170,7 +212,42 @@ internal fun PhotoReorderGrid(
                 moveHeldTo(center.x, center.y)
             }
 
-            Box(Modifier.fillMaxWidth().height(tile * rows + gap * (rows - 1))) {
+            // While a photo is held near the top or bottom edge of the editor's visible area,
+            // scroll
+            // it, and keep the photo under the finger: the grid moves by what was scrolled, so the
+            // held photo's place in the grid moves by the same, and the slot is looked up again.
+            val zonePx = with(density) { EDGE_SCROLL_ZONE_DP.dp.toPx() }
+            val maxSpeedPx = with(density) { EDGE_SCROLL_MAX_SPEED_DP.dp.toPx() }
+            LaunchedEffect(heldKey, stride, columns, rows) {
+                if (heldKey == null) return@LaunchedEffect
+                var last = withFrameNanos { it }
+                while (true) {
+                    val now = withFrameNanos { it }
+                    val scale =
+                        ((now - last) / 1_000_000f / EDGE_SCROLL_FRAME_MILLIS).coerceIn(0f, 3f)
+                    last = now
+                    val scroller = scrollHost?.scroller ?: continue
+                    val viewport = scroller.viewport() ?: continue
+                    val origin =
+                        gridCoords[0]?.takeIf { it.isAttached }?.positionInWindow() ?: continue
+                    val pointerY = origin.y + startPos.y + grab.y + delta.y
+                    val step =
+                        edgeScrollDelta(pointerY, viewport.top, viewport.bottom, zonePx, maxSpeedPx)
+                    if (step == 0f) continue
+                    val consumed = scroller.scrollBy(step * scale)
+                    if (consumed != 0f) {
+                        delta += Offset(0f, consumed)
+                        val center = startPos + delta + Offset(tilePx / 2, tilePx / 2)
+                        moveHeldTo(center.x, center.y)
+                    }
+                }
+            }
+
+            Box(
+                Modifier.fillMaxWidth()
+                    .height(tile * rows + gap * (rows - 1))
+                    .onGloballyPositioned { gridCoords[0] = it }
+            ) {
                 photos.forEachIndexed { index, photo ->
                     key(photo.key) {
                         val reorderable = index < reorder.count
@@ -216,7 +293,9 @@ internal fun PhotoReorderGrid(
                                     if (reorderable) {
                                         Modifier.pointerInput(photo.key) {
                                             detectDragGesturesAfterLongPress(
-                                                onDragStart = { startDrag(photo.key) },
+                                                onDragStart = { offset ->
+                                                    startDrag(photo.key, offset)
+                                                },
                                                 onDrag = { change, amount ->
                                                     change.consume()
                                                     drag(amount)
