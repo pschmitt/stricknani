@@ -42,7 +42,7 @@ on:
       - main
     tags:
       - v*
-      - '*.*.*'
+      - "*.*.*"
   workflow_dispatch:
     inputs:
       lane:
@@ -338,7 +338,8 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
           REF_TYPE: ${{ github.ref_type }}
           PRODUCER_WORKFLOW: build.yaml
-          PRODUCER_JOBS: nix,nix-checks,nix-aarch64 / build
+          PRODUCER_JOB: nix / build
+          PRODUCER_JOBS: nix / build,nix-checks / checks,nix-aarch64 / build,nix-aarch64-checks / checks
           ALLOW_STANDALONE: ${{ github.ref_type == 'tag' || github.event_name == 'workflow_dispatch' }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}

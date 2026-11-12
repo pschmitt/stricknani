@@ -625,3 +625,64 @@ test("requires the x86 producer job used for metadata attempt identity", async (
     /must include the nix producer job/,
   );
 });
+
+test("reuses a shared producer when validation alone was retried", async () => {
+  const api = fixture({
+    jobs: [
+      {
+        name: "nix",
+        run_attempt: 1,
+        status: "completed",
+        conclusion: "failure",
+      },
+      {
+        name: "nix / build",
+        run_attempt: 1,
+        status: "completed",
+        conclusion: "success",
+      },
+      {
+        name: "nix-checks / checks",
+        run_attempt: 2,
+        status: "completed",
+        conclusion: "success",
+      },
+      {
+        name: "nix-aarch64 / build",
+        run_attempt: 1,
+        status: "completed",
+        conclusion: "success",
+      },
+      {
+        name: "nix-aarch64-checks / checks",
+        run_attempt: 2,
+        status: "completed",
+        conclusion: "success",
+      },
+    ],
+  });
+  api.run.run_attempt = 2;
+  const result = await waitForProducer({
+    env: env({
+      PRODUCER_JOB: "nix / build",
+      PRODUCER_JOBS:
+        "nix / build,nix-checks / checks,nix-aarch64 / build,nix-aarch64-checks / checks",
+    }),
+    fetcher: api.fetcher,
+    sleep: async () => assert.fail("all required jobs already passed"),
+    log: () => {},
+  });
+  assert.equal(result.runAttempt, 1);
+});
+
+test("requires the configured shared producer in the validation gate", async () => {
+  await assert.rejects(
+    waitForProducer({
+      env: env({ PRODUCER_JOB: "nix / build" }),
+      fetcher: async () => assert.fail("must validate producer names first"),
+      sleep: async () => {},
+      log: () => {},
+    }),
+    /must include the nix \/ build producer job/,
+  );
+});

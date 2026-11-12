@@ -297,8 +297,9 @@ export async function waitForProducer({
     .split(",")
     .map((name) => name.trim())
     .filter(Boolean);
-  if (!requiredNames.includes("nix")) {
-    fail("PRODUCER_JOBS must include the nix producer job.");
+  const producerJob = env.PRODUCER_JOB?.trim() || "nix";
+  if (!requiredNames.includes(producerJob)) {
+    fail(`PRODUCER_JOBS must include the ${producerJob} producer job.`);
   }
   const standalone = env.ALLOW_STANDALONE === "true";
   const attempts = parsePositiveInteger(
@@ -387,7 +388,7 @@ export async function waitForProducer({
         repo,
         run,
       );
-      const producerAttempt = states.jobs.get("nix")?.run_attempt;
+      const producerAttempt = states.jobs.get(producerJob)?.run_attempt;
       if (metadataExists && producerAttempt)
         return {
           runId: run.id,

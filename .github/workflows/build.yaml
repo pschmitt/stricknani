@@ -1,48 +1,16 @@
 name: Build
 
-# Build produces and caches Nix outputs and the container image. The separate
-# E2E and Release workflows consume those outputs for the same source revision.
-# - nix and nix-aarch64: native package and image producers; package outputs go to niks3.
-# - nix-checks: full x86_64 flake validation and cache publication for its check outputs.
-# - docker: loads both native Nix image artifacts, probes /healthz, then publishes a manifest.
-# - android: unit tests and the debug APKs (shared ci-workflows build).
+# Run every lane and let Nix substitute unchanged derivations from the S3 cache.
+# Native producers finish before their checks; E2E can consume the amd64 producer
+# while validation continues. Container publication waits for all native gates.
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-    paths:
-      - "web/**"
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - "src/**"
-      - "tests/**"
-      - "migrations/**"
-      - "templates/**"
-      - "examples/**"
-      - "locales/**"
-      - "stricknani/locales/**"
-      - "nix/**"
-      - "flake.nix"
-      - "flake.lock"
-      - "justfile"
-      - "android/**"
-      - "ci/run-*.sh"
-      - "ci/verify-container.sh"
-      - "ci/wait-for-nix-producer.mjs"
-      - "ci/wait-for-nix-producer.test.mjs"
-      - "docs/web-v2-contract.md"
-      - "docs/rust-replay-ci.md"
-      - ".github/workflows/build.yaml"
-      - ".github/workflows/e2e.yaml"
-      - ".github/workflows/release.yaml"
   workflow_dispatch:
 
 concurrency:
-  # A newer push to a pull request supersedes this run (the pull request's
-  # diff still covers every change). On main every run finishes: the next
-  # push may not match a job's paths, so a cancelled run would leave its
-  # commit unchecked. Manual dispatches keep their own group.
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
@@ -50,261 +18,43 @@ permissions:
   contents: read
 
 jobs:
-  # Which jobs this change needs; a manual dispatch runs them all.
-  changes:
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      pull-requests: read
-    outputs:
-      nix: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.nix == 'true' }}
-      docker: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.docker == 'true' }}
-      android: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.android == 'true' }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      # On main, compare against the last commit this workflow passed on, not just the previous
-      # push: a run GitHub replaced in the queue (or one that failed) must not leave its commit's
-      # changes untested. Without such a run, paths-filter falls back to the previous push.
-      - id: base
-        if: github.event_name == 'push'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          WORKFLOW_REF: ${{ github.workflow_ref }}
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          workflow_file="${WORKFLOW_REF%@*}"
-          workflow_file="${workflow_file##*/}"
-          sha="$(gh api \
-            "repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow_file}/runs?branch=${GITHUB_REF_NAME}&event=push&status=success&per_page=1" \
-            --jq '.workflow_runs[0].head_sha // empty')"
-          if [[ -n "$sha" ]] && git merge-base --is-ancestor "$sha" HEAD
-          then
-            printf 'sha=%s\n' "$sha" >> "$GITHUB_OUTPUT"
-            printf 'Comparing with the last passed run: %s\n' "$sha"
-          else
-            printf '%s\n' 'No passed run on this branch; comparing with the previous push.'
-          fi
-      - id: filter
-        if: github.event_name != 'workflow_dispatch'
-        uses: dorny/paths-filter@v4
-        with:
-          base: ${{ steps.base.outputs.sha }}
-          filters: |
-            nix:
-              - 'web/**'
-              - 'Cargo.toml'
-              - 'Cargo.lock'
-              - 'src/**'
-              - 'tests/**'
-              - 'migrations/**'
-              - 'templates/**'
-              - 'examples/**'
-              - 'locales/**'
-              - 'nix/**'
-              - 'flake.nix'
-              - 'flake.lock'
-              - 'justfile'
-              - 'android/**'
-              - 'ci/run-*.sh'
-              - 'ci/wait-for-nix-producer.mjs'
-              - 'ci/wait-for-nix-producer.test.mjs'
-              - 'docs/web-v2-contract.md'
-              - 'docs/rust-replay-ci.md'
-              - '.github/workflows/build.yaml'
-              - '.github/workflows/e2e.yaml'
-              - '.github/workflows/release.yaml'
-            docker:
-              - 'ci/verify-container.sh'
-              - 'Cargo.toml'
-              - 'Cargo.lock'
-              - 'src/**'
-              - 'tests/**'
-              - 'migrations/**'
-              - 'templates/**'
-              - 'examples/**'
-              - 'locales/**'
-              - 'web/**'
-              - 'nix/**'
-              - 'flake.nix'
-              - 'flake.lock'
-              - '.github/workflows/build.yaml'
-            android:
-              - 'android/**'
-              - '.github/workflows/build.yaml'
-
   nix:
-    needs: changes
-    if: ${{ github.event_name == 'push' || needs.changes.outputs.nix == 'true' || needs.changes.outputs.docker == 'true' }}
-    runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Install just
-        uses: extractions/setup-just@v4
-
-      # Substitutes what nixbot and the build hosts already pushed to niks3, then publishes
-      # the exact source's packages and crane dependency outputs for E2E and Release consumers.
-      - name: Install Nix with the niks3 cache
-        uses: pschmitt/ci-workflows/.github/actions/nix-niks3@main
-        with:
-          s3-store: ${{ secrets.NIKS3_S3_STORE }}
-          s3-access-key: ${{ secrets.NIKS3_S3_ACCESS_KEY }}
-          s3-secret-key: ${{ secrets.NIKS3_S3_SECRET_KEY }}
-          extra-conf: |
-            nix-path = nixpkgs=channel:nixos-unstable
-
-      - name: Build shared packages, dependencies and the container
-        id: built
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          nix build --out-link result \
-            '.#stricknani' '.#stricknani-web' '.#stricknani-server-static' \
-            '.#stricknani-docker' '.#stricknani.cargoArtifacts' \
-            '.#stricknani-server-static.cargoArtifacts'
-          # Each root is realised once above; later jobs consume these outputs.
-          cp --dereference result-3 "$RUNNER_TEMP/stricknani-image.tar.gz"
-          {
-            echo "paths<<EOF"
-            printf 'stricknani %s\n' "$(readlink -f result)"
-            printf 'stricknani-web %s\n' "$(readlink -f result-1)"
-            printf 'stricknani-server-static %s\n' "$(readlink -f result-2)"
-            printf 'stricknani-docker %s\n' "$(readlink -f result-3)"
-            printf 'stricknani-cargoArtifacts %s\n' "$(readlink -f result-4)"
-            printf 'stricknani-static-cargoArtifacts %s\n' "$(readlink -f result-5)"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Push to the niks3 cache
-        uses: pschmitt/ci-workflows/.github/actions/niks3-push@main
-        with:
-          paths: ${{ steps.built.outputs.paths }}
-          pin-prefix: gh-stricknani-main
-          server-url: ${{ vars.NIKS3_SERVER_URL }}
-
-      - name: Write producer source identity
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          source_sha="$(git rev-parse HEAD)"
-          if [[ "$source_sha" != "$GITHUB_SHA" ]]
-          then
-            echo 'Checked out source does not match the workflow event SHA.' >&2
-            exit 1
-          fi
-          node - "$GITHUB_EVENT_PATH" "$source_sha" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" \
-            > "$RUNNER_TEMP/nix-producer.json" <<'JS'
-          const { readFileSync } = require("node:fs");
-          const event = JSON.parse(readFileSync(process.argv[2], "utf8"));
-          const sha = process.argv[3];
-          const runId = Number(process.argv[4]);
-          const runAttempt = Number(process.argv[5]);
-          if (!/^[0-9a-f]{40}$/i.test(sha) || !Number.isSafeInteger(runId) || !Number.isSafeInteger(runAttempt)) {
-            console.error("Nix producer metadata inputs are invalid.");
-            process.exit(1);
-          }
-          const prHeadSha = event.pull_request?.head?.sha ?? null;
-          if (prHeadSha !== null && !/^[0-9a-f]{40}$/i.test(prHeadSha)) {
-            console.error("Nix producer pull request identity is invalid.");
-            process.exit(1);
-          }
-          process.stdout.write(JSON.stringify({ source_sha: sha, pr_head_sha: prHeadSha, run_id: runId, run_attempt: runAttempt }) + "\n");
-          JS
-
-      - name: Upload Nix producer metadata
-        uses: actions/upload-artifact@v7
-        with:
-          name: nix-producer-metadata
-          path: ${{ runner.temp }}/nix-producer.json
-          overwrite: true
-          if-no-files-found: error
-          retention-days: 1
-
-      - name: Upload the Nix container for verification and publishing
-        uses: actions/upload-artifact@v7
-        with:
-          name: nix-container-amd64
-          path: ${{ runner.temp }}/stricknani-image.tar.gz
-          compression-level: 0
-          if-no-files-found: error
-          retention-days: 1
-          overwrite: true
+    uses: pschmitt/ci-workflows/.github/workflows/nix-build.yaml@main
+    with:
+      pin-prefix: gh-stricknani-main
+      image-package: stricknani-docker
+      image-artifact: nix-container-amd64
+      image-archive-file: stricknani-image.tar.gz
+      producer-metadata-artifact: nix-producer-metadata
+    secrets:
+      s3_store: ${{ secrets.NIKS3_S3_STORE }}
+      s3_access_key: ${{ secrets.NIKS3_S3_ACCESS_KEY }}
+      s3_secret_key: ${{ secrets.NIKS3_S3_SECRET_KEY }}
 
   nix-checks:
-    needs: [changes, nix]
-    if: ${{ needs.nix.result == 'success' && (github.event_name == 'push' || needs.changes.outputs.nix == 'true' || needs.changes.outputs.docker == 'true') }}
-    runs-on: ubuntu-latest
+    needs: nix
     permissions:
       contents: read
       id-token: write
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: Install Nix with the niks3 cache
-        uses: pschmitt/ci-workflows/.github/actions/nix-niks3@main
-        with:
-          s3-store: ${{ secrets.NIKS3_S3_STORE }}
-          s3-access-key: ${{ secrets.NIKS3_S3_ACCESS_KEY }}
-          s3-secret-key: ${{ secrets.NIKS3_S3_SECRET_KEY }}
-          extra-conf: |
-            nix-path = nixpkgs=channel:nixos-unstable
-
-      - name: Run full x86_64 Nix validation
-        run: nix flake check
-
-      - name: Collect validated check outputs
-        id: checks
-        shell: bash
-        run: |
-          set -Eeuo pipefail
-          checks_file="$RUNNER_TEMP/check-names"
-          paths_file="$RUNNER_TEMP/check-paths"
-          nix eval --json .#checks.x86_64-linux --apply builtins.attrNames \
-            | jq -r '.[]' > "$checks_file"
-          declare -A seen_paths=()
-          : > "$paths_file"
-          while IFS= read -r check
-          do
-            path="$(nix build --no-link --print-out-paths ".#checks.x86_64-linux.$check")"
-            if [[ -z "${seen_paths[$path]:-}" ]]
-            then
-              seen_paths["$path"]=1
-              printf 'check-%s %s\n' "$check" "$path" >> "$paths_file"
-            fi
-          done < "$checks_file"
-          {
-            echo 'paths<<EOF'
-            cat "$paths_file"
-            echo EOF
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Push validated check outputs to niks3
-        uses: pschmitt/ci-workflows/.github/actions/niks3-push@main
-        with:
-          paths: ${{ steps.checks.outputs.paths }}
-          pin-prefix: gh-stricknani-main
-          server-url: ${{ vars.NIKS3_SERVER_URL }}
-
-  # aarch64-linux packages and checks, built natively on GitHub's arm runners
-  # (nixbot on x86_64 would have to emulate them) and pushed to the niks3 S3
-  # cache from main and pull requests (the server only trusts those refs); see
-  # pschmitt/ci-workflows. Nothing here needs KVM.
+    uses: pschmitt/ci-workflows/.github/workflows/nix-checks.yaml@main
+    with:
+      pin-prefix: gh-stricknani-main
+    secrets:
+      s3_store: ${{ secrets.NIKS3_S3_STORE }}
+      s3_access_key: ${{ secrets.NIKS3_S3_ACCESS_KEY }}
+      s3_secret_key: ${{ secrets.NIKS3_S3_SECRET_KEY }}
 
   nix-aarch64:
-    needs: changes
-    if: ${{ github.event_name == 'push' || needs.changes.outputs.nix == 'true' || needs.changes.outputs.docker == 'true' }}
     permissions:
       contents: read
       id-token: write
-    uses: pschmitt/ci-workflows/.github/workflows/nix-aarch64.yaml@main
+    uses: pschmitt/ci-workflows/.github/workflows/nix-build.yaml@main
     with:
+      runner: ubuntu-26.04-arm
+      system: aarch64-linux
       pin-prefix: gh-stricknani-main
       image-package: stricknani-docker
       image-artifact: nix-container-arm64
@@ -314,9 +64,25 @@ jobs:
       s3_access_key: ${{ secrets.NIKS3_S3_ACCESS_KEY }}
       s3_secret_key: ${{ secrets.NIKS3_S3_SECRET_KEY }}
 
-  docker:
-    needs: [changes, nix, nix-checks, nix-aarch64]
-    if: ${{ needs.changes.outputs.docker == 'true' }}
+  nix-aarch64-checks:
+    needs: nix-aarch64
+    permissions:
+      contents: read
+      id-token: write
+    uses: pschmitt/ci-workflows/.github/workflows/nix-checks.yaml@main
+    with:
+      runner: ubuntu-26.04-arm
+      system: aarch64-linux
+      full-flake-check: false
+      pin-prefix: gh-stricknani-main
+    secrets:
+      s3_store: ${{ secrets.NIKS3_S3_STORE }}
+      s3_access_key: ${{ secrets.NIKS3_S3_ACCESS_KEY }}
+      s3_secret_key: ${{ secrets.NIKS3_S3_SECRET_KEY }}
+
+  publish-container:
+    name: Publish container
+    needs: [nix, nix-checks, nix-aarch64, nix-aarch64-checks]
     permissions:
       contents: read
       packages: write
@@ -330,8 +96,6 @@ jobs:
       publish: ${{ github.event_name != 'pull_request' }}
 
   android:
-    needs: changes
-    if: ${{ needs.changes.outputs.android == 'true' }}
     uses: pschmitt/ci-workflows/.github/workflows/build.yaml@main
     with:
       project-directory: android

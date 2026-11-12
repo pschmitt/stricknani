@@ -213,7 +213,8 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
           REF_TYPE: ${{ github.ref_type }}
           PRODUCER_WORKFLOW: build.yaml
-          PRODUCER_JOBS: nix
+          PRODUCER_JOB: nix / build
+          PRODUCER_JOBS: nix / build
           ALLOW_STANDALONE: ${{ github.event_name == 'workflow_dispatch' }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -355,7 +356,7 @@ jobs:
     # API 34 runs the chosen lane; API 33 runs the data backup test again, because Android 13 and
     # older use a different transfer path (a WorkManager worker in a foreground service instead of a
     # user-initiated job). The API 34 entry keeps the established check name.
-    name: ${{ matrix.api == 34 && 'Server + Android emulator' || format('Server + Android emulator (API {0})', matrix.api) }}
+    name: ${{ matrix.api == 34 && 'Android Emulator' || format('Android Emulator (API {0})', matrix.api) }}
     runs-on: ubuntu-26.04
     timeout-minutes: 90
     permissions:
@@ -385,7 +386,8 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
           REF_TYPE: ${{ github.ref_type }}
           PRODUCER_WORKFLOW: build.yaml
-          PRODUCER_JOBS: nix
+          PRODUCER_JOB: nix / build
+          PRODUCER_JOBS: nix / build
           ALLOW_STANDALONE: ${{ github.event_name == 'workflow_dispatch' }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -610,7 +612,7 @@ jobs:
   android-replay:
     needs: [changes]
     if: ${{ needs.changes.outputs.replay == 'true' && github.event_name != 'pull_request' }}
-    name: Server and Android Room replay
+    name: Android Room Replay
     runs-on: ubuntu-26.04
     timeout-minutes: 90
     permissions:
@@ -629,7 +631,8 @@ jobs:
           REF_NAME: ${{ github.ref_name }}
           REF_TYPE: ${{ github.ref_type }}
           PRODUCER_WORKFLOW: build.yaml
-          PRODUCER_JOBS: nix
+          PRODUCER_JOB: nix / build
+          PRODUCER_JOBS: nix / build
           ALLOW_STANDALONE: ${{ github.event_name == 'workflow_dispatch' }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
