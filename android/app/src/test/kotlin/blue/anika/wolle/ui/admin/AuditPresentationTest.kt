@@ -490,4 +490,28 @@ class AuditPresentationTest {
         assertEquals("Unknown client", label(AuditClientDto(kind = "toaster", label = "x")))
         assertEquals(AuditClientKind.Unknown, null.clientKind())
     }
+
+    @Test
+    fun `a backup restore is a server event with its details`() {
+        val json = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+        val event =
+            json.decodeFromString<AuditEventDto>(
+                """{"id":7,"actor_email":null,"entity_type":"server","entity_id":0,
+                "action":"backup_restored","created_at":"2026-01-02T03:04:05.000000Z",
+                "resource":{"name":"stricknani-20260101-020000.tar.gz"},
+                "server":{"backup":"stricknani-20260101-020000.tar.gz",
+                "pre_restore":"pre-restore-20260102-030000.sqlite3","media":"add_missing",
+                "actor_email":"admin@example.invalid"}}"""
+            )
+        assertEquals("add_missing", event.server?.media)
+        assertEquals("pre-restore-20260102-030000.sqlite3", event.server?.preRestore)
+        assertEquals("admin@example.invalid", event.server?.actorEmail)
+        assertEquals(
+            R.string.admin_action_backup_restored,
+            auditActionPresentation(event.action).labelRes,
+        )
+        assertEquals(R.string.admin_entity_server, entityTypeLabelRes("server"))
+        assertTrue("server" in auditEntityTypes)
+        assertNull(event.copy(server = null).server)
+    }
 }

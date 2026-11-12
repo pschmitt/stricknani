@@ -113,6 +113,7 @@ private val knownActions: Map<String, Pair<AuditActionKind, Int>> =
         "share_left" to (AuditActionKind.Remove to R.string.admin_action_share_left),
         "ownership_transferred" to
             (AuditActionKind.Update to R.string.admin_action_ownership_transferred),
+        "backup_restored" to (AuditActionKind.Update to R.string.admin_action_backup_restored),
         "impersonation_started" to
             (AuditActionKind.Impersonate to R.string.admin_action_impersonation_started),
         "impersonation_stopped" to
@@ -179,7 +180,7 @@ val AddedGreenLight = Color(0xFF1B6E3A)
 val AddedGreenDark = Color(0xFF8FD9A6)
 
 /** The entity filter values the API accepts besides "all". */
-val auditEntityTypes: List<String> = listOf("project", "yarn", "category")
+val auditEntityTypes: List<String> = listOf("project", "yarn", "category", "server")
 
 @StringRes
 fun entityTypeLabelRes(entityType: String): Int? =
@@ -187,6 +188,7 @@ fun entityTypeLabelRes(entityType: String): Int? =
         "project" -> R.string.admin_entity_project
         "yarn" -> R.string.admin_entity_yarn
         "category" -> R.string.admin_entity_category
+        "server" -> R.string.admin_entity_server
         else -> null
     }
 

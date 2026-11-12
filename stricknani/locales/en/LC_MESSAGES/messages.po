@@ -114,8 +114,8 @@ msgstr "Create yarn"
 msgid "Content fingerprint"
 msgstr ""
 
-#: src/import_service.rs:716 web/src/lib/features/admin/AdminAudit.svelte:270
-#: web/src/lib/features/admin/AdminAudit.svelte:361
+#: src/import_service.rs:716 web/src/lib/features/admin/AdminAudit.svelte:274
+#: web/src/lib/features/admin/AdminAudit.svelte:365
 #: web/src/lib/features/admin/AdminResource.svelte:237
 #: web/src/lib/features/admin/AdminResource.svelte:433
 #: web/src/lib/features/admin/DiffPanel.svelte:96
@@ -151,8 +151,8 @@ msgstr "Stitch sample"
 msgid "Other materials"
 msgstr "Other materials"
 
-#: src/import_service.rs:720 web/src/lib/features/admin/AdminAudit.svelte:268
-#: web/src/lib/features/admin/AdminAudit.svelte:360
+#: src/import_service.rs:720 web/src/lib/features/admin/AdminAudit.svelte:272
+#: web/src/lib/features/admin/AdminAudit.svelte:364
 #: web/src/lib/features/admin/AdminResource.svelte:235
 #: web/src/lib/features/admin/AdminResource.svelte:437
 #: web/src/lib/features/admin/DiffPanel.svelte:94
@@ -460,7 +460,7 @@ msgstr "Acknowledge that you saved the token before closing this dialog."
 msgid "Act as {email}? Everything you do is recorded as done by them and logged."
 msgstr "Act as {email}? Everything you do is recorded as done by them and logged."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:365
+#: web/src/lib/features/admin/AdminAudit.svelte:370
 msgid "Action"
 msgstr "Action"
 
@@ -594,8 +594,8 @@ msgstr "Adjusted rows"
 msgid "Adjusted stitches"
 msgstr "Adjusted stitches"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:337
-#: web/src/lib/features/admin/AdminAudit.svelte:346
+#: web/src/lib/features/admin/AdminAudit.svelte:341
+#: web/src/lib/features/admin/AdminAudit.svelte:350
 #: web/src/lib/features/admin/AdminBackups.svelte:108
 #: web/src/lib/features/admin/AdminBackups.svelte:116
 #: web/src/lib/features/admin/AdminUsers.svelte:650
@@ -665,7 +665,7 @@ msgstr "All"
 msgid "All changes saved"
 msgstr "All changes saved"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:358
+#: web/src/lib/features/admin/AdminAudit.svelte:362
 msgid "All entities"
 msgstr "All entities"
 
@@ -752,7 +752,7 @@ msgstr "Android"
 msgid "Android app and offline data"
 msgstr "Android app and offline data"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:372
+#: web/src/lib/features/admin/AdminAudit.svelte:377
 msgid "Any action"
 msgstr "Any action"
 
@@ -851,15 +851,15 @@ msgstr "Attachment count"
 msgid "Attachment deleted"
 msgstr "Attachment deleted"
 
-#: web/src/lib/features/admin/audit-action.ts:129
+#: web/src/lib/features/admin/audit-action.ts:130
 msgid "Attachment deleted forever"
 msgstr "Attachment deleted forever"
 
-#: web/src/lib/features/admin/audit-action.ts:119
+#: web/src/lib/features/admin/audit-action.ts:120
 msgid "Attachment moved to trash"
 msgstr "Attachment moved to trash"
 
-#: web/src/lib/features/admin/audit-action.ts:124
+#: web/src/lib/features/admin/audit-action.ts:125
 msgid "Attachment restored from trash"
 msgstr "Attachment restored from trash"
 
@@ -873,7 +873,7 @@ msgstr "Attachment uploaded"
 msgid "Attachments"
 msgstr "Attachments"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:409
+#: web/src/lib/features/admin/AdminAudit.svelte:414
 msgid "Audit events"
 msgstr "Audit events"
 
@@ -882,12 +882,12 @@ msgstr "Audit events"
 msgid "Audit events could not be loaded."
 msgstr "Audit events could not be loaded."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:337
+#: web/src/lib/features/admin/AdminAudit.svelte:341
 #: web/src/lib/features/admin/AdminTabs.svelte:22
 msgid "Audit log"
 msgstr "Audit log"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:540
+#: web/src/lib/features/admin/AdminAudit.svelte:560
 msgid "Audit pages"
 msgstr "Audit pages"
 
@@ -956,6 +956,7 @@ msgid "Back to yarns"
 msgstr "Back to yarns"
 
 #: web/src/lib/features/admin/RestoreBackupDialog.svelte:308
+#: web/src/lib/features/admin/audit-action.ts:98
 msgid "Backup restored"
 msgstr "Backup restored"
 
@@ -1033,7 +1034,7 @@ msgstr ""
 msgid "Bulleted list"
 msgstr "Bulleted list"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:478
+#: web/src/lib/features/admin/AdminAudit.svelte:498
 msgid "By"
 msgstr "By"
 
@@ -2007,7 +2008,7 @@ msgstr "Enter your actual gauge from your swatch (stitches and rows per 10cm)"
 msgid "Enter your current password."
 msgstr "Enter your current password."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:356
+#: web/src/lib/features/admin/AdminAudit.svelte:360
 msgid "Entity"
 msgstr "Entity"
 
@@ -2130,13 +2131,13 @@ msgstr "Fetching the page"
 msgid "File"
 msgstr "File"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:380
+#: web/src/lib/features/admin/AdminAudit.svelte:385
 #: web/src/lib/features/projects/ProjectLibrary.svelte:325
 #: web/src/lib/features/yarns/YarnLibrary.svelte:247
 msgid "Filter"
 msgstr "Filter"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:353
+#: web/src/lib/features/admin/AdminAudit.svelte:357
 msgid "Filter audit events"
 msgstr "Filter audit events"
 
@@ -2455,15 +2456,15 @@ msgstr "Image count"
 msgid "Image deleted"
 msgstr "Image deleted"
 
-#: web/src/lib/features/admin/audit-action.ts:128
+#: web/src/lib/features/admin/audit-action.ts:129
 msgid "Image deleted forever"
 msgstr "Image deleted forever"
 
-#: web/src/lib/features/admin/audit-action.ts:118
+#: web/src/lib/features/admin/audit-action.ts:119
 msgid "Image moved to trash"
 msgstr "Image moved to trash"
 
-#: web/src/lib/features/admin/audit-action.ts:123
+#: web/src/lib/features/admin/audit-action.ts:124
 msgid "Image restored from trash"
 msgstr "Image restored from trash"
 
@@ -2502,11 +2503,11 @@ msgstr "Impersonation could not be stopped. Try again."
 msgid "Impersonation has ended. Reload the page to continue."
 msgstr "Impersonation has ended. Reload the page to continue."
 
-#: web/src/lib/features/admin/audit-action.ts:100
+#: web/src/lib/features/admin/audit-action.ts:101
 msgid "Impersonation started"
 msgstr "Impersonation started"
 
-#: web/src/lib/features/admin/audit-action.ts:104
+#: web/src/lib/features/admin/audit-action.ts:105
 msgid "Impersonation stopped"
 msgstr "Impersonation stopped"
 
@@ -2936,7 +2937,7 @@ msgstr "Loading account details…"
 msgid "Loading archive status…"
 msgstr "Loading archive status…"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:386
+#: web/src/lib/features/admin/AdminAudit.svelte:391
 msgid "Loading audit events…"
 msgstr "Loading audit events…"
 
@@ -3077,6 +3078,10 @@ msgstr "Materials"
 msgid "Media files"
 msgstr "Media files"
 
+#: web/src/lib/features/admin/AdminAudit.svelte:447
+msgid "Media files were kept"
+msgstr "Media files were kept"
+
 #: web/src/lib/api.ts:335
 #: web/src/lib/features/account/AccountSettings.svelte:855
 #: web/src/lib/features/projects/ProjectEditor.svelte:1787
@@ -3105,6 +3110,10 @@ msgstr "Minutes"
 #: web/src/lib/features/account/BackupsSection.svelte:452
 msgid "Missing in the file"
 msgstr "Missing in the file"
+
+#: web/src/lib/features/admin/AdminAudit.svelte:446
+msgid "Missing media files were added"
+msgstr "Missing media files were added"
 
 #: web/src/lib/features/home/greeting.ts:14
 msgid "Mooorning!"
@@ -3263,7 +3272,7 @@ msgstr "Next"
 msgid "Next image"
 msgstr "Next image"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:560
+#: web/src/lib/features/admin/AdminAudit.svelte:580
 #: web/src/lib/features/admin/AdminUsers.svelte:877
 msgid "Next page"
 msgstr "Next page"
@@ -3293,7 +3302,7 @@ msgstr ""
 "No Stricknani account is linked to this {name} login yet. Sign in with "
 "your password, then link {name} in your account settings."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:406
+#: web/src/lib/features/admin/AdminAudit.svelte:411
 msgid "No audit events match these filters."
 msgstr "No audit events match these filters."
 
@@ -3326,8 +3335,8 @@ msgstr "No changes recorded yet"
 msgid "No connection"
 msgstr "No connection"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:514
-#: web/src/lib/features/admin/AdminAudit.svelte:516
+#: web/src/lib/features/admin/AdminAudit.svelte:534
+#: web/src/lib/features/admin/AdminAudit.svelte:536
 #: web/src/lib/features/history/HistoryEventDetail.svelte:35
 #: web/src/lib/features/history/HistoryEventDetail.svelte:58
 msgid "No details recorded"
@@ -3731,7 +3740,7 @@ msgstr "PDF"
 msgid "PDF link not attached"
 msgstr "PDF link not attached"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:551
+#: web/src/lib/features/admin/AdminAudit.svelte:571
 #: web/src/lib/features/admin/AdminUsers.svelte:869
 #: web/src/lib/features/projects/ProjectLibrary.svelte:460
 #: web/src/lib/features/yarns/YarnLibrary.svelte:346
@@ -3871,7 +3880,7 @@ msgstr "Photo count"
 msgid "Photo deleted"
 msgstr "Photo deleted"
 
-#: web/src/lib/features/admin/audit-action.ts:130
+#: web/src/lib/features/admin/audit-action.ts:131
 msgid "Photo deleted forever"
 msgstr "Photo deleted forever"
 
@@ -3880,7 +3889,7 @@ msgstr "Photo deleted forever"
 msgid "Photo moved to position {position} of {total}."
 msgstr "Photo moved to position {position} of {total}."
 
-#: web/src/lib/features/admin/audit-action.ts:120
+#: web/src/lib/features/admin/audit-action.ts:121
 msgid "Photo moved to trash"
 msgstr "Photo moved to trash"
 
@@ -3888,7 +3897,7 @@ msgstr "Photo moved to trash"
 msgid "Photo order"
 msgstr "Photo order"
 
-#: web/src/lib/features/admin/audit-action.ts:125
+#: web/src/lib/features/admin/audit-action.ts:126
 msgid "Photo restored from trash"
 msgstr "Photo restored from trash"
 
@@ -3984,7 +3993,7 @@ msgstr "Previous"
 msgid "Previous image"
 msgstr "Previous image"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:549
+#: web/src/lib/features/admin/AdminAudit.svelte:569
 #: web/src/lib/features/admin/AdminUsers.svelte:867
 msgid "Previous page"
 msgstr "Previous page"
@@ -4047,8 +4056,8 @@ msgstr ""
 "account settings, and the instance operator can disable it for the whole "
 "instance."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:266
-#: web/src/lib/features/admin/AdminAudit.svelte:359
+#: web/src/lib/features/admin/AdminAudit.svelte:270
+#: web/src/lib/features/admin/AdminAudit.svelte:363
 #: web/src/lib/features/admin/AdminResource.svelte:233
 #: web/src/lib/features/admin/DiffPanel.svelte:92
 #: web/src/lib/features/trash/trash-kinds.ts:43
@@ -4162,7 +4171,7 @@ msgstr ""
 "Projects, yarns, categories, photos and attachments in one archive, "
 "including items shared with you."
 
-#: web/src/lib/features/admin/audit-action.ts:165
+#: web/src/lib/features/admin/audit-action.ts:166
 msgid "Purged automatically after 90 days"
 msgstr "Purged automatically after 90 days"
 
@@ -4458,7 +4467,7 @@ msgstr "Reset to default order"
 msgid "Resetting…"
 msgstr "Resetting…"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:271
+#: web/src/lib/features/admin/AdminAudit.svelte:275
 #: web/src/lib/features/admin/DiffPanel.svelte:97
 msgid "Resource"
 msgstr "Resource"
@@ -4641,6 +4650,11 @@ msgstr "Rumour has it a cat was involved."
 #: web/src/lib/features/projects/ProjectTimer.svelte:748
 msgid "Running reminder"
 msgstr "Running reminder"
+
+#: web/src/lib/features/admin/AdminAudit.svelte:440
+#, python-brace-format
+msgid "Safety copy: {name}"
+msgstr "Safety copy: {name}"
 
 #: web/src/lib/features/categories/CategoryManager.svelte:331
 #: web/src/lib/features/media/PhotoEditor.svelte:465
@@ -4836,6 +4850,10 @@ msgstr ""
 "Sends technical details of errors, never your content, to the instance "
 "operator."
 
+#: web/src/lib/features/admin/AdminAudit.svelte:366
+msgid "Server"
+msgstr "Server"
+
 #: web/src/routes/about/+page.svelte:233 web/src/routes/about/+page.svelte:371
 msgid "Server build"
 msgstr "Server build"
@@ -4917,8 +4935,8 @@ msgstr "Show"
 msgid "Show all changes"
 msgstr "Show all changes"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:524
-#: web/src/lib/features/admin/AdminAudit.svelte:525
+#: web/src/lib/features/admin/AdminAudit.svelte:544
+#: web/src/lib/features/admin/AdminAudit.svelte:545
 msgid "Show diff"
 msgstr "Show diff"
 
@@ -5358,7 +5376,7 @@ msgid "Swatch size"
 msgstr "Swatch size"
 
 #: web/src/lib/features/account/AccountSettings.svelte:137
-#: web/src/lib/features/admin/AdminAudit.svelte:248
+#: web/src/lib/features/admin/AdminAudit.svelte:251
 #: web/src/lib/features/admin/DiffPanel.svelte:146
 #: web/src/lib/features/admin/DiffPanel.svelte:152
 #: web/src/lib/features/admin/audit-client.ts:46
@@ -5901,7 +5919,7 @@ msgid "The server returned an unexpected import response."
 msgstr "The server returned an unexpected import response."
 
 #: web/src/lib/api.ts:493 web/src/lib/features/account/account-api.ts:65
-#: web/src/lib/features/admin/admin-api.ts:186
+#: web/src/lib/features/admin/admin-api.ts:213
 #: web/src/lib/features/auth/oidc-api.ts:74
 #: web/src/lib/features/auth/signup-api.ts:46
 #: web/src/lib/features/categories/category-api.ts:20
@@ -6388,7 +6406,7 @@ msgstr "Title image changed"
 msgid "Title image uploaded"
 msgstr "Title image uploaded"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:306
+#: web/src/lib/features/admin/AdminAudit.svelte:310
 #: web/src/lib/features/home/activity.ts:386
 msgid "Today"
 msgstr "Today"
@@ -6487,7 +6505,7 @@ msgstr "Try a different name, category, or tag."
 #: web/src/lib/features/account/AccountSettings.svelte:929
 #: web/src/lib/features/account/AccountSettings.svelte:1523
 #: web/src/lib/features/account/BackupsSection.svelte:436
-#: web/src/lib/features/admin/AdminAudit.svelte:401
+#: web/src/lib/features/admin/AdminAudit.svelte:406
 #: web/src/lib/features/admin/AdminBackups.svelte:131
 #: web/src/lib/features/admin/AdminResource.svelte:385
 #: web/src/lib/features/admin/AdminUsers.svelte:693
@@ -6576,8 +6594,8 @@ msgstr "Undo the last restore"
 msgid "Unknown"
 msgstr "Unknown"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:251
-#: web/src/lib/features/admin/AdminAudit.svelte:258
+#: web/src/lib/features/admin/AdminAudit.svelte:255
+#: web/src/lib/features/admin/AdminAudit.svelte:262
 #: web/src/lib/features/admin/DiffPanel.svelte:147
 #: web/src/lib/features/admin/DiffPanel.svelte:153
 msgid "Unknown actor"
@@ -6978,7 +6996,7 @@ msgstr "Yarn specifications"
 msgid "Yarn weight"
 msgstr "Yarn weight"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:308
+#: web/src/lib/features/admin/AdminAudit.svelte:312
 #: web/src/lib/features/home/activity.ts:387
 msgid "Yesterday"
 msgstr "Yesterday"

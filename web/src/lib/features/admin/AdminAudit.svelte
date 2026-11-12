@@ -227,7 +227,10 @@
     if (!(target instanceof HTMLSelectElement)) return;
     const value = target.value;
     const entity: AuditEntity =
-      value === "project" || value === "yarn" || value === "category"
+      value === "project" ||
+      value === "yarn" ||
+      value === "category" ||
+      value === "server"
         ? value
         : "all";
     void updateFilters({ page: 1, entity, action: actionDraft.trim() });
@@ -246,6 +249,7 @@
   function actorLabel(event: AuditEvent): string {
     if (event.actor_email) return event.actor_email;
     if (event.system) return t("System", locale);
+    if (event.server?.actor_email) return event.server.actor_email;
     if (event.legacy_actor_user_id !== null)
       return `${t(legacyUserMessage, locale)} #${event.legacy_actor_user_id}`;
     return t("Unknown actor", locale);
@@ -359,6 +363,7 @@
         <option value="project">{t("Project", locale)}</option>
         <option value="yarn">{t("Yarn", locale)}</option>
         <option value="category">{t("Category", locale)}</option>
+        <option value="server">{t("Server", locale)}</option>
       </select>
     </label>
     <label class="filter-field filter-field--grow">
@@ -427,7 +432,22 @@
                   class="event-resource"
                   class:no-media={!event.media && !hasLifecycle(event)}
                 >
-                  {#if event.entity_type === "user"}
+                  {#if event.entity_type === "server" && event.server}
+                    <p class="impersonation-event" data-audit-server>
+                      <strong>{actionLabel(event.action, locale)}</strong>
+                      <span>{event.server.backup}</span>
+                      <span
+                        >{t("Safety copy: {name}", locale).replace(
+                          "{name}",
+                          event.server.pre_restore,
+                        )}
+                        ·
+                        {event.server.media === "add_missing"
+                          ? t("Missing media files were added", locale)
+                          : t("Media files were kept", locale)}</span
+                      >
+                    </p>
+                  {:else if event.entity_type === "user"}
                     <p class="impersonation-event">
                       <strong
                         >{impersonationHeadline(event.action, actor, locale) ??

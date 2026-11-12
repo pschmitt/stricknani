@@ -416,7 +416,8 @@ private fun AuditRow(
     val typeLabel =
         entityTypeLabelRes(event.entityType)?.let { stringResource(it) } ?: event.entityType
     val time = formatTime(event)
-    val actor = event.actorEmail ?: stringResource(R.string.admin_actor_unknown)
+    val actor =
+        event.actorEmail ?: event.server?.actorEmail ?: stringResource(R.string.admin_actor_unknown)
     val target = event.target()
     // An item in the trash has no page (it would answer 404): a tap opens its details, whose link
     // leads to the Trash screen.
@@ -464,6 +465,26 @@ private fun AuditRow(
                     event.media?.let { media ->
                         Text(
                             auditMediaNote(media),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    event.server?.let { server ->
+                        Text(
+                            stringResource(R.string.admin_server_safety_copy, server.preRestore),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.testTag("admin-audit-row-server"),
+                        )
+                        Text(
+                            stringResource(
+                                if (server.media == "add_missing") R.string.admin_server_media_added
+                                else R.string.admin_server_media_kept
+                            ),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,

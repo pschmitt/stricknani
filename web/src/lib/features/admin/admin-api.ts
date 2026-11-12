@@ -47,6 +47,8 @@ export interface AuditEvent {
   subject: LifecycleSubject | null;
   /** The client that caused the event; `unknown` for events recorded before clients were kept. */
   client: AuditClient;
+  /** What a server event (a backup restore) was about; absent on other events. */
+  server?: AuditServerEvent | null;
 }
 
 export interface Impersonator {
@@ -62,6 +64,31 @@ export function parseImpersonator(value: unknown): Impersonator | null {
     id: safeInteger(value.id) ? value.id : null,
     name: typeof value.name === "string" ? value.name : null,
     email: typeof value.email === "string" ? value.email : null,
+  };
+}
+
+export interface AuditServerEvent {
+  backup: string;
+  pre_restore: string;
+  media: "none" | "add_missing";
+  /** The requesting administrator, also when that account is not in the restored data. */
+  actor_email: string | null;
+}
+
+/** The `server` block of a backup-restore event; malformed values read as none. */
+export function parseAuditServerEvent(value: unknown): AuditServerEvent | null {
+  if (
+    !record(value) ||
+    typeof value.backup !== "string" ||
+    typeof value.pre_restore !== "string"
+  )
+    return null;
+  return {
+    backup: value.backup,
+    pre_restore: value.pre_restore,
+    media: value.media === "add_missing" ? "add_missing" : "none",
+    actor_email:
+      typeof value.actor_email === "string" ? value.actor_email : null,
   };
 }
 
@@ -149,7 +176,7 @@ export interface AuditPage {
   meta: PageMeta;
 }
 
-export type AuditEntity = "all" | "project" | "yarn" | "category";
+export type AuditEntity = "all" | "project" | "yarn" | "category" | "server";
 
 export interface AuditFilters {
   page: number;
@@ -266,6 +293,7 @@ function parseAuditEvent(value: unknown): AuditEvent {
     system: value.system === true,
     subject: parseLifecycleSubject(value.subject),
     client: parseAuditClient(value.client),
+    server: parseAuditServerEvent(value.server),
   };
 }
 
@@ -585,7 +613,10 @@ export function auditFiltersFromSearch(search: string): AuditFilters {
   return {
     page: Number.isSafeInteger(page) && page >= 1 && page <= 10000 ? page : 1,
     entity:
-      entity === "project" || entity === "yarn" || entity === "category"
+      entity === "project" ||
+      entity === "yarn" ||
+      entity === "category" ||
+      entity === "server"
         ? entity
         : "all",
     action: params.get("action") ?? "",

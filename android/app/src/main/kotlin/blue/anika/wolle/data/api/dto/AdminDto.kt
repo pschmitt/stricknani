@@ -130,6 +130,20 @@ data class AuditEventDto(
     val system: Boolean = false,
     /** The client that caused the event; absent on servers that do not record clients. */
     val client: AuditClientDto? = null,
+    /** What a server event (a backup restore) was about; absent on every other event. */
+    val server: AuditServerEventDto? = null,
+)
+
+/**
+ * `AuditServerEvent` in `audit_service.rs`: a backup restore. [actorEmail] names the requesting
+ * administrator even when that account is not part of the restored data.
+ */
+@Serializable
+data class AuditServerEventDto(
+    val backup: String,
+    @SerialName("pre_restore") val preRestore: String,
+    val media: String = "none",
+    @SerialName("actor_email") val actorEmail: String? = null,
 )
 
 /**

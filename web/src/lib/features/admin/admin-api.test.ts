@@ -9,6 +9,7 @@ import {
   listAdminUsers,
   listAuditEvents,
   resetUserPassword,
+  parseAuditServerEvent,
   parseImpersonator,
   setUserActive,
   stopImpersonation,
@@ -812,5 +813,40 @@ describe("administrator API", () => {
       );
       await expect(list()).rejects.toMatchObject({ code: "invalid_response" });
     });
+  });
+});
+
+describe("server audit events", () => {
+  it("reads a backup-restore block and ignores a malformed one", () => {
+    expect(
+      parseAuditServerEvent({
+        backup: "stricknani-20260101-020000.tar.gz",
+        pre_restore: "pre-restore-20260102-030000.sqlite3",
+        media: "add_missing",
+        actor_email: "admin@example.invalid",
+      }),
+    ).toEqual({
+      backup: "stricknani-20260101-020000.tar.gz",
+      pre_restore: "pre-restore-20260102-030000.sqlite3",
+      media: "add_missing",
+      actor_email: "admin@example.invalid",
+    });
+    expect(
+      parseAuditServerEvent({ backup: "a", pre_restore: "b", media: "x" }),
+    ).toEqual({
+      backup: "a",
+      pre_restore: "b",
+      media: "none",
+      actor_email: null,
+    });
+    expect(parseAuditServerEvent({ backup: "a" })).toBeNull();
+    expect(parseAuditServerEvent(null)).toBeNull();
+  });
+
+  it("keeps the server entity in the audit filters", () => {
+    expect(auditFiltersFromSearch("?entity=server").entity).toBe("server");
+    expect(
+      auditSearchFromFilters({ page: 1, entity: "server", action: "" }),
+    ).toBe("entity=server");
   });
 });
