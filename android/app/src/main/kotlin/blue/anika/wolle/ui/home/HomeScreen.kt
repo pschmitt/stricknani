@@ -969,7 +969,11 @@ private fun ShelfTile(
                 }
             }
             owner?.let {
-                OwnerBadge(it, modifier = Modifier.align(Alignment.TopStart).padding(8.dp))
+                OwnerBadge(
+                    it,
+                    modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
+                    compact = true,
+                )
             }
         }
         Text(
