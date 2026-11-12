@@ -12,6 +12,8 @@
   import AuditActionBadge from "./AuditActionBadge.svelte";
   import AuditLifecycle from "./AuditLifecycle.svelte";
   import AuditMediaPreview from "./AuditMediaPreview.svelte";
+  import ClientIcon from "./ClientIcon.svelte";
+  import { clientLabel } from "./audit-client";
   import { knownAuditActions } from "./audit-action";
   import {
     actionLabel,
@@ -485,6 +487,16 @@
                         : actor}</span
                     >
                   </span>
+                  <span
+                    class="client-chip"
+                    data-audit-client={event.client.kind}
+                    title={event.client.user_agent ?? undefined}
+                  >
+                    <ClientIcon kind={event.client.kind} />
+                    <span class="client-name"
+                      >{clientLabel(event.client, locale)}</span
+                    >
+                  </span>
                 </p>
                 <div class="event-meta">
                   <time
@@ -705,6 +717,21 @@
   }
   .actor-identity :global(.user-avatar) {
     flex: none;
+  }
+  .client-chip {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.1rem;
+    font-size: 0.78rem;
+    line-height: 1.2;
+  }
+  .client-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .actor-name {
     min-width: 0;

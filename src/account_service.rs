@@ -745,7 +745,7 @@ pub(crate) async fn delete_account(
         "DELETE FROM audit_events WHERE actor_user_id = ?1",
         // Administrator events about the account itself keep only the id.
         "UPDATE audit_events SET resource_name_snapshot = NULL, details = NULL, \
-             safe_changes = NULL WHERE entity_type = 'user' AND entity_id = ?1",
+             safe_changes = NULL, client_user_agent = NULL WHERE entity_type = 'user' AND entity_id = ?1",
         // Tokens and identities first: no ON DELETE SET NULL update can then
         // trip the token-origin triggers while the rows cascade away.
         "DELETE FROM api_tokens WHERE user_id = ?1",
