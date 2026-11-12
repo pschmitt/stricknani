@@ -14,7 +14,9 @@ interface ImpersonationBackend {
 
 class StartedImpersonation(val token: String, val session: ImpersonationSession)
 
-/** Where the impersonation is persisted. Writes are synchronous: the process restarts right after. */
+/**
+ * Where the impersonation is persisted. Writes are synchronous: the process restarts right after.
+ */
 interface ImpersonationStore {
     /** The impersonation this process runs as; fixed for the life of the process. */
     val session: ImpersonationSession?

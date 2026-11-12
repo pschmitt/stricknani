@@ -328,7 +328,9 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         ) to token
     }
 
-    /** Written with `commit()`: the process is restarted right after, an `apply()` could be lost. */
+    /**
+     * Written with `commit()`: the process is restarted right after, an `apply()` could be lost.
+     */
     override fun begin(session: ImpersonationSession, token: String): Boolean =
         prefs
             .edit()

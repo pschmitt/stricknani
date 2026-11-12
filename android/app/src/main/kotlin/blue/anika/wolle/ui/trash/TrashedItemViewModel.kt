@@ -20,6 +20,7 @@ import blue.anika.wolle.data.repository.TrashRepository
 import blue.anika.wolle.data.repository.YarnRepository
 import blue.anika.wolle.data.repository.toTrashFailure
 import blue.anika.wolle.sync.SyncScheduler
+import blue.anika.wolle.ui.common.DangerousActionGuard
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.navigation.Route
 import blue.anika.wolle.ui.projects.LinkedYarn
@@ -78,6 +79,7 @@ constructor(
     private val mediaUrlResolver: MediaUrlResolver,
     private val projectRepository: ProjectRepository,
     private val yarnRepository: YarnRepository,
+    private val guard: DangerousActionGuard,
 ) : ViewModel() {
     private val route = savedStateHandle.toRoute<Route.TrashedItem>()
     val kind: String = route.kind
@@ -177,7 +179,10 @@ constructor(
         }
     }
 
-    fun purge() {
+    /** Permanent deletion: after the dialog, behind the device unlock. */
+    fun purge() = guard.confirm(R.string.unlock_reason_purge) { purgeConfirmed() }
+
+    private fun purgeConfirmed() {
         if (_busy.value) return
         _busy.value = true
         viewModelScope.launch {

@@ -24,6 +24,19 @@ data class AdminPageMetaDto(
     val page: Int,
     @SerialName("per_page") val perPage: Int,
     @SerialName("has_more") val hasMore: Boolean,
+    /** The account an audit list was filtered to with `user`; absent otherwise. */
+    val user: AuditFilterUserDto? = null,
+)
+
+/** `meta.user` of the audit list: the account the list is filtered to. */
+@Serializable data class AuditFilterUserDto(val id: Long, val email: String)
+
+/** `impersonated_by` of an audit event: the administrator who acted as the actor. */
+@Serializable
+data class AuditImpersonatorDto(
+    val id: Long? = null,
+    val name: String? = null,
+    val email: String? = null,
 )
 
 @Serializable
@@ -152,6 +165,24 @@ data class AuditEventDto(
     @SerialName("media_thumbnails") val mediaThumbs: Map<String, HistoryMediaDto> = emptyMap(),
     /** True only for the automatic purge after 90 days: nobody did it, so there is no actor. */
     val system: Boolean = false,
+    /** The client that caused the event; absent on servers that do not record clients. */
+    val client: AuditClientDto? = null,
+    /** The administrator who made this change while acting as the actor. */
+    @SerialName("impersonated_by") val impersonatedBy: AuditImpersonatorDto? = null,
+)
+
+/**
+ * `AuditClient` in `audit_service.rs`: which client caused an event. [kind] is `web`, `android`,
+ * `api`, `system` (no request) or `unknown` (recorded before clients were kept). [label] is the
+ * server's short display text such as `Firefox 159 · Linux`, [version] the app version with its
+ * build parameters, [userAgent] the raw header (at most 256 characters).
+ */
+@Serializable
+data class AuditClientDto(
+    val kind: String = "unknown",
+    val version: String? = null,
+    val label: String? = null,
+    @SerialName("user_agent") val userAgent: String? = null,
 )
 
 /**

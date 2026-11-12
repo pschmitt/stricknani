@@ -12,6 +12,7 @@ import blue.anika.wolle.data.oidc.ReauthAction
 import blue.anika.wolle.data.oidc.ReauthProof
 import blue.anika.wolle.data.oidc.ReauthTarget
 import blue.anika.wolle.data.settings.SettingsRepository
+import blue.anika.wolle.ui.common.DangerousActionGuard
 import blue.anika.wolle.ui.common.MutationFeedback
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -66,6 +67,7 @@ constructor(
     private val oidc: OidcCoordinator,
     private val settings: SettingsRepository,
     private val feedback: MutationFeedback,
+    private val guard: DangerousActionGuard,
 ) : ViewModel() {
     private val _state = MutableStateFlow(LinkedLoginsState())
     val state: StateFlow<LinkedLoginsState> = _state.asStateFlow()
@@ -128,8 +130,10 @@ constructor(
     fun confirmUnlink() {
         val identity = _state.value.confirmUnlink ?: return
         _state.update { it.copy(confirmUnlink = null) }
-        afterProof = AfterProof.Unlink(identity)
-        stepUp.begin(request(ReauthAction.UNLINK_IDENTITY, ReauthTarget.Identity(identity.id)))
+        guard.confirm(R.string.unlock_reason_unlink_login) {
+            afterProof = AfterProof.Unlink(identity)
+            stepUp.begin(request(ReauthAction.UNLINK_IDENTITY, ReauthTarget.Identity(identity.id)))
+        }
     }
 
     fun dismissSheet() = stepUp.dismiss()

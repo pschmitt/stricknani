@@ -119,7 +119,7 @@
     }
   }
 
-  const title = $derived(t(full ? "Activity" : "Recent activity", locale));
+  const title = $derived(t(full ? "My activity" : "Recent activity", locale));
   const days = $derived(groupActivity(items, locale));
 </script>
 

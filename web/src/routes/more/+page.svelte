@@ -48,6 +48,12 @@
       title={t("Trash", locale)}
       description={t("Restore deleted items or delete them for good.", locale)}
     />
+    <NavigationTile
+      href={resolve("/activity")}
+      icon="history"
+      title={t("My activity", locale)}
+      description={t("Recent changes to your projects and yarns.", locale)}
+    />
   </nav>
 
   {#if user}

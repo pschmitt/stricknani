@@ -894,12 +894,12 @@
     <string name="photo_take">Foto aufnehmen</string>
     <string name="photo_choose">Foto auswählen</string>
     <string name="photo_camera_denied">Der Kamerazugriff ist aus. Erlaube ihn in den Systemeinstellungen, um ein Foto aufzunehmen.</string>
-    <string name="editor_photo_cover">Titelbild</string>
-    <string name="editor_photo_make_cover">Als Titelbild festlegen</string>
+    <string name="editor_photo_move_first">An den Anfang</string>
     <string name="editor_photo_move_earlier">Weiter nach vorn</string>
     <string name="editor_photo_move_later">Weiter nach hinten</string>
     <string name="editor_photo_position">Foto %1$d von %2$d</string>
     <string name="editor_photo_reorder_hint">Zum Sortieren ziehen. Das erste Foto ist das Titelbild.</string>
+    <string name="editor_photo_reorder_hint_plain">Zum Sortieren ziehen.</string>
     <string name="project_editor_step_removed">Schritt entfernt</string>
     <string name="editor_photo_removed">Foto entfernt.</string>
     <string name="editor_photo_removed_to_trash">Entfernt. Beim Speichern landet es im Papierkorb.</string>
@@ -1066,6 +1066,13 @@
     <string name="admin_accounts_enable_text">Die Person kann sich danach wieder anmelden.</string>
     <string name="admin_accounts_disabled">%1$s ist gesperrt</string>
     <string name="admin_accounts_enabled">%1$s ist entsperrt</string>
+    <string name="admin_accounts_activity">Aktivität</string>
+    <string name="admin_filter_user">Benutzer: %1$s</string>
+    <string name="admin_filter_user_remove">Benutzerfilter entfernen</string>
+    <string name="admin_role_actor">Von %1$s</string>
+    <string name="admin_role_impersonator">%1$s als %2$s</string>
+    <string name="admin_role_subject_account">Auf dem Konto von %1$s</string>
+    <string name="admin_role_subject">Betrifft %1$s</string>
     <string name="admin_accounts_reset_password">Passwort zurücksetzen</string>
     <string name="admin_accounts_reset_title">Passwort für %1$s zurücksetzen?</string>
     <string name="admin_accounts_reset_text">Die Person muss sich mit dem neuen Passwort anmelden.</string>
@@ -1279,7 +1286,8 @@
     </plurals>
     <string name="activity_show_more">Mehr anzeigen</string>
     <string name="activity_see_all">Alle anzeigen</string>
-    <string name="activity_page_title">Aktivität</string>
+    <string name="activity_page_title">Meine Aktivität</string>
+    <string name="more_activity_subtitle">Letzte Änderungen an deinen Projekten und Garnen.</string>
     <string name="activity_unavailable">Aktivität braucht eine Verbindung</string>
     <string name="activity_empty">Noch nichts – deine Änderungen erscheinen hier.</string>
     <string name="activity_more_failed">Weitere Aktivität konnte nicht geladen werden.</string>
@@ -1602,6 +1610,14 @@
     <string name="admin_state_in_trash">Im Papierkorb · %1$s</string>
     <string name="admin_owner_line">Besitzer: %1$s</string>
     <string name="admin_actor_system">Automatische Bereinigung</string>
+    <string name="admin_client_system">System</string>
+    <string name="admin_client_unknown">Unbekannter Client</string>
+    <string name="admin_client_web">Web</string>
+    <string name="admin_client_android">Android</string>
+    <string name="admin_client_api">API</string>
+    <string name="admin_detail_client">Client</string>
+    <string name="admin_detail_client_version">Version</string>
+    <string name="admin_detail_client_agent">User-Agent</string>
     <string name="admin_open_trash">Papierkorb öffnen</string>
     <string name="activity_trashed">%1$s %2$s in den Papierkorb verschoben</string>
     <string name="activity_restored">%1$s %2$s aus dem Papierkorb wiederhergestellt</string>
@@ -1633,4 +1649,22 @@
     </plurals>
 
     <string name="trash_banner_delete_dialog_title">Endgültig löschen?</string>
+
+    <!-- Device unlock for dangerous actions -->
+    <string name="device_unlock_title">Dieses Gerät</string>
+    <string name="device_unlock_toggle">Gefährliche Aktionen mit Entsperren bestätigen</string>
+    <string name="device_unlock_toggle_help">Fragt vor endgültigem Löschen, Wiederherstellen, Übertragen des Eigentums und ähnlichen Aktionen nach deinem Fingerabdruck, Gesicht oder deiner Displaysperre.</string>
+    <string name="device_unlock_no_screen_lock">Richte eine Displaysperre ein, um dies zu nutzen.</string>
+    <string name="unlock_title">Bestätigen: %1$s</string>
+    <string name="unlock_subtitle">Nutze deinen Fingerabdruck, dein Gesicht oder deine Displaysperre.</string>
+    <string name="unlock_failed">Die Überprüfung ist fehlgeschlagen. Es wurde nichts geändert.</string>
+    <string name="unlock_reason_purge">endgültig löschen</string>
+    <string name="unlock_reason_delete_account">Konto löschen</string>
+    <string name="unlock_reason_transfer">Eigentum übertragen</string>
+    <string name="unlock_reason_revoke_token">Zugriffstoken widerrufen</string>
+    <string name="unlock_reason_unlink_login">verknüpfte Anmeldung entfernen</string>
+    <string name="unlock_reason_disable_user">Konto deaktivieren</string>
+    <string name="unlock_reason_reset_password">Passwort zurücksetzen</string>
+    <string name="unlock_reason_impersonate">als Nutzer anmelden</string>
+    <string name="unlock_reason_turn_off">diesen Schutz ausschalten</string>
 </resources>

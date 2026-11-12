@@ -10,7 +10,8 @@ export interface NavItem {
     | "/create"
     | "/categories"
     | "/gauge"
-    | "/trash";
+    | "/trash"
+    | "/activity";
   label: string;
   icon: NavIconName;
 }
@@ -26,4 +27,5 @@ export const secondaryNavigation: readonly NavItem[] = [
   { href: "/categories", label: msg("Categories"), icon: "categories" },
   { href: "/gauge", label: msg("Gauge calculator"), icon: "gauge" },
   { href: "/trash", label: msg("Trash"), icon: "trash" },
+  { href: "/activity", label: msg("My activity"), icon: "history" },
 ];

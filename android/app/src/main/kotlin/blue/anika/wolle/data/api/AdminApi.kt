@@ -27,6 +27,7 @@ interface AdminApi {
         @Query("page") page: Int,
         @Query("entity") entity: String? = null,
         @Query("action") action: String? = null,
+        @Query("user") user: Long? = null,
     ): AuditPageDto
 
     @GET("api/v2/admin/audit/{id}")

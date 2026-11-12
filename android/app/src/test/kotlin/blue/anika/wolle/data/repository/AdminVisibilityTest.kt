@@ -51,8 +51,12 @@ class AdminVisibilityTest {
     private class FakeAdminApi(val listUsersResult: () -> AdminUsersPageDto) : AdminApi {
         var listUsersCalls = 0
 
-        override suspend fun listAudit(page: Int, entity: String?, action: String?): AuditPageDto =
-            error("unused")
+        override suspend fun listAudit(
+            page: Int,
+            entity: String?,
+            action: String?,
+            user: Long?,
+        ): AuditPageDto = error("unused")
 
         override suspend fun getAuditEvent(id: Long): AuditDetailEnvelopeDto = error("unused")
 

@@ -24,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Button
@@ -64,6 +65,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -73,7 +75,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
+import blue.anika.wolle.data.api.dto.AuditClientDto
 import blue.anika.wolle.data.api.dto.AuditEventDto
+import blue.anika.wolle.data.api.dto.AuditFilterUserDto
 import blue.anika.wolle.data.api.dto.ChangeItemDto
 import blue.anika.wolle.data.api.dto.parseChangeValue
 import blue.anika.wolle.data.repository.AdminFailure
@@ -121,8 +125,10 @@ fun AdminAuditScreen(
         Column(Modifier.fillMaxSize().padding(innerPadding).testTag("admin-audit-screen")) {
             AuditFilterBar(
                 filter = state.filter,
+                user = state.user,
                 onEntity = viewModel::setEntity,
                 onAction = viewModel::setAction,
+                onClearUser = viewModel::clearUser,
             )
             val phase = state.phase
             when {
@@ -156,6 +162,7 @@ fun AdminAuditScreen(
                         } else {
                             AuditList(
                                 state = state,
+                                filterUser = state.user,
                                 avatarUrl = viewModel::avatarUrl,
                                 onOpen = viewModel::openEvent,
                                 onOpenItem = { target ->
@@ -192,14 +199,40 @@ fun AdminAuditScreen(
 @Composable
 private fun AuditFilterBar(
     filter: AuditFilter,
+    user: AuditFilterUserDto?,
     onEntity: (String?) -> Unit,
     onAction: (String?) -> Unit,
+    onClearUser: () -> Unit,
 ) {
     LazyRow(
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth().testTag("admin-audit-filters"),
     ) {
+        if (filter.userId != null) {
+            item {
+                // Selected like the web chip; tapping removes the user filter.
+                FilterChip(
+                    selected = true,
+                    onClick = onClearUser,
+                    label = {
+                        Text(
+                            stringResource(
+                                R.string.admin_filter_user,
+                                user?.email ?: "#${filter.userId}",
+                            )
+                        )
+                    },
+                    trailingIcon = {
+                        Icon(
+                            Icons.Filled.Close,
+                            contentDescription = stringResource(R.string.admin_filter_user_remove),
+                        )
+                    },
+                    modifier = Modifier.testTag("admin-audit-user-chip"),
+                )
+            }
+        }
         item {
             FilterChip(
                 selected = filter.entity == null,
@@ -271,6 +304,7 @@ private fun AuditFilterBar(
 @Composable
 private fun AuditList(
     state: AuditListState,
+    filterUser: AuditFilterUserDto?,
     avatarUrl: (String?) -> String?,
     onOpen: (AuditEventDto) -> Unit,
     onOpenItem: (AuditTarget) -> Unit,
@@ -307,6 +341,7 @@ private fun AuditList(
             items(group.events, key = { it.id }) { event ->
                 AuditRow(
                     event,
+                    filterUser = filterUser,
                     avatarUrl = avatarUrl,
                     onOpenDetails = { onOpen(event) },
                     onOpenItem = onOpenItem,
@@ -403,6 +438,7 @@ private fun formatTime(event: AuditEventDto, style: FormatStyle = FormatStyle.SH
 @Composable
 private fun AuditRow(
     event: AuditEventDto,
+    filterUser: AuditFilterUserDto?,
     avatarUrl: (String?) -> String?,
     onOpenDetails: () -> Unit,
     onOpenItem: (AuditTarget) -> Unit,
@@ -493,6 +529,28 @@ private fun AuditRow(
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
+                    val role = filterUser?.let { event.userRole(it) }
+                    if (role != null) {
+                        val name = filterUser?.email.orEmpty()
+                        Text(
+                            when (role) {
+                                AuditUserRole.Actor ->
+                                    stringResource(R.string.admin_role_actor, name)
+                                AuditUserRole.Impersonator ->
+                                    stringResource(R.string.admin_role_impersonator, name, actor)
+                                AuditUserRole.SubjectOfAccount ->
+                                    stringResource(R.string.admin_role_subject_account, name)
+                                AuditUserRole.Subject ->
+                                    stringResource(R.string.admin_role_subject, name)
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.testTag("admin-audit-user-role"),
+                        )
+                    }
+                    AuditClientChip(event.client)
                 }
                 AuditMediaThumb(event.media, Modifier.padding(horizontal = 8.dp))
                 Column(
@@ -714,6 +772,61 @@ private fun AuditDetailHeader(event: AuditEventDto, avatarUrl: (String?) -> Stri
     }
     DetailLine(label = stringResource(R.string.admin_detail_when)) {
         Text(whenText, style = MaterialTheme.typography.bodyLarge)
+    }
+    DetailLine(label = stringResource(R.string.admin_detail_client)) {
+        AuditClientChip(event.client, large = true)
+    }
+    event.client
+        ?.version
+        ?.takeIf { it.isNotBlank() }
+        ?.let { version ->
+            DetailLine(label = stringResource(R.string.admin_detail_client_version)) {
+                Text(version, style = MaterialTheme.typography.bodyLarge)
+            }
+        }
+    event.client
+        ?.userAgent
+        ?.takeIf { it.isNotBlank() }
+        ?.let { agent ->
+            DetailLine(label = stringResource(R.string.admin_detail_client_agent)) {
+                Text(
+                    agent,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.testTag("admin-audit-detail-user-agent"),
+                )
+            }
+        }
+}
+
+/** The client of an event: its icon and label, the same chip as on the website. */
+@Composable
+private fun AuditClientChip(client: AuditClientDto?, large: Boolean = false) {
+    val kind = client.clientKind()
+    val resources = LocalResources.current
+    val label = client.clientLabel { resources.getString(it) }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier.testTag("admin-audit-client"),
+    ) {
+        Icon(
+            kind.icon(),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(if (large) 18.dp else 14.dp),
+        )
+        Text(
+            label,
+            style =
+                if (large) MaterialTheme.typography.bodyLarge
+                else MaterialTheme.typography.labelSmall,
+            color =
+                if (large) MaterialTheme.colorScheme.onSurface
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

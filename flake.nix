@@ -209,6 +209,13 @@
             rust-build = stricknaniRust;
             inherit pre-commit-check playwright-pin;
           }
+          # VM test of the pre-upgrade backup, with a stub server package (no Rust build).
+          // pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+            predeploy-backup = import ./nix/tests/predeploy-backup.nix {
+              inherit pkgs;
+              module = ./nix/module.nix;
+            };
+          }
           # fmt, Clippy and the test suite, on the cached dependency artifacts.
           // stricknaniRustCore.checks;
         }

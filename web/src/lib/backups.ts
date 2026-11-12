@@ -1,3 +1,5 @@
+import { clientHeader, clientHeaderName } from "./client-header";
+
 /** Same-origin download of the per-user data export (see docs/data-export.md). */
 export const exportPath = "/api/v2/account/export";
 
@@ -154,6 +156,7 @@ export function uploadRestore(
     xhr.open("POST", importPath);
     xhr.withCredentials = true;
     xhr.setRequestHeader("accept", "application/json");
+    xhr.setRequestHeader(clientHeaderName, clientHeader);
     xhr.setRequestHeader("content-type", restoreContentType(file));
     if (csrfToken) xhr.setRequestHeader("x-csrf-token", csrfToken);
     if (passphrase)

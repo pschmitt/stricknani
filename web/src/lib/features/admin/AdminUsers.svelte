@@ -805,6 +805,15 @@
                     <NavIcon name="yarns" />
                     <span>{t("Yarns", locale)}</span>
                   </a>
+                  <a
+                    class="action-overflow__item"
+                    role="menuitem"
+                    href={`/app/admin/audit?user=${user.id}`}
+                    onclick={() => close()}
+                  >
+                    <NavIcon name="audit" />
+                    <span>{t("Activity", locale)}</span>
+                  </a>
                   <button
                     class="action-overflow__item"
                     role="menuitem"

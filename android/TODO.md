@@ -3013,7 +3013,7 @@ web (`web/src/lib/features/trash`).
 - [x] Trash rows show the item's cover or picture (`thumbnail_url`), an icon for categories, steps
       and attachments.
 
-## SNA-110: Native admin impersonation (Impersonate inside the app)
+## SNA-112: Native admin impersonation (Impersonate inside the app)
 
 Status: **done** (server and Android implemented and unit tested; the process restart and the banner
 layout are not verified on a device yet, see "Open").
@@ -3054,3 +3054,15 @@ Design:
 Open: verify the restart and the banner insets on a device (Compose and process restarts are not
 covered by the unit tests).
 
+
+## SNA-111: Photo reorder grid auto-scroll (web parity)
+
+The web reorder grid scrolls the page while a lifted photo is held near the top or bottom edge
+(`edgeScrollDelta` in `web/src/lib/features/media/media-reorder.ts`). `PhotoReorderGrid` has no
+auto-scroll: a long grid in a short window needs a second drag after scrolling by hand. Needs the
+editor's scroll state passed into `EditorPhotoStrip`.
+
+- [x] Scroll the editor while a lifted photo is within about 72dp of the top or bottom edge
+      (`edgeScrollDelta`, same zone and curve as the web; `Modifier.photoAutoScroll` on the editors'
+      LazyColumn registers the scroller with `PhotoEditHost`; the held photo keeps its place under
+      the finger and the slot is looked up again each frame).

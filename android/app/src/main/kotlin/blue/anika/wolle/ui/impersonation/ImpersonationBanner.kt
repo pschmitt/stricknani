@@ -102,7 +102,10 @@ fun ImpersonationBanner(
             onClick = stop,
             enabled = !stopping,
             colors =
-                ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = BannerBackground),
+                ButtonDefaults.buttonColors(
+                    containerColor = Color.White,
+                    contentColor = BannerBackground,
+                ),
             border = BorderStroke(1.dp, BannerStripe),
             modifier = Modifier.testTag("impersonation-stop"),
         ) {

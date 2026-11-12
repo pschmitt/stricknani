@@ -91,6 +91,7 @@ fun AdminAccountsScreen(
     onBack: () -> Unit,
     onOpenUserProjects: (userId: Long) -> Unit = {},
     onOpenUserYarns: (userId: Long) -> Unit = {},
+    onOpenUserActivity: (userId: Long) -> Unit = {},
     viewModel: AdminAccountsViewModel = hiltViewModel(),
     identitiesViewModel: AdminIdentitiesViewModel = hiltViewModel(),
 ) {
@@ -190,6 +191,7 @@ fun AdminAccountsScreen(
                                             } else null,
                                         onOpenProjects = { onOpenUserProjects(user.id) },
                                         onOpenYarns = { onOpenUserYarns(user.id) },
+                                        onOpenActivity = { onOpenUserActivity(user.id) },
                                         onResetPassword = {
                                             viewModel.clearForm()
                                             toReset = user
@@ -334,6 +336,7 @@ private fun AccountRow(
     onShowLogins: (() -> Unit)?,
     onOpenProjects: () -> Unit,
     onOpenYarns: () -> Unit,
+    onOpenActivity: () -> Unit,
     onResetPassword: () -> Unit,
     onImpersonate: (() -> Unit)?,
 ) {
@@ -469,6 +472,17 @@ private fun AccountRow(
                         onClick = {
                             menuOpen = false
                             onOpenYarns()
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.admin_accounts_activity)) },
+                        leadingIcon = {
+                            Icon(PhosphorIcons.ClockCounterClockwise, contentDescription = null)
+                        },
+                        modifier = Modifier.testTag("admin-account-activity-${user.id}"),
+                        onClick = {
+                            menuOpen = false
+                            onOpenActivity()
                         },
                     )
                     DropdownMenuItem(

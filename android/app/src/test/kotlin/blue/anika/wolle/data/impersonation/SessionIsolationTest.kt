@@ -115,7 +115,8 @@ class SessionIsolationTest {
 
     @Test
     fun `a session expires at the server's expiry`() {
-        val session = ImpersonationSession(7, "a@example.invalid", "A", null, expiresAtSeconds = 100)
+        val session =
+            ImpersonationSession(7, "a@example.invalid", "A", null, expiresAtSeconds = 100)
         assertFalse(session.isExpired(99))
         assertTrue(session.isExpired(100))
         assertEquals(40, session.secondsLeft(60))
@@ -126,10 +127,20 @@ class SessionIsolationTest {
     fun `notifications about an account's data are suppressed while impersonating`() {
         val granted = true
         assertTrue(
-            blue.anika.wolle.sync.canPostAccountNotifications(34, granted, true, impersonating = false)
+            blue.anika.wolle.sync.canPostAccountNotifications(
+                34,
+                granted,
+                true,
+                impersonating = false,
+            )
         )
         assertFalse(
-            blue.anika.wolle.sync.canPostAccountNotifications(34, granted, true, impersonating = true)
+            blue.anika.wolle.sync.canPostAccountNotifications(
+                34,
+                granted,
+                true,
+                impersonating = true,
+            )
         )
     }
 

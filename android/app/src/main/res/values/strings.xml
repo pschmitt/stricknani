@@ -895,12 +895,12 @@
     <string name="photo_take">Take photo</string>
     <string name="photo_choose">Choose photo</string>
     <string name="photo_camera_denied">Camera access is off. Allow it in the system settings to take a photo.</string>
-    <string name="editor_photo_cover">Cover</string>
-    <string name="editor_photo_make_cover">Make cover</string>
+    <string name="editor_photo_move_first">Move to first</string>
     <string name="editor_photo_move_earlier">Move earlier</string>
     <string name="editor_photo_move_later">Move later</string>
     <string name="editor_photo_position">Photo %1$d of %2$d</string>
     <string name="editor_photo_reorder_hint">Drag to reorder. The first photo is the cover.</string>
+    <string name="editor_photo_reorder_hint_plain">Drag to reorder.</string>
     <string name="project_editor_step_removed">Step removed</string>
     <string name="editor_photo_removed">Photo removed.</string>
     <string name="editor_photo_removed_to_trash">Removed. It goes to the trash when you save.</string>
@@ -1067,6 +1067,13 @@
     <string name="admin_accounts_enable_text">The user will be able to sign in again.</string>
     <string name="admin_accounts_disabled">%1$s is disabled</string>
     <string name="admin_accounts_enabled">%1$s is enabled</string>
+    <string name="admin_accounts_activity">Activity</string>
+    <string name="admin_filter_user">User: %1$s</string>
+    <string name="admin_filter_user_remove">Remove user filter</string>
+    <string name="admin_role_actor">By %1$s</string>
+    <string name="admin_role_impersonator">%1$s acting as %2$s</string>
+    <string name="admin_role_subject_account">On %1$s\'s account</string>
+    <string name="admin_role_subject">Affects %1$s</string>
     <string name="admin_accounts_reset_password">Reset password</string>
     <string name="admin_accounts_reset_title">Reset password for %1$s?</string>
     <string name="admin_accounts_reset_text">The user will need to sign in with the new password.</string>
@@ -1280,7 +1287,8 @@
     </plurals>
     <string name="activity_show_more">Show more</string>
     <string name="activity_see_all">See all</string>
-    <string name="activity_page_title">Activity</string>
+    <string name="activity_page_title">My activity</string>
+    <string name="more_activity_subtitle">Recent changes to your projects and yarns.</string>
     <string name="activity_unavailable">Activity needs a connection</string>
     <string name="activity_empty">Nothing yet - your changes will show up here.</string>
     <string name="activity_more_failed">More activity could not be loaded.</string>
@@ -1605,6 +1613,14 @@
     <string name="admin_state_in_trash">In the trash · %1$s</string>
     <string name="admin_owner_line">Owner: %1$s</string>
     <string name="admin_actor_system">Automatic purge</string>
+    <string name="admin_client_system">System</string>
+    <string name="admin_client_unknown">Unknown client</string>
+    <string name="admin_client_web">Web</string>
+    <string name="admin_client_android">Android</string>
+    <string name="admin_client_api">API</string>
+    <string name="admin_detail_client">Client</string>
+    <string name="admin_detail_client_version">Version</string>
+    <string name="admin_detail_client_agent">User agent</string>
     <string name="admin_open_trash">Open the trash</string>
     <string name="activity_trashed">%1$s moved %2$s to the trash</string>
     <string name="activity_restored">%1$s restored %2$s from the trash</string>
@@ -1636,4 +1652,22 @@
     </plurals>
 
     <string name="trash_banner_delete_dialog_title">Delete permanently?</string>
+
+    <!-- Device unlock for dangerous actions -->
+    <string name="device_unlock_title">This device</string>
+    <string name="device_unlock_toggle">Unlock to confirm dangerous actions</string>
+    <string name="device_unlock_toggle_help">Asks for your fingerprint, face or screen lock before deleting permanently, restoring, transferring ownership and similar actions.</string>
+    <string name="device_unlock_no_screen_lock">Set up a screen lock to use this.</string>
+    <string name="unlock_title">Confirm: %1$s</string>
+    <string name="unlock_subtitle">Use your fingerprint, face or screen lock.</string>
+    <string name="unlock_failed">Could not verify it is you. Nothing was changed.</string>
+    <string name="unlock_reason_purge">delete permanently</string>
+    <string name="unlock_reason_delete_account">delete account</string>
+    <string name="unlock_reason_transfer">transfer ownership</string>
+    <string name="unlock_reason_revoke_token">revoke access token</string>
+    <string name="unlock_reason_unlink_login">remove linked login</string>
+    <string name="unlock_reason_disable_user">disable account</string>
+    <string name="unlock_reason_reset_password">reset password</string>
+    <string name="unlock_reason_impersonate">impersonate user</string>
+    <string name="unlock_reason_turn_off">turn off this protection</string>
 </resources>

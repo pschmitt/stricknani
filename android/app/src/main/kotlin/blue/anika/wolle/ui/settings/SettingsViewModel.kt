@@ -524,7 +524,9 @@ constructor(
                 database.clearAllTables()
                 // The queued upload files belong to the account that picked them; their rows are
                 // gone now, so the files must not outlive the sign-out either.
-                runCatching { File(context.filesDir, SessionMode.uploadsDirectory).deleteRecursively() }
+                runCatching {
+                    File(context.filesDir, SessionMode.uploadsDirectory).deleteRecursively()
+                }
             }
         }
     }
@@ -538,7 +540,9 @@ constructor(
         signOut()
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                runCatching { File(context.filesDir, SessionMode.uploadsDirectory).deleteRecursively() }
+                runCatching {
+                    File(context.filesDir, SessionMode.uploadsDirectory).deleteRecursively()
+                }
                 runCatching {
                     SingletonImageLoader.get(context).let {
                         it.memoryCache?.clear()

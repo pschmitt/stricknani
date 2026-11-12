@@ -4,7 +4,8 @@
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import NavIcon, { type NavIconName } from "#lib/components/NavIcon.svelte";
 
-  type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+  type ButtonVariant =
+    "primary" | "secondary" | "ghost" | "danger" | "danger-ghost";
   type ButtonSize = "md" | "sm";
   type ButtonContent =
     | { children: Snippet; icon?: NavIconName }

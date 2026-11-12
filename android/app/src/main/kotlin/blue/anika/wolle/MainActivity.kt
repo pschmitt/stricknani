@@ -8,13 +8,13 @@ import android.graphics.Color as AndroidColor
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -33,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -42,8 +42,8 @@ import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.importAvailability
 import blue.anika.wolle.data.export.DataExportNotifier
 import blue.anika.wolle.data.export.ExportFormat
-import blue.anika.wolle.data.imports.AppVisibility
 import blue.anika.wolle.data.impersonation.ImpersonationController
+import blue.anika.wolle.data.imports.AppVisibility
 import blue.anika.wolle.data.imports.ImportNotifier
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.oidc.OidcCoordinator
@@ -56,6 +56,8 @@ import blue.anika.wolle.data.update.UpdateAvailableNotifier
 import blue.anika.wolle.sync.SyncNotifier
 import blue.anika.wolle.sync.syncedRoute
 import blue.anika.wolle.ui.common.CrashReportDialog
+import blue.anika.wolle.ui.common.DeviceUnlock
+import blue.anika.wolle.ui.common.LocalDangerousActionGuard
 import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.OwnerContext
@@ -84,7 +86,7 @@ import kotlinx.coroutines.launch
  * app is already running arrives via [onNewIntent] rather than a fresh [onCreate].
  */
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
 
     companion object {
         /** Set on the launcher intent that restarts the app after an impersonation ended. */
@@ -99,6 +101,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var mediaUrlResolver: MediaUrlResolver
     @Inject lateinit var appVisibility: AppVisibility
     @Inject lateinit var impersonationController: ImpersonationController
+    @Inject lateinit var deviceUnlock: DeviceUnlock
 
     private var pendingDeepLink by mutableStateOf<Route?>(null)
     // SNA-61: `stricknani://setup?p=...` (the manifest's own registered intent-filter, so a
@@ -122,6 +125,8 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // The device-unlock prompt (dangerous actions) needs an activity to host it.
+        deviceUnlock.attach(this)
 
         pendingDeepLink = routeFor(intent)
         pendingSetupUri = intent?.dataString?.takeIf(QrConfigCodec::looksLikeQrConfigUri)
@@ -181,7 +186,10 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             StricknaniTheme(darkTheme = darkTheme, dynamicColor = dynamicColor) {
-                CompositionLocalProvider(LocalOwnerContext provides ownerContext) {
+                CompositionLocalProvider(
+                    LocalOwnerContext provides ownerContext,
+                    LocalDangerousActionGuard provides deviceUnlock,
+                ) {
                     val impersonation = impersonationController.session
                     val credentialRejected by
                         settingsRepository.sessionExpired.collectAsStateWithLifecycle()
@@ -192,7 +200,9 @@ class MainActivity : ComponentActivity() {
                                 session = impersonation,
                                 credentialRejected = credentialRejected,
                                 nowSeconds = { System.currentTimeMillis() / MILLIS_PER_SECOND },
-                                onStop = { lifecycleScope.launch { impersonationController.stop() } },
+                                onStop = {
+                                    lifecycleScope.launch { impersonationController.stop() }
+                                },
                             )
                         }
                         Box(
@@ -207,13 +217,17 @@ class MainActivity : ComponentActivity() {
                                     )
                         ) {
                             StricknaniNavHost(
-                                startDestination = if (isConfigured) Route.Home else Route.Onboarding,
-                                // Deferred (not consumed) until onboarding is done - there's nothing to
-                                // navigate to yet, and StricknaniNavHost gets a fresh NavController once
+                                startDestination =
+                                    if (isConfigured) Route.Home else Route.Onboarding,
+                                // Deferred (not consumed) until onboarding is done - there's
+                                // nothing to
+                                // navigate to yet, and StricknaniNavHost gets a fresh NavController
+                                // once
                                 // isConfigured flips anyway (see its kdoc).
                                 pendingDeepLinkRoute = pendingDeepLink.takeIf { isConfigured },
                                 onDeepLinkConsumed = { pendingDeepLink = null },
-                                // Only meaningful pre-onboarding - once configured, a stray setup URI (an
+                                // Only meaningful pre-onboarding - once configured, a stray setup
+                                // URI (an
                                 // old
                                 // QR scanned again, say) has nothing useful to do.
                                 pendingSetupUri = pendingSetupUri.takeIf { !isConfigured },
@@ -249,6 +263,11 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         appVisibility.stopped()
         super.onStop()
+    }
+
+    override fun onDestroy() {
+        deviceUnlock.detach(this)
+        super.onDestroy()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -304,7 +323,8 @@ class MainActivity : ComponentActivity() {
      * another device" opens the list that changed.
      */
     private fun routeFor(intent: Intent?): Route? {
-        // Back from an impersonation: the administrator's account list, where it started. The marker
+        // Back from an impersonation: the administrator's account list, where it started. The
+        // marker
         // is used up, so a rotation does not navigate there again.
         if (intent?.getBooleanExtra(EXTRA_AFTER_IMPERSONATION, false) == true) {
             intent.removeExtra(EXTRA_AFTER_IMPERSONATION)

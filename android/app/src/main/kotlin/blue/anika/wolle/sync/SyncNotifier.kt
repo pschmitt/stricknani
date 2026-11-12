@@ -14,10 +14,10 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import blue.anika.wolle.MainActivity
 import blue.anika.wolle.R
+import blue.anika.wolle.data.impersonation.SessionMode
 import blue.anika.wolle.notify.NotificationImages
 import blue.anika.wolle.notify.applyBrand
 import blue.anika.wolle.notify.joinDetails
-import blue.anika.wolle.data.impersonation.SessionMode
 import blue.anika.wolle.ui.navigation.Route
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -329,5 +329,4 @@ internal fun canPostAccountNotifications(
     permissionGranted: Boolean,
     notificationsEnabled: Boolean,
     impersonating: Boolean = SessionMode.impersonating,
-): Boolean =
-    !impersonating && canPostNotifications(sdkInt, permissionGranted, notificationsEnabled)
+): Boolean = !impersonating && canPostNotifications(sdkInt, permissionGranted, notificationsEnabled)

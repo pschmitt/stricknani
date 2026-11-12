@@ -67,7 +67,9 @@ class StricknaniApp : Application(), Configuration.Provider, SingletonImageLoade
             .components { add(OkHttpNetworkFetcherFactory(callFactory = { mediaOkHttpClient })) }
             .diskCache {
                 DiskCache.Builder()
-                    .directory(context.cacheDir.resolve(SessionMode.imageCacheDirectory).toOkioPath())
+                    .directory(
+                        context.cacheDir.resolve(SessionMode.imageCacheDirectory).toOkioPath()
+                    )
                     .maxSizeBytes(MAX_IMAGE_CACHE_BYTES)
                     .build()
             }

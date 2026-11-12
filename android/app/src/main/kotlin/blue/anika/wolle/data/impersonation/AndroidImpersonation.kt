@@ -56,9 +56,7 @@ class AndroidImpersonationDataWiper(private val context: Context) : Impersonatio
  */
 class ProcessRestarter(private val context: Context) : AppRestarter {
     override fun restart(afterImpersonation: Boolean) {
-        val launch =
-            context.packageManager.getLaunchIntentForPackage(context.packageName)
-                ?: return
+        val launch = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return
         launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         if (afterImpersonation) launch.putExtra(MainActivity.EXTRA_AFTER_IMPERSONATION, true)
         val restart =

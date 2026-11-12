@@ -36,7 +36,7 @@ left alone on purpose.
 | P-18 | Admin | Screen titles and card text | Users, Audit log, "Manage accounts and review the audit log." | Accounts, Activity | fixed |
 | P-19 | Admin Users | Create dialog | Create user, Create a user account, Email address, Temporary password, Administrator access + hint, badge Administrator | Add account, Add an account, Email, Password, Make this person an admin, Admin | fixed |
 | P-20 | Admin Users | Enable / disable / reset dialogs | texts "The user will be able to sign in again.", "...signed out and will not be able to sign in.", "The user will need to sign in with the new password.", buttons Enable account, Disable account, Reset password, "New temporary password" | own variants | fixed (dialog titles stay "Enable {email}?": Android names the account, `platform`) |
-| P-21 | Admin Users | Impersonate, Member and Active status | in the row menu and table | Impersonate switches the app into an impersonation session (SNA-110), Role and Status chips | fixed (SNA-107, SNA-110) |
+| P-21 | Admin Users | Impersonate, Member and Active status | in the row menu and table | Impersonate switches the app into an impersonation session (SNA-112), Role and Status chips | fixed (SNA-107, SNA-112) |
 | P-22 | Admin audit | Texts | Unknown actor, All entities, Recorded changes, "No changes are available for this event.", "No audit events match these filters." | Unknown person, All, What changed, other texts | fixed |
 | P-23 | Sharing | Transfer text, people errors | "Ownership moves to the person you pick, right away...", "People could not be loaded.", "Search by name", "No one matches that search." | variants | fixed |
 | P-24 | Sharing | Transfer with linked yarns switch | present | switch existed, hint added | fixed (SNA-107) |

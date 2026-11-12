@@ -11,6 +11,7 @@ import blue.anika.wolle.data.repository.AdminException
 import blue.anika.wolle.data.repository.AdminFailure
 import blue.anika.wolle.data.repository.AdminRepository
 import blue.anika.wolle.data.settings.SettingsRepository
+import blue.anika.wolle.ui.common.DangerousActionGuard
 import blue.anika.wolle.ui.common.MutationFeedback
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.security.SecureRandom
@@ -85,6 +86,7 @@ constructor(
     private val feedback: MutationFeedback,
     private val settings: SettingsRepository,
     private val impersonation: ImpersonationController,
+    private val guard: DangerousActionGuard,
 ) : ViewModel() {
     private val _state =
         MutableStateFlow(
@@ -125,6 +127,11 @@ constructor(
      */
     fun impersonate(user: AdminUserDto) {
         if (_state.value.busyUserId != null || !canImpersonateUser(user)) return
+        guard.confirm(R.string.unlock_reason_impersonate) { impersonateConfirmed(user) }
+    }
+
+    private fun impersonateConfirmed(user: AdminUserDto) {
+        if (_state.value.busyUserId != null) return
         _state.update { it.copy(busyUserId = user.id) }
         viewModelScope.launch {
             val result = impersonation.start(user.id)
@@ -182,7 +189,13 @@ constructor(
         }
     }
 
+    /** Disabling an account is guarded by the device unlock; enabling one is not. */
     fun setActive(user: AdminUserDto, active: Boolean) {
+        if (active) setActiveConfirmed(user, true)
+        else guard.confirm(R.string.unlock_reason_disable_user) { setActiveConfirmed(user, false) }
+    }
+
+    private fun setActiveConfirmed(user: AdminUserDto, active: Boolean) {
         if (_state.value.busyUserId != null) return
         _state.update { it.copy(busyUserId = user.id) }
         viewModelScope.launch {
@@ -229,7 +242,12 @@ constructor(
         }
     }
 
-    fun resetPassword(user: AdminUserDto, password: String, onDone: () -> Unit) {
+    fun resetPassword(user: AdminUserDto, password: String, onDone: () -> Unit) =
+        guard.confirm(R.string.unlock_reason_reset_password) {
+            resetPasswordConfirmed(user, password, onDone)
+        }
+
+    private fun resetPasswordConfirmed(user: AdminUserDto, password: String, onDone: () -> Unit) {
         if (_form.value == FormState.Saving) return
         _form.value = FormState.Saving
         viewModelScope.launch {

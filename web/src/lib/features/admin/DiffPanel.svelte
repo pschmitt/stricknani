@@ -9,6 +9,8 @@
   import AuditActionBadge from "./AuditActionBadge.svelte";
   import AuditLifecycle from "./AuditLifecycle.svelte";
   import AuditMediaPreview from "./AuditMediaPreview.svelte";
+  import ClientIcon from "./ClientIcon.svelte";
+  import { clientLabel } from "./audit-client";
   import { t } from "#lib/i18n.svelte.ts";
   import { session } from "#lib/session.svelte.ts";
   import { getAuditEventDetail, type AuditEventDetail } from "./admin-api";
@@ -190,6 +192,21 @@
           <AuditMediaPreview media={detail.event.media} {locale} />
         </div>
       {/if}
+      <dl class="client-details" data-audit-client-details>
+        <dt>{t("Client", locale)}</dt>
+        <dd class="client-kind">
+          <ClientIcon kind={detail.event.client.kind} />
+          <span>{clientLabel(detail.event.client, locale)}</span>
+        </dd>
+        {#if detail.event.client.version}
+          <dt>{t("Version", locale)}</dt>
+          <dd>{detail.event.client.version}</dd>
+        {/if}
+        {#if detail.event.client.user_agent}
+          <dt>{t("User agent", locale)}</dt>
+          <dd class="client-agent">{detail.event.client.user_agent}</dd>
+        {/if}
+      </dl>
     </article>
 
     {#if detail.changes}
@@ -245,6 +262,32 @@
     justify-content: space-between;
     gap: 0.5rem;
     margin-top: 0.5rem;
+  }
+  .client-details {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 0.25rem 0.9rem;
+    margin: 0.9rem 0 0;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.9rem;
+  }
+  .client-details dt {
+    color: var(--muted);
+  }
+  .client-details dd {
+    margin: 0;
+    min-width: 0;
+  }
+  .client-kind {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .client-agent {
+    overflow-wrap: anywhere;
+    font-family: var(--font-mono, ui-monospace, monospace);
+    font-size: 0.82rem;
   }
   .event-card :global(.resource-card__name) {
     margin: 0.9rem 0 0.4rem;
