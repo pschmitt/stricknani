@@ -1,10 +1,8 @@
 name: Release
 
-# Hand-written rather than delegating to pschmitt/ci-workflows's reusable release.yaml: that
-# workflow assumes the Gradle project sits at the repo root, which isn't true here (it's at
-# android/, alongside the unrelated Python web app at the repo root) - same reason as
-# the android jobs of build.yaml/checks.yaml (see their header comments). This mirrors that reusable
-# workflow's logic closely (SNA-12), just with every Gradle/path reference scoped under android/.
+# Product-specific release assembly: Android JNI libraries and signed APKs,
+# static server binaries and the web archive form one checksummed asset set.
+# Shared actions handle Gradle setup, signing and the gated Play upload.
 #
 # One pipeline, two release flavors depending on what got pushed:
 # - a push to main moves the rolling "latest" prerelease tag and republishes it (debug + release
@@ -40,16 +38,12 @@ name: Release
 
 on:
   push:
-    # Deliberately no `paths:` filter here, unlike build.yaml/checks.yaml: GitHub
-    # combines `paths` with `tags` via AND, and path-diff filtering is unreliable for a brand-new
-    # tag ref (no meaningful "previous" commit to diff against) - a silently-skipped release on a
-    # real version tag push would be a much worse bug than an occasional unneeded "latest" rebuild
-    # triggered by a backend-only commit to main.
-    branches:
-      - main
+    # Main pushes are routed here by Build through workflow_call. Keep direct pushes for version
+    # tags, where path-diff filtering has no meaningful previous commit and could skip a release.
     tags:
       - v*
       - '*.*.*'
+  workflow_call:
   workflow_dispatch:
     inputs:
       lane:
@@ -309,13 +303,56 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  server:
-    # The Rust server as a static (musl) binary, and the built web app it serves, from the flake's
-    # `stricknani-server-static` and `stricknani-web` packages. aarch64 is built natively on
-    # GitHub's arm runners, like the nix-aarch64 job of build.yaml; dependency builds substitute
-    # from niks3 where nixbot or an earlier run pushed them.
-    name: Server (linux-${{ matrix.arch }})
+  web:
+    # The web output is architecture independent. Build and archive it once; both native server
+    # jobs use this exact artifact for smoke tests, and x86_64 includes it in the release assets.
+    name: Web asset
     needs: params
+    runs-on: ubuntu-latest
+    concurrency:
+      group: release-web-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref_type != 'tag' }}
+    permissions:
+      contents: read
+    env:
+      TAG: ${{ needs.params.outputs.tag_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Nix with the niks3 cache
+        uses: pschmitt/ci-workflows/.github/actions/nix-niks3@main
+        with:
+          s3-store: ${{ secrets.NIKS3_S3_STORE }}
+          s3-access-key: ${{ secrets.NIKS3_S3_ACCESS_KEY }}
+          s3-secret-key: ${{ secrets.NIKS3_S3_SECRET_KEY }}
+          extra-conf: |
+            nix-path = nixpkgs=channel:nixos-unstable
+
+      - name: Build the web app
+        run: nix build --print-build-logs --out-link result-web '.#stricknani-web'
+
+      - name: Archive the web app
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p "$RUNNER_TEMP/web-assets"
+          tar --sort=name --owner=0 --group=0 --numeric-owner --mtime='@0' \
+            -C result-web -czf "$RUNNER_TEMP/web-assets/stricknani-web-$TAG.tar.gz" .
+
+      - name: Upload the web artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-web
+          path: ${{ runner.temp }}/web-assets/stricknani-web-*.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+
+  server:
+    # Build each native static (musl) server binary. The x86_64 job also stages the single web
+    # archive produced above; both smoke tests consume that same web artifact.
+    name: Server (linux-${{ matrix.arch }})
+    needs: [params, web]
     strategy:
       fail-fast: false
       matrix:
@@ -337,6 +374,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Download the web artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: release-web
+          path: ${{ runner.temp }}/web-assets
+
       - name: Install Nix with the niks3 cache
         uses: pschmitt/ci-workflows/.github/actions/nix-niks3@main
         with:
@@ -349,8 +392,12 @@ jobs:
       - name: Build the static server
         run: nix build --print-build-logs --out-link result-server '.#stricknani-server-static'
 
-      - name: Build the web app
-        run: nix build --print-build-logs --out-link result-web '.#stricknani-web'
+      - name: Extract the web app
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p result-web
+          tar -xzf "$RUNNER_TEMP/web-assets/stricknani-web-$TAG.tar.gz" -C result-web
 
       - name: Stage the assets
         shell: bash
@@ -363,11 +410,10 @@ jobs:
           file "$binary"
           # A dynamic binary would not run on the hosts this is meant for.
           file "$binary" | grep -E 'statically linked|static-pie linked'
-          # The web app is architecture independent: ship it once.
+          # Ship the shared web artifact once, alongside the x86_64 server.
           if [[ "$ARCH" == x86_64 ]]
           then
-            tar --sort=name --owner=0 --group=0 --numeric-owner --mtime='@0' \
-              -C result-web -czf "$out/stricknani-web-$TAG.tar.gz" .
+            cp "$RUNNER_TEMP/web-assets/stricknani-web-$TAG.tar.gz" "$out/"
           fi
           ls -la "$out"
 

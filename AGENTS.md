@@ -435,10 +435,13 @@ Use this file as the operational source of truth for working in Stricknani.
   checks, artifacts and publish gates. Keep application-specific checks here.
 - `just check` runs Nix lint, strict Rust checks, the Rust suite,
   i18n checks and the web checks (including the e2e type check), tests and build. CI has
-  three workflows whose jobs run in parallel, each only when its files change:
-  `checks.yaml` (Checks: `just check`, Nix lint, Android lint), `build.yaml`
-  (Build: Nix, aarch64, Docker image, Android APKs) and `e2e.yaml` (E2E: the
-  packaged-web browser acceptance, Android journeys and Android replay).
+  `checks.yaml` runs Checks (`just check`, Nix lint, Android lint).
+  `build.yaml` produces the native Nix outputs and caches them before calling
+  `e2e.yaml` (packaged-web browser acceptance, Android journeys and Room replay)
+  and the rolling main release in `release.yaml`. Container publication consumes
+  the producer's Nix image artifact through the shared `nix-image.yaml` workflow;
+  its application-specific health probe stays in `ci/verify-container.sh`.
+  Version tags and manual release dispatches still run `release.yaml` directly.
 - Before a release, merge the green Renovate pull requests (fix or comment
   on the rest) and triage the unresolved Sentry issues: fix, or comment and
   resolve. See `docs/maintaining.md`, "Releases".

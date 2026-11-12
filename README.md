@@ -37,15 +37,15 @@ Android app. Your projects, yarn and photos stay on your own server.
 
 ## Install
 
-Build and start the container, then create the first administrator:
+Pull and start the container, then create the first administrator:
 
 ```sh
-docker build -t stricknani .
+docker pull ghcr.io/pschmitt/stricknani:latest
 docker volume create stricknani-data
 docker run -d --name stricknani -p 127.0.0.1:7674:7674 \
   -v stricknani-data:/var/lib/stricknani \
   -e TRUSTED_HOSTS=localhost,127.0.0.1 \
-  -e SESSION_COOKIE_SECURE=false stricknani
+  -e SESSION_COOKIE_SECURE=false ghcr.io/pschmitt/stricknani:latest
 docker exec -i stricknani /bin/stricknani-server create-admin \
   admin@example.invalid < /path/to/protected-admin-password
 ```
@@ -65,7 +65,7 @@ opencode on the machine that will host it:
 Set up a private Stricknani instance for me. Stricknani is a self-hosted knitting project manager: https://github.com/pschmitt/stricknani
 
 1. Clone the repository and read README.md and docs/install.md first. Follow them.
-2. Deploy it with Docker (build the image from the Dockerfile and keep the data volume), or with the NixOS module services.stricknani if this machine runs NixOS.
+2. Deploy it with Docker (pull the published GHCR image and keep the data volume), or with the NixOS module services.stricknani if this machine runs NixOS.
 3. Create the first administrator with "stricknani-server create-admin EMAIL" (stricknani-cli on NixOS). Pass the password on standard input, at least 12 characters, never on the command line.
 4. Set TRUSTED_HOSTS to the exact host name people will open, for example stricknani.example.com.
 5. Put it behind an HTTPS reverse proxy and set SESSION_COOKIE_SECURE=true. Do not expose port 7674 directly.

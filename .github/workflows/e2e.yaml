@@ -9,31 +9,7 @@ name: E2E
 # - android-replay: Room replay against the server; on pushes to main and
 #   manual dispatches, not on pull requests.
 on:
-  push:
-    branches: [main]
-    paths: &paths
-      - "web/**"
-      - "nix/web-package.nix"
-      - "nix/rust-package.nix"
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - "src/**"
-      - "tests/**"
-      - "migrations/**"
-      - "templates/**"
-      - "examples/**"
-      - "locales/**"
-      - "stricknani/locales/**"
-      - "docs/web-v2-contract.md"
-      - "flake.nix"
-      - "flake.lock"
-      - "android/**"
-      - "ci/run-*.sh"
-      - "docs/rust-replay-ci.md"
-      - ".github/workflows/e2e.yaml"
-  pull_request:
-    branches: [main]
-    paths: *paths
+  workflow_call:
   workflow_dispatch:
     inputs:
       lane:
@@ -51,7 +27,9 @@ concurrency:
   # diff still covers every change). On main every run finishes: the next
   # push may not match a job's paths, so a cancelled run would leave its
   # commit unchecked. Manual dispatches keep their own group.
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  # Called workflows inherit the caller's workflow name. Keep this group distinct
+  # from Build so the caller and this workflow cannot cancel or deadlock each other.
+  group: E2E-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
@@ -118,6 +96,7 @@ jobs:
               - 'docs/web-v2-contract.md'
               - 'flake.nix'
               - 'flake.lock'
+              - '.github/workflows/build.yaml'
               - '.github/workflows/e2e.yaml'
             android:
               - 'android/**'
@@ -136,6 +115,7 @@ jobs:
               - 'nix/rust-package.nix'
               - 'flake.nix'
               - 'flake.lock'
+              - '.github/workflows/build.yaml'
               - '.github/workflows/e2e.yaml'
             replay:
               - 'android/**'
@@ -155,6 +135,7 @@ jobs:
               - 'docs/rust-replay-ci.md'
               - 'flake.nix'
               - 'flake.lock'
+              - '.github/workflows/build.yaml'
               - '.github/workflows/e2e.yaml'
 
   web-build:
@@ -178,7 +159,21 @@ jobs:
       - run: npm run format:check
       - run: npm run check
       - run: npm test
-      - run: npm run build
+
+      - name: Install Nix with the niks3 cache
+        uses: pschmitt/ci-workflows/.github/actions/nix-niks3@main
+        with:
+          s3-store: ${{ secrets.NIKS3_S3_STORE }}
+          s3-access-key: ${{ secrets.NIKS3_S3_ACCESS_KEY }}
+          s3-secret-key: ${{ secrets.NIKS3_S3_SECRET_KEY }}
+
+      - name: Build the canonical packaged web app
+        working-directory: .
+        run: nix build --print-build-logs --out-link result-web '.#stricknani-web'
+
+      - name: Copy packaged web app for browser acceptance
+        working-directory: .
+        run: mkdir -p web/build && cp -a result-web/. web/build/
 
       - name: Verify static app contract
         run: |
@@ -202,7 +197,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      STRICKNANI_SERVER_BINARY: ${{ github.workspace }}/target/debug/stricknani-server
       STRICKNANI_FIXTURE_BINARY: ${{ github.workspace }}/target/debug/examples/optional_browser_fixture
       STRICKNANI_WEB_ROOT: ${{ github.workspace }}/web/build
     steps:
@@ -230,11 +224,23 @@ jobs:
       - name: Cache Rust build
         uses: Swatinem/rust-cache@v2
 
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31
+      - name: Install Nix with the niks3 cache
+        uses: pschmitt/ci-workflows/.github/actions/nix-niks3@main
+        with:
+          s3-store: ${{ secrets.NIKS3_S3_STORE }}
+          s3-access-key: ${{ secrets.NIKS3_S3_ACCESS_KEY }}
+          s3-secret-key: ${{ secrets.NIKS3_S3_SECRET_KEY }}
 
-      - name: Build server and dev-only fixture example
-        run: cargo build --locked --bin stricknani-server --example optional_browser_fixture
+      - name: Use the cached packaged server
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          server="$(nix build --no-link --print-out-paths '.#stricknani')"
+          # Use the underlying executable so fixture WEB_ROOT overrides are respected.
+          printf 'STRICKNANI_SERVER_BINARY=%s/bin/.stricknani-server-wrapped\n' "$server" >> "$GITHUB_ENV"
+
+      - name: Build the dev-only fixture example
+        run: cargo build --locked --example optional_browser_fixture
 
       - name: Run browser acceptance suite (Playwright)
         shell: bash

@@ -9,7 +9,7 @@ export const REPOSITORY_URL = "https://github.com/pschmitt/stricknani";
 export const SETUP_PROMPT = `Set up a private Stricknani instance for me. Stricknani is a self-hosted knitting project manager: https://github.com/pschmitt/stricknani
 
 1. Clone the repository and read README.md and docs/install.md first. Follow them.
-2. Deploy it with Docker (build the image from the Dockerfile and keep the data volume), or with the NixOS module services.stricknani if this machine runs NixOS.
+2. Deploy it with Docker (pull the published GHCR image and keep the data volume), or with the NixOS module services.stricknani if this machine runs NixOS.
 3. Create the first administrator with "stricknani-server create-admin EMAIL" (stricknani-cli on NixOS). Pass the password on standard input, at least 12 characters, never on the command line.
 4. Set TRUSTED_HOSTS to the exact host name people will open, for example stricknani.example.com.
 5. Put it behind an HTTPS reverse proxy and set SESSION_COOKIE_SECURE=true. Do not expose port 7674 directly.

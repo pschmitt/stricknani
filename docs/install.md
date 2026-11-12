@@ -9,11 +9,11 @@ is now `SIGNUP_ENABLED`); the database, media and Sentry variables use the
 
 ## Container
 
-Requirements: Docker and a checkout of this repository. Build the image from the
-repository root and start it with a persistent data volume:
+Requirements: Docker. Pull the published image and start it with a persistent
+data volume:
 
 ```sh
-docker build -t stricknani .
+docker pull ghcr.io/pschmitt/stricknani:latest
 docker volume create stricknani-data
 docker run -d \
   --name stricknani \
@@ -22,8 +22,12 @@ docker run -d \
   -v stricknani-data:/var/lib/stricknani \
   -e TRUSTED_HOSTS=localhost,127.0.0.1 \
   -e SESSION_COOKIE_SECURE=false \
-  stricknani
+  ghcr.io/pschmitt/stricknani:latest
 ```
+
+To build the same Nix image from a repository checkout, run
+`nix build .#stricknani-docker` and load the resulting `result` symlink with
+`docker load --input result`.
 
 This example binds to loopback for local HTTP use. The container stores its
 SQLite database and uploads under `/var/lib/stricknani`; keep that volume
@@ -143,5 +147,5 @@ live in `web/scripts/i18n/` (`npm run i18n:*`, wrapped by `just i18n-*`) and the
 Playwright browser acceptance suite and fixture CLIs in `web/e2e/`
 (`npm --prefix web run e2e`, `fixture`, `seed`, `summarize-e2e`,
 `verify-import`; run `npm ci --prefix web` first). The legacy Python
-application is the signed tag `v0.1.0` on `main`. The root `Dockerfile` builds
-the Rust runtime.
+application is the signed tag `v0.1.0` on `main`. The Rust runtime and OCI
+image are Nix flake outputs; `.#stricknani-docker` builds the container image.

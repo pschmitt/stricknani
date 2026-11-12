@@ -84,10 +84,29 @@
               craneLib = crane.mkLib pkgs.pkgsStatic;
             }).package;
 
+          # The container uses the same fully static server binary as release assets, while
+          # sharing the normal web build and runtime wrapper (including OCR and CA certificates).
+          stricknaniContainerRuntime = pkgs.callPackage ./nix/rust-package.nix {
+            corePackage = stricknaniRustStatic;
+            webPackage = stricknaniWeb;
+            inherit gitRevision;
+          };
+
           rustContainerConfig = {
-            Cmd = [ "${stricknaniRust}/bin/stricknani-server" ];
+            Cmd = [ "/bin/stricknani-server" ];
             User = "65532:65532";
             WorkingDir = "/var/lib/stricknani";
+            StopSignal = "SIGTERM";
+            Labels = {
+              "org.opencontainers.image.description" = "A self-hosted web app for managing knitting projects";
+              "org.opencontainers.image.licenses" = "GPL-3.0-only";
+              "org.opencontainers.image.source" = "https://github.com/pschmitt/stricknani";
+              "org.opencontainers.image.title" = "Stricknani";
+              "org.opencontainers.image.version" = stricknaniContainerRuntime.version;
+            }
+            // pkgs.lib.optionalAttrs (gitRevision != "") {
+              "org.opencontainers.image.revision" = gitRevision;
+            };
             ExposedPorts = {
               "7674/tcp" = { };
             };
@@ -107,7 +126,7 @@
             Healthcheck = {
               Test = [
                 "CMD"
-                "${stricknaniRust}/bin/stricknani-server"
+                "/bin/stricknani-server"
                 "health-check"
               ];
               Interval = 30000000000;
@@ -146,7 +165,7 @@
             stricknani-docker = pkgs.dockerTools.buildLayeredImage {
               name = "ghcr.io/pschmitt/stricknani";
               tag = "latest";
-              contents = [ stricknaniRust ];
+              contents = [ stricknaniContainerRuntime ];
               fakeRootCommands = ''
                 mkdir -p ./tmp ./var/lib/stricknani
                 chmod 1777 ./tmp

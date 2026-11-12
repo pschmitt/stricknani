@@ -169,7 +169,11 @@ build-container:
 [group: 'build']
 [group: 'container']
 build-image:
-  docker build -t stricknani:latest .
+  #!/usr/bin/env bash
+  set -euo pipefail
+  image_path=$(nix build --no-link --print-out-paths '.#stricknani-docker')
+  docker load --input "$image_path"
+  docker tag ghcr.io/pschmitt/stricknani:latest stricknani:latest
 
 # Push image to GHCR
 [group: 'container']
