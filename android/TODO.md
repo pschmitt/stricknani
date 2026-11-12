@@ -49,8 +49,8 @@ Status: in progress (2026-11-12, Codex)
       parent, owner and deletion timing, then restore and permanent-delete controls below the content.
 - [ ] Keep action targets usable on narrow phones and preserve confirmation, permission, busy and
       error behavior.
-- [ ] Match activity attribution with the avatar before “You” and use danger styling for permanent
-      deletion on both clients.
+- [ ] Match activity attribution as “by <avatar> You”, show avatar-only badges on compact
+      thumbnails, and use danger styling for trash activity on both clients.
 - [ ] Record the web/Android screen parity review and required checks.
 
 ## SNA-110: Formatting icons in the text-selection menu

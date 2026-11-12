@@ -27,6 +27,7 @@
 <span
   class="owner-badge"
   class:compact
+  role={compact ? "img" : undefined}
   title={label}
   aria-label={label}
   data-testid="owner-badge"
