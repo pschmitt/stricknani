@@ -136,11 +136,6 @@ fun canShowAll(
     preview: Int = HISTORY_PREVIEW_COUNT,
 ): Boolean = events.size > preview || hasMore
 
-/** The author to name on a row: nobody when it is the signed-in user (or unknown). */
-fun otherActor(actorEmail: String?, currentEmail: String?): String? = actorEmail?.takeIf {
-    it.isNotBlank() && !it.equals(currentEmail, ignoreCase = true)
-}
-
 /** Appends a page, dropping events already present (a new edit can shift page boundaries). */
 fun mergeEvents(existing: List<AuditEventDto>, next: List<AuditEventDto>): List<AuditEventDto> {
     val seen = existing.mapTo(HashSet()) { it.id }

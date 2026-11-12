@@ -1469,12 +1469,7 @@
     </div>
 
     {#if !adminData && !trashed}
-      <HistorySection
-        kind="projects"
-        id={project.id}
-        {locale}
-        currentEmail={session.data?.user?.email ?? null}
-      />
+      <HistorySection kind="projects" id={project.id} {locale} />
     {/if}
 
     <footer class="reader-footer">

@@ -5,6 +5,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -36,9 +38,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -47,6 +46,10 @@ import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
 import blue.anika.wolle.ui.admin.DayLabel
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.UserLabel
+import blue.anika.wolle.ui.common.UserLabelSize
+import blue.anika.wolle.ui.history.actionLabelText
+import blue.anika.wolle.ui.history.sharingHeadlineText
 import blue.anika.wolle.ui.trash.daysLeft
 import blue.anika.wolle.ui.trash.daysLeftText
 import coil3.compose.AsyncImage
@@ -284,8 +287,12 @@ private fun TimelineEntry(
 ) {
     val colors = MaterialTheme.colorScheme
     val muted = colors.onSurfaceVariant
-    val sentence = activitySentence(row)
-    val meta = metaText(row, activityTimeOfDay(row.createdAt, zone))
+    val name =
+        row.entityName
+            ?: stringResource(
+                if (row.isYarn) R.string.activity_unnamed_yarn
+                else R.string.activity_unnamed_project
+            )
     val tappable = !row.deleted
     val alpha = if (row.deleted) 0.6f else 1f
     Row(
@@ -311,21 +318,15 @@ private fun TimelineEntry(
             verticalArrangement = Arrangement.Center,
         ) {
             Text(
-                sentence,
+                name,
                 style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                textDecoration = if (row.deleted) TextDecoration.LineThrough else null,
                 color = colors.onSurface.copy(alpha = alpha),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (meta.isNotEmpty()) {
-                Text(
-                    meta,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = muted,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+            ActivityMeta(row, activityTimeOfDay(row.createdAt, zone), muted)
         }
         if (previewUrl != null) {
             AsyncImage(
@@ -370,75 +371,63 @@ private fun activityIcon(kind: ActivityIconKind): ImageVector =
         ActivityIconKind.Trash -> PhosphorIcons.Trash
         ActivityIconKind.Minus -> PhosphorIcons.Minus
         ActivityIconKind.Restore -> Icons.AutoMirrored.Filled.Undo
+        ActivityIconKind.Timer -> PhosphorIcons.Timer
+        ActivityIconKind.Share -> PhosphorIcons.ShareNetwork
         ActivityIconKind.Attachment -> PhosphorIcons.Paperclip
         ActivityIconKind.Other -> PhosphorIcons.NotePencil
     }
 
-/** "14:32 · 3 changes · notes, stitch sample": the time, the run length and the changed fields. */
+/**
+ * What happened, who did it and when: "Timer started · by You · 14:32 · 3 changes · notes". The
+ * action is worded like the project history; the actor is always named, with their picture.
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun metaText(row: ActivityRowModel, time: String?): String {
-    val parts = mutableListOf<String>()
-    if (time != null) parts += time
-    row.trashDaysLeft?.let { days ->
-        parts += stringResource(R.string.admin_state_in_trash, daysLeftText(daysLeft(days)))
-    }
-    row.ownerName?.let { parts += stringResource(R.string.admin_owner_line, it) }
-    if (row.count > 1) {
-        parts += pluralStringResource(R.plurals.activity_changes_count, row.count, row.count)
-    }
-    if (row.fieldNounRes.isNotEmpty()) {
-        val nouns = row.fieldNounRes.map { stringResource(it) }
-        parts +=
-            (if (row.moreFields > 0) nouns + stringResource(R.string.history_n_more, row.moreFields)
-                else nouns)
-                .joinToString(", ")
-    }
-    return parts.joinToString(" · ")
-}
-
-/** "You updated **Winter socks**": the sentence with the resource name in bold. */
-@Composable
-private fun activitySentence(row: ActivityRowModel): AnnotatedString {
-    val actor =
-        when {
-            row.actorIsSelf -> stringResource(R.string.activity_actor_you)
-            row.actorName != null -> stringResource(R.string.activity_actor_named, row.actorName)
-            else -> stringResource(R.string.activity_actor_someone)
-        }
-    val name =
-        row.entityName
-            ?: stringResource(
-                if (row.isYarn) R.string.activity_unnamed_yarn
-                else R.string.activity_unnamed_project
+private fun ActivityMeta(row: ActivityRowModel, time: String?, muted: Color) {
+    val style = MaterialTheme.typography.labelMedium
+    val headline =
+        sharingHeadlineText(row.action, row.subject) ?: actionLabelText(row.action, row.system)
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+        itemVerticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(headline, style = style, fontWeight = FontWeight.Bold, color = muted)
+        UserLabel(row.actor, size = UserLabelSize.Inline, by = true, style = style, color = muted)
+        if (time != null) Text(time, style = style, color = muted)
+        row.trashDaysLeft?.let { days ->
+            Text(
+                stringResource(R.string.admin_state_in_trash, daysLeftText(daysLeft(days))),
+                style = style,
+                color = muted,
             )
-    val template =
-        when (row.verb) {
-            ActivityVerb.Created -> R.string.activity_created
-            ActivityVerb.Updated -> R.string.activity_updated
-            ActivityVerb.Deleted -> R.string.activity_deleted
-            ActivityVerb.Uploaded -> R.string.activity_uploaded
-            ActivityVerb.Removed -> R.string.activity_removed
-            ActivityVerb.Trashed -> R.string.activity_trashed
-            ActivityVerb.Restored -> R.string.activity_restored
-            ActivityVerb.Purged -> R.string.activity_purged
-            ActivityVerb.PurgedAuto -> R.string.activity_purged_auto
-            ActivityVerb.Changed -> R.string.activity_changed
         }
-    val text =
-        if (row.verb == ActivityVerb.PurgedAuto) stringResource(template, name)
-        else stringResource(template, actor, name)
-    val range = nameRange(text, name)
-    return buildAnnotatedString {
-        append(text)
-        if (range != null) {
-            addStyle(SpanStyle(fontWeight = FontWeight.Bold), range.first, range.last + 1)
-            if (row.deleted) {
-                addStyle(
-                    SpanStyle(textDecoration = TextDecoration.LineThrough),
-                    range.first,
-                    range.last + 1,
-                )
+        row.owner?.let { owner ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(stringResource(R.string.user_owner_prefix), style = style, color = muted)
+                UserLabel(owner, size = UserLabelSize.Inline, style = style, color = muted)
             }
+        }
+        if (row.count > 1) {
+            Text(
+                pluralStringResource(R.plurals.activity_changes_count, row.count, row.count),
+                style = style,
+                color = muted,
+            )
+        }
+        if (row.fieldNounRes.isNotEmpty()) {
+            val nouns = row.fieldNounRes.map { stringResource(it) }
+            Text(
+                (if (row.moreFields > 0)
+                        nouns + stringResource(R.string.history_n_more, row.moreFields)
+                    else nouns)
+                    .joinToString(", "),
+                style = style,
+                color = muted,
+            )
         }
     }
 }

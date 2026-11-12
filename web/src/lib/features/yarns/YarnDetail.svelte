@@ -778,12 +778,7 @@
     </div>
 
     {#if !trashed}
-      <HistorySection
-        kind="yarns"
-        id={currentYarn.id}
-        {locale}
-        currentEmail={session.data?.user?.email ?? null}
-      />
+      <HistorySection kind="yarns" id={currentYarn.id} {locale} />
     {/if}
   </main>
   <ProjectLightbox

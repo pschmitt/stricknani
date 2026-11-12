@@ -156,6 +156,14 @@ Use this file as the operational source of truth for working in Stricknani.
   is about (see `android/AGENTS.md`, "Notifications"). A notification that
   only informs is a bug.
 
+- Wherever a user's name is shown, render it with the shared `UserLabel`
+  (avatar + name): `web/src/lib/components/UserLabel.svelte` (people and
+  `UserRef` helpers in `web/src/lib/user-label.ts`, sentences with people in
+  `UserSentence.svelte`) and `ui/common/UserLabel.kt` on Android. It covers You,
+  a display name (never an email for non-administrators), "an administrator",
+  System and Unknown, in three sizes. Recent changes, history panels and the
+  home and My activity feeds always name their actor with it.
+
 ### Native API v2 migration
 
 - Track remaining work under T121 in `TODO.md`. Codex owns server changes and API/data review; Claude owns Android migration

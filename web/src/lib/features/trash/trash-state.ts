@@ -16,6 +16,7 @@ export interface TrashStatus {
 export interface LifecycleSubject {
   id: number | null;
   name: string | null;
+  avatar_url?: string | null;
 }
 
 function record(value: unknown): value is Record<string, unknown> {
@@ -66,6 +67,12 @@ export function parseLifecycleSubject(value: unknown): LifecycleSubject | null {
     id:
       typeof id === "number" && Number.isSafeInteger(id) && id > 0 ? id : null,
     name: name || null,
+    avatar_url:
+      typeof value.avatar_url === "string" &&
+      value.avatar_url.startsWith("/") &&
+      !value.avatar_url.startsWith("//")
+        ? value.avatar_url
+        : null,
   };
 }
 

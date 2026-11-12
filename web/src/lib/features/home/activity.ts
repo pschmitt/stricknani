@@ -1,12 +1,23 @@
 import { ApiError, apiRequest } from "#lib/api.ts";
 import { msg, t, type Locale } from "#lib/i18n.svelte.ts";
-import { fieldNoun } from "#lib/features/history/history-summary.ts";
 import {
+  actionLabel,
+  fieldNoun,
+  sharingHeadline,
+} from "#lib/features/history/history-summary.ts";
+import {
+  activityActor,
+  avatarPath,
+  parseUserKind,
+  type UserKind,
+  type UserRef,
+} from "#lib/user-label.ts";
+import {
+  isLifecycleAction,
   parseLifecycleSubject,
   parseResourceState,
   parseTrashStatus,
   trashedStateText,
-  lifecycleSubjectText,
   type LifecycleSubject,
   type ResourceState,
   type TrashStatus,
@@ -17,6 +28,9 @@ export const ACTIVITY_PAGE_SIZE = 6;
 export const ACTIVITY_FULL_PAGE_SIZE = 20;
 
 export interface ActivityActor {
+  /** Who it was, as this viewer may know it; null on an older server (read from `is_self`). */
+  kind: UserKind | null;
+  /** Display name, never an email; only for `self` and `user`. */
   name: string | null;
   is_self: boolean;
   avatar_url: string | null;
@@ -41,10 +55,12 @@ export interface ActivityItem {
   state: ResourceState | null;
   /** Present only while the item is in the trash. */
   trash: TrashStatus | null;
-  /** True only for the automatic purge of the trash: no actor. */
+  /** No account caused it: the purge job, a restore the server ran. */
   system: boolean;
-  /** The owner, named on events an administrator or the system caused. */
+  /** The owner an administrator or the system acted on, or the other account of a sharing event. */
   subject: LifecycleSubject | null;
+  /** The role of a sharing event's subject; absent otherwise. */
+  subject_role: string | null;
 }
 
 export interface ActivityPage {
@@ -115,7 +131,11 @@ export function parseActivityItem(value: unknown): ActivityItem {
     href: exists && state !== "in_trash" ? localPath(value.href) : null,
     thumbnail_url: localPath(value.thumbnail_url),
     actor: {
-      name: typeof actor.name === "string" ? actor.name : null,
+      kind: parseUserKind(actor.kind),
+      name:
+        typeof actor.name === "string" && actor.name.trim() !== ""
+          ? actor.name
+          : null,
       is_self: actor.is_self === true,
       avatar_url: localPath(actor.avatar_url),
     },
@@ -124,6 +144,10 @@ export function parseActivityItem(value: unknown): ActivityItem {
     trash,
     system: value.system === true,
     subject: parseLifecycleSubject(value.subject),
+    subject_role:
+      record(value.subject) && typeof value.subject.role === "string"
+        ? value.subject.role
+        : null,
   };
 }
 
@@ -160,65 +184,36 @@ export function mergeActivity(
   return [...current, ...next.filter((item) => !seen.has(item.id))];
 }
 
-export interface ActivitySentence {
-  before: string;
-  /** The resource name, rendered in bold; null when the name is not known. */
-  name: string | null;
-  after: string;
+/** The actor of a feed item as a `UserRef`: You, a name, an administrator, System or Unknown. */
+export function activityItemActor(item: ActivityItem): UserRef {
+  return activityActor(item.actor, item.system);
 }
 
-const NAME = "{name}";
+/**
+ * What happened, worded like the project history (`actionLabel`, sharing sentences): "Timer
+ * started", "Restored from trash", "Shared with Anna · Can view". Android words it the same.
+ */
+export function activityHeadline(item: ActivityItem, locale: Locale): string {
+  return (
+    sharingHeadline(
+      item.action,
+      item.subject ? { ...item.subject, role: item.subject_role } : null,
+      locale,
+    ) ?? actionLabel(item.action, locale, item.system)
+  );
+}
 
-const selfSentences: Record<string, string> = {
-  created: msg("You created {name}"),
-  updated: msg("You updated {name}"),
-  deleted: msg("You deleted {name}"),
-  uploaded: msg("You added files to {name}"),
-  removed: msg("You removed files from {name}"),
-  trashed: msg("You moved {name} to the trash"),
-  restored: msg("You restored {name} from the trash"),
-  purged: msg("You deleted {name} permanently"),
-};
-const otherSentences: Record<string, string> = {
-  created: msg("An admin created {name}"),
-  updated: msg("An admin updated {name}"),
-  deleted: msg("An admin deleted {name}"),
-  uploaded: msg("An admin added files to {name}"),
-  removed: msg("An admin removed files from {name}"),
-  trashed: msg("An admin moved {name} to the trash"),
-  restored: msg("An admin restored {name} from the trash"),
-  purged: msg("An admin deleted {name} permanently"),
-};
-const systemPurged = msg("{name} was purged automatically after 90 days");
-const selfFallback = msg("You changed {name}");
-const otherFallback = msg("An admin changed {name}");
-
-/** "You updated **Winter socks**" as three parts, so the name can be emphasised. */
-export function activitySentence(
+/** The name to show for the resource: its name, else "a project" / "a yarn". */
+export function activityResourceName(
   item: ActivityItem,
   locale: Locale,
-): ActivitySentence {
-  const table = item.actor.is_self ? selfSentences : otherSentences;
-  const fallback = item.actor.is_self ? selfFallback : otherFallback;
-  const template =
-    item.system && item.action === "purged"
-      ? t(systemPurged, locale)
-      : t(table[item.action] ?? fallback, locale);
-  const known = item.entity_name !== null;
-  const name = known
-    ? item.entity_name
-    : item.entity_type === "project"
+): string {
+  return (
+    item.entity_name ??
+    (item.entity_type === "project"
       ? t("a project", locale)
-      : t("a yarn", locale);
-  const at = template.indexOf(NAME);
-  if (at < 0) return { before: template, name: null, after: "" };
-  return {
-    before: template.slice(0, at),
-    name: known ? name : null,
-    after: known
-      ? template.slice(at + NAME.length)
-      : `${name}${template.slice(at + NAME.length)}`,
-  };
+      : t("a yarn", locale))
+  );
 }
 
 const extraNouns: Record<string, string> = {
@@ -287,17 +282,22 @@ export function activityAgo(
   return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(then);
 }
 
-/** The owner and trash state of a lifecycle entry: "Owner: Anna · In the trash · 12 days left". */
-export function activityLifecycleNote(
+/** Where a moved-to-trash item is now: "In the trash · 12 days left", "Restored"; else empty. */
+export function activityStateNote(item: ActivityItem, locale: Locale): string {
+  return trashedStateText(item.action, item.state, item.trash, locale) ?? "";
+}
+
+/** The owner of a trash, restore or purge entry, for an "Owner: {name}" hint; null otherwise. */
+export function activityOwner(
   item: ActivityItem,
   locale: Locale,
-): string {
-  return [
-    item.subject?.name ? lifecycleSubjectText(item.subject, locale) : null,
-    trashedStateText(item.action, item.state, item.trash, locale),
-  ]
-    .filter((part): part is string => part !== null)
-    .join(" · ");
+): UserRef | null {
+  if (!isLifecycleAction(item.action) || !item.subject) return null;
+  return {
+    kind: "user",
+    name: item.subject.name ?? t("a deleted account", locale),
+    avatarUrl: avatarPath(item.subject.avatar_url),
+  };
 }
 
 /** Icon of a timeline node: what happened, not what it happened to. */
@@ -310,6 +310,8 @@ export type ActivityIcon =
   | "action-delete"
   | "action-remove"
   | "action-upload"
+  | "stopwatch"
+  | "share"
   | "action-default";
 
 const exactIcons: Record<string, ActivityIcon> = {
@@ -334,6 +336,17 @@ const exactIcons: Record<string, ActivityIcon> = {
   image_deleted: "action-delete",
   photo_deleted: "action-delete",
   removed: "action-remove",
+  timer_started: "stopwatch",
+  timer_stopped: "stopwatch",
+  timer_total_changed: "stopwatch",
+  shared: "share",
+  share_role_changed: "share",
+  share_revoked: "action-remove",
+  share_left: "action-remove",
+  ownership_transferred: "share",
+  step_trashed: "trash",
+  step_restored: "reset",
+  step_purged: "action-delete",
 };
 
 /** Maps an audit action to a node icon; unknown actions are read by their suffix. */
@@ -404,20 +417,39 @@ export function activityTime(value: string, locale: Locale): string {
 }
 
 function sameActor(a: ActivityItem, b: ActivityItem): boolean {
-  return a.actor.is_self === b.actor.is_self && a.actor.name === b.actor.name;
+  return (
+    a.actor.is_self === b.actor.is_self &&
+    a.actor.kind === b.actor.kind &&
+    a.actor.name === b.actor.name
+  );
 }
 
-/** Created and deleted are single events and never fold into a run. */
+/** One-off facts (lifecycle, sharing, timer) are single events and never fold into a run. */
+const standaloneActions = new Set([
+  "created",
+  "deleted",
+  "trashed",
+  "restored",
+  "purged",
+  "step_trashed",
+  "step_restored",
+  "step_purged",
+  "shared",
+  "share_role_changed",
+  "share_revoked",
+  "share_left",
+  "ownership_transferred",
+  "timer_started",
+  "timer_stopped",
+  "timer_total_changed",
+]);
+
 function mergeable(newer: ActivityItem, older: ActivityItem): boolean {
   return (
     newer.entity_type === older.entity_type &&
     newer.entity_id === older.entity_id &&
     newer.action === older.action &&
-    newer.action !== "created" &&
-    newer.action !== "deleted" &&
-    newer.action !== "trashed" &&
-    newer.action !== "restored" &&
-    newer.action !== "purged" &&
+    !standaloneActions.has(newer.action) &&
     sameActor(newer, older)
   );
 }

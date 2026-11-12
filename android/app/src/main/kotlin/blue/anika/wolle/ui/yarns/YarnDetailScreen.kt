@@ -729,7 +729,6 @@ internal fun YarnDetailContent(
                     HistorySection(
                         state = historyState,
                         controller = history,
-                        avatarUrl = resolveMediaUrl,
                         emptyHint = R.string.history_empty_hint_yarn,
                     )
                 }

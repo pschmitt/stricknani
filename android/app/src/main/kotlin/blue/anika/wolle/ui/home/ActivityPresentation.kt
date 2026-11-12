@@ -1,10 +1,14 @@
 package blue.anika.wolle.ui.home
 
 import blue.anika.wolle.data.api.dto.ActivityItemDto
+import blue.anika.wolle.data.api.dto.AuditSubjectDto
 import blue.anika.wolle.data.api.dto.RESOURCE_STATE_IN_TRASH
 import blue.anika.wolle.data.util.DateTimeUtils
 import blue.anika.wolle.ui.admin.DayLabel
 import blue.anika.wolle.ui.admin.dayLabelFor
+import blue.anika.wolle.ui.common.UserRef
+import blue.anika.wolle.ui.common.activityActorRef
+import blue.anika.wolle.ui.common.subjectRef
 import blue.anika.wolle.ui.history.fieldNounRes
 import java.time.Instant
 import java.time.LocalDate
@@ -12,8 +16,9 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /*
- * Pure rules behind Home's "Recent activity": which sentence a feed item gets, how many changed
- * fields are named and what the row does when tapped. The Compose layer only turns this into text.
+ * Pure rules behind Home's "Recent activity": who did it, how many changed fields are named and what
+ * the row does when tapped. The action is worded like the project history ([auditActionPresentation]
+ * and the sharing sentences), so both views agree. The Compose layer only turns this into text.
  */
 
 /** How many rows Home shows (its first page; "See all" opens the full page). */
@@ -24,37 +29,6 @@ const val ACTIVITY_FULL_PAGE_SIZE = 20
 
 /** At most this many field labels are named on a row; the rest become "N more". */
 const val ACTIVITY_MAX_FIELDS = 3
-
-enum class ActivityVerb {
-    Created,
-    Updated,
-    Deleted,
-    Uploaded,
-    Removed,
-    /** Moved to the trash. */
-    Trashed,
-    /** Restored from the trash. */
-    Restored,
-    /** Deleted for good by hand; the legacy hard delete reads [Deleted]. */
-    Purged,
-    /** The automatic purge after 90 days: nobody did it. */
-    PurgedAuto,
-    /** The legacy imported actions (`step_updated` and the like) and anything unknown. */
-    Changed,
-}
-
-fun activityVerb(action: String): ActivityVerb =
-    when (action.lowercase()) {
-        "created" -> ActivityVerb.Created
-        "updated" -> ActivityVerb.Updated
-        "deleted" -> ActivityVerb.Deleted
-        "uploaded" -> ActivityVerb.Uploaded
-        "removed" -> ActivityVerb.Removed
-        "trashed" -> ActivityVerb.Trashed
-        "restored" -> ActivityVerb.Restored
-        "purged" -> ActivityVerb.Purged
-        else -> ActivityVerb.Changed
-    }
 
 /** What a timeline node draws: the kind of change, not the thing that changed. */
 enum class ActivityIconKind {
@@ -70,6 +44,10 @@ enum class ActivityIconKind {
     Minus,
     /** restored from the trash */
     Restore,
+    /** the project timer */
+    Timer,
+    /** sharing and ownership */
+    Share,
     /** a file other than a photo was added */
     Attachment,
     /** anything the app does not know by name */
@@ -99,6 +77,17 @@ private val exactIcons =
         "image_deleted" to ActivityIconKind.Trash,
         "photo_deleted" to ActivityIconKind.Trash,
         "removed" to ActivityIconKind.Minus,
+        "timer_started" to ActivityIconKind.Timer,
+        "timer_stopped" to ActivityIconKind.Timer,
+        "timer_total_changed" to ActivityIconKind.Timer,
+        "shared" to ActivityIconKind.Share,
+        "share_role_changed" to ActivityIconKind.Share,
+        "share_revoked" to ActivityIconKind.Minus,
+        "share_left" to ActivityIconKind.Minus,
+        "ownership_transferred" to ActivityIconKind.Share,
+        "step_trashed" to ActivityIconKind.Trash,
+        "step_restored" to ActivityIconKind.Restore,
+        "step_purged" to ActivityIconKind.Trash,
     )
 
 /** The node icon of an audit action; unknown actions are read by their suffix. */
@@ -113,6 +102,8 @@ fun activityIconKind(action: String): ActivityIconKind {
         key.endsWith("_uploaded") -> ActivityIconKind.Camera
         key.endsWith("_deleted") -> ActivityIconKind.Trash
         key.endsWith("_removed") -> ActivityIconKind.Minus
+        key.endsWith("_trashed") || key.endsWith("_purged") -> ActivityIconKind.Trash
+        key.endsWith("_restored") -> ActivityIconKind.Restore
         else -> ActivityIconKind.Other
     }
 }
@@ -130,16 +121,21 @@ sealed interface ActivityTarget {
     data object Trash : ActivityTarget
 }
 
-/**
- * One row, ready to draw. [actorName] is null for "You" (the signed-in user) and for an actor the
- * server does not name; [actorIsSelf] tells those apart.
- */
+/** Actions that move an item through the trash: the row names the owner next to the actor. */
+private val lifecycleActions = setOf("trashed", "restored", "purged")
+
+/** One row, ready to draw. */
 data class ActivityRowModel(
     val key: Long,
-    val verb: ActivityVerb,
+    /** The audit action; worded by the project history's labels. */
+    val action: String,
+    /** No account caused it: reads "Purged automatically after 90 days". */
+    val system: Boolean,
     val icon: ActivityIconKind,
-    val actorIsSelf: Boolean,
-    val actorName: String?,
+    /** Who did it: You, a display name, an administrator, System or Unknown. */
+    val actor: UserRef,
+    /** The other account of a sharing event ("Shared with Anna"). */
+    val subject: AuditSubjectDto?,
     val isYarn: Boolean,
     val entityName: String?,
     /** More than one edit folded into this row (an autosave burst); 1 otherwise. */
@@ -156,7 +152,7 @@ data class ActivityRowModel(
     /** Days left while the item sits in the trash; null when it is not in the trash. */
     val trashDaysLeft: Int? = null,
     /** The owner of the item, for trash events an administrator did and the automatic purge. */
-    val ownerName: String? = null,
+    val owner: UserRef? = null,
 ) {
     /** A deleted resource: muted and not tappable. An item in the trash leads to the trash. */
     val deleted: Boolean
@@ -182,12 +178,11 @@ fun activityRow(item: ActivityItemDto): ActivityRowModel {
         }
     return ActivityRowModel(
         key = item.id,
-        verb =
-            if (item.system && item.action.lowercase() == "purged") ActivityVerb.PurgedAuto
-            else activityVerb(item.action),
+        action = item.action,
+        system = item.system,
         icon = activityIconKind(item.action),
-        actorIsSelf = item.actor.isSelf && !item.system,
-        actorName = item.actor.name?.takeIf { it.isNotBlank() && !item.actor.isSelf },
+        actor = activityActorRef(item),
+        subject = item.subject,
         isYarn = isYarn,
         entityName = item.entityName?.takeIf { it.isNotBlank() },
         count = item.count.coerceAtLeast(1),
@@ -197,19 +192,8 @@ fun activityRow(item: ActivityItemDto): ActivityRowModel {
         target = target,
         createdAt = item.createdAt,
         trashDaysLeft = if (inTrash) item.trash?.daysRemaining ?: 0 else null,
-        ownerName = item.subject?.name?.trim()?.ifBlank { null },
+        owner = if (item.action in lifecycleActions) subjectRef(item.subject) else null,
     )
-}
-
-/**
- * The range of [name] inside the formatted [sentence] (to draw it bold), or null when it is not in
- * there. The last occurrence is used: the name follows the actor in every sentence, and an actor
- * called like the resource must not take the emphasis.
- */
-fun nameRange(sentence: String, name: String?): IntRange? {
-    if (name.isNullOrEmpty()) return null
-    val start = sentence.lastIndexOf(name)
-    return if (start < 0) null else start until start + name.length
 }
 
 /** Appends a page, dropping items already present (a new edit can shift the page boundary). */
@@ -227,18 +211,36 @@ fun mergeActivity(
 data class ActivityDay(val label: DayLabel, val rows: List<ActivityRowModel>)
 
 private fun ActivityItemDto.sameActor(other: ActivityItemDto): Boolean =
-    actor.isSelf == other.actor.isSelf && actor.name == other.actor.name
+    actor.isSelf == other.actor.isSelf &&
+        actor.kind == other.actor.kind &&
+        actor.name == other.actor.name
 
-/** Created and deleted are single events; everything else can fold into a run. */
+/** One-off facts (lifecycle, sharing, timer) are single events and never fold into a run. */
+private val standaloneActions =
+    setOf(
+        "created",
+        "deleted",
+        "trashed",
+        "restored",
+        "purged",
+        "step_trashed",
+        "step_restored",
+        "step_purged",
+        "shared",
+        "share_role_changed",
+        "share_revoked",
+        "share_left",
+        "ownership_transferred",
+        "timer_started",
+        "timer_stopped",
+        "timer_total_changed",
+    )
+
 private fun ActivityItemDto.foldsInto(newer: ActivityItemDto): Boolean =
     entityType == newer.entityType &&
         entityId == newer.entityId &&
         action == newer.action &&
-        action != "created" &&
-        action != "deleted" &&
-        action != "trashed" &&
-        action != "restored" &&
-        action != "purged" &&
+        action !in standaloneActions &&
         sameActor(newer)
 
 /**

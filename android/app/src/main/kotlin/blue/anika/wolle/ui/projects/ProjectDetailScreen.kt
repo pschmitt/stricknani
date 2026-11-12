@@ -975,7 +975,6 @@ internal fun ProjectDetailContent(
                     HistorySection(
                         state = historyState,
                         controller = history,
-                        avatarUrl = resolveMediaUrl,
                         emptyHint = R.string.history_empty_hint_project,
                     )
                 }

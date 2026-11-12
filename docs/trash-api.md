@@ -115,7 +115,9 @@ Every step is audited and keeps `resource_name_snapshot`:
   `Project › Step`).
 * The actor is the account that acted. When an administrator acts on someone
   else's item, or the system purges, the owner is the event's `subject`. The
-  automatic purge has no actor and is marked `system: true`. Impersonation is
+  automatic purge has no actor and is marked `system: true`, and so is any
+  event with no actor that the server wrote itself (a restore from a backup,
+  `client.kind` `system`). Impersonation is
   recorded as `impersonated_by` as for every event.
 * Rows written before the trash (`deleted`, `removed`) stay as they are and
   read as "deleted permanently".

@@ -10,6 +10,8 @@ import {
   type PageMeta,
 } from "#lib/features/admin/admin-api.ts";
 
+import { avatarPath } from "#lib/user-label.ts";
+
 import { parseChangeMedia, type ChangeMedia } from "./media-change";
 
 /** The two resources that keep an owner-visible change history. */
@@ -17,8 +19,13 @@ export type HistoryKind = "projects" | "yarns";
 
 export interface HistoryEvent {
   id: number;
+  /** Only readers who manage the resource get it; show `actor_name`, never this, in the UI. */
   actor_email: string | null;
+  /** The actor's display name (never an email); absent without an account. */
+  actor_name?: string | null;
   actor_avatar_url: string | null;
+  /** The reader is the actor. */
+  actor_is_self?: boolean;
   entity_type: string;
   entity_id: number;
   action: string;
@@ -43,6 +50,7 @@ export interface HistorySubject {
   id: number | null;
   name: string | null;
   role: string | null;
+  avatar_url?: string | null;
 }
 
 export interface HistoryPage {
@@ -81,9 +89,13 @@ export function parseHistoryEvent(value: unknown): HistoryEvent {
   return {
     id: value.id,
     actor_email: value.actor_email,
+    actor_name:
+      typeof value.actor_name === "string" && value.actor_name.trim() !== ""
+        ? value.actor_name
+        : null,
     // Only same-origin paths are rendered as images.
-    actor_avatar_url:
-      typeof avatar === "string" && avatar.startsWith("/") ? avatar : null,
+    actor_avatar_url: avatarPath(avatar),
+    actor_is_self: value.actor_is_self === true,
     entity_type: value.entity_type,
     entity_id: value.entity_id,
     action: value.action,
@@ -104,6 +116,7 @@ function parseSubject(value: unknown): HistorySubject | null {
     id: typeof id === "number" && Number.isSafeInteger(id) ? id : null,
     name: typeof value.name === "string" ? value.name : null,
     role: typeof value.role === "string" ? value.role : null,
+    avatar_url: avatarPath(value.avatar_url),
   };
 }
 

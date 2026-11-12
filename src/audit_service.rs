@@ -242,6 +242,9 @@ pub(crate) struct AuditEvent {
     pub(crate) actor_name: Option<String>,
     pub(crate) actor_avatar_url: Option<String>,
     pub(crate) legacy_actor_user_id: Option<i64>,
+    /// The reader is the actor. Resource history and activity reads only.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub(crate) actor_is_self: bool,
     pub(crate) entity_type: String,
     pub(crate) entity_id: i64,
     pub(crate) action: String,
@@ -261,7 +264,8 @@ pub(crate) struct AuditEvent {
     /// The administrator who made this change while acting as the actor.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) impersonated_by: Option<AuditImpersonator>,
-    /// No account caused this event: the automatic purge of the trash.
+    /// No account caused this event: the automatic purge of the trash, or a
+    /// change the server made on its own (a restore from a backup).
     #[serde(skip_serializing_if = "std::ops::Not::not")]
     pub(crate) system: bool,
     /// The client that caused the event. Administrator audit reads only: the
@@ -322,6 +326,8 @@ pub(crate) struct AuditSubject {
     pub(crate) id: Option<i64>,
     pub(crate) name: Option<String>,
     pub(crate) role: Option<String>,
+    /// The avatar path any signed-in user may read; null without a picture.
+    pub(crate) avatar_url: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -372,10 +378,16 @@ macro_rules! resource_event_columns {
     () => {
         concat!("SELECT e.id, e.actor_user_id, e.legacy_actor_user_id, \
         u.email AS actor_email, avatar.filename AS actor_avatar_filename, u.use_gravatar AS actor_use_gravatar, \
+        COALESCE(u.is_admin, 0) AS actor_is_admin, \
+        (e.actor_user_id IS NOT NULL AND EXISTS (SELECT 1 FROM resource_shares AS actor_share \
+           WHERE actor_share.kind = e.entity_type AND actor_share.resource_id = e.entity_id \
+             AND actor_share.user_id = e.actor_user_id)) AS actor_has_share, \
         e.entity_type, e.entity_id, e.action, e.created_at, \
         e.resource_name_snapshot, e.change_version, \
         e.subject_user_id, e.subject_role, \
         (SELECT email FROM users WHERE id = e.subject_user_id) AS subject_email, \
+        (SELECT use_gravatar FROM users WHERE id = e.subject_user_id) AS subject_use_gravatar, \
+        (SELECT filename FROM user_avatars WHERE user_id = e.subject_user_id) AS subject_avatar_filename, \
         e.impersonated_by_user_id, \
         e.client_kind, e.client_version, e.client_label, e.client_user_agent, \
         e.server_details, \
@@ -747,8 +759,14 @@ const ACTIVITY_BATCH: i64 = 100;
 pub(crate) const ACTIVITY_DEFAULT_LIMIT: u32 = 10;
 pub(crate) const ACTIVITY_MAX_LIMIT: u32 = 50;
 
+/// Who caused a feed item, as the reader may know it.
 #[derive(Clone, Debug, Serialize)]
 pub(crate) struct ActivityActor {
+    /// `self`, `user`, `admin` (an administrator whose identity is hidden from
+    /// this reader), `system` (no account: the purge job, a restore the server
+    /// ran) or `unknown` (a row without a readable actor).
+    pub(crate) kind: &'static str,
+    /// Display name, never an email. Only for `self` and `user`.
     pub(crate) name: Option<String>,
     pub(crate) is_self: bool,
     pub(crate) avatar_url: Option<String>,
@@ -776,6 +794,13 @@ pub(crate) struct ActivityItem {
     pub(crate) actor: ActivityActor,
     pub(crate) changed_fields: Vec<String>,
     pub(crate) count: u32,
+    /// No account caused this event.
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub(crate) system: bool,
+    /// The other account of a sharing event, or the owner an administrator or
+    /// the system acted on. Never carries an email.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) subject: Option<AuditSubject>,
     #[serde(skip)]
     actor_user_id: Option<i64>,
     #[serde(skip)]
@@ -802,6 +827,7 @@ fn parse_event_seconds(value: &str) -> Option<i64> {
 fn activity_item(
     row: &sqlx::sqlite::SqliteRow,
     user_id: i64,
+    viewer_is_admin: bool,
     gravatar_enabled: bool,
 ) -> ActivityItem {
     let event = make_event(
@@ -816,10 +842,30 @@ fn activity_item(
     let current: Option<String> = row.get("current_name");
     let actor_user_id: Option<i64> = row.get("actor_user_id");
     let is_self = actor_user_id == Some(user_id);
-    let name = is_self.then(|| {
-        let email = event.actor_email.clone().unwrap_or_default();
-        email.split('@').next().unwrap_or_default().to_owned()
-    });
+    // The reader may open the resource (owner, also from the trash; share; administrator).
+    // Events the reader caused on resources they lost access to stay in the
+    // feed under their recorded name, without a link, picture or live name.
+    let can_open = viewer_is_admin || row.get::<bool, _>("viewer_can_open");
+    // Other people's administrators stay anonymous to a member, unless that
+    // administrator owns the resource or was invited to it.
+    let hide_admin = !viewer_is_admin
+        && !is_self
+        && actor_user_id.is_some()
+        && row.get::<bool, _>("actor_is_admin")
+        && row.get::<Option<i64>, _>("current_owner_id") != actor_user_id
+        && !row.get::<bool, _>("actor_has_share");
+    let kind = if is_self {
+        "self"
+    } else if event.system {
+        "system"
+    } else if actor_user_id.is_none() || event.actor_name.is_none() {
+        "unknown"
+    } else if hide_admin {
+        "admin"
+    } else {
+        "user"
+    };
+    let shows_actor = matches!(kind, "self" | "user");
     let mut changed_fields = Vec::new();
     if let (Some(changes), _) = project_changes(row) {
         for item in &changes.items {
@@ -837,35 +883,62 @@ fn activity_item(
         action: event.action,
         entity_type: event.entity_type,
         entity_id: event.entity_id,
-        entity_name: current.or(snapshot),
+        entity_name: if can_open {
+            current.or(snapshot)
+        } else {
+            snapshot
+        },
         exists: event.resource.exists,
         state: event.resource.state,
-        trash: event.resource.trash,
-        href: event.resource.href,
-        thumbnail_url: event.resource.preview_url,
+        trash: event.resource.trash.filter(|_| can_open),
+        href: event.resource.href.filter(|_| can_open),
+        thumbnail_url: event.resource.preview_url.filter(|_| can_open),
         actor: ActivityActor {
-            name: name.filter(|name| !name.is_empty()),
+            kind,
+            name: event.actor_name.filter(|_| shows_actor),
             is_self,
-            avatar_url: event.actor_avatar_url,
+            avatar_url: event.actor_avatar_url.filter(|_| shows_actor),
         },
         changed_fields,
         count: 1,
+        system: event.system,
+        subject: event.subject,
         actor_user_id,
     }
 }
 
+/// Actions that are one-off facts: a run of them never folds into one item.
+fn is_standalone_action(action: &str) -> bool {
+    matches!(
+        action,
+        "created"
+            | "deleted"
+            | "trashed"
+            | "restored"
+            | "purged"
+            | "step_trashed"
+            | "step_restored"
+            | "step_purged"
+            | "shared"
+            | "share_role_changed"
+            | "share_revoked"
+            | "share_left"
+            | "ownership_transferred"
+            | "timer_started"
+            | "timer_stopped"
+            | "timer_total_changed"
+    )
+}
+
 impl ActivityItem {
-    /// Repeated edits by one actor to one resource collapse; creation and
-    /// deletion are always their own item.
+    /// Repeated edits by one actor to one resource collapse; lifecycle,
+    /// sharing and timer events are always their own item.
     fn absorbs(&self, older: &Self) -> bool {
         if self.entity_type != older.entity_type
             || self.entity_id != older.entity_id
             || self.action != older.action
             || self.actor_user_id != older.actor_user_id
-            || matches!(
-                self.action.as_str(),
-                "created" | "deleted" | "trashed" | "restored" | "purged"
-            )
+            || is_standalone_action(&self.action)
         {
             return false;
         }
@@ -888,13 +961,16 @@ impl ActivityItem {
     }
 }
 
-/// The user's own recent project and yarn events, newest first, with runs of
+/// The user's recent project and yarn events, newest first, with runs of
 /// identical edits coalesced. `before` is an audit event id; only events older
 /// than it are returned.
 ///
-/// Visible events are those on resources the user currently owns (whoever
-/// acted), plus events on resources that no longer exist when the user was the
-/// actor, since a deleted resource has no owner left to check.
+/// Every audit action counts (timer, trash, sharing, ...). Visible events are
+/// those on resources the user can currently see (own, shared with them, or
+/// linked to a project they can see; whoever acted), those on resources they
+/// own even while in the trash, and every event the user caused themselves,
+/// also on resources they do not own or that are gone. Other people's
+/// resources never appear for any other reason.
 pub(crate) async fn list_activity(
     pool: &SqlitePool,
     user_id: i64,
@@ -902,7 +978,16 @@ pub(crate) async fn list_activity(
     before: Option<i64>,
     gravatar_enabled: bool,
 ) -> Result<ActivityPage, AuditError> {
+    use crate::resource_access::{ResourceKind, visible_sql};
+
     let limit = limit.clamp(1, ACTIVITY_MAX_LIMIT) as usize;
+    let viewer_is_admin: bool = sqlx::query_scalar(
+        "SELECT EXISTS(SELECT 1 FROM users WHERE id = ? AND is_admin = 1 AND active = 1)",
+    )
+    .bind(user_id)
+    .fetch_one(pool)
+    .await
+    .map_err(|_| AuditError::Database)?;
     let mut cursor: Option<(String, i64)> = match before {
         Some(id) => {
             let row = sqlx::query("SELECT created_at, id FROM audit_events WHERE id = ?")
@@ -923,28 +1008,51 @@ pub(crate) async fn list_activity(
         }
         None => None,
     };
-    let branch = |entity: &str, table: &str| {
+    const PAGE_CURSOR: &str = "(?2 IS NULL OR (e.created_at, e.id) < (?2, ?3))";
+    let branch = |from: &str, filter: &str| {
         format!(
-            "SELECT id, created_at FROM (SELECT e.id, e.created_at FROM {table} AS r \
-               JOIN audit_events AS e ON e.entity_type = '{entity}' AND e.entity_id = r.id \
-               WHERE r.owner_id = ?1 AND e.action NOT LIKE 'timer\\_%' ESCAPE '\\' \
-               AND (?2 IS NULL OR (e.created_at, e.id) < (?2, ?3)) \
+            "SELECT id, created_at FROM (SELECT e.id, e.created_at FROM {from} \
+               WHERE {filter} AND {PAGE_CURSOR} \
                ORDER BY e.created_at DESC, e.id DESC LIMIT ?4)"
         )
     };
-    let deleted_branch = |entity: &str, table: &str| {
+    // Resources the user owns, even in the trash.
+    let owned = |entity: &str, table: &str| {
+        branch(
+            &format!(
+                "{table} AS r JOIN audit_events AS e \
+                   ON e.entity_type = '{entity}' AND e.entity_id = r.id"
+            ),
+            "r.owner_id = ?1",
+        )
+    };
+    // Resources the user can open now: shares and linked yarns.
+    let visible = |entity: &str, table: &str, kind: ResourceKind| {
+        branch(
+            &format!(
+                "{table} AS r JOIN audit_events AS e \
+                   ON e.entity_type = '{entity}' AND e.entity_id = r.id"
+            ),
+            &visible_sql(kind, "r", 1),
+        )
+    };
+    // Whatever the user did themselves, on resources of anybody, gone or not.
+    let acted = |entity: &str| {
+        branch(
+            "audit_events AS e",
+            &format!("e.actor_user_id = ?1 AND e.entity_type = '{entity}'"),
+        )
+    };
+    let can_open = |entity: &str, table: &str, kind: ResourceKind| {
         format!(
-            "SELECT id, created_at FROM (SELECT e.id, e.created_at FROM audit_events AS e \
-               WHERE e.actor_user_id = ?1 AND e.entity_type = '{entity}' \
-                 AND e.action NOT LIKE 'timer\\_%' ESCAPE '\\' \
-                 AND (?2 IS NULL OR (e.created_at, e.id) < (?2, ?3)) \
-                 AND NOT EXISTS (SELECT 1 FROM {table} AS r WHERE r.id = e.entity_id) \
-               ORDER BY e.created_at DESC, e.id DESC LIMIT ?4)"
+            "WHEN '{entity}' THEN EXISTS(SELECT 1 FROM {table} AS vr \
+               WHERE vr.id = e.entity_id AND (vr.owner_id = ?1 OR {visible}))",
+            visible = visible_sql(kind, "vr", 1)
         )
     };
     let sql = format!(
-        "{columns} FROM (\
-           {a} UNION ALL {b} UNION ALL {c} UNION ALL {d} \
+        "{columns}, CASE e.entity_type {open_project} {open_yarn} ELSE 0 END AS viewer_can_open FROM (\
+           {a} UNION {b} UNION {c} UNION {d} UNION {e} UNION {f} \
            ORDER BY created_at DESC, id DESC LIMIT ?4) AS v \
          JOIN audit_events AS e ON e.id = v.id \
          LEFT JOIN users AS u ON u.id = e.actor_user_id \
@@ -953,10 +1061,14 @@ pub(crate) async fn list_activity(
          ORDER BY e.created_at DESC, e.id DESC",
         media_join = media_event_join!(),
         columns = resource_event_columns!(),
-        a = branch("project", "projects"),
-        b = branch("yarn", "yarns"),
-        c = deleted_branch("project", "projects"),
-        d = deleted_branch("yarn", "yarns"),
+        open_project = can_open("project", "projects", ResourceKind::Project),
+        open_yarn = can_open("yarn", "yarns", ResourceKind::Yarn),
+        a = owned("project", "projects"),
+        b = owned("yarn", "yarns"),
+        c = visible("project", "projects", ResourceKind::Project),
+        d = visible("yarn", "yarns", ResourceKind::Yarn),
+        e = acted("project"),
+        f = acted("yarn"),
     );
 
     let mut items: Vec<ActivityItem> = Vec::new();
@@ -973,7 +1085,7 @@ pub(crate) async fn list_activity(
         let fetched = rows.len() as i64;
         for row in rows {
             cursor = Some((row.get("created_at"), row.get("id")));
-            let item = activity_item(&row, user_id, gravatar_enabled);
+            let item = activity_item(&row, user_id, viewer_is_admin, gravatar_enabled);
             if let Some(last) = items.last_mut()
                 && last.absorbs(&item)
             {
@@ -1401,14 +1513,8 @@ fn make_event(
                     )
                     .map(|(url, _)| url)
                 }
-                // Readers without manage rights get the readable avatar path.
-                (
-                    AuditAudience::Owner {
-                        reveal_email: false,
-                        ..
-                    },
-                    Some(actor_id),
-                ) => crate::media::people_avatar(
+                // Everyone else gets the avatar path any signed-in user may read.
+                (AuditAudience::Owner { .. }, Some(actor_id)) => crate::media::people_avatar(
                     actor_id,
                     filename.as_deref(),
                     use_gravatar,
@@ -1419,9 +1525,16 @@ fn make_event(
             }
         },
         legacy_actor_user_id: row.get("legacy_actor_user_id"),
+        actor_is_self: match audience {
+            AuditAudience::Owner { viewer_id, .. } => {
+                row.get::<Option<i64>, _>("actor_user_id") == Some(viewer_id)
+            }
+            AuditAudience::Administrator => false,
+        },
         system: row.get::<Option<i64>, _>("actor_user_id").is_none()
             && row.get::<Option<i64>, _>("legacy_actor_user_id").is_none()
-            && row.get::<String, _>("action") == "purged",
+            && (row.get::<String, _>("action") == "purged"
+                || row.get::<Option<String>, _>("client_kind").as_deref() == Some("system")),
         entity_type,
         entity_id,
         action: row.get("action"),
@@ -1461,6 +1574,22 @@ fn make_event(
                     .get::<Option<String>, _>("subject_email")
                     .map(|email| crate::resource_access::display_name(&email)),
                 role,
+                avatar_url: row
+                    .get::<Option<i64>, _>("subject_user_id")
+                    .and_then(|subject_id| {
+                        let use_gravatar = row
+                            .get::<Option<i64>, _>("subject_use_gravatar")
+                            .unwrap_or(1)
+                            != 0;
+                        crate::media::people_avatar(
+                            subject_id,
+                            row.get::<Option<String>, _>("subject_avatar_filename")
+                                .as_deref(),
+                            use_gravatar,
+                            gravatar_enabled,
+                        )
+                    })
+                    .map(|(url, _)| url),
             }),
     }
 }

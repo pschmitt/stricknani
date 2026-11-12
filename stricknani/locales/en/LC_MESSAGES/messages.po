@@ -712,51 +712,6 @@ msgstr "Amount"
 msgid "An account with that email already exists."
 msgstr "An account with that email already exists."
 
-#: web/src/lib/features/home/activity.ts:186
-#, python-brace-format
-msgid "An admin added files to {name}"
-msgstr "An admin added files to {name}"
-
-#: web/src/lib/features/home/activity.ts:194
-#, python-brace-format
-msgid "An admin changed {name}"
-msgstr "An admin changed {name}"
-
-#: web/src/lib/features/home/activity.ts:183
-#, python-brace-format
-msgid "An admin created {name}"
-msgstr "An admin created {name}"
-
-#: web/src/lib/features/home/activity.ts:185
-#, python-brace-format
-msgid "An admin deleted {name}"
-msgstr "An admin deleted {name}"
-
-#: web/src/lib/features/home/activity.ts:190
-#, python-brace-format
-msgid "An admin deleted {name} permanently"
-msgstr "An admin deleted {name} permanently"
-
-#: web/src/lib/features/home/activity.ts:188
-#, python-brace-format
-msgid "An admin moved {name} to the trash"
-msgstr "An admin moved {name} to the trash"
-
-#: web/src/lib/features/home/activity.ts:187
-#, python-brace-format
-msgid "An admin removed files from {name}"
-msgstr "An admin removed files from {name}"
-
-#: web/src/lib/features/home/activity.ts:189
-#, python-brace-format
-msgid "An admin restored {name} from the trash"
-msgstr "An admin restored {name} from the trash"
-
-#: web/src/lib/features/home/activity.ts:184
-#, python-brace-format
-msgid "An admin updated {name}"
-msgstr "An admin updated {name}"
-
 #: web/src/lib/features/media/ArchiveControl.svelte:448
 msgid "An archived copy is ready."
 msgstr "An archived copy is ready."
@@ -1116,7 +1071,7 @@ msgstr "Can view"
 #: web/src/lib/features/projects/ProjectEditor.svelte:2492
 #: web/src/lib/features/projects/ProjectEditor.svelte:2575
 #: web/src/lib/features/projects/ProjectEditor.svelte:2657
-#: web/src/lib/features/projects/ProjectReader.svelte:1525
+#: web/src/lib/features/projects/ProjectReader.svelte:1520
 #: web/src/lib/features/projects/ProjectTimer.svelte:702
 #: web/src/lib/features/sharing/AccessNotice.svelte:121
 #: web/src/lib/features/sharing/TransferDialog.svelte:133
@@ -1599,7 +1554,7 @@ msgstr "Default"
 
 #: web/src/lib/features/categories/CategoryManager.svelte:370
 #: web/src/lib/features/categories/CategoryManager.svelte:388
-#: web/src/lib/features/yarns/YarnDetail.svelte:809
+#: web/src/lib/features/yarns/YarnDetail.svelte:804
 #: web/src/lib/features/yarns/YarnForm.svelte:1414
 msgid "Delete"
 msgstr "Delete"
@@ -1643,24 +1598,24 @@ msgstr "Delete permanently?"
 #: web/src/lib/features/projects/ProjectEditor.svelte:2465
 #: web/src/lib/features/projects/ProjectEditor.svelte:2585
 #: web/src/lib/features/projects/ProjectReader.svelte:1331
-#: web/src/lib/features/projects/ProjectReader.svelte:1534
+#: web/src/lib/features/projects/ProjectReader.svelte:1529
 msgid "Delete project"
 msgstr "Delete project"
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:287
-#: web/src/lib/features/projects/ProjectReader.svelte:1500
+#: web/src/lib/features/projects/ProjectReader.svelte:1495
 msgid "Delete this project?"
 msgstr "Delete this project?"
 
 #: web/src/lib/features/yarns/YarnDetail.svelte:688
-#: web/src/lib/features/yarns/YarnDetail.svelte:838
+#: web/src/lib/features/yarns/YarnDetail.svelte:833
 #: web/src/lib/features/yarns/YarnForm.svelte:1345
 #: web/src/lib/features/yarns/YarnForm.svelte:1361
 #: web/src/lib/features/yarns/YarnForm.svelte:1445
 msgid "Delete yarn"
 msgstr "Delete yarn"
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:804
+#: web/src/lib/features/yarns/YarnDetail.svelte:799
 #: web/src/lib/features/yarns/YarnForm.svelte:1409
 msgid "Delete yarn?"
 msgstr "Delete yarn?"
@@ -1689,7 +1644,7 @@ msgstr ""
 " good."
 
 #: web/src/lib/features/admin/audit-action.ts:32
-#: web/src/lib/features/trash/trash-state.ts:97
+#: web/src/lib/features/trash/trash-state.ts:104
 msgid "Deleted permanently"
 msgstr "Deleted permanently"
 
@@ -1713,7 +1668,7 @@ msgstr "Deleted {when}"
 #: web/src/lib/features/projects/ProjectEditor.svelte:2465
 #: web/src/lib/features/trash/TrashManager.svelte:450
 #: web/src/lib/features/trash/TrashedBanner.svelte:182
-#: web/src/lib/features/yarns/YarnDetail.svelte:838
+#: web/src/lib/features/yarns/YarnDetail.svelte:833
 #: web/src/lib/features/yarns/YarnForm.svelte:1445
 msgid "Deleting…"
 msgstr "Deleting…"
@@ -1921,11 +1876,11 @@ msgstr "Edit time"
 msgid "Edit yarn"
 msgstr "Edit yarn"
 
-#: web/src/lib/features/history/HistorySection.svelte:270
+#: web/src/lib/features/history/HistorySection.svelte:265
 msgid "Edits to this project will show up here."
 msgstr "Edits to this project will show up here."
 
-#: web/src/lib/features/history/HistorySection.svelte:271
+#: web/src/lib/features/history/HistorySection.svelte:266
 msgid "Edits to this yarn will show up here."
 msgstr "Edits to this yarn will show up here."
 
@@ -2619,11 +2574,11 @@ msgstr "In the great ball of yarn that is the internet, this is a loose end."
 
 #: web/src/lib/features/admin/DiffPanel.svelte:174
 #: web/src/lib/features/admin/RestoreBackupDialog.svelte:299
-#: web/src/lib/features/trash/trash-state.ts:94
+#: web/src/lib/features/trash/trash-state.ts:101
 msgid "In the trash"
 msgstr "In the trash"
 
-#: web/src/lib/features/trash/trash-state.ts:90
+#: web/src/lib/features/trash/trash-state.ts:97
 #, python-brace-format
 msgid "In the trash · {left}"
 msgstr "In the trash · {left}"
@@ -2670,8 +2625,8 @@ msgstr "It is due for deletion."
 #: web/src/lib/features/categories/CategoryManager.svelte:392
 #: web/src/lib/features/projects/ProjectEditor.svelte:2546
 #: web/src/lib/features/projects/ProjectEditor.svelte:2553
-#: web/src/lib/features/projects/ProjectReader.svelte:1505
-#: web/src/lib/features/yarns/YarnDetail.svelte:809
+#: web/src/lib/features/projects/ProjectReader.svelte:1500
+#: web/src/lib/features/yarns/YarnDetail.svelte:804
 #: web/src/lib/features/yarns/YarnForm.svelte:1347
 #: web/src/lib/features/yarns/YarnForm.svelte:1414
 msgid "It moves to the trash and can be restored from there for 90 days."
@@ -2739,7 +2694,7 @@ msgstr "Keep timing"
 msgid "Keep token"
 msgstr "Keep token"
 
-#: web/src/lib/features/yarns/YarnDetail.svelte:829
+#: web/src/lib/features/yarns/YarnDetail.svelte:824
 #: web/src/lib/features/yarns/YarnForm.svelte:1435
 msgid "Keep yarn"
 msgstr "Keep yarn"
@@ -2798,7 +2753,7 @@ msgstr "Language"
 msgid "Large"
 msgstr "Large"
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1481
+#: web/src/lib/features/projects/ProjectReader.svelte:1476
 msgid "Last updated"
 msgstr "Last updated"
 
@@ -3017,11 +2972,11 @@ msgstr "Loading passkeys…"
 msgid "Loading project details…"
 msgstr "Loading project details…"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:164
+#: web/src/lib/features/home/ActivityFeed.svelte:169
 msgid "Loading recent activity…"
 msgstr "Loading recent activity…"
 
-#: web/src/lib/features/history/HistorySection.svelte:253
+#: web/src/lib/features/history/HistorySection.svelte:248
 msgid "Loading recent changes…"
 msgstr "Loading recent changes…"
 
@@ -3056,7 +3011,7 @@ msgstr "Loading yarn options…"
 msgid "Loading your home…"
 msgstr "Loading your home…"
 
-#: web/src/lib/features/history/HistorySection.svelte:386
+#: web/src/lib/features/history/HistorySection.svelte:381
 #: web/src/lib/features/sharing/PeoplePicker.svelte:157
 #: web/src/lib/features/sharing/ShareDialog.svelte:240
 msgid "Loading…"
@@ -3185,7 +3140,7 @@ msgstr "More about your data is in the"
 msgid "More actions"
 msgstr "More actions"
 
-#: web/src/lib/features/history/HistorySection.svelte:363
+#: web/src/lib/features/history/HistorySection.svelte:358
 msgid "More changes could not be loaded."
 msgstr "More changes could not be loaded."
 
@@ -3392,7 +3347,7 @@ msgstr "No change snapshot was recorded for this event."
 msgid "No changes are available for this event."
 msgstr "No changes are available for this event."
 
-#: web/src/lib/features/history/HistorySection.svelte:266
+#: web/src/lib/features/history/HistorySection.svelte:261
 msgid "No changes recorded yet"
 msgstr "No changes recorded yet"
 
@@ -3554,7 +3509,7 @@ msgstr "Nothing matches"
 msgid "Nothing on the needles yet"
 msgstr "Nothing on the needles yet"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:175
+#: web/src/lib/features/home/ActivityFeed.svelte:180
 msgid "Nothing yet - your changes will show up here."
 msgstr "Nothing yet - your changes will show up here."
 
@@ -3696,7 +3651,7 @@ msgstr "Open the project to stop the timer or keep timing."
 
 #: web/src/lib/features/admin/AuditLifecycle.svelte:98
 #: web/src/lib/features/admin/AuditLifecycle.svelte:105
-#: web/src/lib/features/home/ActivityFeed.svelte:256
+#: web/src/lib/features/home/ActivityFeed.svelte:273
 msgid "Open trash"
 msgstr "Open trash"
 
@@ -3780,8 +3735,10 @@ msgstr "Owned by {name}"
 msgid "Owner"
 msgstr "Owner"
 
+#: web/src/lib/features/history/HistorySection.svelte:321
+#: web/src/lib/features/home/ActivityFeed.svelte:231
 #: web/src/lib/features/trash/TrashManager.svelte:359
-#: web/src/lib/features/trash/trash-state.ts:106
+#: web/src/lib/features/trash/trash-state.ts:113
 #, python-brace-format
 msgid "Owner: {name}"
 msgstr "Owner: {name}"
@@ -4335,17 +4292,17 @@ msgstr "Ready to review"
 msgid "Ready when you are"
 msgstr "Ready when you are"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:168
-#: web/src/lib/features/home/ActivityFeed.svelte:281
+#: web/src/lib/features/home/ActivityFeed.svelte:173
+#: web/src/lib/features/home/ActivityFeed.svelte:298
 msgid "Recent activity could not be loaded."
 msgstr "Recent activity could not be loaded."
 
-#: web/src/lib/features/history/HistorySection.svelte:244
-#: web/src/lib/features/history/HistorySection.svelte:275
+#: web/src/lib/features/history/HistorySection.svelte:239
+#: web/src/lib/features/history/HistorySection.svelte:270
 msgid "Recent changes"
 msgstr "Recent changes"
 
-#: web/src/lib/features/history/HistorySection.svelte:257
+#: web/src/lib/features/history/HistorySection.svelte:252
 msgid "Recent changes could not be loaded."
 msgstr "Recent changes could not be loaded."
 
@@ -4623,7 +4580,7 @@ msgstr "Resource unavailable"
 #: web/src/lib/features/account/BackupsSection.svelte:493
 #: web/src/lib/features/account/BackupsSection.svelte:535
 #: web/src/lib/features/admin/AuditLifecycle.svelte:119
-#: web/src/lib/features/home/ActivityFeed.svelte:268
+#: web/src/lib/features/home/ActivityFeed.svelte:285
 #: web/src/lib/features/trash/TrashManager.svelte:388
 #: web/src/lib/features/trash/TrashedBanner.svelte:135
 msgid "Restore"
@@ -4661,12 +4618,12 @@ msgstr "Restore the project or yarn it belongs to from the trash first."
 msgid "Restore this file?"
 msgstr "Restore this file?"
 
-#: web/src/lib/features/trash/trash-state.ts:96
+#: web/src/lib/features/trash/trash-state.ts:103
 msgid "Restored"
 msgstr "Restored"
 
 #: web/src/lib/features/admin/AuditLifecycle.svelte:76
-#: web/src/lib/features/home/ActivityFeed.svelte:108
+#: web/src/lib/features/home/ActivityFeed.svelte:113
 #: web/src/lib/features/trash/TrashManager.svelte:132
 #: web/src/lib/features/trash/TrashedBanner.svelte:75
 #: web/src/lib/features/trash/trash-undo.ts:53
@@ -4691,7 +4648,7 @@ msgstr "Restore…"
 #: web/src/lib/features/account/BackupsSection.svelte:401
 #: web/src/lib/features/admin/AuditLifecycle.svelte:119
 #: web/src/lib/features/admin/RestoreBackupDialog.svelte:322
-#: web/src/lib/features/home/ActivityFeed.svelte:267
+#: web/src/lib/features/home/ActivityFeed.svelte:284
 #: web/src/lib/features/trash/TrashManager.svelte:388
 #: web/src/lib/features/trash/TrashedBanner.svelte:135
 msgid "Restoring…"
@@ -5060,7 +5017,7 @@ msgstr "Shh, everyone is asleep!"
 msgid "Show"
 msgstr "Show"
 
-#: web/src/lib/features/history/HistorySection.svelte:375
+#: web/src/lib/features/history/HistorySection.svelte:370
 msgid "Show all changes"
 msgstr "Show all changes"
 
@@ -5069,17 +5026,17 @@ msgstr "Show all changes"
 msgid "Show diff"
 msgstr "Show diff"
 
-#: web/src/lib/features/history/HistorySection.svelte:395
+#: web/src/lib/features/history/HistorySection.svelte:390
 msgid "Show fewer"
 msgstr "Show fewer"
 
 #: web/src/lib/components/CommandPalette.svelte:344
-#: web/src/lib/features/home/ActivityFeed.svelte:289
+#: web/src/lib/features/home/ActivityFeed.svelte:306
 #: web/src/lib/features/sharing/PeoplePicker.svelte:146
 msgid "Show more"
 msgstr "Show more"
 
-#: web/src/lib/features/history/HistorySection.svelte:387
+#: web/src/lib/features/history/HistorySection.svelte:382
 msgid "Show older changes"
 msgstr "Show older changes"
 
@@ -5528,7 +5485,7 @@ msgstr "Synced across your devices"
 #: web/src/lib/features/admin/AdminAudit.svelte:276
 #: web/src/lib/features/admin/DiffPanel.svelte:146
 #: web/src/lib/features/admin/DiffPanel.svelte:152
-#: web/src/lib/features/admin/audit-client.ts:46
+#: web/src/lib/features/admin/audit-client.ts:46 web/src/lib/user-label.ts:51
 msgid "System"
 msgstr "System"
 
@@ -6599,7 +6556,7 @@ msgid "Title image uploaded"
 msgstr "Title image uploaded"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:335
-#: web/src/lib/features/home/activity.ts:386
+#: web/src/lib/features/home/activity.ts:399
 msgid "Today"
 msgstr "Today"
 
@@ -6707,9 +6664,9 @@ msgstr "Try a different name, category, or tag."
 #: web/src/lib/features/auth/PasskeysSection.svelte:262
 #: web/src/lib/features/categories/CategoryManager.svelte:241
 #: web/src/lib/features/history/HistoryEventDetail.svelte:68
-#: web/src/lib/features/history/HistorySection.svelte:259
-#: web/src/lib/features/home/ActivityFeed.svelte:170
-#: web/src/lib/features/home/ActivityFeed.svelte:283
+#: web/src/lib/features/history/HistorySection.svelte:254
+#: web/src/lib/features/home/ActivityFeed.svelte:175
+#: web/src/lib/features/home/ActivityFeed.svelte:300
 #: web/src/lib/features/home/ContinueCarousel.svelte:163
 #: web/src/lib/features/home/HomeDashboard.svelte:196
 #: web/src/lib/features/media/ArchiveControl.svelte:513
@@ -6782,6 +6739,7 @@ msgstr "Undo removing this photo"
 msgid "Undo the last restore"
 msgstr "Undo the last restore"
 
+#: web/src/lib/user-label.ts:53 web/src/lib/user-label.ts:55
 #: web/src/routes/about/+page.svelte:368 web/src/routes/about/+page.svelte:372
 #: web/src/routes/about/+page.svelte:376 web/src/routes/about/+page.svelte:384
 msgid "Unknown"
@@ -7205,18 +7163,14 @@ msgid "Yarn weight"
 msgstr "Yarn weight"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:337
-#: web/src/lib/features/home/activity.ts:387
+#: web/src/lib/features/home/activity.ts:400
 msgid "Yesterday"
 msgstr "Yesterday"
 
 #: web/src/lib/features/admin/AdminUsers.svelte:712
+#: web/src/lib/user-label.ts:47
 msgid "You"
 msgstr "You"
-
-#: web/src/lib/features/home/activity.ts:176
-#, python-brace-format
-msgid "You added files to {name}"
-msgstr "You added files to {name}"
 
 #: web/src/lib/components/ImpersonationBanner.svelte:51
 #, python-brace-format
@@ -7323,11 +7277,6 @@ msgstr "You can view this yarn but not edit it."
 msgid "You cannot disable your own account."
 msgstr "You cannot disable your own account."
 
-#: web/src/lib/features/home/activity.ts:193
-#, python-brace-format
-msgid "You changed {name}"
-msgstr "You changed {name}"
-
 #: web/src/lib/features/admin/RestoreBackupDialog.svelte:352
 msgid "You confirmed it is you."
 msgstr "You confirmed it is you."
@@ -7343,21 +7292,6 @@ msgstr "You confirmed it is you. One last step below."
 #: web/src/lib/features/sharing/AccessNotice.svelte:71
 msgid "You could not leave. Try again."
 msgstr "You could not leave. Try again."
-
-#: web/src/lib/features/home/activity.ts:173
-#, python-brace-format
-msgid "You created {name}"
-msgstr "You created {name}"
-
-#: web/src/lib/features/home/activity.ts:175
-#, python-brace-format
-msgid "You deleted {name}"
-msgstr "You deleted {name}"
-
-#: web/src/lib/features/home/activity.ts:180
-#, python-brace-format
-msgid "You deleted {name} permanently"
-msgstr "You deleted {name} permanently"
 
 #: web/src/routes/+layout.svelte:416
 msgid "You do not have access to this page."
@@ -7391,11 +7325,6 @@ msgstr ""
 "revoke API tokens, and contact the relevant instance operator about your "
 "rights under applicable law."
 
-#: web/src/lib/features/home/activity.ts:178
-#, python-brace-format
-msgid "You moved {name} to the trash"
-msgstr "You moved {name} to the trash"
-
 #: web/src/routes/delete-account/+page.svelte:71
 msgid ""
 "You need to be signed in to delete your account, so that nobody else can "
@@ -7419,21 +7348,6 @@ msgstr "You no longer have access to this yarn."
 #: web/src/lib/features/yarns/YarnForm.svelte:626
 msgid "You no longer have access to this yarn. Your changes are still here."
 msgstr "You no longer have access to this yarn. Your changes are still here."
-
-#: web/src/lib/features/home/activity.ts:177
-#, python-brace-format
-msgid "You removed files from {name}"
-msgstr "You removed files from {name}"
-
-#: web/src/lib/features/home/activity.ts:179
-#, python-brace-format
-msgid "You restored {name} from the trash"
-msgstr "You restored {name} from the trash"
-
-#: web/src/lib/features/home/activity.ts:174
-#, python-brace-format
-msgid "You updated {name}"
-msgstr "You updated {name}"
 
 #: web/src/lib/features/auth/LinkedLogins.svelte:350
 msgid ""
@@ -7613,23 +7527,28 @@ msgid "Your yarns could not be loaded."
 msgstr "Your yarns could not be loaded."
 
 #: web/src/lib/features/history/history-summary.ts:201
-#: web/src/lib/features/trash/trash-state.ts:108
+#: web/src/lib/features/home/activity.ts:298
+#: web/src/lib/features/trash/trash-state.ts:115 web/src/lib/user-label.ts:167
 msgid "a deleted account"
 msgstr "a deleted account"
 
-#: web/src/lib/features/home/activity.ts:211
+#: web/src/lib/features/home/activity.ts:214
 msgid "a project"
 msgstr "a project"
 
-#: web/src/lib/features/home/activity.ts:212
+#: web/src/lib/features/home/activity.ts:215
 msgid "a yarn"
 msgstr "a yarn"
+
+#: web/src/lib/user-label.ts:41
+msgid "an administrator"
+msgstr "an administrator"
 
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:546
 msgid "and"
 msgstr "and"
 
-#: web/src/lib/features/home/activity.ts:228
+#: web/src/lib/features/home/activity.ts:223
 msgid "attachments"
 msgstr "attachments"
 
@@ -7637,10 +7556,23 @@ msgstr "attachments"
 msgid "brand"
 msgstr "brand"
 
-#: web/src/lib/features/history/HistorySection.svelte:329
-msgid "by"
-msgstr "by"
+#: web/src/lib/user-label.ts:70
+msgid "by System"
+msgstr "by System"
 
+#: web/src/lib/user-label.ts:72
+msgid "by Unknown"
+msgstr "by Unknown"
+
+#: web/src/lib/user-label.ts:66
+msgid "by You"
+msgstr "by You"
+
+#: web/src/lib/user-label.ts:68
+msgid "by an administrator"
+msgstr "by an administrator"
+
+#: web/src/lib/features/history/HistorySection.svelte:310
 #: web/src/lib/features/history/history-summary.ts:327
 #, python-brace-format
 msgid "by {admin} as {user}"
@@ -7745,8 +7677,8 @@ msgstr "other materials"
 msgid "photo order"
 msgstr "photo order"
 
-#: web/src/lib/features/home/activity.ts:225
-#: web/src/lib/features/home/activity.ts:226
+#: web/src/lib/features/home/activity.ts:220
+#: web/src/lib/features/home/activity.ts:221
 msgid "photos"
 msgstr "photos"
 
@@ -7780,7 +7712,7 @@ msgid "step picture order"
 msgstr "step picture order"
 
 #: web/src/lib/features/history/history-summary.ts:59
-#: web/src/lib/features/home/activity.ts:227
+#: web/src/lib/features/home/activity.ts:222
 msgid "steps"
 msgstr "steps"
 
@@ -7835,11 +7767,6 @@ msgstr "{name} now owns this project. You are an editor."
 msgid "{name} now owns this yarn. You are an editor."
 msgstr "{name} now owns this yarn. You are an editor."
 
-#: web/src/lib/features/home/activity.ts:192
-#, python-brace-format
-msgid "{name} was purged automatically after 90 days"
-msgstr "{name} was purged automatically after 90 days"
-
 #: web/src/lib/features/admin/AdminBackups.svelte:163
 #, python-brace-format
 msgid "{name} was restored on {time} by {email}."
@@ -7866,7 +7793,7 @@ msgstr "{name}'s project"
 msgid "{name}'s yarn"
 msgstr "{name}'s yarn"
 
-#: web/src/lib/features/home/activity.ts:237
+#: web/src/lib/features/home/activity.ts:232
 #, python-brace-format
 msgid "{n} changes"
 msgstr "{n} changes"
@@ -7882,7 +7809,7 @@ msgid "{n} days left"
 msgstr "{n} days left"
 
 #: web/src/lib/features/history/history-summary.ts:179
-#: web/src/lib/features/home/activity.ts:249
+#: web/src/lib/features/home/activity.ts:244
 #, python-brace-format
 msgid "{n} more"
 msgstr "{n} more"
@@ -8518,3 +8445,63 @@ msgstr "{yarns} yarns"
 
 #~ msgid "Recently updated projects could not be loaded."
 #~ msgstr "Recently updated projects could not be loaded."
+
+#~ msgid "An admin added files to {name}"
+#~ msgstr "An admin added files to {name}"
+
+#~ msgid "An admin changed {name}"
+#~ msgstr "An admin changed {name}"
+
+#~ msgid "An admin created {name}"
+#~ msgstr "An admin created {name}"
+
+#~ msgid "An admin deleted {name}"
+#~ msgstr "An admin deleted {name}"
+
+#~ msgid "An admin deleted {name} permanently"
+#~ msgstr "An admin deleted {name} permanently"
+
+#~ msgid "An admin moved {name} to the trash"
+#~ msgstr "An admin moved {name} to the trash"
+
+#~ msgid "An admin removed files from {name}"
+#~ msgstr "An admin removed files from {name}"
+
+#~ msgid "An admin restored {name} from the trash"
+#~ msgstr "An admin restored {name} from the trash"
+
+#~ msgid "An admin updated {name}"
+#~ msgstr "An admin updated {name}"
+
+#~ msgid "You added files to {name}"
+#~ msgstr "You added files to {name}"
+
+#~ msgid "You changed {name}"
+#~ msgstr "You changed {name}"
+
+#~ msgid "You created {name}"
+#~ msgstr "You created {name}"
+
+#~ msgid "You deleted {name}"
+#~ msgstr "You deleted {name}"
+
+#~ msgid "You deleted {name} permanently"
+#~ msgstr "You deleted {name} permanently"
+
+#~ msgid "You moved {name} to the trash"
+#~ msgstr "You moved {name} to the trash"
+
+#~ msgid "You removed files from {name}"
+#~ msgstr "You removed files from {name}"
+
+#~ msgid "You restored {name} from the trash"
+#~ msgstr "You restored {name} from the trash"
+
+#~ msgid "You updated {name}"
+#~ msgstr "You updated {name}"
+
+#~ msgid "by"
+#~ msgstr "by"
+
+#~ msgid "{name} was purged automatically after 90 days"
+#~ msgstr "{name} was purged automatically after 90 days"

@@ -41,10 +41,15 @@ describe("lifecycle parsing", () => {
   it("reads the subject leniently", () => {
     expect(
       parseLifecycleSubject({ id: 3, name: " Anna ", role: null }),
-    ).toEqual({ id: 3, name: "Anna" });
+    ).toEqual({ id: 3, name: "Anna", avatar_url: null });
+    expect(
+      parseLifecycleSubject({ id: 3, name: "Anna", avatar_url: "/a.png" })
+        ?.avatar_url,
+    ).toBe("/a.png");
     expect(parseLifecycleSubject({ id: null, name: null })).toEqual({
       id: null,
       name: null,
+      avatar_url: null,
     });
     expect(parseLifecycleSubject("x")).toBeNull();
   });

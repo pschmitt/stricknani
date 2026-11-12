@@ -50,13 +50,29 @@ describe("history API", () => {
       data: [
         event(3, {
           action: "ownership_transferred",
-          subject: { id: 2, name: "Anika", role: null },
+          subject: {
+            id: 2,
+            name: "Anika",
+            role: null,
+            avatar_url: "/api/v2/people/2/avatar/a.png",
+          },
+          actor_name: "Anika Bergmann",
+          actor_is_self: true,
         }),
         event(2, { action: "shared", subject: "bogus" }),
       ],
       meta: { page: 1, per_page: 20, has_more: false },
     });
-    expect(page.data[0].subject).toEqual({ id: 2, name: "Anika", role: null });
+    expect(page.data[0].subject).toEqual({
+      id: 2,
+      name: "Anika",
+      role: null,
+      avatar_url: "/api/v2/people/2/avatar/a.png",
+    });
+    expect(page.data[0].actor_name).toBe("Anika Bergmann");
+    expect(page.data[0].actor_is_self).toBe(true);
+    expect(page.data[1].actor_is_self).toBe(false);
+    expect(page.data[1].actor_name).toBeNull();
     expect(page.data[1].subject).toBeNull();
   });
 

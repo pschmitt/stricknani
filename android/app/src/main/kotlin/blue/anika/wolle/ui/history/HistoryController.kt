@@ -44,7 +44,6 @@ data class HistoryUiState(
     val details: Map<Long, HistoryDetailState> = emptyMap(),
     /** The event whose diff is open in the bottom sheet. */
     val selected: AuditEventDto? = null,
-    val currentEmail: String? = null,
 )
 
 /**
@@ -99,7 +98,6 @@ class HistoryController(
                             hasMore = result.value.meta.hasMore,
                             loadingMore = false,
                             details = emptyMap(),
-                            currentEmail = repository.currentEmail,
                         )
                     }
                 HistoryResult.Unsupported -> _state.update { it.copy(phase = HistoryPhase.Hidden) }

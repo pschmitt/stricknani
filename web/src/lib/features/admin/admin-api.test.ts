@@ -766,7 +766,7 @@ describe("administrator API", () => {
         preview_url: null,
         trash,
       });
-      expect(event.subject).toEqual({ id: 2, name: "Anna" });
+      expect(event.subject).toEqual({ id: 2, name: "Anna", avatar_url: null });
     });
 
     it("reads the system purge without an actor", async () => {

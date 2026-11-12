@@ -435,9 +435,14 @@ async fn history_detail_reuses_safe_changes_projection_and_checks_resource_type(
     assert_eq!(detail.status(), StatusCode::OK);
     let detail = json(detail).await;
     assert_eq!(detail["data"]["event"]["id"], event_id);
+    // Another account's avatar is the path any signed-in user may read, never an
+    // administrator-only route.
     assert_eq!(
         detail["data"]["event"]["actor_avatar_url"],
-        serde_json::Value::Null
+        format!(
+            "/api/v2/people/{}/avatar/thumb_admin-avatar.jpg",
+            fixture.admin_id
+        )
     );
     assert_eq!(
         detail["data"]["changes"]["items"].as_array().unwrap().len(),
@@ -973,4 +978,91 @@ async fn admin_audit_resolves_thumbnails_to_read_only_administrator_routes() {
             .unwrap();
         assert_eq!(denied.status(), StatusCode::FORBIDDEN);
     }
+}
+
+#[tokio::test]
+async fn history_names_every_actor_with_a_display_name_and_marks_the_readers_own_entries() {
+    let f = fixture().await;
+    let pid = project(&f.pool, f.owner_id, "Hat").await;
+    sqlx::query(
+        "INSERT INTO resource_shares (kind, resource_id, user_id, role, created_at, updated_at) \
+         VALUES ('project', ?, ?, 'editor', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+    )
+    .bind(pid)
+    .bind(f.other_id)
+    .execute(&f.pool)
+    .await
+    .unwrap();
+    for (actor, action, at) in [
+        (Some(f.owner_id), "created", "2026-05-01T10:00:00Z"),
+        (Some(f.other_id), "timer_started", "2026-05-01T11:00:00Z"),
+        (Some(f.admin_id), "restored", "2026-05-01T12:00:00Z"),
+        (None, "purged", "2026-05-01T13:00:00Z"),
+        (None, "updated", "2026-05-01T14:00:00Z"),
+    ] {
+        event(
+            &f.pool,
+            EventInput {
+                actor_id: actor,
+                entity_type: "project",
+                entity_id: pid,
+                action,
+                created_at: at,
+                details: None,
+                safe_changes: None,
+            },
+        )
+        .await;
+    }
+    sqlx::query("UPDATE audit_events SET subject_user_id = ? WHERE action = 'restored'")
+        .bind(f.owner_id)
+        .execute(&f.pool)
+        .await
+        .unwrap();
+    let path = format!("/projects/{pid}/history");
+
+    // The sharer reads the same history: only their own entry is theirs, nobody's email shows.
+    let response = f
+        .app
+        .clone()
+        .oneshot(bearer(&path, OTHER_PAT))
+        .await
+        .unwrap();
+    let body = json(response).await;
+    let data = body["data"].as_array().unwrap();
+    assert_eq!(data.len(), 5);
+    let by_action = |action: &str| data.iter().find(|e| e["action"] == action).unwrap();
+    assert_eq!(by_action("timer_started")["actor_is_self"], true);
+    assert_eq!(by_action("timer_started")["actor_name"], "History Other");
+    assert!(by_action("created").get("actor_is_self").is_none());
+    assert_eq!(by_action("created")["actor_name"], "History Owner");
+    assert_eq!(by_action("restored")["actor_name"], "History Admin");
+    assert_eq!(by_action("restored")["subject"]["name"], "History Owner");
+    assert!(by_action("purged").get("actor_name").is_none());
+    assert_eq!(by_action("purged")["system"], true);
+    assert!(by_action("updated").get("actor_name").is_none());
+    assert!(by_action("updated").get("system").is_none());
+    assert!(by_action("created")["actor_avatar_url"].is_null());
+    assert!(
+        !serde_json::to_string(&body)
+            .unwrap()
+            .contains("example.test")
+    );
+
+    // The administrator who restored it reads it as theirs.
+    let response = f
+        .app
+        .clone()
+        .oneshot(bearer(&path, ADMIN_PAT))
+        .await
+        .unwrap();
+    let body = json(response).await;
+    let restored = body["data"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|e| e["action"] == "restored")
+        .unwrap();
+    assert_eq!(restored["actor_is_self"], true);
+    assert_eq!(restored["actor_name"], "History Admin");
 }

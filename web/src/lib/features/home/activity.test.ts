@@ -8,8 +8,11 @@ import {
   groupActivity,
   mergeActivityRuns,
   activityDetail,
-  activityLifecycleNote,
-  activitySentence,
+  activityHeadline,
+  activityItemActor,
+  activityOwner,
+  activityResourceName,
+  activityStateNote,
   loadActivity,
   mergeActivity,
   parseActivityItem,
@@ -28,7 +31,7 @@ const raw = {
   exists: true,
   href: "/app/projects/17",
   thumbnail_url: "/media/thumbnails/projects/17/thumb_cover.jpg",
-  actor: { name: "philipp", is_self: true, avatar_url: null },
+  actor: { kind: "self", name: "Philipp", is_self: true, avatar_url: null },
   changed_fields: ["project.name", "project.needles"],
   count: 4,
 };
@@ -118,21 +121,60 @@ describe("loadActivity", () => {
 });
 
 describe("activity text", () => {
-  it("builds the sentence around a bold name", () => {
-    expect(activitySentence(parseActivityItem(raw), "en")).toEqual({
-      before: "You updated ",
-      name: "Winter socks",
-      after: "",
-    });
+  it("words the action like the project history", () => {
+    expect(activityHeadline(parseActivityItem(raw), "en")).toBe("Updated");
+    for (const [action, text] of [
+      ["timer_started", "Timer started"],
+      ["timer_stopped", "Timer stopped"],
+      ["timer_total_changed", "Knitting time changed"],
+      ["restored", "Restored from trash"],
+      ["trashed", "Moved to trash"],
+      ["photo_promoted", "Cover photo changed"],
+    ] as const)
+      expect(
+        activityHeadline(parseActivityItem({ ...raw, action }), "en"),
+      ).toBe(text);
   });
 
-  it("names an administrator and falls back for unknown actions", () => {
+  it("words sharing events with the other person", () => {
     const item = parseActivityItem({
       ...raw,
-      action: "step_updated",
-      actor: { name: null, is_self: false, avatar_url: null },
+      action: "shared",
+      subject: { id: 2, name: "Anna", role: "editor" },
     });
-    expect(activitySentence(item, "en").before).toBe("An admin changed ");
+    expect(activityHeadline(item, "en")).toBe("Shared with Anna · Can edit");
+  });
+
+  it("always names the actor, as You, a name, an administrator, System or Unknown", () => {
+    const actors = [
+      [{ kind: "self", name: "Philipp", is_self: true }, "self", "Philipp"],
+      [
+        { kind: "user", name: "Anna Berg", is_self: false },
+        "user",
+        "Anna Berg",
+      ],
+      [{ kind: "admin", name: null, is_self: false }, "admin", null],
+      [{ kind: "system", name: null, is_self: false }, "system", null],
+      [{ kind: "unknown", name: null, is_self: false }, "unknown", null],
+    ] as const;
+    for (const [actor, kind, name] of actors) {
+      const item = parseActivityItem({
+        ...raw,
+        actor: { ...actor, avatar_url: null },
+      });
+      expect(activityItemActor(item)).toMatchObject({ kind, name });
+    }
+  });
+
+  it("reads the actor of an older server from is_self and name", () => {
+    const old = (actor: object, extra = {}) =>
+      activityItemActor(parseActivityItem({ ...raw, actor, ...extra }));
+    expect(old({ name: "philipp", is_self: true }).kind).toBe("self");
+    expect(old({ name: "Anna", is_self: false }).kind).toBe("user");
+    expect(old({ name: null, is_self: false }).kind).toBe("admin");
+    expect(old({ name: null, is_self: false }, { system: true }).kind).toBe(
+      "system",
+    );
   });
 
   it("uses a generic noun when the name is unknown", () => {
@@ -142,11 +184,10 @@ describe("activity text", () => {
       entity_type: "yarn",
       action: "deleted",
     });
-    expect(activitySentence(item, "en")).toEqual({
-      before: "You deleted ",
-      name: null,
-      after: "a yarn",
-    });
+    expect(activityResourceName(item, "en")).toBe("a yarn");
+    expect(activityResourceName(parseActivityItem(raw), "en")).toBe(
+      "Winter socks",
+    );
   });
 
   it("lists the change count and field labels", () => {
@@ -220,6 +261,10 @@ describe("activityIcon", () => {
     expect(activityIcon("attachment_uploaded")).toBe("action-upload");
     expect(activityIcon("deleted")).toBe("action-delete");
     expect(activityIcon("removed")).toBe("action-remove");
+    expect(activityIcon("timer_started")).toBe("stopwatch");
+    expect(activityIcon("timer_total_changed")).toBe("stopwatch");
+    expect(activityIcon("shared")).toBe("share");
+    expect(activityIcon("ownership_transferred")).toBe("share");
   });
 
   it("reads unknown actions by suffix and falls back", () => {
@@ -327,10 +372,23 @@ describe("mergeActivityRuns", () => {
         entry({ id: 3 }),
         entry({
           id: 2,
-          actor: { name: null, is_self: false, avatar_url: null },
+          actor: {
+            kind: "admin",
+            name: null,
+            is_self: false,
+            avatar_url: null,
+          },
         }),
       ]),
     ).toHaveLength(2);
+  });
+
+  it("never folds timer or sharing events", () => {
+    for (const action of ["timer_started", "shared"]) {
+      const a = parseActivityItem({ ...raw, action, id: 2, first_event_id: 2 });
+      const b = parseActivityItem({ ...raw, action, id: 1, first_event_id: 1 });
+      expect(mergeActivityRuns([a, b])).toHaveLength(2);
+    }
   });
 
   it("only merges neighbours, never created or deleted", () => {
@@ -395,29 +453,20 @@ describe("trash activity", () => {
     expect(() => parseActivityItem({ ...raw, state: "somewhere" })).toThrow();
   });
 
-  it("words trash events for you, an administrator and the system", () => {
-    expect(activitySentence(parseActivityItem(trashed), "en")).toEqual({
-      before: "You moved ",
-      name: "Winter socks",
-      after: " to the trash",
-    });
-    const admin = parseActivityItem({
-      ...trashed,
-      action: "restored",
-      actor: { name: null, is_self: false, avatar_url: null },
-    });
-    expect(activitySentence(admin, "en").before).toBe("An admin restored ");
+  it("words trash events and names who did them", () => {
+    expect(activityHeadline(parseActivityItem(trashed), "en")).toBe(
+      "Moved to trash",
+    );
     const system = parseActivityItem({
       ...trashed,
       action: "purged",
       system: true,
-      actor: { name: null, is_self: false, avatar_url: null },
+      actor: { kind: "system", name: null, is_self: false, avatar_url: null },
     });
-    expect(activitySentence(system, "en")).toEqual({
-      before: "",
-      name: "Winter socks",
-      after: " was purged automatically after 90 days",
-    });
+    expect(activityHeadline(system, "en")).toBe(
+      "Purged automatically after 90 days",
+    );
+    expect(activityItemActor(system).kind).toBe("system");
   });
 
   it("uses the trash and restore icons", () => {
@@ -434,14 +483,24 @@ describe("trash activity", () => {
     expect(mergeActivityRuns([a, b])).toHaveLength(2);
   });
 
-  it("summarizes owner and state", () => {
+  it("names the owner and the state apart", () => {
     const item = parseActivityItem({
       ...trashed,
+      subject: { id: 2, name: "Anna", role: null, avatar_url: "/a.png" },
+    });
+    expect(activityStateNote(item, "en")).toBe("In the trash · 89 days left");
+    expect(activityOwner(item, "en")).toEqual({
+      kind: "user",
+      name: "Anna",
+      avatarUrl: "/a.png",
+    });
+    expect(activityStateNote(parseActivityItem(raw), "en")).toBe("");
+    expect(activityOwner(parseActivityItem(raw), "en")).toBeNull();
+    const restored = parseActivityItem({
+      ...trashed,
+      action: "restored",
       subject: { id: 2, name: "Anna", role: null },
     });
-    expect(activityLifecycleNote(item, "en")).toBe(
-      "Owner: Anna · In the trash · 89 days left",
-    );
-    expect(activityLifecycleNote(parseActivityItem(raw), "en")).toBe("");
+    expect(activityOwner(restored, "en")?.name).toBe("Anna");
   });
 });

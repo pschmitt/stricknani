@@ -1275,16 +1275,18 @@
     <string name="mascot_say_hi">Dem Wollknäuel Hallo sagen</string>
 
     <!-- Home: recent activity -->
+    <string name="user_label_you">Du</string>
+    <string name="user_label_admin">ein Administrator</string>
+    <string name="user_label_system">System</string>
+    <string name="user_label_unknown">Unbekannt</string>
+    <string name="user_by_you">von dir</string>
+    <string name="user_by_admin">von einem Administrator</string>
+    <string name="user_by_system">vom System</string>
+    <string name="user_by_unknown">von Unbekannt</string>
+    <string name="user_by_deleted">von einem gelöschten Konto</string>
+    <string name="user_owner_prefix">Besitzer:</string>
+    <string name="user_as">als</string>
     <string name="activity_title">Letzte Aktivität</string>
-    <string name="activity_actor_you">Du hast</string>
-    <string name="activity_actor_named">%1$s hat</string>
-    <string name="activity_actor_someone">Jemand hat</string>
-    <string name="activity_created">%1$s %2$s angelegt</string>
-    <string name="activity_updated">%1$s %2$s aktualisiert</string>
-    <string name="activity_deleted">%1$s %2$s gelöscht</string>
-    <string name="activity_uploaded">%1$s eine Datei zu %2$s hinzugefügt</string>
-    <string name="activity_removed">%1$s etwas aus %2$s entfernt</string>
-    <string name="activity_changed">%1$s %2$s geändert</string>
     <string name="activity_unnamed_project">ein Projekt</string>
     <string name="activity_unnamed_yarn">ein Garn</string>
     <plurals name="activity_changes_count">
@@ -1626,10 +1628,6 @@
     <string name="admin_detail_client_version">Version</string>
     <string name="admin_detail_client_agent">User-Agent</string>
     <string name="admin_open_trash">Papierkorb öffnen</string>
-    <string name="activity_trashed">%1$s %2$s in den Papierkorb verschoben</string>
-    <string name="activity_restored">%1$s %2$s aus dem Papierkorb wiederhergestellt</string>
-    <string name="activity_purged">%1$s %2$s endgültig gelöscht</string>
-    <string name="activity_purged_auto">%1$s wurde nach 90 Tagen automatisch gelöscht</string>
     <string name="admin_action_step_trashed">Schritt in den Papierkorb verschoben</string>
     <string name="admin_action_step_restored">Schritt aus dem Papierkorb wiederhergestellt</string>
     <string name="admin_action_step_purged">Schritt endgültig gelöscht</string>

@@ -6,6 +6,12 @@ import kotlinx.serialization.Serializable
 /** `GET /api/v2/activity`: the owner's recent project and yarn events, coalesced server side. */
 @Serializable
 data class ActivityActorDto(
+    /**
+     * `self`, `user`, `admin` (an administrator hidden from this viewer), `system` or `unknown`;
+     * null on servers older than the field (see `activityActorRef`).
+     */
+    val kind: String? = null,
+    /** Display name, never an email; only for `self` and `user`. */
     val name: String? = null,
     @SerialName("is_self") val isSelf: Boolean = false,
     @SerialName("avatar_url") val avatarUrl: String? = null,
@@ -33,9 +39,12 @@ data class ActivityItemDto(
     val state: String? = null,
     /** Only while [state] is `in_trash`. */
     val trash: TrashStateDto? = null,
-    /** True only for the automatic purge after 90 days (no actor). */
+    /** No account caused it: the purge job, a restore the server ran. */
     val system: Boolean = false,
-    /** The owner of the item for trash events an administrator did and for the automatic purge. */
+    /**
+     * The owner of the item for trash events an administrator did and for the automatic purge, or
+     * the other account of a sharing event.
+     */
     val subject: AuditSubjectDto? = null,
 )
 

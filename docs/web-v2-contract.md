@@ -1073,13 +1073,15 @@ older than it, for "load more". Any invalid, unknown or duplicate query
 parameter returns `400 invalid_query`. Requires a strict API-purpose PAT or a
 browser session (`401 session_expired` otherwise); the response is `no-store`.
 
-Scope: events on projects and yarns the user currently owns (whoever acted,
-so an administrator's edit shows up), plus events on resources that have since
-been deleted when the user was the actor (a deleted resource has no owner row
-left to check). Nothing about other users' resources is returned. Category
-events are not included. Actions are the existing audit vocabulary
-(`created`, `updated`, `deleted`, `uploaded`, `removed`, and the legacy
-imported ones such as `step_updated`).
+Scope: events on projects and yarns the user owns (also in the trash) or can
+open now (shared with them, or yarns linked to a project they can open),
+whoever acted, plus every event the user caused themselves, also on other
+people's resources (an administrator's own edits of a member's project) and on
+resources that have since been deleted or that the user lost access to. For
+those the reader gets the recorded name and no link or picture unless they can
+still open the resource. Nothing else about other users' resources is
+returned, and administrators get no wider view of other people's activity here
+(the audit log is for that). Category events are not included.
 
 Coalescing happens server side: consecutive feed entries for the same
 resource, with the same action and the same actor, where each event is at most
@@ -1105,7 +1107,7 @@ never split across pages, so a page can hold slightly more events than
       "exists": true,
       "href": "/app/projects/17",
       "thumbnail_url": "/media/thumbnails/projects/17/thumb_cover.jpg",
-      "actor": {"name": "philipp", "is_self": true, "avatar_url": "/media/thumbnails/users/1/thumb_a.jpg"},
+      "actor": {"kind": "self", "name": "Philipp", "is_self": true, "avatar_url": "/media/thumbnails/users/1/thumb_a.jpg"},
       "changed_fields": ["project.name", "project.needles"],
       "count": 4
     },
@@ -1121,7 +1123,7 @@ never split across pages, so a page can hold slightly more events than
       "exists": false,
       "href": null,
       "thumbnail_url": null,
-      "actor": {"name": "philipp", "is_self": true, "avatar_url": null},
+      "actor": {"kind": "self", "name": "Philipp", "is_self": true, "avatar_url": null},
       "changed_fields": [],
       "count": 1
     }
@@ -1132,13 +1134,32 @@ never split across pages, so a page can hold slightly more events than
 
 `entity_name` is the current name while the resource exists and the name
 recorded at the event otherwise (nullable for very old events without a
-snapshot). `href` and `thumbnail_url` are null once the resource is gone;
-`thumbnail_url` is also null without a cover photo, and is an ordinary
-owner-readable media path. `actor.name` is the local part of the actor's
-email for the current user and null for anyone else (for example an
-administrator); `actor.avatar_url` is likewise only set for the current user.
+snapshot); for a resource the reader can no longer open it is always the
+recorded name. `href` and `thumbnail_url` are null once the resource is gone
+or the reader may not open it; `thumbnail_url` is also null without a cover
+photo, and is an ordinary owner-readable media path.
 `changed_fields` lists the safe change-field keys (such as `project.name`)
 when the event recorded a typed diff, otherwise it is empty.
+
+`actor` always says who did it: `kind` is `self` (the reader), `user` (another
+account), `admin` (an administrator whose identity is hidden from this reader:
+an administrator who acted on a resource they neither own nor were invited to,
+as seen by a non-administrator), `system` (no account: the automatic purge, a
+restore the server ran) or `unknown` (an old row without a readable actor).
+`name` is the display name (the email's local part, capitalised per word, never
+an email) and only set for `self` and `user`; `avatar_url` likewise (the
+reader's own avatar path, or the readable people avatar path of another
+account). `is_self` is `kind == "self"`. Items also carry `system` (true when
+no account caused the event, omitted otherwise) and `subject` (`{id, name, role,
+avatar_url}`: the other account of a sharing event, or the owner an
+administrator or the system acted on; never an email, omitted otherwise).
+
+Every audit action of a project or yarn is in the feed (`created`, `updated`,
+`uploaded`, `removed`, `deleted`, `trashed`, `restored`, `purged`, the `step_*`
+and picture actions, `timer_started`, `timer_stopped`, `timer_total_changed`,
+`shared`, `share_role_changed`, `share_revoked`, `share_left`,
+`ownership_transferred`, and the legacy imported ones). Clients word them like
+the project history. Lifecycle, sharing and timer events never coalesce.
 
 ## Administrator audit API slice
 

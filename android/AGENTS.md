@@ -41,6 +41,16 @@ See the shared doc for the `nix develop`/`git-hooks.nix` basics, run from within
 application; Android tooling (JDK, Android SDK, `just`, `ktfmt`) is deliberately a separate devShell
 scoped to this directory, not mixed into the root one.
 
+## Showing people
+
+Wherever a user's name is shown, render it with the shared `UserLabel`
+([UserLabel.kt](app/src/main/kotlin/blue/anika/wolle/ui/common/UserLabel.kt): avatar + name; the
+web has the same component). Build the `UserRef` through `UserRefs.kt` (`historyActorRef`,
+`activityActorRef`, `subjectRef`, `impersonatorRef`) so You, a display name, "an administrator",
+System, Unknown and "a deleted account" read alike everywhere; never print an email. Sizes:
+`Inline` (meta lines), `Compact` (rows, default), `Regular` (headers). `by = true` words it as an
+author ("by You"). Recent changes and activity rows always name their actor.
+
 ## Markdown selection menus
 
 - In the pinned Compose API, standard menu `leadingIcon` IDs can be Android theme

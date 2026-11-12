@@ -1276,16 +1276,18 @@
     <string name="mascot_say_hi">Say hi to the yarn ball</string>
 
     <!-- Home: recent activity -->
+    <string name="user_label_you">You</string>
+    <string name="user_label_admin">an administrator</string>
+    <string name="user_label_system">System</string>
+    <string name="user_label_unknown">Unknown</string>
+    <string name="user_by_you">by You</string>
+    <string name="user_by_admin">by an administrator</string>
+    <string name="user_by_system">by System</string>
+    <string name="user_by_unknown">by Unknown</string>
+    <string name="user_by_deleted">by a deleted account</string>
+    <string name="user_owner_prefix">Owner:</string>
+    <string name="user_as">as</string>
     <string name="activity_title">Recent activity</string>
-    <string name="activity_actor_you">You</string>
-    <string name="activity_actor_named">%1$s</string>
-    <string name="activity_actor_someone">Someone</string>
-    <string name="activity_created">%1$s created %2$s</string>
-    <string name="activity_updated">%1$s updated %2$s</string>
-    <string name="activity_deleted">%1$s deleted %2$s</string>
-    <string name="activity_uploaded">%1$s added a file to %2$s</string>
-    <string name="activity_removed">%1$s removed something from %2$s</string>
-    <string name="activity_changed">%1$s changed %2$s</string>
     <string name="activity_unnamed_project">a project</string>
     <string name="activity_unnamed_yarn">a yarn</string>
     <plurals name="activity_changes_count">
@@ -1629,10 +1631,6 @@
     <string name="admin_detail_client_version">Version</string>
     <string name="admin_detail_client_agent">User agent</string>
     <string name="admin_open_trash">Open the trash</string>
-    <string name="activity_trashed">%1$s moved %2$s to the trash</string>
-    <string name="activity_restored">%1$s restored %2$s from the trash</string>
-    <string name="activity_purged">%1$s deleted %2$s permanently</string>
-    <string name="activity_purged_auto">%1$s was purged automatically after 90 days</string>
     <string name="admin_action_step_trashed">Step moved to trash</string>
     <string name="admin_action_step_restored">Step restored from trash</string>
     <string name="admin_action_step_purged">Step deleted permanently</string>

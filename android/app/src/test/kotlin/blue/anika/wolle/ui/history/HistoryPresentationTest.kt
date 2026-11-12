@@ -151,18 +151,6 @@ class HistoryPresentationTest {
     }
 
     @Test
-    fun `only other authors are named`() {
-        assertNull(otherActor("me@example.invalid", "ME@example.invalid"))
-        assertNull(otherActor(null, "me@example.invalid"))
-        assertNull(otherActor("  ", "me@example.invalid"))
-        assertEquals(
-            "anna@example.invalid",
-            otherActor("anna@example.invalid", "me@example.invalid"),
-        )
-        assertEquals("anna@example.invalid", otherActor("anna@example.invalid", null))
-    }
-
-    @Test
     fun `merging a page drops events already shown`() {
         val merged = mergeEvents(listOf(event(5), event(4)), listOf(event(4), event(3)))
         assertEquals(listOf(5L, 4L, 3L), merged.map { it.id })

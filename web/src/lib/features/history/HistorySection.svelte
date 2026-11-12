@@ -3,12 +3,11 @@
   import Mascot from "#lib/components/Mascot.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import SectionHeading from "#lib/components/SectionHeading.svelte";
-  import UserAvatar from "#lib/components/UserAvatar.svelte";
+  import UserLabel from "#lib/components/UserLabel.svelte";
+  import UserSentence from "#lib/components/UserSentence.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
-  import {
-    isLifecycleAction,
-    lifecycleSubjectText,
-  } from "../trash/trash-state";
+  import { historyActor, subjectUser } from "#lib/user-label.ts";
+  import { isLifecycleAction } from "../trash/trash-state";
   import HistoryEventDetail from "./HistoryEventDetail.svelte";
   import {
     getHistoryDetail,
@@ -24,7 +23,6 @@
     eventHeadline,
     fullDate,
     historyDetailKind,
-    impersonatedByText,
     relativeTime,
   } from "./history-summary";
 
@@ -35,12 +33,10 @@
     kind,
     id,
     locale,
-    currentEmail = null,
   }: {
     kind: HistoryKind;
     id: number;
     locale: Locale;
-    currentEmail?: string | null;
   } = $props();
 
   type DetailState =
@@ -213,21 +209,20 @@
     );
   }
 
-  /** "Owner: Anna" on moved-to-trash, restore and purge entries an administrator or the system caused. */
-  function ownerNote(event: HistoryEvent): string | null {
+  /** The owner of moved-to-trash, restore and purge entries an administrator or the system caused. */
+  function ownerOf(event: HistoryEvent) {
     return isLifecycleAction(event.action)
-      ? lifecycleSubjectText(
-          event.subject
-            ? { id: event.subject.id, name: event.subject.name }
-            : null,
-          locale,
-        )
+      ? subjectUser(event.subject ?? null, locale)
       : null;
   }
 
-  function byOther(event: HistoryEvent): string | null {
-    if (!event.actor_email) return null;
-    return event.actor_email === currentEmail ? null : event.actor_email;
+  /** Who made a change while acting as the actor: "by Ann as Bea". */
+  function impersonator(event: HistoryEvent) {
+    const admin = event.impersonated_by;
+    if (!admin) return null;
+    return admin.name
+      ? ({ kind: "user", name: admin.name, avatarUrl: null } as const)
+      : ({ kind: "admin", name: null, avatarUrl: null } as const);
   }
 </script>
 
@@ -275,7 +270,9 @@
     <ol class="timeline" aria-label={t("Recent changes", locale)}>
       {#each visible as event (event.id)}
         {@const tone = actionTone(event.action)}
-        {@const other = byOther(event)}
+        {@const actor = historyActor(event)}
+        {@const owner = ownerOf(event)}
+        {@const admin = impersonator(event)}
         {@const open = expanded[event.id] === true}
         {@const entry = details[event.id]}
         <li class="entry" data-tone={tone}>
@@ -307,26 +304,24 @@
                   title={fullDate(event.created_at, locale)}
                   >{relativeTime(event.created_at, now, locale)}</time
                 >
-                {#if ownerNote(event)}
-                  <span class="entry-actor">{ownerNote(event)}</span>
-                {/if}
-                {#if event.impersonated_by}
-                  <span class="entry-actor">
-                    <span
-                      >{impersonatedByText(
-                        event.impersonated_by.name ?? "",
-                        event.actor_email ?? currentEmail ?? "",
-                        locale,
-                      )}</span
-                    >
-                  </span>
-                {:else if other}
-                  <span class="entry-actor">
-                    <UserAvatar
-                      avatarUrl={event.actor_avatar_url}
-                      name={other}
+                <span class="entry-actor">
+                  {#if admin}
+                    <UserSentence
+                      template={t("by {admin} as {user}", locale)}
+                      users={{ admin, user: actor }}
+                      {locale}
                     />
-                    <span>{t("by", locale)} {other}</span>
+                  {:else}
+                    <UserLabel user={actor} {locale} size="inline" by />
+                  {/if}
+                </span>
+                {#if owner}
+                  <span class="entry-actor">
+                    <UserSentence
+                      template={t("Owner: {name}", locale)}
+                      users={{ name: owner }}
+                      {locale}
+                    />
                   </span>
                 {/if}
               </span>
@@ -592,13 +587,6 @@
     gap: 0.35rem;
     min-width: 0;
     overflow-wrap: anywhere;
-  }
-
-  .entry-actor :global(.user-avatar) {
-    flex-basis: 1.3rem;
-    width: 1.3rem;
-    height: 1.3rem;
-    font-size: 0.7rem;
   }
 
   .entry-chevron {

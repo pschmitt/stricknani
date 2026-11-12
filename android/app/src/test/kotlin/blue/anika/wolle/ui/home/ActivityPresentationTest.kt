@@ -6,6 +6,8 @@ import blue.anika.wolle.data.api.dto.ActivityItemDto
 import blue.anika.wolle.data.api.dto.AuditSubjectDto
 import blue.anika.wolle.data.api.dto.TrashStateDto
 import blue.anika.wolle.ui.admin.DayLabel
+import blue.anika.wolle.ui.common.UserKind
+import blue.anika.wolle.ui.common.UserRef
 import java.time.LocalDate
 import java.time.ZoneId
 import org.junit.Assert.assertEquals
@@ -44,16 +46,6 @@ class ActivityPresentationTest {
         )
 
     @Test
-    fun `actions map to verbs and unknown ones to changed`() {
-        assertEquals(ActivityVerb.Created, activityVerb("created"))
-        assertEquals(ActivityVerb.Updated, activityVerb("Updated"))
-        assertEquals(ActivityVerb.Deleted, activityVerb("deleted"))
-        assertEquals(ActivityVerb.Uploaded, activityVerb("uploaded"))
-        assertEquals(ActivityVerb.Removed, activityVerb("removed"))
-        assertEquals(ActivityVerb.Changed, activityVerb("step_updated"))
-    }
-
-    @Test
     fun `a project row opens the project, a yarn row the yarn`() {
         assertEquals(ActivityTarget.Project(17), activityRow(item()).target)
         assertEquals(ActivityTarget.Yarn(17), activityRow(item(type = "yarn")).target)
@@ -68,11 +60,36 @@ class ActivityPresentationTest {
     }
 
     @Test
-    fun `the actor is named only when it is somebody else`() {
-        assertNull(activityRow(item(self = true)).actorName)
-        assertEquals("anna", activityRow(item(self = false, actorName = "anna")).actorName)
-        assertNull(activityRow(item(self = false, actorName = null)).actorName)
-        assertTrue(activityRow(item(self = true)).actorIsSelf)
+    fun `every row names its actor`() {
+        assertEquals(UserRef(UserKind.Self, "philipp"), activityRow(item(self = true)).actor)
+        assertEquals(
+            UserRef(UserKind.User, "anna"),
+            activityRow(item(self = false, actorName = "anna")).actor,
+        )
+        // An older server without `kind`: an unnamed other actor is an administrator.
+        assertEquals(
+            UserRef(UserKind.Admin),
+            activityRow(item(self = false, actorName = null)).actor,
+        )
+        val kinds =
+            mapOf(
+                "self" to UserKind.Self,
+                "user" to UserKind.User,
+                "admin" to UserKind.Admin,
+                "system" to UserKind.System,
+                "unknown" to UserKind.Unknown,
+            )
+        for ((wire, kind) in kinds) {
+            val row =
+                activityRow(
+                    item()
+                        .copy(actor = ActivityActorDto(kind = wire, name = "Leak", isSelf = false))
+                )
+            assertEquals(kind, row.actor.kind)
+            // Only people carry a name; an anonymous administrator never leaks one.
+            val named = kind == UserKind.Self || kind == UserKind.User
+            assertEquals(if (named) "Leak" else null, row.actor.name)
+        }
     }
 
     @Test
@@ -117,14 +134,6 @@ class ActivityPresentationTest {
     }
 
     @Test
-    fun `the name is found by its last occurrence`() {
-        assertEquals(12..23, nameRange("You updated Winter socks", "Winter socks"))
-        assertEquals(9..11, nameRange("Sox said Sox", "Sox"))
-        assertNull(nameRange("You updated a project", null))
-        assertNull(nameRange("You updated", "Winter socks"))
-    }
-
-    @Test
     fun `merging pages drops items already shown`() {
         val a = listOf(item(id = 5), item(id = 4))
         val b = listOf(item(id = 4), item(id = 3))
@@ -142,6 +151,11 @@ class ActivityPresentationTest {
         assertEquals(ActivityIconKind.Minus, activityIconKind("removed"))
         assertEquals(ActivityIconKind.Sparkle, activityIconKind("pattern_created"))
         assertEquals(ActivityIconKind.Trash, activityIconKind("Pattern_Deleted"))
+        assertEquals(ActivityIconKind.Timer, activityIconKind("timer_started"))
+        assertEquals(ActivityIconKind.Timer, activityIconKind("timer_total_changed"))
+        assertEquals(ActivityIconKind.Share, activityIconKind("shared"))
+        assertEquals(ActivityIconKind.Share, activityIconKind("ownership_transferred"))
+        assertEquals(ActivityIconKind.Restore, activityIconKind("step_restored"))
         assertEquals(ActivityIconKind.Other, activityIconKind("whatever"))
         assertEquals(ActivityIconKind.Camera, activityRow(item(action = "uploaded")).icon)
     }
@@ -235,6 +249,17 @@ class ActivityPresentationTest {
     }
 
     @Test
+    fun `timer and sharing events never fold`() {
+        for (action in listOf("timer_started", "timer_stopped", "shared", "share_revoked")) {
+            val rows =
+                mergeActivityRuns(
+                    listOf(item(id = 2, action = action), item(id = 1, action = action))
+                )
+            assertEquals(action, 2, rows.size)
+        }
+    }
+
+    @Test
     fun `created and deleted never fold`() {
         assertEquals(
             2,
@@ -269,10 +294,7 @@ class ActivityPresentationTest {
     }
 
     @Test
-    fun `trash actions have their own verbs and icons`() {
-        assertEquals(ActivityVerb.Trashed, activityVerb("trashed"))
-        assertEquals(ActivityVerb.Restored, activityVerb("restored"))
-        assertEquals(ActivityVerb.Purged, activityVerb("purged"))
+    fun `trash actions have their own icons`() {
         assertEquals(ActivityIconKind.Trash, activityIconKind("trashed"))
         assertEquals(ActivityIconKind.Trash, activityIconKind("purged"))
         assertEquals(ActivityIconKind.Restore, activityIconKind("restored"))
@@ -292,7 +314,7 @@ class ActivityPresentationTest {
         assertEquals(ActivityTarget.Trash, row.target)
         assertEquals(88, row.trashDaysLeft)
         assertEquals(false, row.deleted)
-        assertEquals(ActivityVerb.Trashed, row.verb)
+        assertEquals("trashed", row.action)
     }
 
     @Test
@@ -304,7 +326,7 @@ class ActivityPresentationTest {
         val old = activityRow(item(action = "deleted", exists = false))
         assertNull(old.target)
         assertNull(old.trashDaysLeft)
-        assertNull(old.ownerName)
+        assertNull(old.owner)
     }
 
     @Test
@@ -313,16 +335,17 @@ class ActivityPresentationTest {
             activityRow(
                 item(action = "purged", exists = false, self = false, actorName = null)
                     .copy(
+                        actor = ActivityActorDto(kind = "system"),
                         system = true,
                         state = "gone",
                         subject = AuditSubjectDto(id = 2, name = "Anika"),
                     )
             )
 
-        assertEquals(ActivityVerb.PurgedAuto, row.verb)
-        assertEquals(false, row.actorIsSelf)
-        assertNull(row.actorName)
-        assertEquals("Anika", row.ownerName)
+        assertEquals("purged", row.action)
+        assertTrue(row.system)
+        assertEquals(UserKind.System, row.actor.kind)
+        assertEquals(UserRef(UserKind.User, "Anika"), row.owner)
         assertNull(row.target)
     }
 
@@ -340,5 +363,31 @@ class ActivityPresentationTest {
             )
 
         assertEquals(2, days.single().rows.size)
+    }
+
+    @Test
+    fun `a restore an administrator did names the actor and keeps the owner apart`() {
+        val row =
+            activityRow(
+                item(action = "restored")
+                    .copy(
+                        actor = ActivityActorDto(kind = "self", name = "Admin", isSelf = true),
+                        state = "active",
+                        subject = AuditSubjectDto(id = 2, name = "Anika Bergmann"),
+                    )
+            )
+
+        assertEquals(UserRef(UserKind.Self, "Admin"), row.actor)
+        assertEquals(UserRef(UserKind.User, "Anika Bergmann"), row.owner)
+    }
+
+    @Test
+    fun `only trash entries show an owner, a share names its subject instead`() {
+        val shared =
+            activityRow(
+                item(action = "shared").copy(subject = AuditSubjectDto(id = 2, name = "Anna"))
+            )
+        assertNull(shared.owner)
+        assertEquals("Anna", shared.subject?.name)
     }
 }

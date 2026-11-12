@@ -711,6 +711,13 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
   );
   markStage("history: waiting for the latest update entry");
   await historyRows.first().waitFor({ state: "visible" });
+  const latestEntryText = (
+    (await historyRows.first().textContent()) ?? ""
+  ).replace(/\s+/g, " ");
+  check(
+    /by You/.test(latestEntryText),
+    `a Recent changes entry did not name its actor ("by You"): ${latestEntryText.slice(0, 80)}`,
+  );
   await historyRows.first().click();
   check(
     (await historyRows.first().getAttribute("aria-expanded")) === "true",

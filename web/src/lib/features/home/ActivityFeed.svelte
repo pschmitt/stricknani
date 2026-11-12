@@ -7,14 +7,19 @@
   import { restoreErrorMessage } from "../trash/trash-undo";
   import Button from "#lib/components/Button.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
+  import UserLabel from "#lib/components/UserLabel.svelte";
+  import UserSentence from "#lib/components/UserSentence.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
   import {
     ACTIVITY_FULL_PAGE_SIZE,
     ACTIVITY_PAGE_SIZE,
     activityDetail,
-    activityLifecycleNote,
+    activityHeadline,
     activityIcon,
-    activitySentence,
+    activityItemActor,
+    activityOwner,
+    activityResourceName,
+    activityStateNote,
     activityTime,
     groupActivity,
     loadActivity,
@@ -183,9 +188,12 @@
           {/if}
           <ol class="tl__entries">
             {#each day.items as item, index (item.id)}
-              {@const sentence = activitySentence(item, locale)}
+              {@const name = activityResourceName(item, locale)}
+              {@const headline = activityHeadline(item, locale)}
+              {@const actor = activityItemActor(item)}
+              {@const owner = activityOwner(item, locale)}
               {@const detail = activityDetail(item, locale)}
-              {@const note = activityLifecycleNote(item, locale)}
+              {@const note = activityStateNote(item, locale)}
               {@const icon = activityIcon(item.action)}
               {#snippet row()}
                 <span class="tl__node" aria-hidden="true">
@@ -208,15 +216,24 @@
                 </span>
                 <span class="tl__copy">
                   <span class="tl__sentence"
-                    >{sentence.before}{#if sentence.name !== null}<strong
-                        class="tl__name">{sentence.name}</strong
-                      >{/if}{sentence.after}</span
+                    ><strong class="tl__name">{name}</strong></span
                   >
-                  <span class="tl__meta"
-                    ><time datetime={item.created_at}
+                  <span class="tl__meta">
+                    <span class="tl__action">{headline}</span>
+                    <UserLabel user={actor} {locale} size="inline" by />
+                    <time datetime={item.created_at}
                       >{activityTime(item.created_at, locale)}</time
-                    >{#if detail}{" "}· {detail}{/if}{#if note}{" "}· {note}{/if}</span
-                  >
+                    >
+                    {#if detail}<span>{detail}</span>{/if}
+                    {#if note}<span>{note}</span>{/if}
+                    {#if owner}
+                      <UserSentence
+                        template={t("Owner: {name}", locale)}
+                        users={{ name: owner }}
+                        {locale}
+                      />
+                    {/if}
+                  </span>
                 </span>
                 {#if item.thumbnail_url}
                   <img
@@ -445,10 +462,17 @@
     font-weight: 800;
   }
   .tl__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.1rem 0.6rem;
     color: var(--ink-muted);
     font-size: 0.82rem;
     line-height: 1.3;
     overflow-wrap: anywhere;
+  }
+  .tl__action {
+    font-weight: 700;
   }
   .tl__meta time {
     font-variant-numeric: tabular-nums;

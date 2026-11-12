@@ -63,11 +63,8 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import blue.anika.wolle.R
@@ -75,7 +72,6 @@ import blue.anika.wolle.data.api.dto.AuditEventDto
 import blue.anika.wolle.data.api.dto.ChangeItemDto
 import blue.anika.wolle.data.api.dto.HistoryMediaDto
 import blue.anika.wolle.ui.admin.ActionBadge
-import blue.anika.wolle.ui.admin.AdminAvatar
 import blue.anika.wolle.ui.admin.AuditMediaBlock
 import blue.anika.wolle.ui.admin.AuditMediaThumb
 import blue.anika.wolle.ui.admin.AuditMediaViewModel
@@ -92,7 +88,14 @@ import blue.anika.wolle.ui.common.ImageViewerDialog
 import blue.anika.wolle.ui.common.ImageViewerImage
 import blue.anika.wolle.ui.common.Mascot
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.common.UserLabel
+import blue.anika.wolle.ui.common.UserLabelSize
+import blue.anika.wolle.ui.common.UserRef
 import blue.anika.wolle.ui.common.YarnLoader
+import blue.anika.wolle.ui.common.historyActorRef
+import blue.anika.wolle.ui.common.impersonatorRef
+import blue.anika.wolle.ui.common.subjectRef
+import blue.anika.wolle.ui.common.userByString
 import coil3.compose.SubcomposeAsyncImage
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -108,7 +111,6 @@ import java.time.format.FormatStyle
 fun HistorySection(
     state: HistoryUiState,
     controller: HistoryController,
-    avatarUrl: (String?) -> String?,
     /** What the empty timeline says: names the project or the yarn, like the web. */
     @StringRes emptyHint: Int,
     modifier: Modifier = Modifier,
@@ -178,8 +180,6 @@ fun HistorySection(
             event = event,
             detail = state.details[event.id],
             headline = historyHeadline(event, state),
-            currentEmail = state.currentEmail,
-            avatarUrl = avatarUrl,
             onRetry = { controller.loadDetail(event.id, force = true) },
             onDismiss = controller::close,
         )
@@ -213,7 +213,6 @@ private fun HistoryTimeline(state: HistoryUiState, controller: HistoryController
             HistoryRow(
                 event = event,
                 headline = historyHeadline(event, state),
-                currentEmail = state.currentEmail,
                 first = index == 0,
                 last = index == shown.lastIndex,
                 onOpen = { controller.open(event) },
@@ -267,22 +266,14 @@ private fun HistoryTimeline(state: HistoryUiState, controller: HistoryController
 }
 
 @Composable
-private fun actionLabel(action: String, system: Boolean = false): String {
-    val presentation = auditActionPresentation(action, system)
-    return presentation.labelRes?.let { stringResource(it) } ?: presentation.fallbackLabel
-}
+private fun actionLabel(action: String, system: Boolean = false): String =
+    actionLabelText(action, system)
 
 /** The summary of what changed once the details are in, else the plain action name. */
 @Composable
 private fun historyHeadline(event: AuditEventDto, state: HistoryUiState): String {
-    sharingEventLine(event.action, event.subject)?.let { line ->
-        val person = line.name ?: stringResource(R.string.history_deleted_account)
-        val role =
-            stringResource(
-                if (line.role == "editor") R.string.sharing_role_editor
-                else R.string.sharing_role_viewer
-            )
-        return stringResource(line.textRes, person, role)
+    sharingHeadlineText(event.action, event.subject)?.let {
+        return it
     }
     event.media?.displayName()?.let { name ->
         return "${actionLabel(event.action, event.system)}: $name"
@@ -354,7 +345,6 @@ private fun fullDate(event: AuditEventDto): String {
 private fun HistoryRow(
     event: AuditEventDto,
     headline: String,
-    currentEmail: String?,
     first: Boolean,
     last: Boolean,
     onOpen: () -> Unit,
@@ -362,12 +352,13 @@ private fun HistoryRow(
     val kind = auditActionPresentation(event.action, event.system).kind
     val tone = kind.tone().color()
     val railColor = tone.copy(alpha = 0.35f)
-    val other = otherActor(event.actorEmail, currentEmail)
+    val actor = historyActorRef(event)
+    val owner = if (event.action in lifecycleOwnerActions) subjectRef(event.subject) else null
     val action = actionLabel(event.action, event.system)
     val time = relativeTime(event)
     val date = fullDate(event)
     val context = LocalContext.current
-    val byText = other?.let { stringResource(R.string.history_by, it) }
+    val byText = userByString(actor)
     val description = listOfNotNull(headline, action, date, byText).joinToString(", ")
     val surface = MaterialTheme.colorScheme.surfaceContainer
     val rowModifier =
@@ -411,17 +402,7 @@ private fun HistoryRow(
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.SemiBold,
                 )
-                Text(
-                    buildAnnotatedString {
-                        withStyle(SpanStyle(color = tone, fontWeight = FontWeight.Bold)) {
-                            append(action)
-                        }
-                        append(" · $time")
-                        if (byText != null) append(" · $byText")
-                    },
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                HistoryMeta(event, action, time, actor, owner, tone)
             }
             AuditMediaThumb(event.media, Modifier.padding(horizontal = 8.dp))
             Icon(
@@ -434,21 +415,78 @@ private fun HistoryRow(
     }
 }
 
+/** Trash, restore and purge entries name the owner next to the actor, like the web. */
+private val lifecycleOwnerActions = setOf("trashed", "restored", "purged")
+
+/**
+ * Who made the change: "by You", "by Anika Bergmann", ... with their picture. A change an
+ * administrator made while acting as the actor reads "by <admin> as <actor>".
+ */
+@Composable
+private fun HistoryActor(event: AuditEventDto, actor: UserRef, size: UserLabelSize) {
+    val style = MaterialTheme.typography.labelMedium
+    val color = MaterialTheme.colorScheme.onSurfaceVariant
+    val admin = event.impersonatedBy
+    if (admin == null) {
+        UserLabel(actor, size = size, by = true, style = style, color = color)
+        return
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        UserLabel(impersonatorRef(admin.name), size = size, by = true, style = style, color = color)
+        Text(stringResource(R.string.user_as), style = style, color = color)
+        UserLabel(actor, size = size, style = style, color = color)
+    }
+}
+
+/** "Created · 2 hours ago · by You · Owner: Anika": the meta line of a history row. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun HistoryMeta(
+    event: AuditEventDto,
+    action: String,
+    time: String,
+    actor: UserRef,
+    owner: UserRef?,
+    tone: Color,
+) {
+    val style = MaterialTheme.typography.labelMedium
+    val color = MaterialTheme.colorScheme.onSurfaceVariant
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+        itemVerticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(action, style = style, fontWeight = FontWeight.Bold, color = tone)
+        Text(time, style = style, color = color)
+        HistoryActor(event, actor, UserLabelSize.Inline)
+        if (owner != null) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(stringResource(R.string.user_owner_prefix), style = style, color = color)
+                UserLabel(owner, size = UserLabelSize.Inline, style = style, color = color)
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HistoryEventSheet(
     event: AuditEventDto,
     detail: HistoryDetailState?,
     headline: String,
-    currentEmail: String?,
-    avatarUrl: (String?) -> String?,
     onRetry: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val kind = auditActionPresentation(event.action, event.system).kind
     val tone = kind.tone().color()
-    val other = otherActor(event.actorEmail, currentEmail)
+    val actor = historyActorRef(event)
     val detailMedia = (detail as? HistoryDetailState.Loaded)?.detail?.event?.mediaThumbs.orEmpty()
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
         Column(
@@ -483,11 +521,8 @@ private fun HistoryEventSheet(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                if (other != null) {
-                    AdminAvatar(avatarUrl(event.actorAvatarUrl), event.actorEmail, size = 24.dp)
-                    Text(other, style = MaterialTheme.typography.bodyMedium)
-                    Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
+                HistoryActor(event, actor, UserLabelSize.Compact)
+                Text("·", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
                     fullDate(event),
                     style = MaterialTheme.typography.bodyMedium,

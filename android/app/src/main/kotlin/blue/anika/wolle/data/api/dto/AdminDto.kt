@@ -147,6 +147,10 @@ data class AuditEventDto(
     val id: Long,
     @SerialName("actor_email") val actorEmail: String? = null,
     @SerialName("actor_avatar_url") val actorAvatarUrl: String? = null,
+    /** The actor's display name (never an email); resource history and activity reads. */
+    @SerialName("actor_name") val actorName: String? = null,
+    /** The reader is the actor (resource history reads). */
+    @SerialName("actor_is_self") val actorIsSelf: Boolean = false,
     @SerialName("legacy_actor_user_id") val legacyActorUserId: Long? = null,
     @SerialName("entity_type") val entityType: String,
     @SerialName("entity_id") val entityId: Long,
@@ -206,7 +210,12 @@ data class AuditClientDto(
  * purge, carry the owner of the item here (with no role).
  */
 @Serializable
-data class AuditSubjectDto(val id: Long? = null, val name: String? = null, val role: String? = null)
+data class AuditSubjectDto(
+    val id: Long? = null,
+    val name: String? = null,
+    val role: String? = null,
+    @SerialName("avatar_url") val avatarUrl: String? = null,
+)
 
 @Serializable data class AuditPageDto(val data: List<AuditEventDto>, val meta: AdminPageMetaDto)
 

@@ -237,7 +237,8 @@ async fn activity_shape_name_thumbnail_and_changed_fields() {
         format!("/media/thumbnails/projects/{pid}/thumb_cover.jpg")
     );
     assert_eq!(item["actor"]["is_self"], true);
-    assert_eq!(item["actor"]["name"], "activity-owner");
+    assert_eq!(item["actor"]["name"], "Activity Owner");
+    assert_eq!(item["actor"]["kind"], "self");
     assert_eq!(item["changed_fields"], serde_json::json!(["project.name"]));
 }
 
@@ -318,6 +319,7 @@ async fn activity_is_owner_scoped() {
     let data = body["data"].as_array().unwrap();
     assert_eq!(data.len(), 3);
     assert_eq!(data[0]["actor"]["is_self"], false);
+    assert_eq!(data[0]["actor"]["kind"], "admin");
     assert_eq!(data[0]["actor"]["name"], serde_json::Value::Null);
     assert_eq!(data[0]["actor"]["avatar_url"], serde_json::Value::Null);
     let text = serde_json::to_string(&body).unwrap();
@@ -325,8 +327,12 @@ async fn activity_is_owner_scoped() {
     assert!(!text.contains("example.test"));
     let (_, other) = get(&f, "/activity", OTHER_PAT).await;
     assert_eq!(other["data"].as_array().unwrap().len(), 3);
+    // The administrator's own edit of the member's project is in their feed.
     let (_, admin) = get(&f, "/activity", ADMIN_PAT).await;
-    assert_eq!(admin["data"].as_array().unwrap().len(), 0);
+    let admin_items = admin["data"].as_array().unwrap();
+    assert_eq!(admin_items.len(), 1);
+    assert_eq!(admin_items[0]["entity_id"], own);
+    assert_eq!(admin_items[0]["actor"]["kind"], "self");
 }
 
 #[tokio::test]
@@ -598,4 +604,277 @@ async fn my_activity_page_works_for_a_non_admin_member_and_never_exposes_client_
             assert_eq!(item["entity_id"], own);
         }
     }
+}
+
+async fn share(pool: &SqlitePool, kind: &str, id: i64, user_id: i64, role: &str) {
+    sqlx::query(
+        "INSERT INTO resource_shares (kind, resource_id, user_id, role, created_at, updated_at) \
+         VALUES (?, ?, ?, ?, '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')",
+    )
+    .bind(kind)
+    .bind(id)
+    .bind(user_id)
+    .bind(role)
+    .execute(pool)
+    .await
+    .unwrap();
+}
+
+#[tokio::test]
+async fn timer_events_on_a_shared_project_reach_the_owner_and_the_sharer_only() {
+    let f = fixture().await;
+    let pid = project(&f.pool, f.owner_id, "Shared hat").await;
+    share(&f.pool, "project", pid, f.other_id, "editor").await;
+    let started = ev(
+        &f,
+        "project",
+        pid,
+        "timer_started",
+        "2026-05-01T10:00:00Z",
+        Some(f.other_id),
+    )
+    .await;
+    let (_, owner) = get(&f, "/activity", OWNER_PAT).await;
+    let item = &owner["data"][0];
+    assert_eq!(item["id"], started);
+    assert_eq!(item["action"], "timer_started");
+    assert_eq!(item["actor"]["kind"], "user");
+    assert_eq!(item["actor"]["name"], "Activity Other");
+    assert_eq!(item["actor"]["is_self"], false);
+    assert_eq!(item["href"], format!("/app/projects/{pid}"));
+    let (_, sharer) = get(&f, "/activity", OTHER_PAT).await;
+    let item = &sharer["data"][0];
+    assert_eq!(item["id"], started);
+    assert_eq!(item["actor"]["kind"], "self");
+    assert_eq!(item["actor"]["name"], "Activity Other");
+    assert_eq!(item["href"], format!("/app/projects/{pid}"));
+    // Somebody without a share, even an administrator, has nothing to see.
+    let (_, admin) = get(&f, "/activity", ADMIN_PAT).await;
+    assert_eq!(admin["data"].as_array().unwrap().len(), 0);
+}
+
+#[tokio::test]
+async fn a_member_never_sees_events_on_a_private_project_of_somebody_else() {
+    let f = fixture().await;
+    let pid = project(&f.pool, f.owner_id, "Private").await;
+    for (action, at) in [
+        ("created", "2026-05-01T10:00:00Z"),
+        ("timer_started", "2026-05-01T10:01:00Z"),
+        ("trashed", "2026-05-01T10:02:00Z"),
+    ] {
+        ev(&f, "project", pid, action, at, Some(f.owner_id)).await;
+    }
+    let (_, other) = get(&f, "/activity", OTHER_PAT).await;
+    assert_eq!(other["data"].as_array().unwrap().len(), 0);
+    let text = serde_json::to_string(&other).unwrap();
+    assert!(!text.contains("Private"));
+    // A share opens the history, and its end hides it again.
+    share(&f.pool, "project", pid, f.other_id, "editor").await;
+    let (_, other) = get(&f, "/activity", OTHER_PAT).await;
+    assert_eq!(other["data"].as_array().unwrap().len(), 3);
+    sqlx::query("DELETE FROM resource_shares")
+        .execute(&f.pool)
+        .await
+        .unwrap();
+    let (_, other) = get(&f, "/activity", OTHER_PAT).await;
+    assert_eq!(other["data"].as_array().unwrap().len(), 0);
+}
+
+#[tokio::test]
+async fn own_actions_on_foreign_resources_show_without_link_unless_the_reader_may_open_them() {
+    let f = fixture().await;
+    let pid = project(&f.pool, f.owner_id, "Babymuetze").await;
+    sqlx::query("UPDATE projects SET name = 'Renamed later' WHERE id = ?")
+        .bind(pid)
+        .execute(&f.pool)
+        .await
+        .unwrap();
+    let by_admin = ev(
+        &f,
+        "project",
+        pid,
+        "timer_started",
+        "2026-05-01T10:00:00Z",
+        Some(f.admin_id),
+    )
+    .await;
+    let restored = ev(
+        &f,
+        "project",
+        pid,
+        "restored",
+        "2026-05-01T10:05:00Z",
+        Some(f.admin_id),
+    )
+    .await;
+    sqlx::query(
+        "UPDATE audit_events SET resource_name_snapshot = 'Babymuetze', subject_user_id = ?, \
+         client_kind = 'system', client_label = 'Manual restore' WHERE id = ?",
+    )
+    .bind(f.owner_id)
+    .bind(restored)
+    .execute(&f.pool)
+    .await
+    .unwrap();
+    let by_other = ev(
+        &f,
+        "project",
+        pid,
+        "updated",
+        "2026-05-01T11:00:00Z",
+        Some(f.other_id),
+    )
+    .await;
+    sqlx::query("UPDATE audit_events SET resource_name_snapshot = 'Babymuetze' WHERE id = ?")
+        .bind(by_other)
+        .execute(&f.pool)
+        .await
+        .unwrap();
+
+    let (_, admin) = get(&f, "/activity", ADMIN_PAT).await;
+    let data = admin["data"].as_array().unwrap();
+    let ids: Vec<i64> = data.iter().map(|e| e["id"].as_i64().unwrap()).collect();
+    assert_eq!(ids, vec![restored, by_admin]);
+    assert_eq!(data[0]["actor"]["kind"], "self");
+    assert_eq!(data[0]["entity_name"], "Renamed later");
+    assert_eq!(data[0]["href"], format!("/app/projects/{pid}"));
+    assert_eq!(data[0]["subject"]["name"], "Activity Owner");
+    assert!(
+        data[0].get("system").is_none(),
+        "the admin acted, not the server"
+    );
+    assert_eq!(data[1]["action"], "timer_started");
+
+    // The member never had access: what they did stays, as a plain name.
+    let (_, other) = get(&f, "/activity", OTHER_PAT).await;
+    let data = other["data"].as_array().unwrap();
+    assert_eq!(data.len(), 1);
+    assert_eq!(data[0]["id"], by_other);
+    assert_eq!(data[0]["entity_name"], "Babymuetze");
+    assert_eq!(data[0]["href"], serde_json::Value::Null);
+    assert_eq!(data[0]["thumbnail_url"], serde_json::Value::Null);
+
+    // The owner reads the same events, the administrator anonymously.
+    let (_, owner) = get(&f, "/activity", OWNER_PAT).await;
+    let data = owner["data"].as_array().unwrap();
+    assert_eq!(data.len(), 3);
+    assert_eq!(data[1]["actor"]["kind"], "admin");
+    assert_eq!(data[1]["actor"]["name"], serde_json::Value::Null);
+    assert_eq!(data[2]["actor"]["kind"], "admin");
+}
+
+#[tokio::test]
+async fn every_action_kind_serialises_with_an_actor() {
+    let f = fixture().await;
+    let pid = project(&f.pool, f.owner_id, "Everything").await;
+    let yid = yarn(&f.pool, f.owner_id, "Everything yarn").await;
+    let project_actions = [
+        "created",
+        "updated",
+        "uploaded",
+        "removed",
+        "deleted",
+        "trashed",
+        "restored",
+        "purged",
+        "step_created",
+        "step_updated",
+        "step_deleted",
+        "step_trashed",
+        "step_restored",
+        "step_purged",
+        "title_image_uploaded",
+        "stitch_sample_image_uploaded",
+        "step_image_uploaded",
+        "attachment_uploaded",
+        "attachment_deleted",
+        "image_deleted",
+        "photo_uploaded",
+        "photo_deleted",
+        "photo_promoted",
+        "title_image_promoted",
+        "shared",
+        "share_role_changed",
+        "share_revoked",
+        "share_left",
+        "ownership_transferred",
+        "timer_started",
+        "timer_stopped",
+        "timer_total_changed",
+    ];
+    for (i, action) in project_actions.iter().enumerate() {
+        let (entity, id) = if i % 2 == 0 {
+            ("project", pid)
+        } else {
+            ("yarn", yid)
+        };
+        ev(
+            &f,
+            entity,
+            id,
+            action,
+            &format!("2026-06-{:02}T10:00:00Z", i + 1),
+            Some(f.owner_id),
+        )
+        .await;
+    }
+    let (status, body) = get(&f, "/activity?limit=50", OWNER_PAT).await;
+    assert_eq!(status, StatusCode::OK);
+    let data = body["data"].as_array().unwrap();
+    let mut seen: Vec<&str> = data.iter().map(|e| e["action"].as_str().unwrap()).collect();
+    seen.sort_unstable();
+    let mut wanted = project_actions.to_vec();
+    wanted.sort_unstable();
+    assert_eq!(seen, wanted);
+    for item in data {
+        assert_eq!(item["actor"]["kind"], "self", "{item}");
+        assert_eq!(item["actor"]["name"], "Activity Owner");
+        assert!(item.get("client").is_none());
+    }
+    assert!(
+        !serde_json::to_string(&body)
+            .unwrap()
+            .contains("example.test")
+    );
+}
+
+#[tokio::test]
+async fn system_and_unknown_actors_are_told_apart_and_sharing_never_carries_an_email() {
+    let f = fixture().await;
+    let pid = project(&f.pool, f.owner_id, "Systemic").await;
+    let purge = ev(&f, "project", pid, "purged", "2026-05-01T10:00:00Z", None).await;
+    let legacy = ev(&f, "project", pid, "updated", "2026-05-01T09:00:00Z", None).await;
+    let shared = ev(
+        &f,
+        "project",
+        pid,
+        "shared",
+        "2026-05-01T11:00:00Z",
+        Some(f.owner_id),
+    )
+    .await;
+    sqlx::query(
+        "UPDATE audit_events SET subject_user_id = ?, subject_role = 'viewer' WHERE id = ?",
+    )
+    .bind(f.other_id)
+    .bind(shared)
+    .execute(&f.pool)
+    .await
+    .unwrap();
+    let (_, body) = get(&f, "/activity", OWNER_PAT).await;
+    let data = body["data"].as_array().unwrap();
+    assert_eq!(data[0]["id"], shared);
+    assert_eq!(data[0]["subject"]["name"], "Activity Other");
+    assert_eq!(data[0]["subject"]["role"], "viewer");
+    assert_eq!(data[1]["id"], purge);
+    assert_eq!(data[1]["actor"]["kind"], "system");
+    assert_eq!(data[1]["system"], true);
+    assert_eq!(data[2]["id"], legacy);
+    assert_eq!(data[2]["actor"]["kind"], "unknown");
+    assert!(data[2].get("system").is_none());
+    assert!(
+        !serde_json::to_string(&body)
+            .unwrap()
+            .contains("example.test")
+    );
 }
