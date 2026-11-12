@@ -777,10 +777,10 @@
     justify-content: center;
     gap: 0.35rem;
     padding: 0 0.6rem;
-    border: 1px solid var(--control-border);
+    border: 0;
     border-radius: 999px;
-    color: var(--ink);
-    background: var(--surface);
+    color: var(--ink-muted);
+    background: transparent;
     font: inherit;
     font-size: 0.9rem;
     font-variant-numeric: tabular-nums;
@@ -791,8 +791,15 @@
       border-color 120ms ease;
     -webkit-tap-highlight-color: transparent;
   }
-  .timer-chip:hover {
+  .timer-chip:active,
+  .timer-chip[aria-expanded="true"] {
     background: var(--accent-wash);
+  }
+  @media (hover: hover) {
+    .timer-chip:hover {
+      background: var(--accent-wash);
+      color: var(--ink);
+    }
   }
   .timer-chip:focus-visible {
     outline: 3px solid var(--focus);
@@ -803,7 +810,6 @@
   }
 
   .running .timer-chip {
-    border-color: var(--accent);
     background: var(--accent-wash);
     color: var(--accent-strong);
   }
