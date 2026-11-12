@@ -1630,4 +1630,50 @@
     </plurals>
 
     <string name="trash_banner_delete_dialog_title">Delete permanently?</string>
+
+    <!-- Passkeys (WebAuthn). Same wording as the web app. -->
+    <string name="passkeys_title">Passkeys</string>
+    <string name="passkeys_hint">Sign in with your fingerprint, face or screen lock instead of typing your password. A passkey stays on your devices and cannot be phished.</string>
+    <string name="passkeys_empty">No passkeys yet.</string>
+    <string name="passkeys_add_button">Add a passkey</string>
+    <string name="passkeys_waiting">Waiting for your passkey…</string>
+    <string name="passkeys_load_failed">The passkeys could not be loaded.</string>
+    <string name="passkeys_retry">Try again</string>
+    <string name="passkeys_added">Added %1$s</string>
+    <string name="passkeys_last_used">Last used %1$s</string>
+    <string name="passkeys_never_used">Never used to sign in</string>
+    <string name="passkeys_synced">Synced across your devices</string>
+    <string name="passkeys_one_device">Stored on one device</string>
+    <string name="passkeys_rename_button">Rename</string>
+    <string name="passkeys_rename_title">Rename passkey</string>
+    <string name="passkeys_name_label">Passkey name</string>
+    <string name="passkeys_remove_button">Remove</string>
+    <string name="passkeys_keep_button">Keep passkey</string>
+    <string name="passkeys_remove_title">Remove %1$s?</string>
+    <string name="passkeys_remove_text">You will no longer be able to sign in with this passkey. You can add it again later. Your password keeps working.</string>
+    <string name="passkeys_reauth_text">For your security, confirm your identity before changing your passkeys.</string>
+    <string name="passkey_reauth_button">Confirm with a passkey</string>
+    <string name="passkey_added_done">Passkey added. You can rename it now.</string>
+    <string name="passkey_removed_done">Passkey removed.</string>
+    <string name="passkey_renamed_done">Passkey renamed.</string>
+    <plurals name="passkeys_limit_reached">
+        <item quantity="one">You can have up to %d passkey. Remove one to add another.</item>
+        <item quantity="other">You can have up to %d passkeys. Remove one to add another.</item>
+    </plurals>
+    <string name="onboarding_passkey_button">Sign in with a passkey</string>
+    <string name="error_passkey_cancelled">The passkey request was cancelled.</string>
+    <string name="error_passkey_no_credential">No passkey for this server was found on this phone. Sign in with your password, then add a passkey in your account settings.</string>
+    <string name="error_passkey_already_registered">This device already has a passkey for your account.</string>
+    <string name="error_passkey_unsupported">This phone cannot use passkeys here. Check that a screen lock and a passkey provider such as Google Password Manager are set up.</string>
+    <string name="error_passkey_not_recognized">That passkey is not registered for any account here. Use another passkey or your password.</string>
+    <string name="error_passkey_expired">The passkey request expired. Try again.</string>
+    <string name="error_passkey_reauth_required">Confirm it is you to continue.</string>
+    <string name="error_passkey_limit">Remove a passkey before adding another.</string>
+    <string name="error_passkey_none">This account has no passkeys.</string>
+    <string name="error_passkey_unavailable">Passkeys are not available on this server.</string>
+    <string name="error_passkey_rejected">The passkey could not be created. Try again.</string>
+    <string name="error_passkey_rate_limited">Too many attempts. Wait a moment and try again.</string>
+    <string name="error_passkey_session_expired">Your session expired. Sign in again.</string>
+    <string name="error_passkey_offline">The server could not be reached. Check your connection and try again.</string>
+    <string name="error_passkey_generic">The passkey request could not be completed. Try again.</string>
 </resources>

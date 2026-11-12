@@ -19,6 +19,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -37,7 +38,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
+import blue.anika.wolle.data.passkey.PasskeyHost
 import blue.anika.wolle.ui.common.PhosphorIcons
+import blue.anika.wolle.ui.passkey.messageResId
 
 /**
  * "Confirm it's you" before linking or unlinking a login. The password field is a real password
@@ -53,6 +56,8 @@ fun ReauthSheet(
     onUseProvider: () -> Unit,
     onDismiss: () -> Unit,
     @StringRes message: Int = R.string.oidc_reauth_text,
+    /** Confirm with a passkey; shown when the request allows it and the screen supports it. */
+    onUsePasskey: ((PasskeyHost) -> Unit)? = null,
 ) {
     val request = state.request
     var password by remember { mutableStateOf("") }
@@ -142,6 +147,22 @@ fun ReauthSheet(
                         stringResource(R.string.oidc_reauth_continue),
                         modifier = Modifier.padding(start = if (state.busy) 8.dp else 0.dp),
                     )
+                }
+            }
+            state.passkeyError?.let { failure ->
+                Text(
+                    stringResource(failure.messageResId()),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+            if (request.canUsePasskey && onUsePasskey != null) {
+                OutlinedButton(
+                    onClick = { onUsePasskey(PasskeyHost { context }) },
+                    enabled = !state.busy,
+                    modifier = Modifier.fillMaxWidth().testTag("oidc-reauth-passkey"),
+                ) {
+                    Text(stringResource(R.string.passkey_reauth_button))
                 }
             }
             request.oidcProvider?.let { provider ->

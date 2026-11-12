@@ -70,6 +70,7 @@ import blue.anika.wolle.ui.oidc.LinkedLoginsCard
 import blue.anika.wolle.ui.oidc.LinkedLoginsPhase
 import blue.anika.wolle.ui.oidc.LinkedLoginsViewModel
 import blue.anika.wolle.ui.oidc.ReauthSheet
+import blue.anika.wolle.ui.passkey.PasskeysCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -251,6 +252,10 @@ internal fun AccountSettingsScreen(
                         )
                     }
                 }
+            }
+            // Hides itself while the server has no passkeys.
+            if (!localMode) {
+                item { PasskeysCard() }
             }
             // Only when the server lists a sign-in provider (OIDC); hidden otherwise.
             if (!localMode && linkedLoginsState.phase != LinkedLoginsPhase.Hidden) {

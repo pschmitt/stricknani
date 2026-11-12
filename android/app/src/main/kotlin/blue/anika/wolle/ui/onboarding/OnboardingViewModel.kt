@@ -18,11 +18,16 @@ import blue.anika.wolle.data.onboarding.QrConfigCodec
 import blue.anika.wolle.data.onboarding.RegistrationClient
 import blue.anika.wolle.data.onboarding.RegistrationError
 import blue.anika.wolle.data.onboarding.RegistrationException
+import blue.anika.wolle.data.passkey.PasskeyFailure
+import blue.anika.wolle.data.passkey.PasskeyHost
+import blue.anika.wolle.data.passkey.PasskeyService
+import blue.anika.wolle.data.passkey.passkeyFailure
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.localserver.LocalServer
 import blue.anika.wolle.sync.SyncScheduler
 import blue.anika.wolle.ui.oidc.DEFAULT_PROVIDER_NAME
 import blue.anika.wolle.ui.oidc.message
+import blue.anika.wolle.ui.passkey.messageResId
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -57,6 +62,7 @@ constructor(
     private val settingsRepository: SettingsRepository,
     private val syncScheduler: SyncScheduler,
     private val oidc: OidcCoordinator,
+    private val passkeys: PasskeyService,
     private val deviceNames: DeviceNameProvider,
     private val tokenRenamer: DeviceTokenRenamer,
     private val localServer: LocalServer,
@@ -77,6 +83,11 @@ constructor(
      * hidden) until a reachable server says otherwise; today's servers list none.
      */
     val oidcProviders: StateFlow<List<OidcProvider>> = _oidcProviders.asStateFlow()
+
+    private val _passkeysAvailable = MutableStateFlow(false)
+
+    /** The entered server advertises passkey sign-in in its public metadata. */
+    val passkeysAvailable: StateFlow<Boolean> = _passkeysAvailable.asStateFlow()
 
     private val _registrationOpen = MutableStateFlow<Boolean?>(null)
 
@@ -116,6 +127,7 @@ constructor(
             val valid = url.trimEnd('/').toHttpUrlOrNull() != null
             _oidcProviders.value = if (valid) oidc.providers(url) else emptyList()
             _registrationOpen.value = if (valid) registrationClient.isOpen(url) else null
+            _passkeysAvailable.value = valid && passkeys.available(url)
         }
     }
 
@@ -150,6 +162,34 @@ constructor(
             _uiState.value =
                 if (failure == null) OnboardingUiState.Idle
                 else OnboardingUiState.Error(failure.message(context, provider.name))
+        }
+    }
+
+    /**
+     * Username-less sign-in with a passkey from Credential Manager. The server answers the same PAT
+     * as the password exchange, so the rest is [signInWithPassword]'s: persist and go. A dismissed
+     * system sheet is not an error.
+     */
+    fun signInWithPasskey(host: PasskeyHost, serverUrl: String) {
+        if (serverUrl.isBlank()) {
+            _uiState.value =
+                OnboardingUiState.Error(context.getString(R.string.onboarding_error_missing_url))
+            return
+        }
+        _uiState.value = OnboardingUiState.Validating
+        viewModelScope.launch {
+            val base = serverUrl.trim().trimEnd('/')
+            val result = passkeys.signIn(host, base, deviceNames.deviceName())
+            val token = result.getOrNull()
+            if (token != null) {
+                persistAndSucceed(serverUrl, token)
+            } else {
+                val failure = result.passkeyFailure()
+                _uiState.value =
+                    if (failure == null || failure == PasskeyFailure.Cancelled)
+                        OnboardingUiState.Idle
+                    else OnboardingUiState.Error(context.getString(failure.messageResId()))
+            }
         }
     }
 

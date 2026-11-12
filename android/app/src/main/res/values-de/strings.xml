@@ -1627,4 +1627,50 @@
     </plurals>
 
     <string name="trash_banner_delete_dialog_title">Endgültig löschen?</string>
+
+    <!-- Passkeys (WebAuthn). Gleiche Formulierungen wie in der Web-App. -->
+    <string name="passkeys_title">Passkeys</string>
+    <string name="passkeys_hint">Melde dich mit Fingerabdruck, Gesicht oder Bildschirmsperre an, statt dein Passwort einzutippen. Ein Passkey bleibt auf deinen Geräten und lässt sich nicht abfangen.</string>
+    <string name="passkeys_empty">Noch keine Passkeys.</string>
+    <string name="passkeys_add_button">Passkey hinzufügen</string>
+    <string name="passkeys_waiting">Warte auf deinen Passkey…</string>
+    <string name="passkeys_load_failed">Die Passkeys konnten nicht geladen werden.</string>
+    <string name="passkeys_retry">Erneut versuchen</string>
+    <string name="passkeys_added">Hinzugefügt am %1$s</string>
+    <string name="passkeys_last_used">Zuletzt verwendet am %1$s</string>
+    <string name="passkeys_never_used">Noch nie zur Anmeldung verwendet</string>
+    <string name="passkeys_synced">Auf deinen Geräten synchronisiert</string>
+    <string name="passkeys_one_device">Auf einem Gerät gespeichert</string>
+    <string name="passkeys_rename_button">Umbenennen</string>
+    <string name="passkeys_rename_title">Passkey umbenennen</string>
+    <string name="passkeys_name_label">Name des Passkeys</string>
+    <string name="passkeys_remove_button">Entfernen</string>
+    <string name="passkeys_keep_button">Passkey behalten</string>
+    <string name="passkeys_remove_title">%1$s entfernen?</string>
+    <string name="passkeys_remove_text">Du kannst dich mit diesem Passkey nicht mehr anmelden. Du kannst ihn später wieder hinzufügen. Dein Passwort funktioniert weiterhin.</string>
+    <string name="passkeys_reauth_text">Bestätige zu deiner Sicherheit deine Identität, bevor du deine Passkeys änderst.</string>
+    <string name="passkey_reauth_button">Mit einem Passkey bestätigen</string>
+    <string name="passkey_added_done">Passkey hinzugefügt. Du kannst ihn jetzt umbenennen.</string>
+    <string name="passkey_removed_done">Passkey entfernt.</string>
+    <string name="passkey_renamed_done">Passkey umbenannt.</string>
+    <plurals name="passkeys_limit_reached">
+        <item quantity="one">Du kannst bis zu %d Passkey haben. Entferne einen, um einen weiteren hinzuzufügen.</item>
+        <item quantity="other">Du kannst bis zu %d Passkeys haben. Entferne einen, um einen weiteren hinzuzufügen.</item>
+    </plurals>
+    <string name="onboarding_passkey_button">Mit einem Passkey anmelden</string>
+    <string name="error_passkey_cancelled">Die Passkey-Anfrage wurde abgebrochen.</string>
+    <string name="error_passkey_no_credential">Auf diesem Handy wurde kein Passkey für diesen Server gefunden. Melde dich mit deinem Passwort an und füge dann in den Kontoeinstellungen einen Passkey hinzu.</string>
+    <string name="error_passkey_already_registered">Dieses Gerät hat bereits einen Passkey für dein Konto.</string>
+    <string name="error_passkey_unsupported">Dieses Handy kann hier keine Passkeys verwenden. Prüfe, ob eine Bildschirmsperre und ein Passkey-Anbieter wie der Google Passwortmanager eingerichtet sind.</string>
+    <string name="error_passkey_not_recognized">Dieser Passkey ist hier für kein Konto registriert. Verwende einen anderen Passkey oder dein Passwort.</string>
+    <string name="error_passkey_expired">Die Passkey-Anfrage ist abgelaufen. Versuche es erneut.</string>
+    <string name="error_passkey_reauth_required">Bestätige, dass du es bist, um fortzufahren.</string>
+    <string name="error_passkey_limit">Entferne einen Passkey, bevor du einen weiteren hinzufügst.</string>
+    <string name="error_passkey_none">Dieses Konto hat keine Passkeys.</string>
+    <string name="error_passkey_unavailable">Passkeys sind auf diesem Server nicht verfügbar.</string>
+    <string name="error_passkey_rejected">Der Passkey konnte nicht erstellt werden. Versuche es erneut.</string>
+    <string name="error_passkey_rate_limited">Zu viele Versuche. Warte einen Moment und versuche es erneut.</string>
+    <string name="error_passkey_session_expired">Deine Sitzung ist abgelaufen. Melde dich erneut an.</string>
+    <string name="error_passkey_offline">Der Server ist nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.</string>
+    <string name="error_passkey_generic">Die Passkey-Anfrage konnte nicht abgeschlossen werden. Versuche es erneut.</string>
 </resources>

@@ -206,6 +206,9 @@ dependencies {
     implementation(libs.androidx.browser)
     implementation(libs.androidx.core)
     implementation(libs.androidx.core.splashscreen)
+    // Passkeys (WebAuthn) through Credential Manager.
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
 
     // Compose / Material 3 (Material You dynamic color)
     implementation(libs.androidx.compose.foundation)

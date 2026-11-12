@@ -66,6 +66,7 @@ import blue.anika.wolle.ui.common.Mascot
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.YarnLoader
 import blue.anika.wolle.ui.common.stitchedBorder
+import blue.anika.wolle.ui.passkey.rememberPasskeyHost
 
 /** How the sign-in page (step 2) signs in: email and password (default) or a pasted token. */
 private enum class OnboardingMode {
@@ -117,6 +118,8 @@ fun OnboardingScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val oidcProviders by viewModel.oidcProviders.collectAsStateWithLifecycle()
+    val passkeysAvailable by viewModel.passkeysAvailable.collectAsStateWithLifecycle()
+    val passkeyHost = rememberPasskeyHost()
     val registrationOpen by viewModel.registrationOpen.collectAsStateWithLifecycle()
     var step by rememberSaveable { mutableStateOf(OnboardingStep.WHERE) }
     var mode by rememberSaveable { mutableStateOf(OnboardingMode.PASSWORD) }
@@ -207,6 +210,8 @@ fun OnboardingScreen(
                             onToggleRegistering = { creating = !creating },
                             oidcProviders = oidcProviders,
                             onOidc = { provider -> viewModel.signInWithOidc(serverUrl, provider) },
+                            passkeysAvailable = passkeysAvailable,
+                            onPasskey = { viewModel.signInWithPasskey(passkeyHost, serverUrl) },
                             onSubmit = {
                                 when (mode) {
                                     OnboardingMode.MANUAL -> viewModel.connect(serverUrl, apiToken)
@@ -431,6 +436,8 @@ private fun SignInPage(
     onToggleRegistering: () -> Unit,
     oidcProviders: List<OidcProvider>,
     onOidc: (OidcProvider) -> Unit,
+    passkeysAvailable: Boolean,
+    onPasskey: () -> Unit,
     onSubmit: () -> Unit,
     fields: @Composable (OnboardingMode) -> Unit,
 ) {
@@ -495,6 +502,33 @@ private fun SignInPage(
                         if (registering) R.string.onboarding_register_back
                         else R.string.onboarding_register_prompt
                     )
+                )
+            }
+        }
+        // Only when the server's meta says it has passkeys. Below the email and password form, as
+        // a secondary way in (and not while creating an account).
+        if (mode == OnboardingMode.PASSWORD && passkeysAvailable && !registering) {
+            Text(
+                text = stringResource(R.string.onboarding_oidc_or),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 16.dp),
+            )
+            OutlinedButton(
+                onClick = onPasskey,
+                enabled = enabled,
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp),
+                modifier =
+                    Modifier.fillMaxWidth().padding(top = 12.dp).testTag("onboarding-passkey"),
+            ) {
+                Icon(
+                    PhosphorIcons.LockKey,
+                    contentDescription = null,
+                    modifier = Modifier.padding(end = 8.dp),
+                )
+                Text(
+                    stringResource(R.string.onboarding_passkey_button),
+                    style = MaterialTheme.typography.titleMedium,
                 )
             }
         }

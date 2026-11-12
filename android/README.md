@@ -102,6 +102,18 @@ safety form declares this as optional crash logs and diagnostics. The SDK's auto
 app starts it itself once reporting is allowed. `-PerrorReporting=false` builds without the SDK and
 the toggle; it is independent of `-PselfUpdate`.
 
+**Passkeys.** When the server has passkeys on (`data.auth.passkeys` in `GET /api/v2/meta`), the
+sign-in page offers **Sign in with a passkey** and Account settings has a **Passkeys** section (add,
+rename, remove). Both go through AndroidX Credential Manager (`androidx.credentials` with the
+`credentials-play-services-auth` provider), so passkeys are the ones of the server's web app: the
+server's `/.well-known/assetlinks.json` grants this app `get_login_creds` and its signing
+certificate (`ANDROID_APP_LINK_FINGERPRINTS`) becomes an accepted WebAuthn origin
+(`android:apk-key-hash:...`). Sign-in trades the passkey assertion for the same API-purpose token as the
+password login (`POST /api/v2/auth/passkey/token`, no browser session); adding or removing a passkey asks
+for a fresh confirmation (password or another passkey) through the same sheet as linking a login. A
+phone without a screen lock or passkey provider gets an explanation, not a crash; dismissing the system
+sheet is quiet. The contract is in `docs/web-v2-contract.md`.
+
 **Delete account.** Account settings ends with **Delete account**: type `DELETE` or your email, then
 confirm it is you (password, or the linked login provider through the same sheet as linking a login).
 The server then permanently deletes the account and everything in it (`POST /api/v2/account/delete`,
