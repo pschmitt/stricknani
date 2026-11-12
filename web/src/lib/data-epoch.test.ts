@@ -4,7 +4,6 @@ import {
   applyDataEpoch,
   compareEpoch,
   discardDataBoundState,
-  fetchDataEpoch,
   type EpochStorage,
 } from "./data-epoch";
 
@@ -61,23 +60,5 @@ describe("data epoch", () => {
     const storage = memoryStorage();
     expect(applyDataEpoch(storage, null)).toBe("unchanged");
     expect(storage.getItem(DATA_EPOCH_KEY)).toBeNull();
-  });
-
-  it("reads the epoch from the meta endpoint and ignores bad answers", async () => {
-    const answer = (body: unknown, ok = true) =>
-      (async () => ({ ok, json: async () => body })) as unknown as typeof fetch;
-    expect(await fetchDataEpoch(answer({ data: { data_epoch: "abc" } }))).toBe(
-      "abc",
-    );
-    expect(await fetchDataEpoch(answer({ data: {} }))).toBeNull();
-    expect(
-      await fetchDataEpoch(answer({ data: { data_epoch: 4 } })),
-    ).toBeNull();
-    expect(await fetchDataEpoch(answer({}, false))).toBeNull();
-    expect(
-      await fetchDataEpoch((async () => {
-        throw new Error("offline");
-      }) as unknown as typeof fetch),
-    ).toBeNull();
   });
 });

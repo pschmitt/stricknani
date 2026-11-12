@@ -47,6 +47,8 @@ export interface SessionData {
   locale: "en" | "de";
   /** Present while an administrator is acting as the signed-in account. */
   impersonation?: Impersonation;
+  /** Changes when an administrator restored a backup; signed-in sessions only. */
+  data_epoch?: string;
 }
 
 export interface RequestOptions {

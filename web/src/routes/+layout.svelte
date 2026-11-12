@@ -16,7 +16,7 @@
     syncErrorReporting,
   } from "#lib/error-reporting.ts";
   import { appVersion } from "#lib/app-version.ts";
-  import { applyDataEpoch, fetchDataEpoch } from "#lib/data-epoch.ts";
+  import { applyDataEpoch } from "#lib/data-epoch.ts";
   import { clearFeedback, feedback, publishFeedback } from "#lib/feedback.ts";
   import CommandPalette from "#lib/components/CommandPalette.svelte";
   import BrandHeader from "#lib/components/BrandHeader.svelte";
@@ -69,12 +69,12 @@
   let epochChecked = false;
   $effect(() => {
     const ownerId = user?.id;
+    const epoch = session.data?.data_epoch ?? null;
     if (ownerId === undefined || epochChecked) return;
     epochChecked = true;
-    untrack(() => void checkDataEpoch(ownerId));
+    untrack(() => checkDataEpoch(ownerId, epoch));
   });
-  async function checkDataEpoch(ownerId: number): Promise<void> {
-    const epoch = await fetchDataEpoch();
+  function checkDataEpoch(ownerId: number, epoch: string | null): void {
     let result: ReturnType<typeof applyDataEpoch> = "unchanged";
     try {
       result = applyDataEpoch(localStorage, epoch);

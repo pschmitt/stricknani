@@ -233,6 +233,10 @@ struct SessionData {
     /// Present while an administrator is acting as the signed-in account.
     #[serde(skip_serializing_if = "Option::is_none")]
     impersonation: Option<crate::impersonation::ImpersonationInfo>,
+    /// Changes when an administrator restored a backup (see `/meta`); signed-in sessions only,
+    /// so browsers learn of a restore without another request.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    data_epoch: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -387,6 +391,11 @@ async fn session(State(state): State<ApiV2State>, headers: HeaderMap) -> Respons
                     error_reporting,
                     locale: locale(&headers),
                     impersonation,
+                    data_epoch: state
+                        .app
+                        .backups
+                        .as_ref()
+                        .map(|backups| backups.data_epoch().to_owned()),
                 },
             })
             .into_response();
@@ -418,6 +427,7 @@ async fn session(State(state): State<ApiV2State>, headers: HeaderMap) -> Respons
             error_reporting,
             locale: locale(&headers),
             impersonation: None,
+            data_epoch: None,
         },
     })
     .into_response();
@@ -548,6 +558,11 @@ async fn login(
             error_reporting,
             locale: locale(&headers),
             impersonation: None,
+            data_epoch: state
+                .app
+                .backups
+                .as_ref()
+                .map(|backups| backups.data_epoch().to_owned()),
         },
     })
     .into_response();

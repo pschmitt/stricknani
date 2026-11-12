@@ -65,26 +65,3 @@ export function applyDataEpoch(
     return "unchanged";
   }
 }
-
-/** The epoch the server reports in `GET /api/v2/meta`, or null when unknown. */
-export async function fetchDataEpoch(
-  fetchImpl: typeof fetch = fetch,
-  signal?: AbortSignal,
-): Promise<string | null> {
-  try {
-    const response = await fetchImpl("/api/v2/meta", {
-      credentials: "same-origin",
-      headers: { accept: "application/json" },
-      signal,
-    });
-    if (!response.ok) return null;
-    const payload: unknown = await response.json();
-    const epoch = (payload as { data?: { data_epoch?: unknown } } | null)?.data
-      ?.data_epoch;
-    return typeof epoch === "string" && epoch.length > 0 && epoch.length <= 64
-      ? epoch
-      : null;
-  } catch {
-    return null;
-  }
-}

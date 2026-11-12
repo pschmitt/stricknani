@@ -947,6 +947,10 @@ async fn meta_exposes_the_data_epoch() {
     assert_eq!(epoch, live.service.data_epoch());
     assert!(!epoch.is_empty());
     assert!(body["data"]["last_restore"].is_null());
+    // Signed-in browsers learn the epoch from the session, without another request.
+    let (status, session) = browser(&live.app, "GET", "/session", ADMIN_TOKEN, None).await;
+    assert_eq!(status, StatusCode::OK, "{session}");
+    assert_eq!(session["data"]["data_epoch"], epoch);
 }
 
 // ------------------------------------------------------- the swap at startup
