@@ -30,6 +30,20 @@ data class MetaV2Dto(
     val imports: MetaV2ImportsDto? = null,
     /** Saving source links to the web archive is enabled (the archive control). */
     val archive: Boolean = false,
+    /**
+     * Changes whenever an administrator restored a backup (`data_epoch`); a client that remembers
+     * another value discards its cache and queued writes. Absent on servers without backups.
+     */
+    @SerialName("data_epoch") val dataEpoch: String? = null,
+    /** Outcome of the last backup restore, so a client that waited for the restart can tell. */
+    @SerialName("last_restore") val lastRestore: MetaV2LastRestoreDto? = null,
+)
+
+/** `meta.last_restore`: `succeeded` or `failed`, and when (RFC 3339). */
+@Serializable
+data class MetaV2LastRestoreDto(
+    val status: String = "",
+    @SerialName("finished_at") val finishedAt: String = "",
 )
 
 /** `meta.imports`: link import and AI availability. */

@@ -103,6 +103,9 @@ sealed interface Route {
     /** Administrator account list (SNA-86) - reachable from Settings -> Admin. */
     @Serializable data object AdminAccounts : Route
 
+    /** Administrator backups and the guarded restore - reachable from Settings -> Admin. */
+    @Serializable data object AdminBackups : Route
+
     /**
      * A Settings sub-screen (SNA-21). [categoryName] is `SettingsCategory.name` (a plain `String`
      * rather than the enum itself, to sidestep any Navigation Compose enum-as-route-arg quirks).
@@ -203,6 +206,7 @@ enum class TopLevelDestination(
             Route.Libraries::class,
             Route.AdminAudit::class,
             Route.AdminAccounts::class,
+            Route.AdminBackups::class,
             Route.Trash::class,
             Route.TrashedItem::class,
         ),

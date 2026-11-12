@@ -50,6 +50,7 @@ import blue.anika.wolle.data.api.dto.ProjectStatus
 import blue.anika.wolle.data.api.v2.ImportJobDto
 import blue.anika.wolle.ui.admin.AdminAccountsScreen
 import blue.anika.wolle.ui.admin.AdminAuditScreen
+import blue.anika.wolle.ui.admin.AdminBackupsScreen
 import blue.anika.wolle.ui.categories.CategoriesScreen
 import blue.anika.wolle.ui.common.AccountAvatar
 import blue.anika.wolle.ui.common.MutationFeedback
@@ -503,6 +504,7 @@ fun StricknaniNavHost(
                         onShowLibraries = { navController.navigate(Route.Libraries) },
                         onOpenAdminActivity = { navController.navigate(Route.AdminAudit) },
                         onOpenAdminAccounts = { navController.navigate(Route.AdminAccounts) },
+                        onOpenAdminBackups = { navController.navigate(Route.AdminBackups) },
                         onOpenCategory = {
                             navController.navigate(Route.SettingsCategoryRoute(it.name))
                         },
@@ -541,6 +543,9 @@ fun StricknaniNavHost(
                         onYarnClick = { id -> navController.navigate(Route.YarnDetail(id)) },
                         onProjectClick = { id -> navController.navigate(Route.ProjectDetail(id)) },
                     )
+                }
+                screen<Route.AdminBackups>(motion) {
+                    AdminBackupsScreen(onBack = { navController.navigateUp() })
                 }
                 screen<Route.AdminAccounts>(motion) {
                     AdminAccountsScreen(

@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import blue.anika.wolle.data.backups.DataEpochGuard
 import blue.anika.wolle.data.errorreporting.ErrorReportingController
 import blue.anika.wolle.data.errorreporting.SyncFailureClassifier
 import blue.anika.wolle.data.errorreporting.SyncFailureKind
@@ -53,6 +54,7 @@ constructor(
     private val importNotifier: ImportNotifier,
     private val appVisibility: AppVisibility,
     private val detailCardOrder: DetailCardOrderRepository,
+    private val dataEpochGuard: DataEpochGuard,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
@@ -67,6 +69,15 @@ constructor(
             )
         ) {
             return Result.success()
+        }
+
+        // A restored server backup replaced the data: drop the old cache before syncing.
+        try {
+            dataEpochGuard.check()
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (failure: Exception) {
+            Log.w("SyncReplay", "Data epoch check failed")
         }
 
         var yarnResult = ItemSyncResult.None

@@ -28,6 +28,12 @@ import blue.anika.wolle.data.api.v2.SharingV2Api
 import blue.anika.wolle.data.api.v2.SyncV2Api
 import blue.anika.wolle.data.api.v2.TrashV2Api
 import blue.anika.wolle.data.api.v2.YarnsV2Api
+import blue.anika.wolle.data.backups.BackupsApi
+import blue.anika.wolle.data.backups.BackupsGateway
+import blue.anika.wolle.data.backups.BackupsRepository
+import blue.anika.wolle.data.backups.HealthApi
+import blue.anika.wolle.data.backups.RestartProbe
+import blue.anika.wolle.data.backups.RetrofitRestartProbe
 import blue.anika.wolle.data.errorreporting.ErrorReportingApi
 import blue.anika.wolle.data.export.DataExportApi
 import blue.anika.wolle.data.export.DataRestoreApi
@@ -137,6 +143,18 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideAdminApi(retrofit: Retrofit): AdminApi = retrofit.create(AdminApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideBackupsApi(retrofit: Retrofit): BackupsApi = retrofit.create(BackupsApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideHealthApi(retrofit: Retrofit): HealthApi = retrofit.create(HealthApi::class.java)
+
+    @Provides fun provideBackupsGateway(repository: BackupsRepository): BackupsGateway = repository
+
+    @Provides fun provideRestartProbe(probe: RetrofitRestartProbe): RestartProbe = probe
 
     @Provides
     @Singleton

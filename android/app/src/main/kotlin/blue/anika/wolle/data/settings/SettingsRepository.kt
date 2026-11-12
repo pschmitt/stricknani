@@ -3,6 +3,7 @@ package blue.anika.wolle.data.settings
 import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import blue.anika.wolle.data.backups.EpochStore
 import blue.anika.wolle.data.export.LocalMoveStore
 import blue.anika.wolle.data.oidc.AUTH_ORIGIN_OIDC
 import blue.anika.wolle.data.oidc.OidcSessionStore
@@ -41,7 +42,7 @@ data class AuthInfo(val expiresAt: String?, val origin: String?) {
 @Suppress("DEPRECATION")
 @Singleton
 class SettingsRepository @Inject constructor(@ApplicationContext context: Context) :
-    OidcSessionStore, LocalMoveStore {
+    OidcSessionStore, LocalMoveStore, EpochStore {
 
     private val prefs =
         EncryptedSharedPreferences.create(
@@ -240,6 +241,11 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         get() = prefs.getString(KEY_UPLOADING_LOCAL_MOVE, null)
         set(value) = putOrRemove(KEY_UPLOADING_LOCAL_MOVE, value)
 
+    /** Last server data epoch seen (see `DataEpoch.kt`); forgotten on sign-out. */
+    override var dataEpoch: String?
+        get() = prefs.getString(KEY_DATA_EPOCH, null)
+        set(value) = putOrRemove(KEY_DATA_EPOCH, value)
+
     private fun putOrRemove(key: String, value: String?) {
         prefs.edit().apply { if (value == null) remove(key) else putString(key, value) }.apply()
     }
@@ -256,6 +262,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
             .remove(KEY_TOKEN_EXPIRES_AT)
             .remove(KEY_AUTH_ORIGIN)
             .remove(KEY_PENDING_TOKEN_RENAME)
+            .remove(KEY_DATA_EPOCH)
             .apply()
         _accountEmail.value = null
         _accountAvatarUrl.value = null
@@ -286,6 +293,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         const val KEY_PENDING_TOKEN_RENAME = "pending_token_rename"
         const val KEY_PENDING_LOCAL_MOVE = "pending_local_move"
         const val KEY_UPLOADING_LOCAL_MOVE = "uploading_local_move"
+        const val KEY_DATA_EPOCH = "data_epoch"
         const val KEY_SERVER_URL = "server_url"
         const val KEY_LOCAL_MODE = "local_mode"
         const val KEY_API_TOKEN = "api_token"
