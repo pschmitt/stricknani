@@ -1461,6 +1461,15 @@ export interface AdminCredentials {
   password: string;
 }
 
+/** The display name the audit shows for an account: its email's local part, capitalised. */
+function displayNameOf(email: string): string {
+  return (email.split("@")[0] ?? "")
+    .split(/[._-]/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toLocaleUpperCase() + word.slice(1))
+    .join(" ");
+}
+
 export async function createFixtureAdmin(
   f: LiveFixture,
   cfg: E2eConfig,
@@ -2250,8 +2259,7 @@ async function runAcceptance(
     );
     check(
       (await page
-        .locator(".reader-admin-owner")
-        .getByText(memberEmail, { exact: true })
+        .locator(`.reader-admin-owner[title="${memberEmail}"]`)
         .count()) === 1,
       "read-only resource view did not identify its owner",
     );
@@ -2636,7 +2644,11 @@ async function runAcceptance(
     mark("check audit actor avatar and known action icons");
     const adminActorRow = page
       .locator(".event-row")
-      .filter({ has: page.getByText(adminEmail, { exact: true }) })
+      .filter({
+        has: page
+          .locator(".actor-identity .user-label__name")
+          .getByText(displayNameOf(adminEmail), { exact: true }),
+      })
       .first();
     const actorRowCount = await adminActorRow.count();
     mark(`wait for admin actor row (found=${actorRowCount > 0})`);

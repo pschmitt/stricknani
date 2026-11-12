@@ -221,9 +221,17 @@ async function shareWith(
   await dialog
     .getByRole("button", { name: new RegExp(`Share with ${name}`, "i") })
     .click();
-  await dialog.getByText(new RegExp(`Shared with ${name}\\.`, "i")).waitFor();
+  await statusLine(
+    dialog,
+    new RegExp(`Shared with\\s*\\S?\\s*${name}\\.`, "i"),
+  ).waitFor();
   await dialog.getByRole("button", { name: "Done" }).click();
   await dialog.waitFor({ state: "hidden" });
+}
+
+/** The dialog's status line; its person is a UserLabel (avatar initial, then the name). */
+function statusLine(dialog: Locator, text: RegExp): Locator {
+  return dialog.locator(".share-dialog__status").filter({ hasText: text });
 }
 
 async function actionsMenu(page: Page): Promise<Locator> {
@@ -386,7 +394,7 @@ export async function runSharingJourney(
     );
     await shoot(olgaPage, "share-dialog.png");
     await dialog.getByRole("button", { name: /Share with bea/i }).click();
-    await dialog.getByText(/Shared with bea\./i).waitFor();
+    await statusLine(dialog, /Shared with\s*\S?\s*bea\./i).waitFor();
     const roleSelect = dialog.getByLabel(/Role of bea/i);
     check((await roleSelect.inputValue()) === "viewer", "bea is not a viewer");
     // The same person is no longer offered again.
@@ -508,7 +516,7 @@ export async function runSharingJourney(
     });
     dialog = await openShareDialog(olgaPage);
     await dialog.getByLabel(/Role of bea/i).selectOption("editor");
-    await dialog.getByText(/Role updated for bea\./i).waitFor();
+    await statusLine(dialog, /Role updated for\s*\S?\s*bea\./i).waitFor();
     await dialog.getByRole("button", { name: "Done" }).click();
     await beaPage.goto(`${origin}/app/projects/${project1}`, {
       waitUntil: "networkidle",
@@ -559,7 +567,7 @@ export async function runSharingJourney(
     });
     dialog = await openShareDialog(olgaPage);
     await dialog.getByRole("button", { name: /Remove bea/i }).click();
-    await dialog.getByText(/bea no longer has access\./i).waitFor();
+    await statusLine(dialog, /\S?\s*bea no longer has access\./i).waitFor();
     await dialog.getByRole("button", { name: "Done" }).click();
     // Favorite is in the ⋮ menu of the project page.
     await (await detailMenuItem(beaPage, /favorites$/)).click();
