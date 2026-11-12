@@ -15,6 +15,7 @@ import blue.anika.wolle.data.passkey.PasskeyLoginApi
 import blue.anika.wolle.data.passkey.PasskeyService
 import blue.anika.wolle.data.passkey.PasskeySignInAgain
 import blue.anika.wolle.data.passkey.QueuedWork
+import blue.anika.wolle.data.passkey.SignInAgainIdentityCheck
 import blue.anika.wolle.data.passkey.SignInAgainOutcome
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.sync.SyncScheduler
@@ -80,9 +81,9 @@ constructor(
         viewModelScope.launch { _passkeysAvailable.value = passkeys.available(serverUrl) }
     }
 
-    private val passkeyReSignIn =
-        PasskeySignInAgain(
-            passkeys,
+    /** The same account rule for both ways of signing in again. */
+    private val identityCheck =
+        SignInAgainIdentityCheck(
             passkeyLogin,
             object : AccountIdentityStore {
                 override val userId
@@ -98,6 +99,7 @@ constructor(
             },
             queuedWork,
         )
+    private val passkeyReSignIn = PasskeySignInAgain(passkeys, identityCheck)
 
     /**
      * Signs in again with a passkey. Like the password path, only the token is replaced, so the
@@ -157,6 +159,15 @@ constructor(
                     deviceName = deviceNames.deviceName(),
                 )
                 .onSuccess { token ->
+                    // The token must belong to the account the cache and queued writes do
+                    // (user id, else remembered email, else only an empty queue).
+                    if (!identityCheck.accepts(serverUrl, token)) {
+                        _state.value =
+                            SignInAgainState.Error(
+                                context.getString(R.string.sign_in_again_account_mismatch)
+                            )
+                        return@onSuccess
+                    }
                     // Only the token changes, so the cache and queued writes stay; this also
                     // lifts the "signed out" state.
                     settings.replaceToken(token, expiresAt = null, authOrigin = null)
