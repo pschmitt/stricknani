@@ -39,6 +39,16 @@
       "groupName": "npm minor and patch"
     },
     {
+      "description": "rsa is pinned to a 0.10.0 release candidate (dev-dependency, OIDC test key generation) because webauthn-rs -> crypto-glue requires an rsa rc with the `sha2` feature, which 0.10.0 final dropped; cargo unifies rsa 0.10.x, so final cannot coexist. Lift once crypto-glue supports rsa 0.10 final.",
+      "matchPackageNames": [
+        "rsa"
+      ],
+      "matchManagers": [
+        "cargo"
+      ],
+      "enabled": false
+    },
+    {
       "description": "p256 must stay on web-push-native's version (0.13): their key types are shared. Lift once web-push-native moves to 0.14.",
       "matchPackageNames": [
         "p256"

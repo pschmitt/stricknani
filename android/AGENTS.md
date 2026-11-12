@@ -54,6 +54,18 @@ scoped to this directory, not mixed into the root one.
   dismissal, and reopening with a new selection. Compilation and lint do not prove
   these platform interactions.
 
+## Passkeys
+
+- Passkeys go through AndroidX Credential Manager (`androidx.credentials`, wrapped by
+  `data/passkey/PasskeyGateway.kt` so flows are unit-tested with a fake). Keep
+  `androidx.credentials:credentials-play-services-auth` as an explicit dependency: below Android 14
+  the platform has no Credential Manager, and this artifact is the provider that bridges to Google
+  Play services (Google Password Manager) so create/get passkey work on Android 9-13. It also means
+  Google Play services is in the APK, unlike the QR scanner stack; without Play services, passkeys
+  degrade to the "unsupported" message, never a crash.
+- View models never hold an Activity; screens pass a `PasskeyHost` into the one call that shows the
+  system sheet.
+
 ## Builds
 
 - **Never run Gradle builds locally on this machine** - use an ad-hoc `rworker` (see the `rworker` skill) or a designated remote build host from

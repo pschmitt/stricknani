@@ -14,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -33,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import blue.anika.wolle.R
+import blue.anika.wolle.ui.passkey.rememberPasskeyHost
 
 /** Signs in again after the server rejected the saved token; nothing on the phone is wiped. */
 @Composable
@@ -42,6 +44,8 @@ fun SignInAgainScreen(onDone: () -> Unit, viewModel: SignInAgainViewModel = hilt
     // Deliberately not saveable: a password never goes into saved instance state.
     var password by remember { mutableStateOf("") }
     val working = state is SignInAgainState.Working
+    val passkeysAvailable by viewModel.passkeysAvailable.collectAsStateWithLifecycle()
+    val passkeyHost = rememberPasskeyHost()
 
     LaunchedEffect(state) { if (state is SignInAgainState.Done) onDone() }
 
@@ -97,6 +101,21 @@ fun SignInAgainScreen(onDone: () -> Unit, viewModel: SignInAgainViewModel = hilt
                 Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("sign-in-again-submit"),
         ) {
             Text(stringResource(R.string.sign_in_again_button))
+        }
+        if (passkeysAvailable) {
+            Text(
+                stringResource(R.string.onboarding_oidc_or),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            OutlinedButton(
+                onClick = { viewModel.signInWithPasskey(passkeyHost) },
+                enabled = !working,
+                modifier =
+                    Modifier.fillMaxWidth().heightIn(min = 52.dp).testTag("sign-in-again-passkey"),
+            ) {
+                Text(stringResource(R.string.onboarding_passkey_button))
+            }
         }
         TextButton(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.sign_in_again_not_now))

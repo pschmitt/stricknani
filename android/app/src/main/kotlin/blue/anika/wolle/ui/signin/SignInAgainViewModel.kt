@@ -5,11 +5,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
 import blue.anika.wolle.data.device.DeviceNameProvider
+import blue.anika.wolle.data.oidc.OidcLoginApi
 import blue.anika.wolle.data.onboarding.OnboardingError
 import blue.anika.wolle.data.onboarding.OnboardingValidationException
 import blue.anika.wolle.data.onboarding.PasswordTokenMinter
+import blue.anika.wolle.data.passkey.PasskeyFailure
+import blue.anika.wolle.data.passkey.PasskeyHost
+import blue.anika.wolle.data.passkey.PasskeyService
+import blue.anika.wolle.data.passkey.passkeyFailure
 import blue.anika.wolle.data.settings.SettingsRepository
 import blue.anika.wolle.sync.SyncScheduler
+import blue.anika.wolle.ui.passkey.messageResId
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -51,6 +57,8 @@ constructor(
     private val minter: PasswordTokenMinter,
     private val deviceNames: DeviceNameProvider,
     private val syncScheduler: SyncScheduler,
+    private val passkeys: PasskeyService,
+    private val oidcLogin: OidcLoginApi,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
     private val _state = MutableStateFlow<SignInAgainState>(SignInAgainState.Idle)
@@ -58,6 +66,54 @@ constructor(
 
     val serverUrl: String
         get() = settings.credentials.value.serverUrl
+
+    private val _passkeysAvailable = MutableStateFlow(false)
+
+    /** The saved server advertises passkey sign-in. */
+    val passkeysAvailable: StateFlow<Boolean> = _passkeysAvailable.asStateFlow()
+
+    init {
+        viewModelScope.launch { _passkeysAvailable.value = passkeys.available(serverUrl) }
+    }
+
+    /**
+     * Signs in again with a passkey. Like the password path, only the token is replaced. A passkey
+     * of another account than the one on this device is refused (its token is never saved), so
+     * queued writes are never replayed under a different account. A dismissed system sheet is not
+     * an error.
+     */
+    fun signInWithPasskey(host: PasskeyHost) {
+        if (_state.value is SignInAgainState.Working) return
+        _state.value = SignInAgainState.Working
+        viewModelScope.launch {
+            val result = passkeys.signIn(host, serverUrl, deviceNames.deviceName())
+            val token = result.getOrNull()
+            if (token == null) {
+                val failure = result.passkeyFailure()
+                _state.value =
+                    if (failure == null || failure == PasskeyFailure.Cancelled)
+                        SignInAgainState.Idle
+                    else SignInAgainState.Error(context.getString(failure.messageResId()))
+                return@launch
+            }
+            val email = oidcLogin.currentUserEmail(serverUrl, token)
+            val saved = settings.accountEmail.value
+            val sameAccount =
+                if (saved.isNullOrBlank()) true
+                else email != null && isSameAccountForSignInAgain(saved, email)
+            if (!sameAccount) {
+                _state.value =
+                    SignInAgainState.Error(
+                        context.getString(R.string.sign_in_again_account_mismatch)
+                    )
+                return@launch
+            }
+            settings.replaceToken(token, expiresAt = null, authOrigin = null)
+            email?.let { settings.setAccountEmail(it) }
+            syncScheduler.replayThenSyncNow()
+            _state.value = SignInAgainState.Done
+        }
+    }
 
     /** The email remembered from the password sign-in, if there was one. */
     val savedEmail: String
