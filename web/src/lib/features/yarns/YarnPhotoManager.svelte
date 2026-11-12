@@ -302,7 +302,7 @@
       {locale}
       label={t("Photos", locale)}
       fallbackAlt={t("Yarn photo", locale)}
-      showCover
+      firstIsCover
       reorderable={reorderAvailable}
       onMove={reorderPhotos}
       onOpen={(photo) => void showPhoto(photo)}

@@ -70,6 +70,7 @@ import blue.anika.wolle.ui.common.StickyNoteField
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.SuggestionTextField
 import blue.anika.wolle.ui.common.UrlTextField
+import blue.anika.wolle.ui.common.photoAutoScroll
 import blue.anika.wolle.ui.common.rememberCameraDeniedNotifier
 import blue.anika.wolle.ui.common.rememberPhotoCapture
 import blue.anika.wolle.ui.common.rememberPhotoRemovalAnnouncer
@@ -262,7 +263,10 @@ fun YarnEditorScreen(
         ) { innerPadding ->
             LazyColumn(
                 modifier =
-                    Modifier.fillMaxSize().padding(innerPadding).testTag("e2e-yarn-editor-form"),
+                    Modifier.fillMaxSize()
+                        .padding(innerPadding)
+                        .testTag("e2e-yarn-editor-form")
+                        .photoAutoScroll(listState),
                 state = listState,
                 contentPadding =
                     PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),

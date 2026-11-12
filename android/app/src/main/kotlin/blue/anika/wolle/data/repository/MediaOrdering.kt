@@ -21,8 +21,11 @@ fun <T> List<T>.movedItem(from: Int, to: Int): List<T> {
     return toMutableList().apply { add(to, removeAt(from)) }
 }
 
-/** A photo can become the cover (position 0) when it is a server photo that is not first yet. */
-fun canMakeCover(index: Int, reorderableCount: Int): Boolean = index in 1 until reorderableCount
+/**
+ * A photo can move to the first position (the cover) when it is a server photo that is not first
+ * yet.
+ */
+fun canMoveToFirst(index: Int, reorderableCount: Int): Boolean = index in 1 until reorderableCount
 
 /** The server images shown in the editor's title strip (not a step's, not the stitch sample). */
 fun ProjectDto.titleImages(): List<ImageDto> =
