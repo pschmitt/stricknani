@@ -101,6 +101,8 @@ internal fun AccountSettingsScreen(
         linkedLoginsState.identities.firstNotNullOfOrNull { id ->
             linkedLoginsState.providers.firstOrNull { it.id == id.provider }
         }
+    val deviceUnlockModel: DeviceUnlockSettingViewModel = hiltViewModel()
+    val deviceUnlockEnabled by deviceUnlockModel.enabled.collectAsStateWithLifecycle()
     val errorReportingModel: ErrorReportingViewModel = hiltViewModel()
     val errorReporting by errorReportingModel.state.collectAsStateWithLifecycle()
     val errorReportingBusy by errorReportingModel.busy.collectAsStateWithLifecycle()
@@ -250,6 +252,19 @@ internal fun AccountSettingsScreen(
                             onChange = securityModel::setStripPhotoMetadata,
                         )
                     }
+                }
+            }
+            // Per device and for everyone (also local-only mode): not synced.
+            item {
+                SettingsGroupCard(
+                    title = stringResource(R.string.device_unlock_title),
+                    icon = PhosphorIcons.ShieldCheck,
+                ) {
+                    DeviceUnlockToggleRow(
+                        checked = deviceUnlockEnabled,
+                        needsScreenLock = deviceUnlockModel.needsScreenLock(),
+                        onChange = deviceUnlockModel::setEnabled,
+                    )
                 }
             }
             // Only when the server lists a sign-in provider (OIDC); hidden otherwise.

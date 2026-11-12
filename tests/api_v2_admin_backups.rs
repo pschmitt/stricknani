@@ -1315,7 +1315,10 @@ async fn the_restore_shows_in_the_per_user_view_of_the_requesting_admin() {
         .unwrap();
     let pool = db::connect(&env.db_url).await.unwrap();
     add_token(&pool, 1, ADMIN_TOKEN, "browser").await;
-    let app = api_v2::router(db::AppState::new(pool.clone()).with_secure_cookies(true), false);
+    let app = api_v2::router(
+        db::AppState::new(pool.clone()).with_secure_cookies(true),
+        false,
+    );
     for query in [
         "/admin/audit?user=1",
         "/admin/audit?user=1&role=actor",

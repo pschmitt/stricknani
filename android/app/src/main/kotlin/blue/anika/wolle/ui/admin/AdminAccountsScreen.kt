@@ -85,6 +85,7 @@ import blue.anika.wolle.ui.common.EmptyState
 import blue.anika.wolle.ui.common.MdiIcons
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.YarnLoader
+import blue.anika.wolle.ui.common.rememberDangerousActionGuard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,6 +105,7 @@ fun AdminAccountsScreen(
     var resetResult by remember { mutableStateOf<Pair<AdminUserDto, String>?>(null) }
     var showAdd by rememberSaveable { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
+    val guard = rememberDangerousActionGuard()
 
     Scaffold(
         topBar = {
@@ -202,7 +204,13 @@ fun AdminAccountsScreen(
                                         // the web hides it.
                                         onImpersonate =
                                             viewModel.impersonationLink(user)?.let { url ->
-                                                { runCatching { uriHandler.openUri(url) } }
+                                                {
+                                                    guard.confirm(
+                                                        R.string.unlock_reason_impersonate
+                                                    ) {
+                                                        runCatching { uriHandler.openUri(url) }
+                                                    }
+                                                }
                                             },
                                     )
                                 }

@@ -8,7 +8,6 @@ import android.graphics.Color as AndroidColor
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -25,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
@@ -47,6 +47,8 @@ import blue.anika.wolle.data.update.UpdateAvailableNotifier
 import blue.anika.wolle.sync.SyncNotifier
 import blue.anika.wolle.sync.syncedRoute
 import blue.anika.wolle.ui.common.CrashReportDialog
+import blue.anika.wolle.ui.common.DeviceUnlock
+import blue.anika.wolle.ui.common.LocalDangerousActionGuard
 import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.OwnerContext
@@ -74,7 +76,7 @@ import kotlinx.coroutines.launch
  * app is already running arrives via [onNewIntent] rather than a fresh [onCreate].
  */
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
 
     @Inject lateinit var settingsRepository: SettingsRepository
     @Inject lateinit var appPreferencesRepository: AppPreferencesRepository
@@ -83,6 +85,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var apiCapabilities: ApiCapabilities
     @Inject lateinit var mediaUrlResolver: MediaUrlResolver
     @Inject lateinit var appVisibility: AppVisibility
+    @Inject lateinit var deviceUnlock: DeviceUnlock
 
     private var pendingDeepLink by mutableStateOf<Route?>(null)
     // SNA-61: `stricknani://setup?p=...` (the manifest's own registered intent-filter, so a
@@ -106,6 +109,8 @@ class MainActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // The device-unlock prompt (dangerous actions) needs an activity to host it.
+        deviceUnlock.attach(this)
 
         pendingDeepLink = routeFor(intent)
         pendingSetupUri = intent?.dataString?.takeIf(QrConfigCodec::looksLikeQrConfigUri)
@@ -165,7 +170,10 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             StricknaniTheme(darkTheme = darkTheme, dynamicColor = dynamicColor) {
-                CompositionLocalProvider(LocalOwnerContext provides ownerContext) {
+                CompositionLocalProvider(
+                    LocalOwnerContext provides ownerContext,
+                    LocalDangerousActionGuard provides deviceUnlock,
+                ) {
                     StricknaniNavHost(
                         startDestination = if (isConfigured) Route.Home else Route.Onboarding,
                         // Deferred (not consumed) until onboarding is done - there's nothing to
@@ -207,6 +215,11 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         appVisibility.stopped()
         super.onStop()
+    }
+
+    override fun onDestroy() {
+        deviceUnlock.detach(this)
+        super.onDestroy()
     }
 
     override fun onNewIntent(intent: Intent) {

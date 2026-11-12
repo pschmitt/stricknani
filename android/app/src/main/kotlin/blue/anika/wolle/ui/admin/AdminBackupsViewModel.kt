@@ -25,6 +25,7 @@ import blue.anika.wolle.data.oidc.ReauthAction
 import blue.anika.wolle.data.oidc.ReauthTarget
 import blue.anika.wolle.data.repository.AdminFailure
 import blue.anika.wolle.data.settings.SettingsRepository
+import blue.anika.wolle.ui.common.DangerousActionGuard
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.oidc.DEFAULT_PROVIDER_NAME
 import blue.anika.wolle.ui.oidc.ReauthRequest
@@ -62,7 +63,10 @@ constructor(
     private val probe: RestartProbe,
     private val epochGuard: DataEpochGuard,
     private val feedback: MutationFeedback,
+    guard: DangerousActionGuard,
 ) : ViewModel() {
+    private val submitter = RestoreSubmitter(guard)
+
     private val _phase = MutableStateFlow<BackupsPhase>(BackupsPhase.Loading)
     val phase: StateFlow<BackupsPhase> = _phase.asStateFlow()
 
@@ -179,12 +183,16 @@ constructor(
         )
     }
 
+    /** The device unlock (see [RestoreSubmitter]) comes first; a refusal sends nothing. */
     fun submit() {
-        val state = _flow.value as? RestoreState.Confirm ?: return
-        if (!state.canRestore()) return
+        submitter.submit(_flow.value, ::dispatch) { state ->
+            if (_flow.value !is RestoreState.Restoring) return@submit
+            send(state)
+        }
+    }
+
+    private fun send(state: RestoreState.Confirm) {
         val proof = state.grant.proof
-        dispatch(RestoreEvent.Submit)
-        if (_flow.value !is RestoreState.Restoring) return
         viewModelScope.launch {
             try {
                 val accepted = gateway.restore(state.backup.name, state.typed, state.media, proof)
