@@ -485,7 +485,7 @@
 
   .trash__row {
     display: grid;
-    grid-template-columns: 3.5rem minmax(0, 1fr) auto;
+    grid-template-columns: 3.5rem minmax(0, 1fr);
     align-items: start;
     gap: 0.75rem;
     border: 1px solid var(--line);
@@ -566,6 +566,7 @@
 
   .trash__actions {
     display: flex;
+    grid-column: 2;
     align-self: center;
     flex-wrap: wrap;
     gap: 0.5rem;
