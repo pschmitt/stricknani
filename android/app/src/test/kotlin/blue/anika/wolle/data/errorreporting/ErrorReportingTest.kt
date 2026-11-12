@@ -2,11 +2,14 @@ package blue.anika.wolle.data.errorreporting
 
 import java.io.IOException
 import kotlinx.serialization.json.Json
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import retrofit2.HttpException
+import retrofit2.Response
 
 class ErrorReportingTest {
     private val meta =
@@ -205,6 +208,15 @@ class ErrorReportingTest {
         )
         assertNull(ErrorReportingGate.tunnelDsn("not a dsn", "https://x.test/t"))
         assertNull(config(meta = meta.copy(dsn = "https://sentry.example.test/7")))
+    }
+
+    @Test
+    fun `expired credentials are expected but authorization and server failures are reported`() {
+        fun failure(status: Int) = HttpException(Response.error<Any>(status, "".toResponseBody()))
+        assertEquals(SyncFailureClass.AUTHENTICATION, SyncFailureClassifier.classify(failure(401)))
+        assertFalse(SyncFailureClassifier.classify(failure(401)).reportable)
+        assertTrue(SyncFailureClassifier.classify(failure(403)).reportable)
+        assertTrue(SyncFailureClassifier.classify(failure(500)).reportable)
     }
 
     @Test

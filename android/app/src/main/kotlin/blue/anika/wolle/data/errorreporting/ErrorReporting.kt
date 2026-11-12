@@ -130,10 +130,12 @@ data class SyncFailureReport(
 /**
  * Stable categories that remain useful when R8 obfuscates JVM class names. [reportable] is false
  * for "the server cannot be reached right now" (no network, DNS, timeouts, refused connections):
- * the app works offline and retries later, so these are not errors worth an event.
+ * the app works offline and retries later, so these are not errors worth an event. Rejected
+ * credentials are handled by session expiry and reauthentication, not error telemetry.
  */
 enum class SyncFailureClass(val tagValue: String, val reportable: Boolean = true) {
     HTTP("http"),
+    AUTHENTICATION("authentication", reportable = false),
     UNKNOWN_HOST("unknown_host", reportable = false),
     TIMEOUT("timeout", reportable = false),
     CONNECTION("connection", reportable = false),
@@ -150,7 +152,9 @@ enum class SyncFailureClass(val tagValue: String, val reportable: Boolean = true
 object SyncFailureClassifier {
     fun classify(failure: Throwable): SyncFailureClass =
         when (failure) {
-            is HttpException -> SyncFailureClass.HTTP
+            is HttpException ->
+                if (failure.code() == 401) SyncFailureClass.AUTHENTICATION
+                else SyncFailureClass.HTTP
             is UnknownHostException -> SyncFailureClass.UNKNOWN_HOST
             is SocketTimeoutException,
             is java.util.concurrent.TimeoutException -> SyncFailureClass.TIMEOUT
