@@ -1929,7 +1929,7 @@
                     {locale}
                     label={t("Project cover", locale)}
                     fallbackAlt={t("Project photo", locale)}
-                    showCover
+                    firstIsCover
                     disabled={!stagingAvailable}
                     onMove={(from, to) => reorderImages(null, from, to)}
                     onDelete={(image) => removeImage(image.id)}

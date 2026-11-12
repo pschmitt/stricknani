@@ -894,12 +894,12 @@
     <string name="photo_take">Foto aufnehmen</string>
     <string name="photo_choose">Foto auswählen</string>
     <string name="photo_camera_denied">Der Kamerazugriff ist aus. Erlaube ihn in den Systemeinstellungen, um ein Foto aufzunehmen.</string>
-    <string name="editor_photo_cover">Titelbild</string>
-    <string name="editor_photo_make_cover">Als Titelbild festlegen</string>
+    <string name="editor_photo_move_first">An den Anfang</string>
     <string name="editor_photo_move_earlier">Weiter nach vorn</string>
     <string name="editor_photo_move_later">Weiter nach hinten</string>
     <string name="editor_photo_position">Foto %1$d von %2$d</string>
     <string name="editor_photo_reorder_hint">Zum Sortieren ziehen. Das erste Foto ist das Titelbild.</string>
+    <string name="editor_photo_reorder_hint_plain">Zum Sortieren ziehen.</string>
     <string name="project_editor_step_removed">Schritt entfernt</string>
     <string name="editor_photo_removed">Foto entfernt.</string>
     <string name="editor_photo_removed_to_trash">Entfernt. Beim Speichern landet es im Papierkorb.</string>

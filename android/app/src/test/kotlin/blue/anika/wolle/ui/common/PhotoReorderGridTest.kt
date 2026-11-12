@@ -27,4 +27,30 @@ class PhotoReorderGridTest {
         // Photos still waiting to upload follow the reorderable ones and cannot be targeted.
         assertEquals(3, photoGridSlot(250f, 150f, 100f, 3, 2, 4))
     }
+
+    @Test
+    fun `no edge scroll in the middle of the visible area`() {
+        assertEquals(0f, edgeScrollDelta(300f, 0f, 600f, 72f, 18f), 0f)
+        assertEquals(0f, edgeScrollDelta(72f, 0f, 600f, 72f, 18f), 0f)
+        assertEquals(0f, edgeScrollDelta(528f, 0f, 600f, 72f, 18f), 0f)
+    }
+
+    @Test
+    fun `edge scroll speed grows with the depth into the zone`() {
+        // Half way into the top zone: 9 px up; at the bottom edge: the top speed down.
+        assertEquals(-9f, edgeScrollDelta(36f, 0f, 600f, 72f, 18f), 0f)
+        assertEquals(-18f, edgeScrollDelta(0f, 0f, 600f, 72f, 18f), 0f)
+        assertEquals(9f, edgeScrollDelta(564f, 0f, 600f, 72f, 18f), 0f)
+        assertEquals(18f, edgeScrollDelta(600f, 0f, 600f, 72f, 18f), 0f)
+        // Rounded up, so a tiny depth still moves.
+        assertEquals(1f, edgeScrollDelta(528.1f, 0f, 600f, 72f, 18f), 0f)
+    }
+
+    @Test
+    fun `edge scroll speed is capped beyond the container edge`() {
+        assertEquals(-18f, edgeScrollDelta(-200f, 0f, 600f, 72f, 18f), 0f)
+        assertEquals(18f, edgeScrollDelta(900f, 0f, 600f, 72f, 18f), 0f)
+        // The viewport need not start at zero.
+        assertEquals(-18f, edgeScrollDelta(100f, 100f, 700f, 72f, 18f), 0f)
+    }
 }

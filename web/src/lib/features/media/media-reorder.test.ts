@@ -2,7 +2,12 @@ import { describe, expect, it, vi } from "vitest";
 import { ApiError } from "#lib/api.ts";
 import {
   applyOptimisticReorder,
-  canMakeCover,
+  canMoveToFirst,
+  edgeScrollDelta,
+  gridColumns,
+  keyboardMoveTarget,
+  LONG_PRESS_MS,
+  orderByIds,
   deltaForKey,
   keyboardTarget,
   moveItem,
@@ -137,20 +142,102 @@ describe("order endpoints", () => {
   });
 });
 
-describe("canMakeCover", () => {
+describe("canMoveToFirst", () => {
   it("allows every photo except the cover itself", () => {
-    expect(canMakeCover(0, 4)).toBe(false);
-    expect(canMakeCover(1, 4)).toBe(true);
-    expect(canMakeCover(3, 4)).toBe(true);
+    expect(canMoveToFirst(0, 4)).toBe(false);
+    expect(canMoveToFirst(1, 4)).toBe(true);
+    expect(canMoveToFirst(3, 4)).toBe(true);
   });
 
   it("rejects out-of-range and fractional indexes", () => {
-    expect(canMakeCover(4, 4)).toBe(false);
-    expect(canMakeCover(-1, 4)).toBe(false);
-    expect(canMakeCover(1.5, 4)).toBe(false);
+    expect(canMoveToFirst(4, 4)).toBe(false);
+    expect(canMoveToFirst(-1, 4)).toBe(false);
+    expect(canMoveToFirst(1.5, 4)).toBe(false);
   });
 
   it("moves the photo to the front in one reorder", () => {
     expect(moveItem(items, 2, 0).map((item) => item.id)).toEqual([3, 1, 2, 4]);
+  });
+});
+
+describe("orderByIds", () => {
+  it("follows the id order and keeps unknown items at the end", () => {
+    expect(ids(orderByIds(items, [3, 1, 2, 4]))).toEqual([3, 1, 2, 4]);
+    expect(ids(orderByIds(items, [4, 99, 2]))).toEqual([4, 2, 1, 3]);
+    expect(ids(orderByIds(items, []))).toEqual([1, 2, 3, 4]);
+  });
+});
+
+describe("gridColumns", () => {
+  it("counts the tiles of the first row", () => {
+    expect(gridColumns([0, 0, 0, 120, 120])).toBe(3);
+    expect(gridColumns([10, 10.4, 10])).toBe(3);
+    expect(gridColumns([0, 0])).toBe(2);
+    expect(gridColumns([0, 90, 180])).toBe(1);
+    expect(gridColumns([])).toBe(1);
+  });
+});
+
+describe("keyboardMoveTarget", () => {
+  const key = (name: string, extra = {}) => ({ key: name, ...extra });
+
+  it("moves by one with left and right and by a row with up and down", () => {
+    expect(keyboardMoveTarget(key("ArrowRight"), 1, 6, 3)).toBe(2);
+    expect(keyboardMoveTarget(key("ArrowLeft"), 1, 6, 3)).toBe(0);
+    expect(keyboardMoveTarget(key("ArrowDown"), 1, 6, 3)).toBe(4);
+    expect(keyboardMoveTarget(key("ArrowUp"), 4, 6, 3)).toBe(1);
+  });
+
+  it("clamps to the first and last slot", () => {
+    expect(keyboardMoveTarget(key("ArrowUp"), 1, 6, 3)).toBe(0);
+    expect(keyboardMoveTarget(key("ArrowDown"), 4, 6, 3)).toBe(5);
+    expect(keyboardMoveTarget(key("ArrowLeft"), 0, 6, 3)).toBe(0);
+  });
+
+  it("mirrors left and right in right-to-left layouts", () => {
+    expect(keyboardMoveTarget(key("ArrowLeft"), 1, 6, 3, true)).toBe(2);
+    expect(keyboardMoveTarget(key("ArrowRight"), 1, 6, 3, true)).toBe(0);
+  });
+
+  it("ignores other keys and modified arrows", () => {
+    expect(keyboardMoveTarget(key("a"), 1, 6, 3)).toBeNull();
+    expect(
+      keyboardMoveTarget(key("ArrowRight", { altKey: true }), 1, 6, 3),
+    ).toBeNull();
+    expect(
+      keyboardMoveTarget(key("ArrowRight", { ctrlKey: true }), 1, 6, 3),
+    ).toBeNull();
+  });
+});
+
+describe("edgeScrollDelta", () => {
+  it("does not scroll in the middle of the area", () => {
+    expect(edgeScrollDelta(400, 0, 800)).toBe(0);
+  });
+
+  it("scrolls up near the top and down near the bottom, faster at the edge", () => {
+    expect(edgeScrollDelta(10, 0, 800)).toBeLessThan(0);
+    expect(edgeScrollDelta(790, 0, 800)).toBeGreaterThan(0);
+    expect(edgeScrollDelta(0, 0, 800)).toBe(-18);
+    expect(edgeScrollDelta(800, 0, 800)).toBe(18);
+    expect(Math.abs(edgeScrollDelta(5, 0, 800))).toBeGreaterThan(
+      Math.abs(edgeScrollDelta(60, 0, 800)),
+    );
+  });
+
+  it("caps the speed when the pointer leaves the area", () => {
+    expect(edgeScrollDelta(-200, 0, 800)).toBe(-18);
+    expect(edgeScrollDelta(1200, 0, 800)).toBe(18);
+  });
+
+  it("respects the offset of a scroll container", () => {
+    expect(edgeScrollDelta(120, 100, 500)).toBeLessThan(0);
+    expect(edgeScrollDelta(300, 100, 500)).toBe(0);
+  });
+});
+
+describe("long press", () => {
+  it("matches the Android long-press timeout", () => {
+    expect(LONG_PRESS_MS).toBe(400);
   });
 });

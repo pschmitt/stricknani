@@ -6,7 +6,6 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,9 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DragHandle
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,12 +26,14 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,6 +50,9 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -64,7 +65,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import blue.anika.wolle.R
-import blue.anika.wolle.data.repository.canMakeCover
+import blue.anika.wolle.data.repository.canMoveToFirst
 import coil3.compose.AsyncImage
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -73,6 +74,38 @@ import kotlin.math.floor
 private const val GRID_MIN_TILE_DP = 110
 private const val GRID_MIN_COLUMNS = 3
 private const val GRID_GAP_DP = 10
+
+/** Web parity (`edgeScrollDelta` in `media-reorder.ts`): the edge zone and the top speed. */
+internal const val EDGE_SCROLL_ZONE_DP = 72f
+internal const val EDGE_SCROLL_MAX_SPEED_DP = 18f
+
+/** One 60 Hz frame; the speed is per such frame and scaled by the real frame time. */
+private const val EDGE_SCROLL_FRAME_MILLIS = 1000f / 60f
+
+/**
+ * Scroll step for one frame while a lifted photo is held at [pointerY], inside the visible span
+ * [top]..[bottom] of the scroll container: zero in the middle, negative (scroll up) within [zone]
+ * of the top and positive (scroll down) within [zone] of the bottom, growing linearly with the
+ * depth into the zone up to [maxSpeed]. The same curve as the web's `edgeScrollDelta`.
+ */
+internal fun edgeScrollDelta(
+    pointerY: Float,
+    top: Float,
+    bottom: Float,
+    zone: Float,
+    maxSpeed: Float,
+): Float {
+    if (zone <= 0f) return 0f
+    if (pointerY < top + zone) {
+        val depth = ((top + zone - pointerY) / zone).coerceAtMost(1f)
+        return -ceil(depth * maxSpeed)
+    }
+    if (pointerY > bottom - zone) {
+        val depth = ((pointerY - (bottom - zone)) / zone).coerceAtMost(1f)
+        return ceil(depth * maxSpeed)
+    }
+    return 0f
+}
 
 /** How many columns fit [widthDp]: at least three, more on wider screens. */
 internal fun photoGridColumns(widthDp: Float): Int =
@@ -100,9 +133,10 @@ internal fun photoGridSlot(
 
 /**
  * The expanded layout of [EditorPhotoStrip]'s reorder mode: every photo as a large thumbnail in a
- * multi-row grid. Drag a thumbnail (long-press it, or grab its handle) to any place; Move earlier /
- * Move later and Make cover are also offered as accessibility actions, Alt+arrow keys move the
- * focused photo. [onDone] leaves the mode. Placement animation is skipped when animations are off.
+ * multi-row grid. Long-press a thumbnail and drag it to any place (no handle, no cover star: the
+ * first photo is the cover); Move earlier / Move later / Move to first are also offered as
+ * accessibility actions, Alt+arrow keys move the focused photo. Only the trash icon is on a tile.
+ * [onDone] leaves the mode. Placement animation is skipped when animations are off.
  */
 @Composable
 internal fun PhotoReorderGrid(
@@ -119,12 +153,20 @@ internal fun PhotoReorderGrid(
     var heldKey by remember { mutableStateOf<String?>(null) }
     var startPos by remember { mutableStateOf(Offset.Zero) }
     var delta by remember { mutableStateOf(Offset.Zero) }
+    // Where inside the tile the finger grabbed it, to know the finger's place while scrolling.
+    var grab by remember { mutableStateOf(Offset.Zero) }
+    val gridCoords = remember { arrayOfNulls<LayoutCoordinates>(1) }
+    val scrollHost = LocalPhotoEditHost.current
     BackHandler(onBack = onDone)
 
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                stringResource(R.string.editor_photo_reorder_hint),
+                stringResource(
+                    if (reorder.firstIsCover) {
+                        R.string.editor_photo_reorder_hint
+                    } else R.string.editor_photo_reorder_hint_plain
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f),
@@ -154,11 +196,12 @@ internal fun PhotoReorderGrid(
                 }
             }
 
-            fun startDrag(key: String) {
+            fun startDrag(key: String, grabOffset: Offset) {
                 val index = currentPhotos.indexOfFirst { it.key == key }
                 if (index < 0 || index >= currentReorder.count) return
                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                 heldKey = key
+                grab = grabOffset
                 startPos = slotOffset(index)
                 delta = Offset.Zero
             }
@@ -169,7 +212,42 @@ internal fun PhotoReorderGrid(
                 moveHeldTo(center.x, center.y)
             }
 
-            Box(Modifier.fillMaxWidth().height(tile * rows + gap * (rows - 1))) {
+            // While a photo is held near the top or bottom edge of the editor's visible area,
+            // scroll
+            // it, and keep the photo under the finger: the grid moves by what was scrolled, so the
+            // held photo's place in the grid moves by the same, and the slot is looked up again.
+            val zonePx = with(density) { EDGE_SCROLL_ZONE_DP.dp.toPx() }
+            val maxSpeedPx = with(density) { EDGE_SCROLL_MAX_SPEED_DP.dp.toPx() }
+            LaunchedEffect(heldKey, stride, columns, rows) {
+                if (heldKey == null) return@LaunchedEffect
+                var last = withFrameNanos { it }
+                while (true) {
+                    val now = withFrameNanos { it }
+                    val scale =
+                        ((now - last) / 1_000_000f / EDGE_SCROLL_FRAME_MILLIS).coerceIn(0f, 3f)
+                    last = now
+                    val scroller = scrollHost?.scroller ?: continue
+                    val viewport = scroller.viewport() ?: continue
+                    val origin =
+                        gridCoords[0]?.takeIf { it.isAttached }?.positionInWindow() ?: continue
+                    val pointerY = origin.y + startPos.y + grab.y + delta.y
+                    val step =
+                        edgeScrollDelta(pointerY, viewport.top, viewport.bottom, zonePx, maxSpeedPx)
+                    if (step == 0f) continue
+                    val consumed = scroller.scrollBy(step * scale)
+                    if (consumed != 0f) {
+                        delta += Offset(0f, consumed)
+                        val center = startPos + delta + Offset(tilePx / 2, tilePx / 2)
+                        moveHeldTo(center.x, center.y)
+                    }
+                }
+            }
+
+            Box(
+                Modifier.fillMaxWidth()
+                    .height(tile * rows + gap * (rows - 1))
+                    .onGloballyPositioned { gridCoords[0] = it }
+            ) {
                 photos.forEachIndexed { index, photo ->
                     key(photo.key) {
                         val reorderable = index < reorder.count
@@ -183,7 +261,7 @@ internal fun PhotoReorderGrid(
                             )
                         val earlierLabel = stringResource(R.string.editor_photo_move_earlier)
                         val laterLabel = stringResource(R.string.editor_photo_move_later)
-                        val makeCoverLabel = stringResource(R.string.editor_photo_make_cover)
+                        val moveFirstLabel = stringResource(R.string.editor_photo_move_first)
                         val positionLabel =
                             if (reorderable) {
                                 stringResource(
@@ -215,7 +293,9 @@ internal fun PhotoReorderGrid(
                                     if (reorderable) {
                                         Modifier.pointerInput(photo.key) {
                                             detectDragGesturesAfterLongPress(
-                                                onDragStart = { startDrag(photo.key) },
+                                                onDragStart = { offset ->
+                                                    startDrag(photo.key, offset)
+                                                },
                                                 onDrag = { change, amount ->
                                                     change.consume()
                                                     drag(amount)
@@ -243,8 +323,10 @@ internal fun PhotoReorderGrid(
                                                     true
                                                 }
                                             } else null,
-                                            if (reorderable && canMakeCover(index, reorder.count)) {
-                                                CustomAccessibilityAction(makeCoverLabel) {
+                                            if (
+                                                reorderable && canMoveToFirst(index, reorder.count)
+                                            ) {
+                                                CustomAccessibilityAction(moveFirstLabel) {
                                                     currentReorder.onMove(index, 0)
                                                     true
                                                 }
@@ -298,18 +380,6 @@ internal fun PhotoReorderGrid(
                                             } else Modifier
                                         ),
                             )
-                            if (index == 0) {
-                                CoverTag(Modifier.align(Alignment.BottomStart).padding(8.dp))
-                            }
-                            if (reorderable && canMakeCover(index, reorder.count)) {
-                                GridBadgeButton(
-                                    onClick = { currentReorder.onMove(index, 0) },
-                                    modifier = Modifier.align(Alignment.TopStart),
-                                    description = makeCoverLabel,
-                                ) {
-                                    Icon(Icons.Filled.Star, null, Modifier.size(18.dp))
-                                }
-                            }
                             GridBadgeButton(
                                 onClick = photo.onRemove,
                                 modifier = Modifier.align(Alignment.TopEnd),
@@ -317,41 +387,6 @@ internal fun PhotoReorderGrid(
                                 destructive = true,
                             ) {
                                 Icon(PhosphorIcons.Trash, null, Modifier.size(18.dp))
-                            }
-                            if (reorderable) {
-                                // The handle drags at once; the rest of the tile needs a long press
-                                // so scrolling the editor past the grid still works.
-                                Box(
-                                    Modifier.align(Alignment.BottomEnd).size(48.dp).pointerInput(
-                                        photo.key
-                                    ) {
-                                        detectDragGestures(
-                                            onDragStart = { startDrag(photo.key) },
-                                            onDrag = { change, amount ->
-                                                change.consume()
-                                                drag(amount)
-                                            },
-                                            onDragEnd = { heldKey = null },
-                                            onDragCancel = { heldKey = null },
-                                        )
-                                    },
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Surface(
-                                        shape = CircleShape,
-                                        color = Color.Black.copy(alpha = 0.6f),
-                                        contentColor = Color.White,
-                                        modifier = Modifier.size(32.dp),
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(
-                                                Icons.Filled.DragHandle,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp),
-                                            )
-                                        }
-                                    }
-                                }
                             }
                         }
                     }
