@@ -26,6 +26,8 @@ import blue.anika.wolle.data.db.dao.PendingMutationDao
 import blue.anika.wolle.data.db.dao.SyncStateDao
 import blue.anika.wolle.data.db.entity.PendingMutationEntity
 import blue.anika.wolle.data.export.LocalMoveCoordinator
+import blue.anika.wolle.data.impersonation.ImpersonationController
+import blue.anika.wolle.data.impersonation.SessionMode
 import blue.anika.wolle.data.repository.EVERYONE_FILTER_KEY
 import blue.anika.wolle.data.settings.AppLanguage
 import blue.anika.wolle.data.settings.AppPreferencesRepository
@@ -92,6 +94,7 @@ constructor(
     private val timerReminderScheduler: ProjectTimerReminderScheduler,
     private val runningTimers: RunningTimers,
     private val localMove: LocalMoveCoordinator,
+    private val impersonation: ImpersonationController,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -504,6 +507,12 @@ constructor(
      * rather than left to leak the previous account's cached projects/yarns into a fresh sign-in.
      */
     fun signOut() {
+        // While acting as another account, signing out means going back to one's own account; the
+        // administrator's credentials and data are not touched.
+        if (impersonation.isImpersonating) {
+            viewModelScope.launch { impersonation.stop() }
+            return
+        }
         timerReminderScheduler.cancelAll()
         viewModelScope.launch {
             timerReminderScheduler.clearSavedDeadlines()
@@ -515,7 +524,7 @@ constructor(
                 database.clearAllTables()
                 // The queued upload files belong to the account that picked them; their rows are
                 // gone now, so the files must not outlive the sign-out either.
-                runCatching { File(context.filesDir, "pending-uploads").deleteRecursively() }
+                runCatching { File(context.filesDir, SessionMode.uploadsDirectory).deleteRecursively() }
             }
         }
     }
@@ -529,7 +538,7 @@ constructor(
         signOut()
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                runCatching { File(context.filesDir, "pending-uploads").deleteRecursively() }
+                runCatching { File(context.filesDir, SessionMode.uploadsDirectory).deleteRecursively() }
                 runCatching {
                     SingletonImageLoader.get(context).let {
                         it.memoryCache?.clear()

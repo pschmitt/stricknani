@@ -50,7 +50,9 @@ internal fun isSessionExpiredBody(body: String): Boolean = errorCodeOf(body) == 
 /** A 401 that says "this token is no longer good" (see [SessionExpiryInterceptor]). */
 internal fun isRejectedTokenResponse(path: String, body: String): Boolean =
     when (errorCodeOf(body)) {
-        "session_expired" -> true
+        "session_expired",
+        // An impersonation credential that expired, was stopped or whose accounts changed.
+        "impersonation_expired" -> true
         null -> path.startsWith("/api/v1/")
         else -> false
     }

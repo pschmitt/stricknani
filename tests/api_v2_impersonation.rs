@@ -1,5 +1,6 @@
-//! Administrator impersonation: browser-session only, limited to ordinary
-//! active accounts, logged, expiring, and attributable in the audit log.
+//! Administrator impersonation on the browser session, limited to ordinary
+//! active accounts, logged, expiring, and attributable in the audit log. The
+//! native bearer flow is covered in `api_v2_native_impersonation.rs`.
 use axum::{
     Router,
     body::Body,
@@ -279,7 +280,7 @@ async fn only_administrators_may_impersonate_ordinary_active_accounts() {
 }
 
 #[tokio::test]
-async fn bearer_tokens_can_neither_start_nor_stop_nor_carry_an_impersonation() {
+async fn api_tokens_cannot_start_a_browser_impersonation_or_carry_one() {
     let fixture = fixture().await;
     let (status, body) = bearer(
         &fixture,
@@ -289,8 +290,11 @@ async fn bearer_tokens_can_neither_start_nor_stop_nor_carry_an_impersonation() {
     .await;
     assert_eq!(status, StatusCode::FORBIDDEN);
     assert_eq!(body["error"]["code"], "impersonation_forbidden");
-    let (status, _) = bearer(&fixture, "POST", "/admin/impersonation/stop").await;
-    assert_eq!(status, StatusCode::FORBIDDEN);
+    // The administrator's PAT may end their native impersonations (none here);
+    // it never touches a browser session's.
+    let (status, body) = bearer(&fixture, "POST", "/admin/impersonation/stop").await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["data"]["stopped"], false);
 
     // While the browser session impersonates, the admin's PAT is unchanged.
     let (status, _) = start(&fixture, fixture.member_id).await;

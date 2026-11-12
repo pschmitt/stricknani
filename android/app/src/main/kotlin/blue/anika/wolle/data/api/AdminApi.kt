@@ -5,6 +5,8 @@ import blue.anika.wolle.data.api.dto.AdminUsersPageDto
 import blue.anika.wolle.data.api.dto.AuditDetailEnvelopeDto
 import blue.anika.wolle.data.api.dto.AuditPageDto
 import blue.anika.wolle.data.api.dto.CreateAdminUserRequest
+import blue.anika.wolle.data.api.dto.ImpersonationStartEnvelopeDto
+import blue.anika.wolle.data.api.dto.ImpersonationStopEnvelopeDto
 import blue.anika.wolle.data.api.dto.ResetPasswordEnvelopeDto
 import blue.anika.wolle.data.api.dto.ResetPasswordRequest
 import blue.anika.wolle.data.api.dto.SetUserActiveRequest
@@ -46,4 +48,18 @@ interface AdminApi {
         @Path("id") id: Long,
         @Body request: ResetPasswordRequest,
     ): ResetPasswordEnvelopeDto
+
+    /**
+     * Asks for a short-lived credential that acts as [id]. Sent with the administrator's own token;
+     * the server refuses anything else.
+     */
+    @POST("api/v2/admin/users/{id}/impersonation-token")
+    suspend fun startImpersonation(@Path("id") id: Long): ImpersonationStartEnvelopeDto
+
+    /**
+     * Revokes the impersonation credential this request carries (or, sent with the administrator's
+     * own token, every impersonation of theirs).
+     */
+    @POST("api/v2/admin/impersonation/stop")
+    suspend fun stopImpersonation(): ImpersonationStopEnvelopeDto
 }

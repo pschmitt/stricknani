@@ -4,6 +4,9 @@ import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import blue.anika.wolle.data.export.LocalMoveStore
+import blue.anika.wolle.data.impersonation.ImpersonationSession
+import blue.anika.wolle.data.impersonation.ImpersonationStore
+import blue.anika.wolle.data.impersonation.SessionMode
 import blue.anika.wolle.data.oidc.AUTH_ORIGIN_OIDC
 import blue.anika.wolle.data.oidc.OidcSessionStore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -41,7 +44,7 @@ data class AuthInfo(val expiresAt: String?, val origin: String?) {
 @Suppress("DEPRECATION")
 @Singleton
 class SettingsRepository @Inject constructor(@ApplicationContext context: Context) :
-    OidcSessionStore, LocalMoveStore {
+    OidcSessionStore, LocalMoveStore, ImpersonationStore {
 
     private val prefs =
         EncryptedSharedPreferences.create(
@@ -52,31 +55,57 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
         )
 
+    /**
+     * The impersonation this process runs as, read once at construction and never updated: the
+     * identity of a process (credential, Room file, upload queue) is fixed, so entering or leaving
+     * an impersonation only takes effect after the restart that follows it. A stored session
+     * without its credential (or the reverse) is half written and counts as none.
+     */
+    private val impersonationAtStart: Pair<ImpersonationSession, String>? =
+        loadImpersonation().also { SessionMode.set(it != null) }
+
+    override val session: ImpersonationSession?
+        get() = impersonationAtStart?.first
+
     private val _credentials = MutableStateFlow(loadCredentials())
     val credentials: StateFlow<StricknaniCredentials> = _credentials.asStateFlow()
+
+    /** Account fields of the administrator's own account are never touched while impersonating. */
+    private val persistAccount: Boolean
+        get() = impersonationAtStart == null
 
     /**
      * Email of the account, remembered only when the user signed in with a password (a pasted token
      * or QR code does not say who it belongs to). Used to mark "You" in the admin account list.
      */
-    private val _accountEmail = MutableStateFlow(prefs.getString(KEY_ACCOUNT_EMAIL, null))
+    private val _accountEmail =
+        MutableStateFlow(
+            impersonationAtStart?.first?.targetEmail ?: prefs.getString(KEY_ACCOUNT_EMAIL, null)
+        )
     val accountEmail: StateFlow<String?> = _accountEmail.asStateFlow()
 
     fun setAccountEmail(email: String?) {
         val cleaned = email?.trim()?.ifBlank { null }
-        if (cleaned == null) prefs.edit().remove(KEY_ACCOUNT_EMAIL).apply()
-        else prefs.edit().putString(KEY_ACCOUNT_EMAIL, cleaned).apply()
+        if (persistAccount) {
+            if (cleaned == null) prefs.edit().remove(KEY_ACCOUNT_EMAIL).apply()
+            else prefs.edit().putString(KEY_ACCOUNT_EMAIL, cleaned).apply()
+        }
         _accountEmail.value = cleaned
     }
 
     /** Last avatar path the server reported (`/media/...`), so the avatar can show offline. */
-    private val _accountAvatarUrl = MutableStateFlow(prefs.getString(KEY_ACCOUNT_AVATAR, null))
+    private val _accountAvatarUrl =
+        MutableStateFlow(
+            if (impersonationAtStart == null) prefs.getString(KEY_ACCOUNT_AVATAR, null) else null
+        )
     val accountAvatarUrl: StateFlow<String?> = _accountAvatarUrl.asStateFlow()
 
     fun setAccountAvatarUrl(path: String?) {
         val cleaned = path?.trim()?.ifBlank { null }
-        if (cleaned == null) prefs.edit().remove(KEY_ACCOUNT_AVATAR).apply()
-        else prefs.edit().putString(KEY_ACCOUNT_AVATAR, cleaned).apply()
+        if (persistAccount) {
+            if (cleaned == null) prefs.edit().remove(KEY_ACCOUNT_AVATAR).apply()
+            else prefs.edit().putString(KEY_ACCOUNT_AVATAR, cleaned).apply()
+        }
         _accountAvatarUrl.value = cleaned
     }
 
@@ -90,10 +119,12 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
      */
     private val _authInfo =
         MutableStateFlow(
-            AuthInfo(
-                expiresAt = prefs.getString(KEY_TOKEN_EXPIRES_AT, null),
-                origin = prefs.getString(KEY_AUTH_ORIGIN, null),
-            )
+            if (impersonationAtStart != null) AuthInfo(null, null)
+            else
+                AuthInfo(
+                    expiresAt = prefs.getString(KEY_TOKEN_EXPIRES_AT, null),
+                    origin = prefs.getString(KEY_AUTH_ORIGIN, null),
+                )
         )
     val authInfo: StateFlow<AuthInfo> = _authInfo.asStateFlow()
 
@@ -141,10 +172,13 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         expiresAt: String?,
         authOrigin: String?,
     ) {
+        if (impersonationAtStart != null) return
         save(serverUrl, token, expiresAt, authOrigin)
     }
 
     override fun replaceToken(token: String, expiresAt: String?, authOrigin: String?) {
+        // An impersonation never signs in again: when its credential is rejected it ends.
+        if (impersonationAtStart != null) return
         val trimmed = token.trim()
         prefs.edit().putString(KEY_API_TOKEN, trimmed).putAuthInfo(expiresAt, authOrigin).apply()
         _authInfo.value = AuthInfo(expiresAt, authOrigin)
@@ -182,6 +216,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         expiresAt: String? = null,
         authOrigin: String? = null,
     ) {
+        if (impersonationAtStart != null) return
         val normalizedUrl = serverUrl.trim().trimEnd('/')
         val trimmedToken = apiToken.trim()
         prefs
@@ -207,6 +242,7 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
 
     /** Store the local server's address and token; keeps the account fields of local mode. */
     fun saveLocal(serverUrl: String, apiToken: String) {
+        if (impersonationAtStart != null) return
         prefs
             .edit()
             .putBoolean(KEY_LOCAL_MODE, true)
@@ -246,6 +282,9 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
 
     /** Wipes credentials. The Room cache (SNA-7) is wiped by the caller alongside this. */
     fun signOut() {
+        // Signing out while impersonating is "stop impersonating" (ImpersonationController): the
+        // administrator's own credentials stay where they are.
+        if (impersonationAtStart != null) return
         prefs
             .edit()
             .remove(KEY_SERVER_URL)
@@ -265,11 +304,52 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         _isConfigured.value = false
     }
 
+    /**
+     * The credential the process sends: the impersonation's while one runs, otherwise the stored
+     * one. The server address is the administrator's own (the same server).
+     */
     private fun loadCredentials(): StricknaniCredentials =
         StricknaniCredentials(
             serverUrl = prefs.getString(KEY_SERVER_URL, "") ?: "",
-            apiToken = prefs.getString(KEY_API_TOKEN, "") ?: "",
+            apiToken = impersonationAtStart?.second ?: (prefs.getString(KEY_API_TOKEN, "") ?: ""),
         )
+
+    private fun loadImpersonation(): Pair<ImpersonationSession, String>? {
+        val token = prefs.getString(KEY_IMP_TOKEN, null)?.takeIf { it.isNotBlank() }
+        val targetId = prefs.getLong(KEY_IMP_TARGET_ID, 0L)
+        val email = prefs.getString(KEY_IMP_TARGET_EMAIL, null)?.takeIf { it.isNotBlank() }
+        if (token == null || targetId <= 0L || email == null) return null
+        return ImpersonationSession(
+            targetId = targetId,
+            targetEmail = email,
+            targetName = prefs.getString(KEY_IMP_TARGET_NAME, null)?.ifBlank { null } ?: email,
+            adminEmail = prefs.getString(KEY_IMP_ADMIN_EMAIL, null),
+            expiresAtSeconds = prefs.getLong(KEY_IMP_EXPIRES_AT, 0L),
+        ) to token
+    }
+
+    /** Written with `commit()`: the process is restarted right after, an `apply()` could be lost. */
+    override fun begin(session: ImpersonationSession, token: String): Boolean =
+        prefs
+            .edit()
+            .putString(KEY_IMP_TOKEN, token)
+            .putLong(KEY_IMP_TARGET_ID, session.targetId)
+            .putString(KEY_IMP_TARGET_EMAIL, session.targetEmail)
+            .putString(KEY_IMP_TARGET_NAME, session.targetName)
+            .putString(KEY_IMP_ADMIN_EMAIL, session.adminEmail)
+            .putLong(KEY_IMP_EXPIRES_AT, session.expiresAtSeconds)
+            .commit()
+
+    override fun end(): Boolean =
+        prefs
+            .edit()
+            .remove(KEY_IMP_TOKEN)
+            .remove(KEY_IMP_TARGET_ID)
+            .remove(KEY_IMP_TARGET_EMAIL)
+            .remove(KEY_IMP_TARGET_NAME)
+            .remove(KEY_IMP_ADMIN_EMAIL)
+            .remove(KEY_IMP_EXPIRES_AT)
+            .commit()
 
     private fun android.content.SharedPreferences.Editor.putAuthInfo(
         expiresAt: String?,
@@ -292,5 +372,11 @@ class SettingsRepository @Inject constructor(@ApplicationContext context: Contex
         const val KEY_ACCOUNT_EMAIL = "account_email"
         const val KEY_ACCOUNT_AVATAR = "account_avatar_url"
         const val KEY_BACKUP_PASSWORD = "scheduled_backup_password"
+        const val KEY_IMP_TOKEN = "impersonation_token"
+        const val KEY_IMP_TARGET_ID = "impersonation_target_id"
+        const val KEY_IMP_TARGET_EMAIL = "impersonation_target_email"
+        const val KEY_IMP_TARGET_NAME = "impersonation_target_name"
+        const val KEY_IMP_ADMIN_EMAIL = "impersonation_admin_email"
+        const val KEY_IMP_EXPIRES_AT = "impersonation_expires_at"
     }
 }

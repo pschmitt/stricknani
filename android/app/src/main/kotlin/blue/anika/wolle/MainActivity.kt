@@ -15,6 +15,13 @@ import androidx.activity.enableEdgeToEdge
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -22,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -35,6 +43,7 @@ import blue.anika.wolle.data.api.importAvailability
 import blue.anika.wolle.data.export.DataExportNotifier
 import blue.anika.wolle.data.export.ExportFormat
 import blue.anika.wolle.data.imports.AppVisibility
+import blue.anika.wolle.data.impersonation.ImpersonationController
 import blue.anika.wolle.data.imports.ImportNotifier
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.oidc.OidcCoordinator
@@ -51,6 +60,7 @@ import blue.anika.wolle.ui.common.LocalOwnerContext
 import blue.anika.wolle.ui.common.MutationFeedback
 import blue.anika.wolle.ui.common.OwnerContext
 import blue.anika.wolle.ui.common.RequestNotificationPermissionEffect
+import blue.anika.wolle.ui.impersonation.ImpersonationBanner
 import blue.anika.wolle.ui.navigation.DeepLinkParser
 import blue.anika.wolle.ui.navigation.Route
 import blue.anika.wolle.ui.navigation.StricknaniNavHost
@@ -76,6 +86,11 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    companion object {
+        /** Set on the launcher intent that restarts the app after an impersonation ended. */
+        const val EXTRA_AFTER_IMPERSONATION = "after_impersonation"
+    }
+
     @Inject lateinit var settingsRepository: SettingsRepository
     @Inject lateinit var appPreferencesRepository: AppPreferencesRepository
     @Inject lateinit var mutationFeedback: MutationFeedback
@@ -83,6 +98,7 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var apiCapabilities: ApiCapabilities
     @Inject lateinit var mediaUrlResolver: MediaUrlResolver
     @Inject lateinit var appVisibility: AppVisibility
+    @Inject lateinit var impersonationController: ImpersonationController
 
     private var pendingDeepLink by mutableStateOf<Route?>(null)
     // SNA-61: `stricknani://setup?p=...` (the manifest's own registered intent-filter, so a
@@ -166,23 +182,49 @@ class MainActivity : ComponentActivity() {
                 }
             StricknaniTheme(darkTheme = darkTheme, dynamicColor = dynamicColor) {
                 CompositionLocalProvider(LocalOwnerContext provides ownerContext) {
-                    StricknaniNavHost(
-                        startDestination = if (isConfigured) Route.Home else Route.Onboarding,
-                        // Deferred (not consumed) until onboarding is done - there's nothing to
-                        // navigate to yet, and StricknaniNavHost gets a fresh NavController once
-                        // isConfigured flips anyway (see its kdoc).
-                        pendingDeepLinkRoute = pendingDeepLink.takeIf { isConfigured },
-                        onDeepLinkConsumed = { pendingDeepLink = null },
-                        // Only meaningful pre-onboarding - once configured, a stray setup URI (an
-                        // old
-                        // QR scanned again, say) has nothing useful to do.
-                        pendingSetupUri = pendingSetupUri.takeIf { !isConfigured },
-                        onSetupUriConsumed = { pendingSetupUri = null },
-                        pendingSharedUrl = pendingSharedUrl,
-                        onSharedUrlConsumed = { pendingSharedUrl = null },
-                        importAvailability = apiState.importAvailability(),
-                        mutationFeedback = mutationFeedback,
-                    )
+                    val impersonation = impersonationController.session
+                    val credentialRejected by
+                        settingsRepository.sessionExpired.collectAsStateWithLifecycle()
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        // On every screen, above the navigation graph, so no screen can hide it.
+                        if (impersonation != null) {
+                            ImpersonationBanner(
+                                session = impersonation,
+                                credentialRejected = credentialRejected,
+                                nowSeconds = { System.currentTimeMillis() / MILLIS_PER_SECOND },
+                                onStop = { lifecycleScope.launch { impersonationController.stop() } },
+                            )
+                        }
+                        Box(
+                            modifier =
+                                Modifier.weight(1f)
+                                    .fillMaxWidth()
+                                    .then(
+                                        // The banner already sits below the status bar.
+                                        if (impersonation != null)
+                                            Modifier.consumeWindowInsets(WindowInsets.statusBars)
+                                        else Modifier
+                                    )
+                        ) {
+                            StricknaniNavHost(
+                                startDestination = if (isConfigured) Route.Home else Route.Onboarding,
+                                // Deferred (not consumed) until onboarding is done - there's nothing to
+                                // navigate to yet, and StricknaniNavHost gets a fresh NavController once
+                                // isConfigured flips anyway (see its kdoc).
+                                pendingDeepLinkRoute = pendingDeepLink.takeIf { isConfigured },
+                                onDeepLinkConsumed = { pendingDeepLink = null },
+                                // Only meaningful pre-onboarding - once configured, a stray setup URI (an
+                                // old
+                                // QR scanned again, say) has nothing useful to do.
+                                pendingSetupUri = pendingSetupUri.takeIf { !isConfigured },
+                                onSetupUriConsumed = { pendingSetupUri = null },
+                                pendingSharedUrl = pendingSharedUrl,
+                                onSharedUrlConsumed = { pendingSharedUrl = null },
+                                importAvailability = apiState.importAvailability(),
+                                mutationFeedback = mutationFeedback,
+                            )
+                        }
+                    }
                 }
                 if (isConfigured) {
                     RequestNotificationPermissionEffect(appPreferencesRepository)
@@ -261,7 +303,17 @@ class MainActivity : ComponentActivity() {
      * A web link, or a notification: "update available" opens Settings -> About, "synced from
      * another device" opens the list that changed.
      */
-    private fun routeFor(intent: Intent?): Route? =
+    private fun routeFor(intent: Intent?): Route? {
+        // Back from an impersonation: the administrator's account list, where it started. The marker
+        // is used up, so a rotation does not navigate there again.
+        if (intent?.getBooleanExtra(EXTRA_AFTER_IMPERSONATION, false) == true) {
+            intent.removeExtra(EXTRA_AFTER_IMPERSONATION)
+            return Route.AdminAccounts
+        }
+        return routeForAction(intent)
+    }
+
+    private fun routeForAction(intent: Intent?): Route? =
         when (intent?.action) {
             UpdateAvailableNotifier.ACTION_OPEN_UPDATE ->
                 Route.SettingsCategoryRoute(SettingsCategory.About.name)
@@ -373,6 +425,7 @@ class MainActivity : ComponentActivity() {
 }
 
 private const val NO_ID = -1
+private const val MILLIS_PER_SECOND = 1000L
 private const val STATE_PENDING_SHARE = "pending_shared_url"
 
 /** The same translucent navigation-bar scrims androidx uses by default for button navigation. */

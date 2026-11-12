@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import blue.anika.wolle.R
 import blue.anika.wolle.data.api.dto.AdminUserDto
+import blue.anika.wolle.data.impersonation.ImpersonationController
+import blue.anika.wolle.data.impersonation.StartResult
 import blue.anika.wolle.data.media.MediaUrlResolver
 import blue.anika.wolle.data.repository.AdminException
 import blue.anika.wolle.data.repository.AdminFailure
@@ -82,6 +84,7 @@ constructor(
     private val mediaUrlResolver: MediaUrlResolver,
     private val feedback: MutationFeedback,
     private val settings: SettingsRepository,
+    private val impersonation: ImpersonationController,
 ) : ViewModel() {
     private val _state =
         MutableStateFlow(
@@ -104,20 +107,33 @@ constructor(
     fun avatarUrl(path: String?): String? = mediaUrlResolver.resolve(path)
 
     /**
-     * Where the web app opens the "Impersonate this account?" confirmation for [user], or null
-     * where the web hides the action (yourself, administrators, disabled accounts) or there is no
-     * web app (local-only mode).
+     * Whether "Impersonate" is offered for [user]: where the web offers it (not yourself, not an
+     * administrator, not a disabled account) and only to an administrator's own session, on a
+     * server (local-only mode has none).
      */
-    fun impersonationLink(user: AdminUserDto): String? {
+    fun canImpersonateUser(user: AdminUserDto): Boolean {
         val current = _state.value
-        val index = current.users.indexOfFirst { it.id == user.id }
-        if (settings.isLocalMode || index < 0) return null
-        if (
-            !canImpersonate(user, isCurrentUser(user, current.currentEmail, current.currentUserId))
-        ) {
-            return null
+        return !settings.isLocalMode &&
+            !impersonation.isImpersonating &&
+            canImpersonate(user, isCurrentUser(user, current.currentEmail, current.currentUserId))
+    }
+
+    /**
+     * Switches the app into an impersonation session for [user]: asks the server for a short-lived
+     * credential, then restarts the app as that account (own database, own queue, banner on every
+     * screen). Returns to normal with Stop.
+     */
+    fun impersonate(user: AdminUserDto) {
+        if (_state.value.busyUserId != null || !canImpersonateUser(user)) return
+        _state.update { it.copy(busyUserId = user.id) }
+        viewModelScope.launch {
+            val result = impersonation.start(user.id)
+            // A started impersonation restarts the process and never gets here.
+            if (result !is StartResult.Started) {
+                _state.update { it.copy(busyUserId = null) }
+                feedback.show(R.string.admin_accounts_impersonate_failed)
+            }
         }
-        return impersonationUrl(settings.credentials.value.serverUrl, user.id, index)
     }
 
     fun refresh() = load(userInitiated = true)

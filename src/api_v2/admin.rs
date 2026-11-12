@@ -26,6 +26,10 @@ pub(super) fn router() -> Router<ApiV2State> {
         )
         .route("/admin/users/{id}/reset-password", post(reset_password))
         .route("/admin/users/{id}/impersonate", post(impersonate))
+        .route(
+            "/admin/users/{id}/impersonation-token",
+            post(impersonate_native),
+        )
         .route("/admin/impersonation/stop", post(stop_impersonation))
         .layer(DefaultBodyLimit::max(8 * 1024))
 }
@@ -238,8 +242,8 @@ async fn reset_password(
     }
 }
 
-/// Impersonation belongs to the cookie session: a Bearer token never starts,
-/// stops or carries one.
+/// Browser impersonation belongs to the cookie session: an API-purpose PAT never
+/// starts, stops or carries one. Native clients use [`impersonate_native`].
 fn browser_session_token(
     state: &ApiV2State,
     headers: &axum::http::HeaderMap,
@@ -285,6 +289,64 @@ async fn impersonate(
 }
 
 #[derive(Serialize)]
+struct NativeImpersonationData {
+    token: String,
+    #[serde(flatten)]
+    info: crate::impersonation::ImpersonationInfo,
+}
+
+/// A native client asks for a short-lived credential that acts as `id`. Only an
+/// administrator's own API-purpose PAT may ask (no cookie, no impersonation
+/// credential: those cannot reach administration at all). The credential is
+/// returned once, expires after the web's impersonation lifetime, and is
+/// revoked by `POST /admin/impersonation/stop`.
+async fn impersonate_native(
+    State(state): State<ApiV2State>,
+    headers: axum::http::HeaderMap,
+    Path(id): Path<i64>,
+) -> Response {
+    if !headers.contains_key(axum::http::header::AUTHORIZATION) {
+        return api_error(
+            StatusCode::FORBIDDEN,
+            "impersonation_forbidden",
+            "Native impersonation needs an API token",
+        );
+    }
+    let actor = match access::admin_mutation_user(&state.app, &headers).await {
+        Ok(actor) => actor,
+        Err(response) => return *response,
+    };
+    match crate::impersonation::start_native(&state.app.pool, actor, id).await {
+        Ok(started) => {
+            let mut response = Json(Envelope {
+                data: NativeImpersonationData {
+                    token: started.token,
+                    info: started.info,
+                },
+            })
+            .into_response();
+            response.headers_mut().insert(
+                axum::http::header::CACHE_CONTROL,
+                axum::http::HeaderValue::from_static("no-store"),
+            );
+            response
+        }
+        Err(error) => error.into_response(),
+    }
+}
+
+/// The bearer value of a request, when it carries exactly one Authorization
+/// header.
+fn bearer_value(headers: &axum::http::HeaderMap) -> Option<&str> {
+    let mut values = headers.get_all(axum::http::header::AUTHORIZATION).iter();
+    let value = values.next()?;
+    if values.next().is_some() {
+        return None;
+    }
+    crate::auth_stepup_service::parse_bearer(value.to_str().ok()?)
+}
+
+#[derive(Serialize)]
 struct StopImpersonationData {
     stopped: bool,
 }
@@ -293,6 +355,9 @@ async fn stop_impersonation(
     State(state): State<ApiV2State>,
     headers: axum::http::HeaderMap,
 ) -> Response {
+    if let Some(bearer) = bearer_value(&headers) {
+        return stop_native_impersonation(&state, &headers, bearer).await;
+    }
     let token = match browser_session_token(&state, &headers) {
         Ok(token) => token,
         Err(response) => return *response,
@@ -307,6 +372,42 @@ async fn stop_impersonation(
         .into_response(),
         Err(_) => internal_error(),
     }
+}
+
+/// Stop with a bearer credential: the impersonation credential ends itself;
+/// the administrator's API-purpose PAT ends every native impersonation of theirs
+/// (the way out when the app lost its credential).
+async fn stop_native_impersonation(
+    state: &ApiV2State,
+    headers: &axum::http::HeaderMap,
+    bearer: &str,
+) -> Response {
+    let stopped = if crate::impersonation::is_native_token(bearer) {
+        match crate::impersonation::stop_native(&state.app.pool, bearer).await {
+            Ok(stopped) => stopped,
+            Err(crate::impersonation::ImpersonationError::NotFound) => {
+                return api_error(
+                    StatusCode::UNAUTHORIZED,
+                    "session_expired",
+                    "Sign in to continue",
+                );
+            }
+            Err(error) => return error.into_response(),
+        }
+    } else {
+        let admin = match access::admin_mutation_user(&state.app, headers).await {
+            Ok(admin) => admin,
+            Err(response) => return *response,
+        };
+        match crate::impersonation::stop_all_native(&state.app.pool, admin).await {
+            Ok(stopped) => stopped,
+            Err(_) => return internal_error(),
+        }
+    };
+    Json(Envelope {
+        data: StopImpersonationData { stopped },
+    })
+    .into_response()
 }
 
 fn map_admin_error(error: crate::admin_service::AdminError, field: &'static str) -> Response {

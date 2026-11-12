@@ -17,6 +17,7 @@ import blue.anika.wolle.R
 import blue.anika.wolle.notify.NotificationImages
 import blue.anika.wolle.notify.applyBrand
 import blue.anika.wolle.notify.joinDetails
+import blue.anika.wolle.data.impersonation.SessionMode
 import blue.anika.wolle.ui.navigation.Route
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -67,7 +68,13 @@ constructor(
                     Manifest.permission.POST_NOTIFICATIONS,
                 ) == PackageManager.PERMISSION_GRANTED
         val notificationsEnabled = NotificationManagerCompat.from(context).areNotificationsEnabled()
-        if (!canPostNotifications(Build.VERSION.SDK_INT, permissionGranted, notificationsEnabled)) {
+        if (
+            !canPostAccountNotifications(
+                Build.VERSION.SDK_INT,
+                permissionGranted,
+                notificationsEnabled,
+            )
+        ) {
             return
         }
         val items = summary.items()
@@ -311,3 +318,16 @@ internal fun canPostNotifications(
     permissionGranted: Boolean,
     notificationsEnabled: Boolean,
 ): Boolean = (sdkInt < Build.VERSION_CODES.TIRAMISU || permissionGranted) && notificationsEnabled
+
+/**
+ * [canPostNotifications] for notifications about an account's own data (changes synced, timers,
+ * imports). While an administrator acts as another account the phone must not notify about that
+ * account's data: it is not the administrator's, and nothing may be registered for it.
+ */
+internal fun canPostAccountNotifications(
+    sdkInt: Int,
+    permissionGranted: Boolean,
+    notificationsEnabled: Boolean,
+    impersonating: Boolean = SessionMode.impersonating,
+): Boolean =
+    !impersonating && canPostNotifications(sdkInt, permissionGranted, notificationsEnabled)
