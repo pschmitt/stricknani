@@ -3013,7 +3013,7 @@ web (`web/src/lib/features/trash`).
 - [x] Trash rows show the item's cover or picture (`thumbnail_url`), an icon for categories, steps
       and attachments.
 
-## SNA-109: Photo reorder grid auto-scroll (web parity)
+## SNA-111: Photo reorder grid auto-scroll (web parity)
 
 The web reorder grid scrolls the page while a lifted photo is held near the top or bottom edge
 (`edgeScrollDelta` in `web/src/lib/features/media/media-reorder.ts`). `PhotoReorderGrid` has no
