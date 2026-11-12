@@ -41,8 +41,8 @@ msgstr "Revoke"
 msgid "Import a pattern"
 msgstr ""
 
-#: src/import_service.rs:703 web/src/routes/+layout.svelte:290
-#: web/src/routes/+layout.svelte:387
+#: src/import_service.rs:703 web/src/routes/+layout.svelte:328
+#: web/src/routes/+layout.svelte:429
 msgid "Main navigation"
 msgstr "Main navigation"
 
@@ -50,6 +50,7 @@ msgstr "Main navigation"
 #: web/src/lib/features/account/BackupsSection.svelte:445
 #: web/src/lib/features/account/BackupsSection.svelte:461
 #: web/src/lib/features/admin/AdminUsers.svelte:797
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:287
 #: web/src/lib/features/projects/ProjectLibrary.svelte:291
 #: web/src/lib/features/projects/ProjectLibrary.svelte:302
 #: web/src/lib/nav-items.ts:20
@@ -60,6 +61,7 @@ msgstr "Projects"
 #: web/src/lib/features/account/BackupsSection.svelte:447
 #: web/src/lib/features/account/BackupsSection.svelte:467
 #: web/src/lib/features/admin/AdminUsers.svelte:806
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:288
 #: web/src/lib/features/yarns/YarnDetail.svelte:359
 #: web/src/lib/features/yarns/YarnLibrary.svelte:213
 #: web/src/lib/features/yarns/YarnLibrary.svelte:224
@@ -330,7 +332,7 @@ msgstr "A newer version was saved"
 msgid "A place for your projects and yarn."
 msgstr "A place for your projects and yarn."
 
-#: web/src/routes/+layout.svelte:205
+#: web/src/routes/+layout.svelte:243
 msgid "A quiet place to keep your knitting projects and yarn close."
 msgstr "A quiet place to keep your knitting projects and yarn close."
 
@@ -340,9 +342,26 @@ msgstr "A quiet place to keep your knitting projects and yarn close."
 msgid "A reference photo could not be prepared for printing. Try again."
 msgstr "A reference photo could not be prepared for printing. Try again."
 
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:162
+msgid "A restore is already in progress."
+msgstr "A restore is already in progress."
+
 #: web/src/lib/features/account/BackupsSection.svelte:423
 msgid "A restore is already running."
 msgstr "A restore is already running."
+
+#: web/src/lib/features/admin/AdminBackups.svelte:141
+#, python-brace-format
+msgid "A restore of {name} is waiting for the server to restart."
+msgstr "A restore of {name} is waiting for the server to restart."
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:402
+msgid ""
+"A safety copy of the current data is saved first, so you can undo the "
+"restore."
+msgstr ""
+"A safety copy of the current data is saved first, so you can undo the "
+"restore."
 
 #: web/src/lib/features/history/change-format.ts:135
 #: web/src/lib/features/history/change-format.ts:155
@@ -374,7 +393,7 @@ msgstr "API access"
 msgid "API token revoked."
 msgstr "API token revoked."
 
-#: web/src/lib/palette/entries.ts:204 web/src/routes/+layout.svelte:361
+#: web/src/lib/palette/entries.ts:204 web/src/routes/+layout.svelte:403
 #: web/src/routes/about/+page.svelte:201 web/src/routes/more/+page.svelte:82
 msgid "About"
 msgstr "About"
@@ -386,12 +405,12 @@ msgstr "About this policy"
 #: web/src/lib/features/account/AccountSettings.svelte:877
 #: web/src/lib/features/account/AccountSettings.svelte:885
 #: web/src/lib/palette/entries.ts:186 web/src/lib/palette/entries.ts:215
-#: web/src/routes/+layout.svelte:324 web/src/routes/+layout.svelte:327
-#: web/src/routes/+layout.svelte:335 web/src/routes/more/+page.svelte:54
+#: web/src/routes/+layout.svelte:362 web/src/routes/+layout.svelte:365
+#: web/src/routes/+layout.svelte:373 web/src/routes/more/+page.svelte:54
 msgid "Account"
 msgstr "Account"
 
-#: web/src/routes/+layout.svelte:371
+#: web/src/routes/+layout.svelte:413
 msgid "Account access"
 msgstr "Account access"
 
@@ -415,6 +434,18 @@ msgstr "Account registration is unavailable."
 #: web/src/routes/more/+page.svelte:57 web/src/routes/more/+page.svelte:58
 msgid "Account settings"
 msgstr "Account settings"
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:286
+msgid "Accounts"
+msgstr "Accounts"
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:390
+msgid ""
+"Accounts, sign-ins and settings go back to that time too. Anyone who "
+"signed in later has to sign in again."
+msgstr ""
+"Accounts, sign-ins and settings go back to that time too. Anyone who "
+"signed in later has to sign in again."
 
 #: web/src/lib/features/account/AccountSettings.svelte:1662
 msgid "Acknowledge that you saved the token before closing this dialog."
@@ -561,14 +592,16 @@ msgstr "Adjusted stitches"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:335
 #: web/src/lib/features/admin/AdminAudit.svelte:344
+#: web/src/lib/features/admin/AdminBackups.svelte:108
+#: web/src/lib/features/admin/AdminBackups.svelte:116
 #: web/src/lib/features/admin/AdminUsers.svelte:650
 #: web/src/lib/features/admin/AdminUsers.svelte:657
-#: web/src/lib/palette/entries.ts:195 web/src/routes/+layout.svelte:351
+#: web/src/lib/palette/entries.ts:195 web/src/routes/+layout.svelte:393
 #: web/src/routes/more/+page.svelte:69 web/src/routes/more/+page.svelte:73
 msgid "Admin"
 msgstr "Admin"
 
-#: web/src/lib/features/admin/AdminTabs.svelte:9
+#: web/src/lib/features/admin/AdminTabs.svelte:11
 msgid "Admin sections"
 msgstr "Admin sections"
 
@@ -583,6 +616,8 @@ msgstr "Administrator access"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:152
 #: web/src/lib/features/admin/AdminAudit.svelte:190
+#: web/src/lib/features/admin/AdminBackups.svelte:50
+#: web/src/lib/features/admin/AdminBackups.svelte:65
 #: web/src/lib/features/admin/AdminResource.svelte:123
 #: web/src/lib/features/admin/AdminResource.svelte:151
 #: web/src/lib/features/admin/AdminUsers.svelte:160
@@ -633,6 +668,10 @@ msgstr "All entities"
 #: web/src/lib/features/auth/SignupForm.svelte:280
 msgid "Already have an account?"
 msgstr "Already have an account?"
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:444
+msgid "Also add media files that are missing (nothing is overwritten or deleted)"
+msgstr "Also add media files that are missing (nothing is overwritten or deleted)"
 
 #: web/src/lib/features/sharing/share-copy.ts:13
 msgid "Also move 1 linked yarn"
@@ -772,7 +811,7 @@ msgstr "Archiving is unavailable right now."
 msgid "Ask AI to improve extraction"
 msgstr "Ask AI to improve extraction"
 
-#: web/src/routes/+layout.svelte:375
+#: web/src/routes/+layout.svelte:417
 msgid "Ask an administrator if you need access."
 msgstr "Ask an administrator if you need access."
 
@@ -836,7 +875,7 @@ msgid "Audit events could not be loaded."
 msgstr "Audit events could not be loaded."
 
 #: web/src/lib/features/admin/AdminAudit.svelte:335
-#: web/src/lib/features/admin/AdminTabs.svelte:20
+#: web/src/lib/features/admin/AdminTabs.svelte:22
 msgid "Audit log"
 msgstr "Audit log"
 
@@ -856,7 +895,8 @@ msgstr ""
 "only when they are created; the server stores a hash for later "
 "verification."
 
-#: web/src/routes/+layout.svelte:283
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:546
+#: web/src/routes/+layout.svelte:321
 msgid "Back"
 msgstr "Back"
 
@@ -881,7 +921,7 @@ msgstr "Back to More"
 #: web/src/lib/features/projects/ProjectReader.svelte:815
 #: web/src/lib/features/projects/ProjectReader.svelte:826
 #: web/src/lib/features/projects/ProjectReader.svelte:832
-#: web/src/routes/+layout.svelte:377
+#: web/src/routes/+layout.svelte:419
 msgid "Back to projects"
 msgstr "Back to projects"
 
@@ -907,6 +947,21 @@ msgstr "Back to the yarn"
 msgid "Back to yarns"
 msgstr "Back to yarns"
 
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:308
+msgid "Backup restored"
+msgstr "Backup restored"
+
+#: web/src/lib/features/admin/AdminBackups.svelte:108
+#: web/src/lib/features/admin/AdminBackups.svelte:207
+#: web/src/lib/features/admin/AdminTabs.svelte:28
+msgid "Backups"
+msgstr "Backups"
+
+#: web/src/lib/features/admin/AdminBackups.svelte:136
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:178
+msgid "Backups are not available on this server."
+msgstr "Backups are not available on this server."
+
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:542
 msgid "Based on a pattern cast-on of"
 msgstr "Based on a pattern cast-on of"
@@ -914,6 +969,27 @@ msgstr "Based on a pattern cast-on of"
 #: web/src/lib/features/history/ChangeList.svelte:102
 msgid "Before"
 msgstr "Before"
+
+#: web/src/lib/features/admin/AdminBackups.svelte:185
+#, python-brace-format
+msgid ""
+"Before every restore the current data is saved as {name} ({time}). "
+"Restoring it brings that state back."
+msgstr ""
+"Before every restore the current data is saved as {name} ({time}). "
+"Restoring it brings that state back."
+
+#: web/src/lib/features/admin/AdminBackups.svelte:82
+msgid "Before migration"
+msgstr "Before migration"
+
+#: web/src/lib/features/admin/AdminBackups.svelte:84
+msgid "Before restore"
+msgstr "Before restore"
+
+#: web/src/lib/features/admin/AdminBackups.svelte:80
+msgid "Before update"
+msgstr "Before update"
 
 #: web/src/lib/components/MarkdownEditor.svelte:231
 msgid "Bold"
@@ -996,7 +1072,8 @@ msgstr "Can view"
 #: web/src/lib/features/admin/AdminUsers.svelte:999
 #: web/src/lib/features/admin/AdminUsers.svelte:1059
 #: web/src/lib/features/admin/AdminUsers.svelte:1135
-#: web/src/lib/features/auth/ReauthDialog.svelte:177
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:534
+#: web/src/lib/features/auth/ReauthDialog.svelte:187
 #: web/src/lib/features/categories/CategoryManager.svelte:341
 #: web/src/lib/features/gauge/SwatchSizeDialog.svelte:114
 #: web/src/lib/features/media/PhotoEditor.svelte:306
@@ -1013,6 +1090,10 @@ msgstr "Can view"
 #: web/src/lib/features/yarns/YarnForm.svelte:1391
 msgid "Cancel"
 msgstr "Cancel"
+
+#: web/src/lib/features/admin/AdminBackups.svelte:102
+msgid "Cannot be read"
+msgstr "Cannot be read"
 
 #: web/src/routes/delete-account/+page.svelte:147
 msgid "Cannot get in?"
@@ -1076,6 +1157,16 @@ msgstr "Changed"
 msgid "Changed {fields}"
 msgstr "Changed {fields}"
 
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:375
+#, python-brace-format
+msgid "Changes made since {time} will be lost, including {count} recorded edits."
+msgstr "Changes made since {time} will be lost, including {count} recorded edits."
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:382
+#, python-brace-format
+msgid "Changes made since {time} will be lost."
+msgstr "Changes made since {time} will be lost."
+
 #: web/src/routes/privacy/+page.svelte:297
 msgid "Changes to this policy"
 msgstr "Changes to this policy"
@@ -1087,6 +1178,10 @@ msgstr "Changing password…"
 #: web/src/lib/features/account/AccountSettings.svelte:1295
 msgid "Changing your password signs out this browser and other sessions."
 msgstr "Changing your password signs out this browser and other sessions."
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:561
+msgid "Check again"
+msgstr "Check again"
 
 #: web/src/lib/features/media/ArchiveControl.svelte:514
 #: web/src/lib/features/media/ArchiveControl.svelte:520
@@ -1215,12 +1310,15 @@ msgstr "Clipboard access is unavailable. Select and copy the text manually."
 
 #: web/src/lib/features/account/ConnectAppDialog.svelte:114
 #: web/src/lib/features/admin/AuditMediaPreview.svelte:100
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:526
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:564
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:572
 #: web/src/lib/features/auth/AdminUserIdentities.svelte:195
 #: web/src/lib/features/projects/ProjectTimer.svelte:607
 msgid "Close"
 msgstr "Close"
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:263
+#: web/src/lib/features/media/ProjectLightbox.svelte:279
 msgid "Close image viewer"
 msgstr "Close image viewer"
 
@@ -1237,11 +1335,15 @@ msgstr "Close photo"
 msgid "Commit"
 msgstr "Commit"
 
-#: web/src/lib/features/auth/ReauthDialog.svelte:202
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:335
+msgid "Comparing the backup with the current data…"
+msgstr "Comparing the backup with the current data…"
+
+#: web/src/lib/features/auth/ReauthDialog.svelte:212
 msgid "Confirm"
 msgstr "Confirm"
 
-#: web/src/lib/features/auth/ReauthDialog.svelte:137
+#: web/src/lib/features/auth/ReauthDialog.svelte:147
 msgid "Confirm it is you"
 msgstr "Confirm it is you"
 
@@ -1265,12 +1367,12 @@ msgstr "Confirm new password"
 msgid "Confirm password"
 msgstr "Confirm password"
 
-#: web/src/lib/features/auth/ReauthDialog.svelte:186
+#: web/src/lib/features/auth/ReauthDialog.svelte:196
 #, python-brace-format
 msgid "Confirm with {name}"
 msgstr "Confirm with {name}"
 
-#: web/src/lib/features/auth/ReauthDialog.svelte:201
+#: web/src/lib/features/auth/ReauthDialog.svelte:211
 msgid "Confirming…"
 msgstr "Confirming…"
 
@@ -1280,6 +1382,7 @@ msgstr "Confirming…"
 msgid "Connect the app"
 msgstr "Connect the app"
 
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:537
 #: web/src/routes/imports/+page.svelte:30
 #: web/src/routes/imports/yarn/+page.svelte:30
 msgid "Continue"
@@ -1425,6 +1528,10 @@ msgstr "Creating…"
 #: web/src/routes/about/+page.svelte:433
 msgid "Credits and licences"
 msgstr "Credits and licences"
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:354
+msgid "Current data and this backup"
+msgstr "Current data and this backup"
 
 #: web/src/lib/features/account/AccountSettings.svelte:1326
 msgid "Current password"
@@ -1742,7 +1849,7 @@ msgstr "Dye lot"
 msgid "Each step needs a title of 256 characters or fewer."
 msgstr "Each step needs a title of 256 characters or fewer."
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:254
+#: web/src/lib/features/media/ProjectLightbox.svelte:270
 #: web/src/lib/features/projects/ProjectReader.svelte:1189
 #: web/src/lib/features/yarns/YarnDetail.svelte:587
 msgid "Edit"
@@ -1754,7 +1861,7 @@ msgid "Edit as Markdown"
 msgstr "Edit as Markdown"
 
 #: web/src/lib/features/media/PhotoEditor.svelte:302
-#: web/src/lib/features/media/ProjectLightbox.svelte:251
+#: web/src/lib/features/media/ProjectLightbox.svelte:267
 #: web/src/lib/features/media/ReorderableMedia.svelte:420
 #: web/src/lib/features/media/ReorderableMedia.svelte:421
 msgid "Edit photo"
@@ -2085,11 +2192,15 @@ msgstr ""
 "For software questions or privacy concerns that relate to the project, "
 "use the"
 
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:584
+msgid "For your security, confirm it is you before a backup is restored."
+msgstr "For your security, confirm it is you before a backup is restored."
+
 #: web/src/lib/features/account/DeleteAccountDialog.svelte:203
 msgid "For your security, confirm it is you before your account is deleted."
 msgstr "For your security, confirm it is you before your account is deleted."
 
-#: web/src/lib/features/auth/ReauthDialog.svelte:143
+#: web/src/lib/features/auth/ReauthDialog.svelte:153
 msgid "For your security, confirm your identity before changing how you sign in."
 msgstr "For your security, confirm your identity before changing how you sign in."
 
@@ -2461,6 +2572,7 @@ msgid "In the great ball of yarn that is the internet, this is a loose end."
 msgstr "In the great ball of yarn that is the internet, this is a loose end."
 
 #: web/src/lib/features/admin/DiffPanel.svelte:172
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:289
 #: web/src/lib/features/trash/trash-state.ts:94
 msgid "In the trash"
 msgstr "In the trash"
@@ -2483,6 +2595,10 @@ msgstr "In trash · {count} days left"
 #, python-brace-format
 msgid "In yarn {name}"
 msgstr "In yarn {name}"
+
+#: web/src/lib/features/admin/AdminBackups.svelte:231
+msgid "Includes media"
+msgstr "Includes media"
 
 #: web/src/lib/features/projects/ProjectReader.svelte:1217
 #: web/src/lib/features/yarns/YarnDetail.svelte:615
@@ -2556,6 +2672,14 @@ msgstr "Keep linked"
 #: web/src/lib/features/account/DeleteAccountDialog.svelte:184
 msgid "Keep my account"
 msgstr "Keep my account"
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:430
+msgid "Keep the current media files"
+msgstr "Keep the current media files"
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:485
+msgid "Keep this page open. The result appears here."
+msgstr "Keep this page open. The result appears here."
 
 #: web/src/lib/features/projects/ProjectTimer.svelte:652
 msgid "Keep timing"
@@ -2809,6 +2933,10 @@ msgstr "Loading archive status…"
 msgid "Loading audit events…"
 msgstr "Loading audit events…"
 
+#: web/src/lib/features/admin/AdminBackups.svelte:121
+msgid "Loading backups…"
+msgstr "Loading backups…"
+
 #: web/src/lib/features/projects/ProjectEditor.svelte:2072
 msgid "Loading categories…"
 msgstr "Loading categories…"
@@ -2925,6 +3053,10 @@ msgstr "Manage users and audit log"
 msgid "Manage your profile and sign-in security."
 msgstr "Manage your profile and sign-in security."
 
+#: web/src/lib/features/admin/AdminBackups.svelte:86
+msgid "Manual"
+msgstr "Manual"
+
 #: web/src/lib/features/projects/ProjectReader.svelte:1272
 msgid "Mark as done"
 msgstr "Mark as done"
@@ -2938,6 +3070,10 @@ msgstr "Mark as in progress"
 #: web/src/lib/features/projects/ProjectReader.svelte:909
 msgid "Materials"
 msgstr "Materials"
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:421
+msgid "Media files"
+msgstr "Media files"
 
 #: web/src/lib/api.ts:331
 #: web/src/lib/features/account/AccountSettings.svelte:855
@@ -2973,7 +3109,7 @@ msgid "Mooorning!"
 msgstr "Mooorning!"
 
 #: web/src/lib/components/AuthFooter.svelte:15
-#: web/src/routes/+layout.svelte:308 web/src/routes/+layout.svelte:417
+#: web/src/routes/+layout.svelte:346 web/src/routes/+layout.svelte:459
 #: web/src/routes/more/+page.svelte:13 web/src/routes/more/+page.svelte:19
 msgid "More"
 msgstr "More"
@@ -3002,7 +3138,7 @@ msgstr "More filters"
 msgid "More for {email}"
 msgstr "More for {email}"
 
-#: web/src/routes/+layout.svelte:309 web/src/routes/more/+page.svelte:78
+#: web/src/routes/+layout.svelte:347 web/src/routes/more/+page.svelte:78
 msgid "More navigation"
 msgstr "More navigation"
 
@@ -3116,7 +3252,7 @@ msgstr "New yarn"
 msgid "Next"
 msgstr "Next"
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:314
+#: web/src/lib/features/media/ProjectLightbox.svelte:349
 msgid "Next image"
 msgstr "Next image"
 
@@ -3124,6 +3260,10 @@ msgstr "Next image"
 #: web/src/lib/features/admin/AdminUsers.svelte:877
 msgid "Next page"
 msgstr "Next page"
+
+#: web/src/lib/features/admin/AdminBackups.svelte:78
+msgid "Nightly"
+msgstr "Nightly"
 
 #: web/src/lib/features/account/AccountSettings.svelte:1528
 msgid "No API tokens yet. Create one when an app needs access."
@@ -3137,7 +3277,7 @@ msgstr ""
 "No Stricknani account is linked to this login yet. Sign in with your "
 "password, then link it in your account settings."
 
-#: web/src/lib/features/auth/oidc-api.ts:212
+#: web/src/lib/features/auth/oidc-api.ts:213
 #, python-brace-format
 msgid ""
 "No Stricknani account is linked to this {name} login yet. Sign in with "
@@ -3149,6 +3289,10 @@ msgstr ""
 #: web/src/lib/features/admin/AdminAudit.svelte:404
 msgid "No audit events match these filters."
 msgstr "No audit events match these filters."
+
+#: web/src/lib/features/admin/AdminBackups.svelte:205
+msgid "No backups found."
+msgstr "No backups found."
 
 #: web/src/lib/features/categories/CategoryManager.svelte:290
 msgid "No categories yet."
@@ -3342,6 +3486,10 @@ msgstr ""
 "Notifications are blocked for this site. Allow them in the browser's site"
 " settings."
 
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:359
+msgid "Now"
+msgstr "Now"
+
 #: web/src/lib/components/MarkdownEditor.svelte:253
 msgid "Numbered list"
 msgstr "Numbered list"
@@ -3483,7 +3631,7 @@ msgstr "Open your project library to continue."
 msgid "Opening your pattern…"
 msgstr "Opening your pattern…"
 
-#: web/src/routes/+layout.svelte:242
+#: web/src/routes/+layout.svelte:280
 msgid "Opening your workspace…"
 msgstr "Opening your workspace…"
 
@@ -3594,7 +3742,7 @@ msgstr "Passphrase"
 
 #: web/src/lib/components/SignInForm.svelte:129
 #: web/src/lib/features/account/AccountSettings.svelte:1293
-#: web/src/lib/features/auth/ReauthDialog.svelte:153
+#: web/src/lib/features/auth/ReauthDialog.svelte:163
 #: web/src/lib/features/auth/SignupForm.svelte:216
 msgid "Password"
 msgstr "Password"
@@ -3695,6 +3843,14 @@ msgid ""
 msgstr ""
 "Permanently delete your account and everything in it. You will be asked "
 "to confirm it is you first."
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:396
+msgid ""
+"Phones and tablets download everything again. Changes made offline on a "
+"device that were not synced yet are lost."
+msgstr ""
+"Phones and tablets download everything again. Changes made offline on a "
+"device that were not synced yet are lost."
 
 #: web/src/lib/features/trash/trash-kinds.ts:49
 msgid "Photo"
@@ -3811,13 +3967,17 @@ msgstr "Preparing full-resolution photos…"
 msgid "Preparing your review"
 msgstr "Preparing your review"
 
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:556
+msgid "Preparing…"
+msgstr "Preparing…"
+
 #: web/src/lib/components/PhotoStrip.svelte:137
 #: web/src/lib/features/projects/ProjectLibrary.svelte:458
 #: web/src/lib/features/yarns/YarnLibrary.svelte:344
 msgid "Previous"
 msgstr "Previous"
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:275
+#: web/src/lib/features/media/ProjectLightbox.svelte:291
 msgid "Previous image"
 msgstr "Previous image"
 
@@ -3920,7 +4080,7 @@ msgstr "Project detail cards"
 msgid "Project details"
 msgstr "Project details"
 
-#: web/src/lib/features/media/ProjectLightbox.svelte:232
+#: web/src/lib/features/media/ProjectLightbox.svelte:248
 msgid "Project image viewer"
 msgstr "Project image viewer"
 
@@ -4140,6 +4300,7 @@ msgstr ""
 "Stricknani!"
 
 #: web/src/lib/components/PwaUpdate.svelte:121
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:568
 msgid "Reload"
 msgstr "Reload"
 
@@ -4329,6 +4490,10 @@ msgstr "Resource unavailable"
 msgid "Restore"
 msgstr "Restore"
 
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:313
+msgid "Restore a backup"
+msgstr "Restore a backup"
+
 #: web/src/routes/more/+page.svelte:49
 msgid "Restore deleted items or delete them for good."
 msgstr "Restore deleted items or delete them for good."
@@ -4344,6 +4509,10 @@ msgstr "Restore finished"
 #: web/src/lib/features/account/BackupsSection.svelte:368
 msgid "Restore from a file"
 msgstr "Restore from a file"
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:557
+msgid "Restore now"
+msgstr "Restore now"
 
 #: web/src/lib/api.ts:367
 msgid "Restore the project or yarn it belongs to from the trash first."
@@ -4375,14 +4544,23 @@ msgstr "Restored from trash"
 msgid "Restored {name}."
 msgstr "Restored {name}."
 
+#: web/src/lib/features/admin/AdminBackups.svelte:265
+msgid "Restore…"
+msgstr "Restore…"
+
 #: web/src/lib/features/account/BackupsSection.svelte:400
 #: web/src/lib/features/account/BackupsSection.svelte:401
 #: web/src/lib/features/admin/AuditLifecycle.svelte:119
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:312
 #: web/src/lib/features/home/ActivityFeed.svelte:267
 #: web/src/lib/features/trash/TrashManager.svelte:388
 #: web/src/lib/features/trash/TrashedBanner.svelte:135
 msgid "Restoring…"
 msgstr "Restoring…"
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:482
+msgid "Restoring… the server is restarting."
+msgstr "Restoring… the server is restarting."
 
 #: web/src/lib/components/CommandPalette.svelte:311
 msgid "Results"
@@ -4573,6 +4751,11 @@ msgstr "Scan with the Stricknani app"
 #: web/src/routes/about/+page.svelte:321
 msgid "Scan with your phone to get the app."
 msgstr "Scan with your phone to get the app."
+
+#: web/src/lib/features/admin/AdminBackups.svelte:225
+#, python-brace-format
+msgid "Schema {version}"
+msgstr "Schema {version}"
 
 #: web/src/routes/delete-account/+page.svelte:46
 msgid "Scroll down to Delete account and choose Delete my account."
@@ -4773,7 +4956,7 @@ msgstr ""
 #: web/src/lib/features/auth/SignupForm.svelte:281
 #: web/src/lib/features/home/HomeDashboard.svelte:172
 #: web/src/lib/features/projects/ProjectEditor.svelte:1624
-#: web/src/routes/+layout.svelte:226 web/src/routes/login/+page.svelte:8
+#: web/src/routes/+layout.svelte:264 web/src/routes/login/+page.svelte:8
 msgid "Sign in"
 msgstr "Sign in"
 
@@ -4842,7 +5025,7 @@ msgid "Sign-in and security"
 msgstr "Sign-in and security"
 
 #: web/src/lib/features/auth/OidcSignIn.svelte:69
-#: web/src/lib/features/auth/oidc-api.ts:216
+#: web/src/lib/features/auth/oidc-api.ts:217
 #, python-brace-format
 msgid "Signing in with {name} did not work. Try again."
 msgstr "Signing in with {name} did not work. Try again."
@@ -4887,13 +5070,18 @@ msgstr "Skein weight"
 msgid "Skein weight in grams"
 msgstr "Skein weight in grams"
 
-#: web/src/routes/+layout.svelte:213
+#: web/src/routes/+layout.svelte:251
 msgid "Skip to content"
 msgstr "Skip to content"
 
 #: web/src/lib/features/account/AccountSettings.svelte:144
 msgid "Small"
 msgstr "Small"
+
+#: web/src/lib/features/admin/AdminBackups.svelte:171
+#, python-brace-format
+msgid "Some media files could not be added: {error}"
+msgstr "Some media files could not be added: {error}"
 
 #: web/src/lib/features/imports/ImportProgress.svelte:100
 msgid "Some pages take a minute when the AI opens them in a browser."
@@ -5259,7 +5447,7 @@ msgstr "That item could not be found."
 msgid "That passphrase does not open this file."
 msgstr "That passphrase does not open this file."
 
-#: web/src/lib/features/auth/ReauthDialog.svelte:120
+#: web/src/lib/features/auth/ReauthDialog.svelte:130
 msgid "That password is not correct."
 msgstr "That password is not correct."
 
@@ -5390,6 +5578,18 @@ msgstr "The archive request is waiting to start."
 msgid "The archive service is working on this source."
 msgstr "The archive service is working on this source."
 
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:169
+msgid "The backup could not be prepared. Nothing was changed."
+msgstr "The backup could not be prepared. Nothing was changed."
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:489
+msgid "The backup was restored and the server is running again."
+msgstr "The backup was restored and the server is running again."
+
+#: web/src/lib/features/admin/AdminBackups.svelte:66
+msgid "The backups could not be loaded."
+msgstr "The backups could not be loaded."
+
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:191
 msgid "The calculation could not be completed."
 msgstr "The calculation could not be completed."
@@ -5409,6 +5609,11 @@ msgstr "The category could not be deleted."
 #: web/src/lib/features/categories/CategoryManager.svelte:209
 msgid "The category could not be saved."
 msgstr "The category could not be saved."
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:492
+#, python-brace-format
+msgid "The data from before is saved as {name}."
+msgstr "The data from before is saved as {name}."
 
 #: web/src/lib/features/account/DetailCardOrderSettings.svelte:77
 msgid "The detail card order could not be saved."
@@ -5477,6 +5682,11 @@ msgstr ""
 "nobody would be left to look after it. Make someone else an administrator"
 " first."
 
+#: web/src/lib/features/admin/AdminBackups.svelte:156
+#, python-brace-format
+msgid "The last restore did not work: {name}."
+msgstr "The last restore did not work: {name}."
+
 #: web/src/lib/features/projects/ProjectEditor.svelte:1173
 #: web/src/lib/features/projects/ProjectEditor.svelte:1188
 msgid "The latest project could not be loaded."
@@ -5487,7 +5697,7 @@ msgstr "The latest project could not be loaded."
 msgid "The link could not be shared."
 msgstr "The link could not be shared."
 
-#: web/src/lib/api.ts:380 web/src/lib/features/auth/ReauthDialog.svelte:124
+#: web/src/lib/api.ts:380 web/src/lib/features/auth/ReauthDialog.svelte:134
 msgid ""
 "The login provider is unavailable right now. Try again later or use your "
 "password."
@@ -5610,10 +5820,11 @@ msgstr "The recorded change snapshot is unavailable."
 
 #: web/src/lib/api.ts:384
 #: web/src/lib/features/account/DeleteAccountDialog.svelte:103
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:180
 #: web/src/lib/features/auth/AdminUserIdentities.svelte:52
 #: web/src/lib/features/auth/LinkedLogins.svelte:84
 #: web/src/lib/features/auth/LinkedLogins.svelte:150
-#: web/src/lib/features/auth/ReauthDialog.svelte:129
+#: web/src/lib/features/auth/ReauthDialog.svelte:139
 msgid "The request could not be completed."
 msgstr "The request could not be completed."
 
@@ -5625,6 +5836,18 @@ msgstr "The request could not be read. Refresh and try again."
 msgid "The request is larger than the allowed size."
 msgstr "The request is larger than the allowed size."
 
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:310
+msgid "The restore did not work"
+msgstr "The restore did not work"
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:511
+msgid ""
+"The restore is ready. Restart the server to finish it; until then it only"
+" accepts reads."
+msgstr ""
+"The restore is ready. Restart the server to finish it; until then it only"
+" accepts reads."
+
 #: web/src/lib/features/gauge/GaugeCalculator.svelte:266
 msgid "The result appears automatically as soon as every field is filled in"
 msgstr "The result appears automatically as soon as every field is filled in"
@@ -5632,6 +5855,14 @@ msgstr "The result appears automatically as soon as every field is filled in"
 #: web/src/lib/features/sharing/ShareDialog.svelte:158
 msgid "The role could not be changed."
 msgstr "The role could not be changed."
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:164
+msgid ""
+"The safety copy of the current data could not be written. Nothing was "
+"changed."
+msgstr ""
+"The safety copy of the current data could not be written. Nothing was "
+"changed."
 
 #: web/src/lib/api.ts:192
 msgid "The server could not be reached. Check your connection and try again."
@@ -5645,6 +5876,22 @@ msgstr "The server could not complete this request. Try again."
 msgid "The server fetches it from Gravatar using your email address."
 msgstr "The server fetches it from Gravatar using your email address."
 
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:507
+msgid "The server is taking longer than expected to come back."
+msgstr "The server is taking longer than expected to come back."
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:499
+msgid ""
+"The server restarted but could not use this backup. Your data from before"
+" is unchanged."
+msgstr ""
+"The server restarted but could not use this backup. Your data from before"
+" is unchanged."
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:409
+msgid "The server restarts and is unavailable for a short while."
+msgstr "The server restarts and is unavailable for a short while."
+
 #: web/src/lib/features/imports/import-api.ts:476
 #: web/src/lib/features/imports/import-drafts-api.ts:201
 msgid "The server returned an unexpected import response."
@@ -5652,7 +5899,7 @@ msgstr "The server returned an unexpected import response."
 
 #: web/src/lib/api.ts:489 web/src/lib/features/account/account-api.ts:65
 #: web/src/lib/features/admin/admin-api.ts:183
-#: web/src/lib/features/auth/oidc-api.ts:73
+#: web/src/lib/features/auth/oidc-api.ts:74
 #: web/src/lib/features/auth/signup-api.ts:46
 #: web/src/lib/features/categories/category-api.ts:20
 #: web/src/lib/features/categories/category-api.ts:75
@@ -5663,7 +5910,15 @@ msgstr "The server returned an unexpected import response."
 msgid "The server returned an unexpected response."
 msgstr "The server returned an unexpected response."
 
-#: web/src/lib/session.svelte.ts:211 web/src/routes/+layout.svelte:255
+#: web/src/routes/+layout.svelte:91
+msgid ""
+"The server was restored from a backup. Changes on this device that had "
+"not been synced are gone."
+msgstr ""
+"The server was restored from a backup. Changes on this device that had "
+"not been synced are gone."
+
+#: web/src/lib/session.svelte.ts:211 web/src/routes/+layout.svelte:293
 msgid "The session could not be loaded."
 msgstr "The session could not be loaded."
 
@@ -5782,7 +6037,7 @@ msgstr "Theme"
 msgid "There is no one else to share with yet."
 msgstr "There is no one else to share with yet."
 
-#: web/src/lib/features/auth/ReauthDialog.svelte:167
+#: web/src/lib/features/auth/ReauthDialog.svelte:177
 msgid "There is no way to confirm your identity right now."
 msgstr "There is no way to confirm your identity right now."
 
@@ -5809,6 +6064,31 @@ msgstr "This account cannot be impersonated."
 #: web/src/lib/components/PreviewSection.svelte:16
 msgid "This area is not connected yet."
 msgstr "This area is not connected yet."
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:360
+msgid "This backup"
+msgstr "This backup"
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:160
+msgid "This backup cannot be read or is damaged."
+msgstr "This backup cannot be read or is damaged."
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:176
+msgid "This backup has no media files to add."
+msgstr "This backup has no media files to add."
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:346
+#, python-brace-format
+msgid "This backup was taken on {time}."
+msgstr "This backup was taken on {time}."
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:155
+msgid ""
+"This backup was written by a newer version of Stricknani than this server"
+" runs."
+msgstr ""
+"This backup was written by a newer version of Stricknani than this server"
+" runs."
 
 #: web/src/lib/error-copy.ts:66
 msgid ""
@@ -6132,7 +6412,7 @@ msgstr "Too many archive requests. Try again later."
 
 #: web/src/lib/api.ts:320
 #: web/src/lib/features/account/DeleteAccountDialog.svelte:100
-#: web/src/lib/features/auth/ReauthDialog.svelte:122
+#: web/src/lib/features/auth/ReauthDialog.svelte:132
 msgid "Too many attempts. Wait a moment and try again."
 msgstr "Too many attempts. Wait a moment and try again."
 
@@ -6205,6 +6485,7 @@ msgstr "Try a different name, category, or tag."
 #: web/src/lib/features/account/AccountSettings.svelte:1523
 #: web/src/lib/features/account/BackupsSection.svelte:436
 #: web/src/lib/features/admin/AdminAudit.svelte:399
+#: web/src/lib/features/admin/AdminBackups.svelte:131
 #: web/src/lib/features/admin/AdminResource.svelte:385
 #: web/src/lib/features/admin/AdminUsers.svelte:693
 #: web/src/lib/features/admin/DiffPanel.svelte:131
@@ -6226,7 +6507,7 @@ msgstr "Try a different name, category, or tag."
 #: web/src/lib/features/yarns/YarnDetail.svelte:391
 #: web/src/lib/features/yarns/YarnForm.svelte:851
 #: web/src/lib/features/yarns/YarnLibrary.svelte:282
-#: web/src/routes/+layout.svelte:263
+#: web/src/routes/+layout.svelte:301
 msgid "Try again"
 msgstr "Try again"
 
@@ -6254,6 +6535,14 @@ msgstr "Type DELETE or your email address to confirm."
 msgid "Type DELETE or your email address, and confirm."
 msgstr "Type DELETE or your email address, and confirm."
 
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:464
+msgid "Type the backup name to confirm"
+msgstr "Type the backup name to confirm"
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:174
+msgid "Type the exact backup name to confirm."
+msgstr "Type the exact backup name to confirm."
+
 #: web/src/lib/features/media/RemovedMediaList.svelte:51
 #: web/src/lib/features/projects/ProjectEditor.svelte:1402
 #: web/src/lib/features/trash/trash-undo.ts:38
@@ -6261,6 +6550,10 @@ msgstr "Type DELETE or your email address, and confirm."
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:185
 msgid "Undo"
 msgstr "Undo"
+
+#: web/src/lib/features/admin/AdminBackups.svelte:199
+msgid "Undo last restore…"
+msgstr "Undo last restore…"
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:251
 msgid "Undo removing this file"
@@ -6270,6 +6563,10 @@ msgstr "Undo removing this file"
 #: web/src/lib/features/yarns/YarnPhotoManager.svelte:70
 msgid "Undo removing this photo"
 msgstr "Undo removing this photo"
+
+#: web/src/lib/features/admin/AdminBackups.svelte:183
+msgid "Undo the last restore"
+msgstr "Undo the last restore"
 
 #: web/src/routes/about/+page.svelte:368 web/src/routes/about/+page.svelte:372
 #: web/src/routes/about/+page.svelte:376 web/src/routes/about/+page.svelte:384
@@ -6440,7 +6737,7 @@ msgstr "User accounts"
 msgid "User accounts could not be loaded."
 msgstr "User accounts could not be loaded."
 
-#: web/src/lib/features/admin/AdminTabs.svelte:14
+#: web/src/lib/features/admin/AdminTabs.svelte:16
 msgid "Users"
 msgstr "Users"
 
@@ -6589,6 +6886,10 @@ msgstr "Winky lost the thread"
 #: web/src/lib/features/account/ConnectAppDialog.svelte:89
 msgid "Working…"
 msgstr "Working…"
+
+#: web/src/lib/features/admin/AdminBackups.svelte:101
+msgid "Written by a newer version of Stricknani"
+msgstr "Written by a newer version of Stricknani"
 
 #: web/src/lib/features/yarns/YarnDetail.svelte:634
 msgid "Yarn actions"
@@ -6779,6 +7080,10 @@ msgstr "You cannot disable your own account."
 msgid "You changed {name}"
 msgstr "You changed {name}"
 
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:342
+msgid "You confirmed it is you."
+msgstr "You confirmed it is you."
+
 #: web/src/lib/features/auth/LinkedLogins.svelte:244
 msgid "You confirmed it is you. Continue where you left off."
 msgstr "You confirmed it is you. Continue where you left off."
@@ -6806,13 +7111,17 @@ msgstr "You deleted {name}"
 msgid "You deleted {name} permanently"
 msgstr "You deleted {name} permanently"
 
-#: web/src/routes/+layout.svelte:373
+#: web/src/routes/+layout.svelte:415
 msgid "You do not have access to this page."
 msgstr "You do not have access to this page."
 
 #: web/src/lib/api.ts:310
 msgid "You do not have permission to do that."
 msgstr "You do not have permission to do that."
+
+#: web/src/lib/features/admin/RestoreBackupDialog.svelte:413
+msgid "You have to restart the server yourself to finish the restore."
+msgstr "You have to restart the server yourself to finish the restore."
 
 #: web/src/lib/features/projects/ProjectReader.svelte:211
 msgid "You left the project."
@@ -6977,7 +7286,7 @@ msgstr "Your gauge (per 10cm)"
 msgid "Your knitting timer has been running for a while."
 msgstr "Your knitting timer has been running for a while."
 
-#: web/src/routes/+layout.svelte:291
+#: web/src/routes/+layout.svelte:329
 msgid "Your library"
 msgstr "Your library"
 
@@ -7039,7 +7348,7 @@ msgstr "Your sign-up session expired. Refresh and try again."
 msgid "Your stash is empty"
 msgstr "Your stash is empty"
 
-#: web/src/routes/+layout.svelte:251
+#: web/src/routes/+layout.svelte:289
 msgid "Your workspace is taking a moment."
 msgstr "Your workspace is taking a moment."
 
@@ -7274,6 +7583,11 @@ msgstr "{name} now owns this yarn. You are an editor."
 msgid "{name} was purged automatically after 90 days"
 msgstr "{name} was purged automatically after 90 days"
 
+#: web/src/lib/features/admin/AdminBackups.svelte:163
+#, python-brace-format
+msgid "{name} was restored on {time} by {email}."
+msgstr "{name} was restored on {time} by {email}."
+
 #: web/src/lib/features/auth/LinkedLogins.svelte:188
 #, python-brace-format
 msgid "{name} was unlinked from your account."
@@ -7316,10 +7630,30 @@ msgstr "{n} days left"
 msgid "{n} more"
 msgstr "{n} more"
 
+#: web/src/lib/features/admin/AdminBackups.svelte:241
+#, python-brace-format
+msgid "{projects} projects"
+msgstr "{projects} projects"
+
 #: web/src/lib/features/projects/ProjectTimer.svelte:350
 #, python-brace-format
 msgid "{time} spent so far. Open the project to stop the timer or keep timing."
 msgstr "{time} spent so far. Open the project to stop the timer or keep timing."
+
+#: web/src/lib/features/admin/AdminBackups.svelte:251
+#, python-brace-format
+msgid "{trashed} in the trash"
+msgstr "{trashed} in the trash"
+
+#: web/src/lib/features/admin/AdminBackups.svelte:236
+#, python-brace-format
+msgid "{users} accounts"
+msgstr "{users} accounts"
+
+#: web/src/lib/features/admin/AdminBackups.svelte:246
+#, python-brace-format
+msgid "{yarns} yarns"
+msgstr "{yarns} yarns"
 
 #~ msgid "Favorite"
 #~ msgstr "Favorite"

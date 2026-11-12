@@ -2,8 +2,10 @@
   import { resolve } from "$app/paths";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
 
-  let { active, locale }: { active: "users" | "audit"; locale: Locale } =
-    $props();
+  let {
+    active,
+    locale,
+  }: { active: "users" | "audit" | "backups"; locale: Locale } = $props();
 </script>
 
 <nav class="admin-tabs" aria-label={t("Admin sections", locale)}>
@@ -18,6 +20,12 @@
     href={resolve("/admin/audit")}
     aria-current={active === "audit" ? "page" : undefined}
     >{t("Audit log", locale)}</a
+  >
+  <a
+    class="admin-tab"
+    href={resolve("/admin/backups")}
+    aria-current={active === "backups" ? "page" : undefined}
+    >{t("Backups", locale)}</a
   >
 </nav>
 

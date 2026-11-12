@@ -120,6 +120,7 @@ const ACTIONS = new Set([
   "create_api_token",
   "revoke_api_token",
   "delete_account",
+  "restore_backup",
 ]);
 
 /**

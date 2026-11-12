@@ -43,7 +43,8 @@ export type ReauthAction =
   | "change_password"
   | "create_api_token"
   | "revoke_api_token"
-  | "delete_account";
+  | "delete_account"
+  | "restore_backup";
 
 export interface ReauthTarget {
   provider?: string;
@@ -267,6 +268,8 @@ export async function startOidcReauth(
   provider: string,
   request: ReauthRequest,
   csrfToken: string,
+  /** In-app path to come back to; the server defaults to the Account page. */
+  returnTo?: string,
 ): Promise<OidcStart> {
   return parseStartResponse(
     await apiRequest("/api/v2/account/reauth/oidc/start", {
@@ -277,6 +280,7 @@ export async function startOidcReauth(
         action: request.action,
         ...(request.target ? { target: request.target } : {}),
         client: "browser",
+        ...(returnTo ? { return_to: returnTo } : {}),
       },
     }),
   );

@@ -16,7 +16,8 @@
     syncErrorReporting,
   } from "#lib/error-reporting.ts";
   import { appVersion } from "#lib/app-version.ts";
-  import { clearFeedback, feedback } from "#lib/feedback.ts";
+  import { applyDataEpoch, fetchDataEpoch } from "#lib/data-epoch.ts";
+  import { clearFeedback, feedback, publishFeedback } from "#lib/feedback.ts";
   import CommandPalette from "#lib/components/CommandPalette.svelte";
   import BrandHeader from "#lib/components/BrandHeader.svelte";
   import ImpersonationBanner from "#lib/components/ImpersonationBanner.svelte";
@@ -62,6 +63,41 @@
       if ($feedback && $feedback.ownerId !== ownerId) clearFeedback();
     });
   });
+  // An administrator restored a backup: this browser drops what it kept about
+  // the old data (timer reminders, library scopes) and reloads once.
+  const RESTORED_FLAG = "stricknani.data-restored";
+  let epochChecked = false;
+  $effect(() => {
+    const ownerId = user?.id;
+    if (ownerId === undefined || epochChecked) return;
+    epochChecked = true;
+    untrack(() => void checkDataEpoch(ownerId));
+  });
+  async function checkDataEpoch(ownerId: number): Promise<void> {
+    const epoch = await fetchDataEpoch();
+    let result: ReturnType<typeof applyDataEpoch> = "unchanged";
+    try {
+      result = applyDataEpoch(localStorage, epoch);
+      if (result === "changed") {
+        sessionStorage.setItem(RESTORED_FLAG, "1");
+        location.reload();
+        return;
+      }
+      if (sessionStorage.getItem(RESTORED_FLAG)) {
+        sessionStorage.removeItem(RESTORED_FLAG);
+        publishFeedback({
+          ownerId,
+          kind: "success",
+          message: t(
+            "The server was restored from a backup. Changes on this device that had not been synced are gone.",
+            locale,
+          ),
+        });
+      }
+    } catch {
+      // Storage is optional.
+    }
+  }
   // Optional error reporting: starts only when the server offers it and the
   // person has not turned it off; an opt-out stops it right away.
   $effect(() => {
@@ -84,6 +120,7 @@
   const adminRoute = $derived(
     pathname.startsWith(resolve("/admin/users")) ||
       pathname.startsWith(resolve("/admin/audit")) ||
+      pathname.startsWith(resolve("/admin/backups")) ||
       pathname.startsWith("/app/admin/resources"),
   );
   const canManageAdmin = $derived(
@@ -181,7 +218,8 @@
     | "/delete-account"
     | "/account"
     | "/admin/users"
-    | "/admin/audit";
+    | "/admin/audit"
+    | "/admin/backups";
 
   function linkTo(path: AppPath): string {
     return resolve(path);
@@ -338,8 +376,12 @@
         </a>
         {#if canManageAdmin}
           <a
-            class:active={isActive("/admin/users") || isActive("/admin/audit")}
-            aria-current={isActive("/admin/users") || isActive("/admin/audit")
+            class:active={isActive("/admin/users") ||
+              isActive("/admin/audit") ||
+              isActive("/admin/backups")}
+            aria-current={isActive("/admin/users") ||
+            isActive("/admin/audit") ||
+            isActive("/admin/backups")
               ? "page"
               : undefined}
             data-tone="admin"
