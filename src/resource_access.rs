@@ -292,6 +292,8 @@ pub(crate) enum Surface {
 pub(crate) struct Grant {
     pub(crate) owner_id: i64,
     pub(crate) access: Access,
+    /// A direct share role, even when an administrator's effective access is Admin.
+    pub(crate) share_role: Option<Access>,
     /// The access comes only from a share of a project linked to this yarn.
     pub(crate) derived: bool,
 }
@@ -300,6 +302,9 @@ pub(crate) struct Grant {
 #[derive(Clone, Copy, Debug, Serialize, PartialEq, Eq)]
 pub struct AccessInfo {
     pub role: &'static str,
+    /// A direct v2 viewer/editor share, independent of the effective role and capabilities.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub share_role: Option<&'static str>,
     pub derived: bool,
     pub can_edit: bool,
     pub can_manage: bool,
@@ -309,6 +314,7 @@ impl AccessInfo {
     /// The creator of a resource owns it.
     pub const OWNER: Self = Self {
         role: "owner",
+        share_role: None,
         derived: false,
         can_edit: true,
         can_manage: true,
@@ -321,6 +327,7 @@ impl AccessInfo {
     pub const fn read_only_trashed(role: &'static str) -> Self {
         Self {
             role,
+            share_role: None,
             derived: false,
             can_edit: false,
             can_manage: false,
@@ -332,6 +339,7 @@ impl From<Grant> for AccessInfo {
     fn from(grant: Grant) -> Self {
         Self {
             role: grant.access.as_str(),
+            share_role: grant.share_role.map(Access::as_str),
             derived: grant.derived,
             can_edit: grant.access.can_edit(),
             can_manage: grant.access.can_manage(),
@@ -353,26 +361,35 @@ pub(crate) fn list_access(
         Grant {
             owner_id,
             access: Access::Owner,
+            share_role: None,
             derived: false,
         }
     } else if admin {
         Grant {
             owner_id,
             access: Access::Admin,
+            share_role: parse_share_role(share_role),
             derived: false,
         }
     } else {
-        let access = match share_role {
-            Some("editor") => Access::Editor,
-            _ => Access::Viewer,
-        };
+        let direct_role = parse_share_role(share_role);
+        let access = direct_role.unwrap_or(Access::Viewer);
         Grant {
             owner_id,
             access,
-            derived: share_role.is_none() && derived,
+            share_role: direct_role,
+            derived: direct_role.is_none() && derived,
         }
     };
     grant.into()
+}
+
+fn parse_share_role(role: Option<&str>) -> Option<Access> {
+    match role {
+        Some("editor") => Some(Access::Editor),
+        Some("viewer") => Some(Access::Viewer),
+        _ => None,
+    }
 }
 
 /// SQL predicate: `alias` rows the user bound to `?{param}` can see through
@@ -481,6 +498,7 @@ async fn grant_in(
         return Ok(Some(Grant {
             owner_id,
             access: Access::Owner,
+            share_role: None,
             derived: false,
         }));
     }
@@ -488,6 +506,10 @@ async fn grant_in(
         return Ok(Some(Grant {
             owner_id,
             access: Access::Admin,
+            share_role: match surface {
+                Surface::V1 => None,
+                Surface::V2 => parse_share_role(role.as_deref()),
+            },
             derived: false,
         }));
     }
@@ -503,11 +525,13 @@ async fn grant_in(
         (Some(access), _) => Some(Grant {
             owner_id,
             access,
+            share_role: Some(access),
             derived: false,
         }),
         (None, true) => Some(Grant {
             owner_id,
             access: Access::Viewer,
+            share_role: None,
             derived: true,
         }),
         (None, false) => None,
@@ -594,7 +618,16 @@ pub(crate) fn display_name(email: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::display_name;
+    use super::{AccessInfo, display_name};
+
+    #[test]
+    fn access_info_omits_share_role_without_a_direct_share() {
+        let owner = serde_json::to_value(AccessInfo::OWNER).unwrap();
+        let trashed = serde_json::to_value(AccessInfo::read_only_trashed("owner")).unwrap();
+
+        assert!(owner.get("share_role").is_none());
+        assert!(trashed.get("share_role").is_none());
+    }
 
     #[test]
     fn display_name_capitalises_local_part() {

@@ -728,6 +728,85 @@ async fn derived_access_is_not_transitive() {
 }
 
 #[tokio::test]
+async fn direct_share_role_is_reported_separately_from_effective_access() {
+    let f = fx().await;
+
+    // A direct share remains visible to an administrator, while their effective
+    // permissions continue to come from the Admin role.
+    insert_share(&f.pool, "project", f.p1, f.admin, "viewer", f.anika).await;
+    insert_share(&f.pool, "yarn", f.y2, f.admin, "editor", f.anika).await;
+
+    let (_, projects) = call(&f.app, "GET", "/api/v2/projects", Some("admin"), None).await;
+    let p1 = projects["data"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["id"] == f.p1)
+        .unwrap();
+    assert_eq!(p1["access"]["role"], "admin");
+    assert_eq!(p1["access"]["share_role"], "viewer");
+    assert_eq!(p1["access"]["can_edit"], true);
+    assert_eq!(p1["access"]["can_manage"], true);
+    let admin_only = projects["data"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["id"] == f.q1)
+        .unwrap();
+    assert_eq!(admin_only["access"]["role"], "admin");
+    assert!(admin_only["access"].get("share_role").is_none());
+
+    let (_, viewer_projects) = call(&f.app, "GET", "/api/v2/projects", Some("vera"), None).await;
+    assert_eq!(viewer_projects["data"][0]["access"]["role"], "viewer");
+    assert_eq!(viewer_projects["data"][0]["access"]["share_role"], "viewer");
+    assert_eq!(viewer_projects["data"][0]["access"]["can_edit"], false);
+    assert_eq!(viewer_projects["data"][0]["access"]["can_manage"], false);
+    let (_, editor_projects) = call(&f.app, "GET", "/api/v2/projects", Some("eddie"), None).await;
+    assert_eq!(editor_projects["data"][0]["access"]["role"], "editor");
+    assert_eq!(editor_projects["data"][0]["access"]["share_role"], "editor");
+    assert_eq!(editor_projects["data"][0]["access"]["can_edit"], true);
+    assert_eq!(editor_projects["data"][0]["access"]["can_manage"], false);
+    let (_, owner_projects) = call(&f.app, "GET", "/api/v2/projects", Some("anika"), None).await;
+    let owned_p1 = owner_projects["data"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["id"] == f.p1)
+        .unwrap();
+    assert_eq!(owned_p1["access"]["role"], "owner");
+    assert!(owned_p1["access"].get("share_role").is_none());
+
+    let (_, detail) = call(
+        &f.app,
+        "GET",
+        &format!("/api/v2/yarns/{}", f.y2),
+        Some("admin"),
+        None,
+    )
+    .await;
+    assert_eq!(detail["data"]["access"]["role"], "admin");
+    assert_eq!(detail["data"]["access"]["share_role"], "editor");
+
+    let (delta, _) = sync(&f, "projects", "admin", None).await;
+    let synced_p1 = delta["data"]["updated"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["id"] == f.p1)
+        .unwrap();
+    assert_eq!(synced_p1["access"]["role"], "admin");
+    assert_eq!(synced_p1["access"]["share_role"], "viewer");
+
+    let (_, derived_yarns) = call(&f.app, "GET", "/api/v2/yarns", Some("vera"), None).await;
+    assert_eq!(derived_yarns["data"][0]["access"]["derived"], true);
+    assert!(
+        derived_yarns["data"][0]["access"]
+            .get("share_role")
+            .is_none()
+    );
+}
+
+#[tokio::test]
 async fn derived_access_ends_on_unlink_and_on_revocation() {
     let f = fx().await;
     let y1 = format!("/api/v2/yarns/{}", f.y1);
