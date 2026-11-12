@@ -1,6 +1,6 @@
 //! Host validation and response security policy for the Rust web server.
 
-use std::{collections::BTreeSet, net::IpAddr, str::FromStr};
+use std::{net::IpAddr, str::FromStr};
 
 use axum::{
     Router,
@@ -89,9 +89,9 @@ fn validate_hash(value: &str) -> Option<&str> {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct TrustedHosts(BTreeSet<HostAuthority>);
+pub struct TrustedHosts(Vec<HostAuthority>);
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct HostAuthority {
     host: String,
     port: Option<u16>,
@@ -107,13 +107,16 @@ impl TrustedHosts {
         if value.len() > 4096 {
             return Err(TrustedHostsError);
         }
-        let mut entries = BTreeSet::new();
+        let mut entries: Vec<HostAuthority> = Vec::new();
         for entry in value.split(',') {
             let entry = entry.trim();
             if entry.is_empty() {
                 return Err(TrustedHostsError);
             }
-            entries.insert(HostAuthority::parse(entry)?);
+            let authority = HostAuthority::parse(entry)?;
+            if !entries.contains(&authority) {
+                entries.push(authority);
+            }
         }
         if entries.is_empty() {
             return Err(TrustedHostsError);
@@ -131,7 +134,7 @@ impl TrustedHosts {
         )
     }
 
-    /// The listed DNS names (no IP addresses) with their optional ports, in a stable order.
+    /// The listed DNS names (no IP addresses) with their optional ports, in the order they were configured.
     pub fn domain_authorities(&self) -> Vec<(String, Option<u16>)> {
         self.0
             .iter()

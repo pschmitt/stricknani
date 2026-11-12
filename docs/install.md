@@ -76,17 +76,24 @@ passkey), and a passkey can confirm sensitive actions the same way.
 * **HTTPS and a DNS name.** Browsers only offer WebAuthn on HTTPS (and on
   `localhost` for development). Passkeys are off on an instance whose
   `TRUSTED_HOSTS` holds only IP addresses.
-* **RP ID.** The relying-party ID is the instance host name: the first DNS name in
-  `TRUSTED_HOSTS`, or `PASSKEY_RP_ID` (a trusted host or a parent domain of one).
+* **RP ID.** The relying-party ID is `PASSKEY_RP_ID` (a trusted host or a parent
+  domain of one). Unset, it is the first real DNS name in `TRUSTED_HOSTS` in the
+  order written; `localhost` and names without a dot are skipped unless nothing else
+  is trusted. The NixOS module sets it to `hostName`.
   Passkeys are bound to it: changing the host name or the RP ID makes every
   registered passkey unusable (the password still works). Origins accepted are the
   trusted DNS names under the RP ID, over `https` when `SESSION_COOKIE_SECURE=true`.
+  Aliases outside the RP ID cannot use passkeys: the server logs a warning at
+  startup and answers the options endpoints with `409 passkey_host_unsupported`
+  for browsers on them (use the main address or a parent-domain RP ID).
 * **Android.** The app signs in and registers through Credential Manager. It needs
   `ANDROID_APP_LINK_FINGERPRINTS` (see above): the server then adds
   `delegate_permission/common.get_login_creds` to `/.well-known/assetlinks.json`
   so Android lets the app use this site's passkeys, and accepts the app's origin
   `android:apk-key-hash:<base64url SHA-256 of the signing certificate>`, one per
   fingerprint. The app and the web app therefore share the same passkeys.
+  Android's Credential Manager reads `assetlinks.json` on the RP ID host, so a
+  parent-domain RP ID works only if that host serves the file.
 * **Switch off.** `PASSKEYS_ENABLED=false` hides the buttons and answers
   `404 passkeys_unavailable`; registered passkeys stay in the database.
 * An account holds at most 10 passkeys, which are removed with the account. A

@@ -1279,3 +1279,28 @@ async fn passkeys_are_unavailable_unless_configured() {
         true
     );
 }
+
+#[tokio::test]
+async fn options_for_a_host_outside_the_rp_id_fail_clearly() {
+    let f = fixture().await;
+    let (cookie, csrf) = anonymous(&f).await;
+    let other = "alias.example.net";
+    let request = Request::post("/auth/passkey/options")
+        .header("host", other)
+        .header("origin", format!("https://{other}"))
+        .header("sec-fetch-site", "same-origin")
+        .header(
+            "cookie",
+            format!("__Host-stricknani_v2_login_csrf={cookie}"),
+        )
+        .header("x-csrf-token", csrf)
+        .header("content-type", "application/json")
+        .body(Body::from("{}"))
+        .unwrap();
+    let response = send(&f, request).await;
+    assert_eq!(response.status(), StatusCode::CONFLICT);
+    assert_eq!(
+        json(response).await["error"]["code"],
+        "passkey_host_unsupported"
+    );
+}

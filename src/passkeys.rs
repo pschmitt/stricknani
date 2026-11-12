@@ -54,13 +54,30 @@ pub struct PasskeyConfig {
     rp_id: String,
     /// Web origin first (it must be under the RP ID), then Android app origins.
     origins: Vec<Url>,
+    /// Trusted DNS names outside the RP ID: passkeys cannot work on them.
+    uncovered_hosts: Vec<String>,
+}
+
+/// Whether `host` is the RP ID or a subdomain of it.
+fn host_under(host: &str, rp_id: &str) -> bool {
+    host == rp_id
+        || host
+            .strip_suffix(rp_id)
+            .is_some_and(|prefix| prefix.ends_with('.'))
+}
+
+/// Names that make a poor default RP ID: loopback names and names without a dot.
+fn is_local_name(host: &str) -> bool {
+    host == "localhost" || host.ends_with(".localhost") || !host.contains('.')
 }
 
 impl PasskeyConfig {
     /// Derive the settings. `None` when passkeys are disabled or the instance has no DNS name
     /// (WebAuthn needs a host name as RP ID, never an IP address).
     ///
-    /// * RP ID: `PASSKEY_RP_ID` or else the first DNS name in `TRUSTED_HOSTS`;
+    /// * RP ID: `PASSKEY_RP_ID` or else the first real DNS name in `TRUSTED_HOSTS` in configured
+    ///   order (loopback and single-label names such as `localhost` only when nothing else is
+    ///   trusted, for development);
     /// * web origins: every trusted DNS name under the RP ID, over `https` when the session cookies
     ///   are `Secure` (HTTP is only meant for `localhost` development);
     /// * Android origins: `android:apk-key-hash:<base64url SHA-256 of each signing certificate>`
@@ -82,7 +99,11 @@ impl PasskeyConfig {
             .filter(|value| !value.is_empty())
         {
             Some(value) => value.to_ascii_lowercase(),
-            None => match authorities.first() {
+            None => match authorities
+                .iter()
+                .find(|(host, _)| !is_local_name(host))
+                .or_else(|| authorities.first())
+            {
                 Some((host, _)) => host.clone(),
                 None => return Ok(None),
             },
@@ -92,8 +113,12 @@ impl PasskeyConfig {
         }
         let scheme = if secure { "https" } else { "http" };
         let mut origins = Vec::new();
+        let mut uncovered_hosts: Vec<String> = Vec::new();
         for (host, port) in authorities {
-            if host != rp_id && !host.ends_with(&format!(".{rp_id}")) {
+            if !host_under(&host, &rp_id) {
+                if !is_local_name(&host) && !uncovered_hosts.contains(&host) {
+                    uncovered_hosts.push(host);
+                }
                 continue;
             }
             let port = port.or_else(|| (!secure).then_some(bind_port));
@@ -109,7 +134,11 @@ impl PasskeyConfig {
         for fingerprint in android.map(AppLinks::fingerprints).unwrap_or_default() {
             origins.push(android_origin(fingerprint).ok_or("Android fingerprint is invalid")?);
         }
-        Ok(Some(Self { rp_id, origins }))
+        Ok(Some(Self {
+            rp_id,
+            origins,
+            uncovered_hosts,
+        }))
     }
 
     pub fn rp_id(&self) -> &str {
@@ -118,6 +147,11 @@ impl PasskeyConfig {
 
     pub fn origins(&self) -> &[Url] {
         &self.origins
+    }
+
+    /// Trusted DNS names that are not under the RP ID (passkeys do not work on them).
+    pub fn uncovered_hosts(&self) -> &[String] {
+        &self.uncovered_hosts
     }
 }
 
@@ -246,6 +280,17 @@ impl PasskeyRuntime {
 
     pub fn rp_id(&self) -> &str {
         &self.rp_id
+    }
+
+    /// Whether a browser on this `Host` header can use passkeys: the host (port ignored) is the
+    /// RP ID or under it. Browsers reject options for any other host.
+    pub fn covers_host(&self, host: &str) -> bool {
+        let name = host
+            .rsplit_once(':')
+            .filter(|(_, port)| port.bytes().all(|b| b.is_ascii_digit()))
+            .map_or(host, |(name, _)| name)
+            .to_ascii_lowercase();
+        host_under(&name, &self.rp_id)
     }
 
     /// Store a ceremony and return its id.
@@ -804,6 +849,68 @@ mod tests {
 
     fn hosts(value: &str) -> TrustedHosts {
         TrustedHosts::parse(value).unwrap()
+    }
+
+    fn default_rp_id(trusted: &str) -> String {
+        PasskeyConfig::from_settings(true, None, &hosts(trusted), true, 7674, None)
+            .unwrap()
+            .unwrap()
+            .rp_id()
+            .to_owned()
+    }
+
+    #[test]
+    fn default_rp_id_for_production_hosts_is_the_configured_primary() {
+        // The module lists hostName first, then aliases, then loopback names.
+        assert_eq!(
+            default_rp_id(
+                "wool.anika.blue,stricken.anika.blue,wolle.anika.blue,127.0.0.1,localhost"
+            ),
+            "wool.anika.blue"
+        );
+        // Configured order wins over alphabetical order.
+        assert_eq!(
+            default_rp_id("wolle.example.org,aaa.example.org"),
+            "wolle.example.org"
+        );
+    }
+
+    #[test]
+    fn default_rp_id_skips_loopback_and_single_label_names() {
+        assert_eq!(
+            default_rp_id("localhost,127.0.0.1,wolle.example.org"),
+            "wolle.example.org"
+        );
+        assert_eq!(
+            default_rp_id("app.localhost,intranet,wolle.example.org"),
+            "wolle.example.org"
+        );
+    }
+
+    #[test]
+    fn default_rp_id_falls_back_to_localhost_for_development() {
+        assert_eq!(default_rp_id("127.0.0.1,localhost"), "localhost");
+        assert_eq!(default_rp_id("localhost"), "localhost");
+    }
+
+    #[test]
+    fn hosts_outside_the_rp_id_are_reported_and_not_covered() {
+        let config = PasskeyConfig::from_settings(
+            true,
+            None,
+            &hosts("wool.anika.blue,wolle.anika.blue,localhost"),
+            true,
+            7674,
+            None,
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(config.uncovered_hosts(), ["wolle.anika.blue"]);
+        let runtime = PasskeyRuntime::new(&config).unwrap();
+        assert!(runtime.covers_host("wool.anika.blue"));
+        assert!(runtime.covers_host("WOOL.anika.blue:443"));
+        assert!(!runtime.covers_host("wolle.anika.blue"));
+        assert!(!runtime.covers_host("evilwool.anika.blue"));
     }
 
     #[test]

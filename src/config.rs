@@ -179,6 +179,15 @@ impl Config {
             android_app_links.as_ref(),
         )
         .map_err(ConfigError)?;
+        if let Some(passkeys) = &passkeys
+            && !passkeys.uncovered_hosts().is_empty()
+        {
+            tracing::warn!(
+                rp_id = passkeys.rp_id(),
+                uncovered = ?passkeys.uncovered_hosts(),
+                "passkeys work only on the RP ID and its subdomains; set PASSKEY_RP_ID to a parent domain to cover the other trusted hosts"
+            );
+        }
         let signup_enabled = match get("SIGNUP_ENABLED").as_deref() {
             None | Some("false" | "0") => false,
             Some("true" | "1") => true,

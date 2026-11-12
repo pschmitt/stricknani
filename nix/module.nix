@@ -360,14 +360,15 @@ in
     passkeys.enable = lib.mkOption {
       type = lib.types.bool;
       default = true;
-      description = "Let people sign in with a passkey (WebAuthn) as an alternative to the password, on the web and in the Android app. Sets PASSKEYS_ENABLED. Needs HTTPS and a DNS host name; the relying-party ID is the first DNS name in the trusted hosts unless passkeys.rpId says otherwise. The Android app additionally needs android.appLinkFingerprints.";
+      description = "Let people sign in with a passkey (WebAuthn) as an alternative to the password, on the web and in the Android app. Sets PASSKEYS_ENABLED. Needs HTTPS and a DNS host name; the relying-party ID is passkeys.rpId (default: hostName). Only that host and its subdomains can use passkeys; other serverAliases cannot. The Android app additionally needs android.appLinkFingerprints.";
     };
 
     passkeys.rpId = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
-      default = null;
+      default = cfg.hostName;
+      defaultText = lib.literalExpression "config.services.stricknani.hostName";
       example = "example.org";
-      description = "The WebAuthn relying-party ID: one of the trusted host names or a parent domain of one. Sets PASSKEY_RP_ID. Passkeys are bound to it, so changing it later makes every registered passkey unusable. Null: the first DNS name in the trusted hosts.";
+      description = "The WebAuthn relying-party ID: one of the trusted host names or a parent domain of one. Sets PASSKEY_RP_ID. Defaults to the primary host name, so that the loopback names in the trusted hosts are never picked. Passkeys are bound to it, so changing it later makes every registered passkey unusable. Only this host and its subdomains can use passkeys; aliases outside it cannot. Android's Credential Manager checks /.well-known/assetlinks.json on the RP ID host, so a parent domain works only if that host serves the file. Null: the server picks the first real DNS name in the trusted hosts.";
     };
 
     registration.enable = lib.mkOption {
