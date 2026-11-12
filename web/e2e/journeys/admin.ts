@@ -1,6 +1,7 @@
 // Administrator users and audit journey against a disposable Rust server.
 // Port of ci/stricknani/web_admin_browser.py.
 import { closeBrowser } from "../lib/common";
+import { execFileSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -1513,6 +1514,84 @@ export async function createFixtureAdmin(
   return { email, password };
 }
 
+/**
+ * The Backups tab: a seeded backup is listed with its kind chip and counts, and
+ * the restore dialog walks preview -> re-authentication -> typed confirmation.
+ * "Restore now" stays disabled until the exact name is typed; the journey never
+ * submits it, because the fixture has no supervisor to restart the server
+ * (the swap itself is covered by tests/api_v2_admin_backups.rs).
+ */
+async function checkBackupsView(
+  page: Page,
+  origin: string,
+  f: LiveFixture,
+  adminPassword: string,
+  mark: Mark,
+): Promise<void> {
+  mark("seed a backup for the Backups tab");
+  const state = asRecord(JSON.parse(fs.readFileSync(f.stateFile, "utf-8")));
+  const runtime = state?.runtime;
+  if (typeof runtime !== "string") {
+    throw new AcceptanceFailure("fixture state has no runtime directory");
+  }
+  const backupDir = path.join(runtime, "backups");
+  fs.mkdirSync(backupDir, { recursive: true, mode: 0o700 });
+  const name = "predeploy-1.0.0-20260105-050000.sqlite3";
+  execFileSync(
+    "sqlite3",
+    [
+      path.join(runtime, "fixture.sqlite3"),
+      `.backup '${path.join(backupDir, name)}'`,
+    ],
+    { stdio: "ignore" },
+  );
+
+  mark("open the Backups tab");
+  await page.goto(`${origin}/app/admin/backups`, { waitUntil: "networkidle" });
+  await waitAdminTab(page, "Backups");
+  const row = page.locator(`.backup-row[data-backup='${name}']`);
+  await row.waitFor({ state: "visible" });
+  check(
+    (await row.locator(".chip").innerText()).trim() === "Before update" &&
+      (await row.innerText()).includes("accounts"),
+    "the seeded backup did not show its kind chip and counts",
+  );
+
+  mark("walk the restore dialog");
+  await row.getByRole("button", { name: "Restore…", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Restore a backup" });
+  await dialog.waitFor({ state: "visible" });
+  await dialog.locator(".compare").waitFor({ state: "visible" });
+  await dialog.getByRole("button", { name: "Continue", exact: true }).click();
+  const reauth = page.getByRole("dialog", { name: "Confirm it is you" });
+  await reauth.waitFor({ state: "visible" });
+  await reauth.getByLabel("Password").fill(adminPassword);
+  await reauth.getByRole("button", { name: "Confirm", exact: true }).click();
+  const input = dialog.getByLabel("Type the backup name to confirm");
+  await input.waitFor({ state: "visible" });
+  const restoreNow = dialog.getByRole("button", {
+    name: "Restore now",
+    exact: true,
+  });
+  check(
+    await restoreNow.isDisabled(),
+    "Restore now was enabled before the name was typed",
+  );
+  await input.fill(name.slice(0, -1));
+  check(
+    await restoreNow.isDisabled(),
+    "Restore now was enabled for a near-miss name",
+  );
+  await input.fill(name);
+  check(
+    await restoreNow.isEnabled(),
+    "Restore now stayed disabled for the exact name",
+  );
+  await dialog.getByRole("button", { name: "Back", exact: true }).click();
+  await dialog.getByRole("button", { name: "Cancel", exact: true }).click();
+  await dialog.waitFor({ state: "hidden" });
+}
+
 async function runAcceptance(
   f: LiveFixture,
   admin: AdminCredentials,
@@ -2541,6 +2620,7 @@ async function runAcceptance(
     await page
       .getByRole("heading", { name: "More", exact: true })
       .waitFor({ state: "visible" });
+    await checkBackupsView(page, origin, f, adminPassword, mark);
     await page.goto(
       `${origin}/app/admin/resources/project/${crossOwnerProjectId}`,
       { waitUntil: "networkidle" },
