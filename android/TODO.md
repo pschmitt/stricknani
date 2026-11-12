@@ -43,15 +43,21 @@ counterpart there once created, since that work lands in `stricknani/`, not `and
 
 ## SNA-113: Trash card and activity attribution polish
 
-Status: in progress (2026-11-12, Codex)
+Status: mostly done (2026-11-12, Codex; web deployed, Android install follows v1.7.4)
 
-- [ ] Match trash cards across web and Android: thumbnail beside title, quiet kind label, clickable
+- [x] Match trash cards across web and Android: thumbnail beside title, quiet kind label, clickable
       parent, owner and deletion timing, then restore and permanent-delete controls below the content.
-- [ ] Keep action targets usable on narrow phones and preserve confirmation, permission, busy and
+- [x] Keep action targets usable on narrow phones and preserve confirmation, permission, busy and
       error behavior.
-- [ ] Match activity attribution as “by <avatar> You”, show avatar-only badges on compact
+- [x] Match activity attribution as “by <avatar> You”, show avatar-only badges on compact
       thumbnails, and use danger styling for trash activity on both clients.
-- [ ] Record the web/Android screen parity review and required checks.
+- [x] Record the web/Android screen parity review and required checks.
+
+Parity: both show title, quiet kind, linked parent, owner and deletion timing; restore and
+permanent-delete controls follow the content and wrap on phones. Both use “by <avatar> You”,
+avatar-only compact badges and danger-colored trash activity. Web browser checks passed at
+390/900px; Android compilation, unit tests, lint and the repository formatter passed.
+APK installation is tracked with the v1.7.4 release handoff.
 
 ## SNA-110: Formatting icons in the text-selection menu
 
