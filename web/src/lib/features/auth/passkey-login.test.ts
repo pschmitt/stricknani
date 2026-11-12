@@ -148,7 +148,9 @@ describe("runConditionalSignIn", () => {
   it("stops quietly when the browser cannot do autofill passkeys", async () => {
     for (const failure of ["unknown", "unsupported", "unavailable"] as const) {
       const deps = base();
-      const signIn = vi.fn().mockRejectedValue(new PasskeyCeremonyError(failure));
+      const signIn = vi
+        .fn()
+        .mockRejectedValue(new PasskeyCeremonyError(failure));
       await runConditionalSignIn({
         ...deps,
         signIn,
