@@ -337,7 +337,7 @@ export async function uiPartB(ctx: UiCtx): Promise<void> {
   await page.locator(".photo-strip__open").first().click();
   const dialog = page.getByRole("dialog", { name: "Project image viewer" });
   await dialog.waitFor({ state: "visible" });
-  const lightboxImage = dialog.locator("img");
+  const lightboxImage = dialog.getByRole("img");
   await lightboxImage.waitFor({ state: "visible" });
   await lightboxImage.evaluate((image) => (image as HTMLImageElement).decode());
   const lightboxCount = dialog.locator("figcaption span");
