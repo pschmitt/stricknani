@@ -725,7 +725,9 @@
      and truncates long names, so all rows are the same height and the times line up. */
   .event-row {
     display: grid;
-    grid-template-columns: 9.5rem minmax(0, 1fr) minmax(0, 14rem) auto;
+    grid-template-columns:
+      clamp(9.5rem, 17vw, 15rem) minmax(0, 1fr) minmax(0, 14rem)
+      auto;
     grid-template-areas: "action resource actor meta";
     align-items: center;
     gap: 1rem;
@@ -936,9 +938,10 @@
       clip: rect(0 0 0 0);
       white-space: nowrap;
     }
-    /* Phones: badge and time on top, then the resource, then who and the diff link. */
+    /* Phones: badge and time on top, then the resource, then who and the diff link. The
+       badge can shrink with its own ellipsis; time and the diff link keep their columns. */
     .event-row {
-      grid-template-columns: auto minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1fr) auto;
       grid-template-areas:
         "action meta"
         "resource resource"
@@ -949,11 +952,31 @@
     /* Fixed columns keep the time and the diff link at the same spot in every row, with or
        without a diff. */
     .event-meta {
-      grid-template-columns: 4.5rem 6.5rem;
+      grid-template-columns: 4.5rem 2.75rem;
       justify-self: end;
+    }
+    .event-action {
+      justify-self: start;
+      max-width: 100%;
     }
     .event-actor {
       padding-right: 0;
+    }
+  }
+
+  @media (max-width: 480px) {
+    /* Long action labels get a full row. Keep time and diff together on their own row so
+       actor names retain the full width and rows stay aligned. */
+    .event-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-areas:
+        "action action"
+        "meta meta"
+        "resource resource"
+        "actor actor";
+    }
+    .event-meta {
+      align-self: center;
     }
   }
 </style>
