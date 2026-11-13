@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, untrack } from "svelte";
   import Mascot from "#lib/components/Mascot.svelte";
+  import { activityIcon } from "#lib/features/home/activity.ts";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import SectionHeading from "#lib/components/SectionHeading.svelte";
   import UserLabel from "#lib/components/UserLabel.svelte";
@@ -276,13 +277,26 @@
     <ol class="timeline" aria-label={t("Recent changes", locale)}>
       {#each visible as event (event.id)}
         {@const tone = actionTone(event.action)}
+        {@const icon = activityIcon(event.action)}
         {@const actor = historyActor(event)}
         {@const owner = ownerOf(event)}
         {@const admin = impersonator(event)}
         {@const open = expanded[event.id] === true}
         {@const entry = details[event.id]}
         <li class="entry" data-tone={tone}>
-          <span class="dot" aria-hidden="true"></span>
+          <span class="dot" aria-hidden="true">
+            {#if icon === "sparkle"}
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                ><path
+                  d="m12 3.5 1.9 5.6 5.6 1.9-5.6 1.9-1.9 5.6-1.9-5.6L4.5 11l5.6-1.9z"
+                /></svg
+              >
+            {:else}<NavIcon name={icon} />{/if}
+          </span>
           {#snippet summary()}
             {#if event.media?.exists && event.media.is_image && event.media.thumbnail_url}
               <img
@@ -520,12 +534,22 @@
     position: absolute;
     top: 1.05rem;
     left: 0;
-    width: 0.95rem;
-    height: 0.95rem;
-    border: 3px solid var(--surface);
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    transform: translate(-0.275rem, -0.275rem);
+    color: var(--tone);
+    border: 2px solid var(--surface);
     border-radius: 50%;
-    background: var(--tone);
-    box-shadow: 0 0 0 1.5px var(--tone);
+    background: var(--surface);
+    box-shadow: 0 0 0 1px var(--tone);
+  }
+
+  .dot :global(svg),
+  .dot svg {
+    width: 1rem;
+    height: 1rem;
   }
 
   .entry-row {
@@ -542,6 +566,12 @@
     background: transparent;
     font: inherit;
     text-align: left;
+  }
+
+  .dot :global(svg),
+  .dot svg {
+    width: 1rem;
+    height: 1rem;
   }
 
   .entry-row {

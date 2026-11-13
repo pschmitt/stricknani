@@ -96,6 +96,8 @@ import blue.anika.wolle.ui.common.historyActorRef
 import blue.anika.wolle.ui.common.impersonatorRef
 import blue.anika.wolle.ui.common.subjectRef
 import blue.anika.wolle.ui.common.userByString
+import blue.anika.wolle.ui.home.activityIcon
+import blue.anika.wolle.ui.home.activityIconKind
 import coil3.compose.SubcomposeAsyncImage
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -389,9 +391,16 @@ private fun HistoryRow(
                     )
                 }
                 drawCircle(color = surface, radius = 7.dp.toPx(), center = Offset(x, dotY))
-                drawCircle(color = tone, radius = 5.dp.toPx(), center = Offset(x, dotY))
-            }
-        )
+            },
+            contentAlignment = Alignment.TopStart,
+        ) {
+            Icon(
+                activityIcon(activityIconKind(event.action)),
+                contentDescription = null,
+                tint = tone,
+                modifier = Modifier.padding(top = 13.dp, start = 1.dp).size(18.dp),
+            )
+        }
         Row(
             Modifier.weight(1f).padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,

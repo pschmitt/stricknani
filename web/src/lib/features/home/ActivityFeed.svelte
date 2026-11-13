@@ -16,8 +16,8 @@
     ACTIVITY_PAGE_SIZE,
     activityDetail,
     activityHeadline,
-    activitySharing,
     activityIcon,
+    activitySharing,
     activityItemActor,
     activityOwner,
     activityResourceName,
@@ -156,7 +156,7 @@
           {#each [0, 1, 2] as row (row)}
             <li class="tl__entry">
               <div class="tl__row">
-                <span class="tl__node tl__node--placeholder"></span>
+                <span class="tl__thumb tl__thumb--placeholder"></span>
                 <span class="tl__copy">
                   <span class="placeholder-line"></span>
                   <span class="placeholder-line placeholder-line--short"></span>
@@ -197,31 +197,21 @@
               {@const owner = activityOwner(item, locale)}
               {@const detail = activityDetail(item, locale)}
               {@const note = activityStateNote(item, locale)}
-              {@const icon = activityIcon(item.action)}
               {@const tone = auditActionTone(item.action)}
+              {@const icon = activityIcon(item.action)}
               {#snippet row()}
-                <span class="tl__node" data-tone={tone} aria-hidden="true">
-                  {#if icon === "sparkle"}
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.8"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                    >
-                      <path
-                        d="m12 3.5 1.9 5.6 5.6 1.9-5.6 1.9-1.9 5.6-1.9-5.6L4.5 11l5.6-1.9zM19 3.5v3M17.5 5h3"
-                      />
-                    </svg>
-                  {:else}
-                    <NavIcon name={icon} />
-                  {/if}
-                </span>
+                {#if item.thumbnail_url}
+                  <img
+                    class="tl__thumb"
+                    src={item.thumbnail_url}
+                    alt=""
+                    loading="lazy"
+                    width="40"
+                    height="40"
+                  />
+                {/if}
                 <span class="tl__copy">
-                  <span class="tl__sentence"
-                    ><strong class="tl__name">{name}</strong></span
-                  >
+                  <span class="tl__sentence">{name}</span>
                   <span class="tl__meta">
                     <span class="tl__action"
                       >{#if sharing}<UserSentence
@@ -230,9 +220,16 @@
                           {locale}
                         />{:else}{headline}{/if}</span
                     >
-                    <UserLabel user={actor} {locale} size="inline" by />
                     <time datetime={item.created_at}
                       >{activityTime(item.created_at, locale)}</time
+                    >
+                    <span class="tl__actor"
+                      ><UserLabel
+                        user={actor}
+                        {locale}
+                        size="inline"
+                        by
+                      /></span
                     >
                     {#if detail}<span>{detail}</span>{/if}
                     {#if note}<span>{note}</span>{/if}
@@ -245,22 +242,28 @@
                     {/if}
                   </span>
                 </span>
-                {#if item.thumbnail_url}
-                  <img
-                    class="tl__thumb"
-                    src={item.thumbnail_url}
-                    alt=""
-                    loading="lazy"
-                  />
-                {/if}
               {/snippet}
               <li
                 class="tl__entry"
+                data-tone={tone}
                 data-deleted={!item.exists && item.state !== "in_trash"
                   ? ""
                   : undefined}
                 style:--i={Math.min(index, 8)}
               >
+                <span class="tl__dot" aria-hidden="true">
+                  {#if icon === "sparkle"}
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      ><path
+                        d="m12 3.5 1.9 5.6 5.6 1.9-5.6 1.9-1.9 5.6-1.9-5.6L4.5 11l5.6-1.9z"
+                      /></svg
+                    >
+                  {:else}<NavIcon name={icon} />{/if}
+                </span>
                 {#if item.exists && item.href}
                   <a
                     class="tl__row"
@@ -355,21 +358,40 @@
     height: 1.1rem;
   }
 
-  /* The timeline: one rail behind every node, entries grouped under day labels. */
+  /* The timeline, as in a project's "Recent changes": a rail with a dot coloured by what
+     happened, entries grouped under day labels. */
   .tl {
-    --node: 2.1rem;
-    --pad: 0.3rem;
-    --gap: 0.75rem;
+    --rail: 0.45rem;
+    --indent: 1.7rem;
     position: relative;
     margin: 0;
-    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: clamp(1rem, 3vw, 1.4rem);
     list-style: none;
+    background: var(--surface);
   }
   /* The rail is cut into pieces (one per entry and day label) so it follows
-     rows of any height; the first and last piece stop at their node. */
+     rows of any height; the first and last piece stop at their dot. */
   .tl__entry,
   .tl__daylabel {
     position: relative;
+  }
+  .tl__entry {
+    --tone: var(--ink-muted);
+    padding-left: var(--indent);
+  }
+  .tl__entry[data-tone="create"] {
+    --tone: var(--success);
+  }
+  .tl__entry[data-tone="update"] {
+    --tone: var(--info);
+  }
+  .tl__entry[data-tone="upload"] {
+    --tone: var(--warning);
+  }
+  .tl__entry[data-tone="delete"] {
+    --tone: var(--danger);
   }
   .tl__entry::before,
   .tl__daylabel::before {
@@ -377,22 +399,45 @@
     position: absolute;
     top: 0;
     bottom: 0;
-    left: calc(var(--pad) + var(--node) / 2 - 1px);
+    left: var(--rail);
     width: 2px;
-    background: var(--line);
+    background: color-mix(
+      in srgb,
+      var(--tone, var(--ink-muted)) 28%,
+      var(--line)
+    );
   }
   .tl__day:first-child .tl__daylabel::before {
     display: none;
   }
   .tl__day:first-child .tl__entry:first-child::before {
-    top: calc(var(--pad) + var(--node) / 2);
+    top: 1.35rem;
   }
   .tl__day:last-child .tl__entry:last-child::before {
-    bottom: auto;
-    height: calc(var(--pad) + var(--node) / 2);
+    bottom: calc(100% - 1.35rem);
   }
   .tl__day:only-child .tl__entry:only-child::before {
     display: none;
+  }
+  .tl__dot {
+    position: absolute;
+    top: 1.05rem;
+    left: 0;
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    transform: translate(-0.275rem, -0.275rem);
+    color: var(--tone);
+    border: 2px solid var(--surface);
+    border-radius: 50%;
+    background: var(--surface);
+    box-shadow: 0 0 0 1px var(--tone);
+  }
+  .tl__dot :global(svg),
+  .tl__dot svg {
+    width: 1rem;
+    height: 1rem;
   }
   .tl__entries {
     margin: 0;
@@ -401,7 +446,7 @@
   }
   .tl__daylabel {
     margin: 0;
-    padding: 0.7rem 0 0.15rem calc(var(--pad) + var(--node) + var(--gap));
+    padding: 0.7rem 0 0.15rem var(--indent);
     color: var(--ink-muted);
     font-family: inherit;
     font-size: 0.78rem;
@@ -417,86 +462,51 @@
   }
   .tl__row {
     position: relative;
-    display: grid;
-    grid-template-columns: var(--node) minmax(0, 1fr);
-    grid-auto-columns: auto;
-    grid-auto-flow: column;
-    align-items: start;
-    gap: var(--gap);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    box-sizing: border-box;
     min-height: 44px;
-    border-radius: var(--radius-sm);
-    padding: var(--pad);
-    padding-right: 0.6rem;
+    border-radius: var(--radius-xs);
+    padding: 0.55rem 0.6rem;
     color: var(--ink);
     text-decoration: none;
   }
   a.tl__row:hover {
-    background: color-mix(in srgb, var(--surface) 80%, var(--accent) 20%);
+    background: var(--surface-raised);
   }
   a.tl__row:focus-visible {
-    outline: 3px solid var(--accent);
+    outline: 3px solid var(--focus);
     outline-offset: 2px;
-  }
-  .tl__node {
-    display: grid;
-    width: var(--node);
-    height: var(--node);
-    place-items: center;
-    border-radius: 50%;
-    color: var(--ink);
-    background: var(--surface-highest);
-  }
-  .tl__node[data-tone="create"] {
-    --node-ink: var(--success);
-  }
-  .tl__node[data-tone="update"] {
-    --node-ink: var(--info);
-  }
-  .tl__node[data-tone="upload"] {
-    --node-ink: var(--warning);
-  }
-  .tl__node[data-tone="delete"] {
-    --node-ink: var(--danger);
-  }
-  .tl__node[data-tone="create"],
-  .tl__node[data-tone="update"],
-  .tl__node[data-tone="upload"],
-  .tl__node[data-tone="delete"] {
-    color: var(--node-ink);
-    background: color-mix(in srgb, var(--node-ink) 14%, var(--surface));
-  }
-  .tl__node :global(svg),
-  .tl__node svg {
-    width: 1.1rem;
-    height: 1.1rem;
   }
   .tl__copy {
     display: grid;
+    flex: 1;
     min-width: 0;
-    min-height: var(--node);
-    align-content: center;
-    gap: 0.05rem;
+    gap: 0.15rem;
   }
   .tl__sentence {
     overflow-wrap: anywhere;
-    font-size: 0.95rem;
-    line-height: 1.3;
-  }
-  .tl__name {
-    font-weight: 800;
+    font-weight: 650;
   }
   .tl__meta {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.1rem 0.6rem;
+    gap: 0.2rem 0.6rem;
     color: var(--ink-muted);
-    font-size: 0.82rem;
-    line-height: 1.3;
+    font-size: 0.85rem;
     overflow-wrap: anywhere;
   }
   .tl__action {
+    color: var(--tone);
     font-weight: 700;
+  }
+  .tl__actor {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
   }
   .tl__meta time {
     font-variant-numeric: tabular-nums;
@@ -506,7 +516,7 @@
     flex-wrap: wrap;
     gap: 0.25rem 1rem;
     margin: 0;
-    padding-left: calc(var(--pad) + var(--node) + var(--gap));
+    padding-left: 0.6rem;
     font-size: 0.88rem;
   }
   .tl__actions a,
@@ -523,27 +533,19 @@
     cursor: pointer;
   }
   .tl__thumb {
-    width: 2.25rem;
-    height: 2.25rem;
-    align-self: center;
-    border-radius: 0.65rem;
+    flex: none;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.6rem;
     object-fit: cover;
     background: var(--surface-raised);
   }
-  .tl__entry[data-deleted] .tl__name {
+  .tl__entry[data-deleted] .tl__sentence {
     text-decoration: line-through;
     text-decoration-thickness: 1.5px;
   }
   .tl__entry[data-deleted] .tl__row {
     color: var(--ink-muted);
-  }
-  .tl__entry[data-deleted] .tl__node {
-    color: var(--ink-muted);
-    background: var(--surface-highest);
-  }
-  .tl__entry .tl__node[data-tone="delete"] {
-    color: var(--danger);
-    background: color-mix(in srgb, var(--danger) 14%, var(--surface));
   }
   .tl__entry[data-deleted] .tl__thumb {
     opacity: 0.55;
@@ -571,7 +573,7 @@
   .activity__error p {
     margin: 0;
   }
-  .tl__node--placeholder,
+  .tl__thumb--placeholder,
   .placeholder-line {
     background: color-mix(in srgb, var(--ink-muted) 18%, transparent);
   }

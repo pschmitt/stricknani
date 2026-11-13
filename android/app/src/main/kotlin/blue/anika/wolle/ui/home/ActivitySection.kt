@@ -30,7 +30,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -45,7 +44,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
-import blue.anika.wolle.ui.admin.AuditTone
 import blue.anika.wolle.ui.admin.DayLabel
 import blue.anika.wolle.ui.admin.auditActionPresentation
 import blue.anika.wolle.ui.admin.color
@@ -66,8 +64,9 @@ import java.time.format.FormatStyle
 
 /**
  * Home's "Recent activity": a timeline of the newest edits to the user's projects and yarns, a
- * vertical rail with one icon node per entry, grouped under day labels. Online-only, so it degrades
- * to a one-line note without a connection and is not shown at all when the server has no such feed.
+ * vertical rail with one coloured dot per entry, grouped under day labels. Online-only, so it
+ * degrades to a one-line note without a connection and is not shown at all when the server has no
+ * such feed.
  */
 @Composable
 fun ActivitySection(
@@ -183,8 +182,8 @@ fun ActivitySection(
     }
 }
 
-private val NODE_SIZE = 36.dp
-private val NODE_GAP = 12.dp
+private val NODE_SIZE = 20.dp
+private val NODE_GAP = 8.dp
 private val ROW_PAD = 6.dp
 
 /** Where the text column starts: past the rail node and its gap. */
@@ -293,6 +292,7 @@ private fun TimelineEntry(
 ) {
     val colors = MaterialTheme.colorScheme
     val muted = colors.onSurfaceVariant
+    val tone = auditActionPresentation(row.action, row.system).kind.tone().color()
     val name =
         row.entityName
             ?: stringResource(
@@ -304,7 +304,7 @@ private fun TimelineEntry(
     Row(
         Modifier.fillMaxWidth()
             .rail(
-                colors.outlineVariant,
+                tone.copy(alpha = 0.35f),
                 top = railTop,
                 bottom = railBottom,
                 nodeCenterY = ROW_PAD + NODE_SIZE / 2,
@@ -318,7 +318,23 @@ private fun TimelineEntry(
             .semantics(mergeDescendants = true) {},
         horizontalArrangement = Arrangement.spacedBy(NODE_GAP),
     ) {
-        TimelineNode(row)
+        Box(Modifier.size(NODE_SIZE), contentAlignment = Alignment.Center) {
+            Icon(
+                activityIcon(row.icon),
+                contentDescription = null,
+                tint = tone,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+        if (previewUrl != null) {
+            AsyncImage(
+                model = previewUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                alpha = if (row.deleted) 0.5f else 1f,
+                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)),
+            )
+        }
         Column(
             Modifier.weight(1f).heightIn(min = NODE_SIZE),
             verticalArrangement = Arrangement.Center,
@@ -334,48 +350,10 @@ private fun TimelineEntry(
             )
             ActivityMeta(row, activityTimeOfDay(row.createdAt, zone), muted)
         }
-        if (previewUrl != null) {
-            AsyncImage(
-                model = previewUrl,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                alpha = if (row.deleted) 0.5f else 1f,
-                modifier = Modifier.padding(end = 4.dp).size(40.dp).clip(RoundedCornerShape(10.dp)),
-            )
-        }
     }
 }
 
-/**
- * The rail node: a circle tinted by what happened, with the web's colours (created and restored
- * green, updated blue, uploads marigold, deletion red, timers, shares and the rest neutral),
- * carrying the action's icon. Red is reserved for deletion.
- */
-@Composable
-private fun TimelineNode(row: ActivityRowModel) {
-    val colors = MaterialTheme.colorScheme
-    val tone = auditActionPresentation(row.action, row.system).kind.tone()
-    val (container, content) =
-        when {
-            tone == AuditTone.Red -> colors.errorContainer to colors.onErrorContainer
-            row.deleted -> colors.surfaceContainerHighest to colors.onSurfaceVariant
-            tone == AuditTone.Muted -> colors.surfaceContainerHighest to colors.onSurface
-            else -> tone.color().copy(alpha = 0.16f).compositeOver(colors.surface) to tone.color()
-        }
-    Box(
-        Modifier.size(NODE_SIZE).clip(CircleShape).background(container),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            activityIcon(row.icon),
-            contentDescription = null,
-            tint = content,
-            modifier = Modifier.size(18.dp),
-        )
-    }
-}
-
-private fun activityIcon(kind: ActivityIconKind): ImageVector =
+internal fun activityIcon(kind: ActivityIconKind): ImageVector =
     when (kind) {
         ActivityIconKind.Sparkle -> PhosphorIcons.Sparkle
         ActivityIconKind.Pencil -> PhosphorIcons.PencilSimple
@@ -415,8 +393,8 @@ private fun ActivityMeta(row: ActivityRowModel, time: String?, muted: Color) {
         } else {
             Text(headline, style = style, fontWeight = FontWeight.Bold, color = muted)
         }
-        UserLabel(row.actor, size = UserLabelSize.Inline, by = true, style = style, color = muted)
         if (time != null) Text(time, style = style, color = muted)
+        UserLabel(row.actor, size = UserLabelSize.Inline, style = style, color = muted)
         row.trashDaysLeft?.let { days ->
             Text(
                 stringResource(R.string.admin_state_in_trash, daysLeftText(daysLeft(days))),

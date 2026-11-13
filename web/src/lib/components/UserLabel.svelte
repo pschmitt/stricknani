@@ -32,18 +32,12 @@
 
   const name = $derived(userLabelText(user, locale));
   const text = $derived(by ? userByText(user, locale) : name);
-  // Both supported locales put the author preposition first. Keep the rest of the
-  // translated phrase intact, including German case ("dir", "einem Administrator").
-  const separator = $derived(by ? text.indexOf(" ") + 1 : 0);
-  const prefix = $derived(text.slice(0, separator));
-  const person = $derived(text.slice(separator));
   const icon = $derived(
     user.kind === "admin" ? "admin" : user.kind === "system" ? "monitor" : null,
   );
 </script>
 
 <span class="user-label" data-size={size} data-kind={user.kind}>
-  {#if prefix}<span class="user-label__prefix">{prefix}</span>{/if}
   {#if icon}
     <span class="user-label__glyph" aria-hidden="true"
       ><NavIcon name={icon} /></span
@@ -54,7 +48,7 @@
       name={user.kind === "unknown" ? "?" : user.name?.trim() || name}
     />
   {/if}
-  <span class="user-label__name">{person}</span>
+  <span class="user-label__name">{text}</span>
 </span>
 
 <style>
