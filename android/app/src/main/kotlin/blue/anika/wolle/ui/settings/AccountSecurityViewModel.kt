@@ -1,6 +1,5 @@
 package blue.anika.wolle.ui.settings
 
-import android.net.Uri
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -31,6 +30,7 @@ import blue.anika.wolle.ui.oidc.StepUp
 import blue.anika.wolle.ui.oidc.showOidcFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.File
+import java.net.URI
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -303,7 +303,9 @@ constructor(
                 try {
                     gateway.uploadAvatar(uri)
                 } finally {
-                    Uri.parse(uri).takeIf { it.scheme == "file" }?.path?.let(::File)?.delete()
+                    runCatching {
+                        URI(uri).takeIf { it.scheme == "file" }?.let(::File)?.delete()
+                    }
                 }
             _state.update { it.copy(avatarBusy = false) }
             when (result) {
