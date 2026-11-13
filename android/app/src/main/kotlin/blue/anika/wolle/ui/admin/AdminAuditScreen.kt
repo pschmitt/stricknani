@@ -61,7 +61,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
@@ -102,9 +101,9 @@ import blue.anika.wolle.ui.history.MediaChangeCard
 import blue.anika.wolle.ui.history.mediaChangeRows
 import blue.anika.wolle.ui.home.activityIcon
 import blue.anika.wolle.ui.home.activityIconKind
+import blue.anika.wolle.ui.trash.TrashThumbnail
 import blue.anika.wolle.ui.trash.daysLeft
 import blue.anika.wolle.ui.trash.daysLeftText
-import coil3.compose.AsyncImage
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -479,6 +478,7 @@ private fun AuditRow(
     val navigable = target is AuditTarget.Project || target is AuditTarget.Yarn
     val description = stringResource(R.string.admin_event_description, action, title, actor, time)
     val detailKind = event.detailKind()
+    val resourceKind = event.resource.kind ?: event.entityType
     Surface(
         color = Color.Transparent,
         modifier =
@@ -523,7 +523,10 @@ private fun AuditRow(
                 shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -640,16 +643,14 @@ private fun AuditRow(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        avatarUrl(event.resource.previewUrl)?.let { preview ->
-                            AsyncImage(
-                                model = preview,
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier =
-                                    Modifier.padding(horizontal = 8.dp)
-                                        .size(40.dp)
-                                        .clip(RoundedCornerShape(10.dp)),
-                            )
+                        if (resourceKind in setOf("project", "yarn", "category")) {
+                            Box(Modifier.padding(horizontal = 8.dp)) {
+                                TrashThumbnail(
+                                    kind = resourceKind,
+                                    url = avatarUrl(event.resource.previewUrl),
+                                    size = 40,
+                                )
+                            }
                         }
                         AuditMediaThumb(event.media, Modifier.padding(horizontal = 8.dp))
                     }

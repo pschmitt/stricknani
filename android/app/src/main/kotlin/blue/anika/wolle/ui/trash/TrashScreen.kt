@@ -388,11 +388,11 @@ private fun TrashRow(
  * the trash); an icon for kinds without one, or while the picture cannot be loaded.
  */
 @Composable
-private fun TrashThumbnail(kind: String, url: String?) {
+internal fun TrashThumbnail(kind: String, url: String?, size: Int = 56) {
     val icon = trashKindIcon(kind)
     Box(
         modifier =
-            Modifier.size(56.dp)
+            Modifier.size(size.dp)
                 .clip(MaterialTheme.shapes.small)
                 .background(MaterialTheme.colorScheme.surfaceContainerHighest)
                 .testTag("trash-thumb"),
