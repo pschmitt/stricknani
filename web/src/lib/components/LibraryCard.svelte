@@ -84,7 +84,7 @@
         </span>
       {/if}
       {#if owner}
-        <span class="library-card__owner"><OwnerBadge {owner} {locale} /></span>
+        <span class="library-card__owner"><OwnerBadge {owner} {locale} compact /></span>
       {/if}
     </span>
     <span class="library-card__copy">

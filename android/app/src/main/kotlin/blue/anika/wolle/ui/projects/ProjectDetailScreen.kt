@@ -245,6 +245,9 @@ fun ProjectDetailScreen(
             timer = timer,
             seconds = timerSeconds,
             canEdit = access.canEdit,
+            projectDone =
+                (uiState as? ProjectDetailUiState.Loaded)?.entity?.status == ProjectStatus.DONE,
+            onReopen = viewModel::toggleStatus,
             reminderDue = timerReminderDue,
             onDismiss = { showTimerDialog = false },
             onRunningChange = viewModel::setTimerRunning,
@@ -1012,6 +1015,8 @@ private fun ProjectTimerDialog(
     timer: ProjectDetailViewModel.TimerState,
     seconds: Long,
     canEdit: Boolean,
+    projectDone: Boolean,
+    onReopen: () -> Unit,
     reminderDue: Boolean,
     onDismiss: () -> Unit,
     onRunningChange: (Boolean, (Boolean) -> Unit) -> Unit,
@@ -1020,6 +1025,7 @@ private fun ProjectTimerDialog(
     onReminderSnooze: () -> Unit,
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
+    var showReopenDialog by remember { mutableStateOf(false) }
     var saveFailed by remember { mutableStateOf(false) }
     var reminderMenu by remember { mutableStateOf(false) }
     val actionsEnabled =
@@ -1128,7 +1134,10 @@ private fun ProjectTimerDialog(
                             }
                             Button(
                                 enabled = actionsEnabled,
-                                onClick = { onRunningChange(!timer.running) {} },
+                                onClick = {
+                                    if (!timer.running && projectDone) showReopenDialog = true
+                                    else onRunningChange(!timer.running) {}
+                                },
                                 modifier = Modifier.weight(1f),
                             ) {
                                 Text(
@@ -1173,6 +1182,28 @@ private fun ProjectTimerDialog(
                 }
             }
         }
+    }
+    if (showReopenDialog) {
+        AlertDialog(
+            onDismissRequest = { showReopenDialog = false },
+            text = { Text(stringResource(R.string.project_timer_reopen_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showReopenDialog = false
+                        onReopen()
+                        onRunningChange(true) {}
+                    }
+                ) {
+                    Text(stringResource(R.string.project_timer_start))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showReopenDialog = false }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            },
+        )
     }
     if (showEditDialog) {
         ProjectTimerEditDialog(

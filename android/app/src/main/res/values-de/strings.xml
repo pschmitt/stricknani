@@ -134,6 +134,7 @@
     <string name="project_timer_running_caption">Zeitaufwand für dieses Projekt</string>
     <string name="project_timer_ready_caption">Bereit, wenn du es bist</string>
     <string name="project_timer_start">Start</string>
+    <string name="project_timer_reopen_message">Dieses Projekt ist als fertig markiert. Beim Starten des Timers wird es wieder auf „Läuft“ gesetzt.</string>
     <string name="project_timer_stop">Timer stoppen</string>
     <string name="project_timer_edit">Zeit bearbeiten</string>
     <string name="project_timer_edit_title">Strickzeit bearbeiten</string>

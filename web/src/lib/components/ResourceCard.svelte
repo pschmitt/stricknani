@@ -90,7 +90,7 @@
     {/if}
     {#if owner}
       <span class="resource-card__owner"
-        ><OwnerBadge {owner} compact={variant !== "library"} /></span
+        ><OwnerBadge {owner} compact /></span
       >
     {/if}
     {#if variant === "library" && badge}
@@ -139,7 +139,7 @@
   .resource-card__link {
     display: grid;
     min-width: 0;
-    grid-template-columns: 3.25rem minmax(0, 1fr);
+    grid-template-columns: 3.75rem minmax(0, 1fr);
     align-items: center;
     gap: 0.7rem;
     border-radius: var(--radius-xs);
@@ -161,7 +161,7 @@
   .resource-card__image {
     position: relative;
     display: grid;
-    width: 3.25rem;
+    width: 3.75rem;
     aspect-ratio: 1;
     flex: none;
     place-items: center;
@@ -172,8 +172,8 @@
   }
 
   .resource-card__image :global(svg) {
-    width: 1.4rem;
-    height: 1.4rem;
+    width: 2.1rem;
+    height: 2.1rem;
   }
 
   .resource-card__image img {

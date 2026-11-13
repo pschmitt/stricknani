@@ -36,6 +36,10 @@
     showChip?: boolean;
     /** True when the timer can be used here (enabled and supported by the server). */
     available?: boolean;
+    /** A finished project asks for confirmation before the timer starts. */
+    projectStatus?: "in_progress" | "done";
+    /** Sets the project back to in progress; resolves true on success. */
+    onreopen?: () => Promise<boolean>;
   }
 
   let {
@@ -48,6 +52,8 @@
     running: runningOut = $bindable(false),
     showChip = true,
     available = $bindable(false),
+    projectStatus = "in_progress",
+    onreopen,
   }: Props = $props();
   let timer = $state<TimerValue | null>(null);
   let loading = $state(true);
@@ -60,6 +66,7 @@
   let minutes = $state("0");
   let seconds = $state("0");
   let editMode = $state(false);
+  let confirmReopen = $state(false);
   let generation = 0;
   let controller: AbortController | null = null;
   let refreshController: AbortController | null = null;
@@ -461,6 +468,23 @@
     if (refreshTick) clearInterval(refreshTick);
   });
 
+  async function requestStart() {
+    if (projectStatus === "done" && onreopen) {
+      confirmReopen = true;
+      return;
+    }
+    await changeTimer("start");
+  }
+
+  async function confirmStart() {
+    if (busy || !onreopen) return;
+    busy = true;
+    const reopened = await onreopen();
+    busy = false;
+    confirmReopen = false;
+    if (reopened) await changeTimer("start");
+  }
+
   async function changeTimer(action: "start" | "stop" | "set_total") {
     const currentSession = session.data;
     const requestGeneration = generation;
@@ -654,7 +678,36 @@
           </div>
         {/if}
 
-        {#if timer && canEdit && editing}
+        {#if confirmReopen}
+          <div
+            class="reminder-alert"
+            role="alertdialog"
+            aria-labelledby="timer-reopen-title"
+          >
+            <p id="timer-reopen-title">
+              {t(
+                "This project is marked as done. Starting the timer sets it back to in progress.",
+                locale,
+              )}
+            </p>
+            <div class="timer-actions">
+              <Button
+                class="save-time"
+                variant="secondary"
+                disabled={busy}
+                onclick={() => (confirmReopen = false)}
+                >{t("Cancel", locale)}</Button
+              >
+              <Button
+                class="start-time"
+                variant="primary"
+                disabled={busy}
+                onclick={() => void confirmStart()}
+                >{t("Start", locale)}</Button
+              >
+            </div>
+          </div>
+        {:else if timer && canEdit && editing}
           <form
             class="timer-controls"
             onsubmit={(event) => {
@@ -733,7 +786,7 @@
                 class="start-time"
                 variant="primary"
                 disabled={busy}
-                onclick={() => void changeTimer("start")}
+                onclick={() => void requestStart()}
                 >{t("Start", locale)}</Button
               >
             {/if}

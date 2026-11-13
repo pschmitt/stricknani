@@ -135,6 +135,7 @@
     <string name="project_timer_running_caption">Time spent on this project</string>
     <string name="project_timer_ready_caption">Ready when you are</string>
     <string name="project_timer_start">Start</string>
+    <string name="project_timer_reopen_message">This project is marked as done. Starting the timer sets it back to in progress.</string>
     <string name="project_timer_stop">Stop timer</string>
     <string name="project_timer_edit">Edit time</string>
     <string name="project_timer_edit_title">Edit knitting time</string>

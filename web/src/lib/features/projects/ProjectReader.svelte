@@ -477,6 +477,12 @@
     }
   }
 
+  /** Starting a timer on a finished project (confirmed in the timer) reopens it. */
+  async function reopenForTimer(): Promise<boolean> {
+    if (project?.status === "done") await toggleStatus();
+    return project?.status !== "done";
+  }
+
   function isCurrentFavorite(
     generation: number,
     projectId: number,
@@ -1173,6 +1179,8 @@
               {canEdit}
               enabled={projectTimersEnabled}
               projectName={currentProject.name}
+              projectStatus={currentProject.status}
+              onreopen={reopenForTimer}
               thumbnailUrl={coverImage?.thumbnail_url ?? null}
             />
           {/if}

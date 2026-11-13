@@ -123,7 +123,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminResource.svelte:444
 #: web/src/lib/features/history/change-format.ts:125
 #: web/src/lib/features/projects/ProjectEditor.svelte:2080
-#: web/src/lib/features/projects/ProjectReader.svelte:863
+#: web/src/lib/features/projects/ProjectReader.svelte:869
 msgid "Needles"
 msgstr ""
 
@@ -133,7 +133,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectEditor.svelte:1941
 #: web/src/lib/features/projects/ProjectEditor.svelte:1963
 #: web/src/lib/features/projects/ProjectEditor.svelte:2088
-#: web/src/lib/features/projects/ProjectReader.svelte:869
+#: web/src/lib/features/projects/ProjectReader.svelte:875
 msgid "Stitch sample"
 msgstr ""
 
@@ -141,7 +141,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminResource.svelte:499
 #: web/src/lib/features/history/change-format.ts:129
 #: web/src/lib/features/projects/ProjectEditor.svelte:2194
-#: web/src/lib/features/projects/ProjectReader.svelte:983
+#: web/src/lib/features/projects/ProjectReader.svelte:989
 msgid "Other materials"
 msgstr ""
 
@@ -151,10 +151,10 @@ msgstr ""
 #: web/src/lib/features/admin/AdminResource.svelte:440
 #: web/src/lib/features/admin/DiffPanel.svelte:96
 #: web/src/lib/features/history/change-format.ts:123
-#: web/src/lib/features/projects/ProjectReader.svelte:916
-#: web/src/lib/features/projects/ProjectReader.svelte:950
-#: web/src/lib/features/projects/ProjectReader.svelte:955
-#: web/src/lib/features/projects/ProjectReader.svelte:962
+#: web/src/lib/features/projects/ProjectReader.svelte:922
+#: web/src/lib/features/projects/ProjectReader.svelte:956
+#: web/src/lib/features/projects/ProjectReader.svelte:961
+#: web/src/lib/features/projects/ProjectReader.svelte:968
 #: web/src/lib/features/trash/trash-kinds.ts:44
 #: web/src/routes/share/+page.svelte:82
 msgid "Yarn"
@@ -226,12 +226,12 @@ msgstr ""
 msgid "Fiber content"
 msgstr ""
 
-#: src/web_push.rs:324 web/src/lib/features/projects/ProjectTimer.svelte:346
+#: src/web_push.rs:324 web/src/lib/features/projects/ProjectTimer.svelte:353
 #, python-brace-format
 msgid "{name}: timer still running"
 msgstr ""
 
-#: src/web_push.rs:351 web/src/lib/features/projects/ProjectTimer.svelte:357
+#: src/web_push.rs:351 web/src/lib/features/projects/ProjectTimer.svelte:364
 #: web/src/lib/features/trash/TrashManager.svelte:266
 msgid "Open project"
 msgstr ""
@@ -254,7 +254,7 @@ msgstr ""
 msgid "1 filter suggestion"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:754
+#: web/src/lib/features/projects/ProjectTimer.svelte:803
 msgid "1 hour"
 msgstr ""
 
@@ -262,11 +262,11 @@ msgstr ""
 msgid "1 linked yarn"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:755
+#: web/src/lib/features/projects/ProjectTimer.svelte:804
 msgid "2 hours"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:753
+#: web/src/lib/features/projects/ProjectTimer.svelte:802
 msgid "30 minutes"
 msgstr ""
 
@@ -324,9 +324,9 @@ msgstr ""
 msgid "A quiet place to keep your knitting projects and yarn close."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:636
-#: web/src/lib/features/projects/ProjectReader.svelte:663
-#: web/src/lib/features/projects/ProjectReader.svelte:728
+#: web/src/lib/features/projects/ProjectReader.svelte:642
+#: web/src/lib/features/projects/ProjectReader.svelte:669
+#: web/src/lib/features/projects/ProjectReader.svelte:734
 msgid "A reference photo could not be prepared for printing. Try again."
 msgstr ""
 
@@ -465,12 +465,12 @@ msgstr ""
 msgid "Add a category above to make your project library easier to browse."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1035
+#: web/src/lib/features/projects/ProjectReader.svelte:1041
 #: web/src/lib/features/yarns/YarnDetail.svelte:514
 msgid "Add a note"
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:356
+#: web/src/lib/features/auth/PasskeysSection.svelte:397
 msgid "Add a passkey"
 msgstr ""
 
@@ -514,7 +514,7 @@ msgid "Add tags…"
 msgstr ""
 
 #: web/src/lib/components/FavoriteButton.svelte:21
-#: web/src/lib/features/projects/ProjectReader.svelte:1251
+#: web/src/lib/features/projects/ProjectReader.svelte:1259
 #: web/src/lib/features/yarns/YarnDetail.svelte:651
 msgid "Add to favorites"
 msgstr ""
@@ -542,7 +542,7 @@ msgstr ""
 msgid "Added an attachment"
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:308
+#: web/src/lib/features/auth/PasskeysSection.svelte:349
 #, python-brace-format
 msgid "Added {date}"
 msgstr ""
@@ -562,7 +562,7 @@ msgstr ""
 msgid "Added {n} steps"
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:97
+#: web/src/lib/features/auth/PasskeysSection.svelte:142
 msgid "Adding the passkey was cancelled."
 msgstr ""
 
@@ -572,7 +572,7 @@ msgid ""
 "items. Nothing you already have is changed."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:666
+#: web/src/lib/features/projects/ProjectTimer.svelte:715
 msgid "Adjust total time"
 msgstr ""
 
@@ -810,7 +810,7 @@ msgstr ""
 
 #: web/src/lib/features/admin/AdminResource.svelte:580
 #: web/src/lib/features/projects/ProjectEditor.svelte:1990
-#: web/src/lib/features/projects/ProjectReader.svelte:1417
+#: web/src/lib/features/projects/ProjectReader.svelte:1425
 msgid "Attachments"
 msgstr ""
 
@@ -863,9 +863,9 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1635
 #: web/src/lib/features/projects/ProjectEditor.svelte:1640
-#: web/src/lib/features/projects/ProjectReader.svelte:816
-#: web/src/lib/features/projects/ProjectReader.svelte:827
+#: web/src/lib/features/projects/ProjectReader.svelte:822
 #: web/src/lib/features/projects/ProjectReader.svelte:833
+#: web/src/lib/features/projects/ProjectReader.svelte:839
 #: web/src/routes/+layout.svelte:420
 msgid "Back to projects"
 msgstr ""
@@ -1015,7 +1015,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminUsers.svelte:1078
 #: web/src/lib/features/admin/AdminUsers.svelte:1152
 #: web/src/lib/features/admin/RestoreBackupDialog.svelte:544
-#: web/src/lib/features/auth/PasskeysSection.svelte:301
+#: web/src/lib/features/auth/PasskeysSection.svelte:342
 #: web/src/lib/features/auth/ReauthDialog.svelte:210
 #: web/src/lib/features/categories/CategoryManager.svelte:341
 #: web/src/lib/features/gauge/SwatchSizeDialog.svelte:114
@@ -1023,8 +1023,9 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectEditor.svelte:2492
 #: web/src/lib/features/projects/ProjectEditor.svelte:2575
 #: web/src/lib/features/projects/ProjectEditor.svelte:2657
-#: web/src/lib/features/projects/ProjectReader.svelte:1518
-#: web/src/lib/features/projects/ProjectTimer.svelte:702
+#: web/src/lib/features/projects/ProjectReader.svelte:1526
+#: web/src/lib/features/projects/ProjectTimer.svelte:695
+#: web/src/lib/features/projects/ProjectTimer.svelte:751
 #: web/src/lib/features/sharing/AccessNotice.svelte:135
 #: web/src/lib/features/sharing/TransferDialog.svelte:135
 #: web/src/lib/features/yarns/YarnForm.svelte:1314
@@ -1267,7 +1268,7 @@ msgstr ""
 msgid "Close image viewer"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1017
+#: web/src/lib/features/projects/ProjectReader.svelte:1023
 #: web/src/lib/features/yarns/YarnDetail.svelte:497
 msgid "Close notes"
 msgstr ""
@@ -1489,7 +1490,7 @@ msgstr ""
 msgid "Dark"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1205
+#: web/src/lib/features/projects/ProjectReader.svelte:1213
 #: web/src/lib/features/yarns/YarnDetail.svelte:605
 msgid "Decrease text size"
 msgstr ""
@@ -1543,13 +1544,13 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:2465
 #: web/src/lib/features/projects/ProjectEditor.svelte:2585
-#: web/src/lib/features/projects/ProjectReader.svelte:1329
-#: web/src/lib/features/projects/ProjectReader.svelte:1527
+#: web/src/lib/features/projects/ProjectReader.svelte:1337
+#: web/src/lib/features/projects/ProjectReader.svelte:1535
 msgid "Delete project"
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:287
-#: web/src/lib/features/projects/ProjectReader.svelte:1493
+#: web/src/lib/features/projects/ProjectReader.svelte:1501
 msgid "Delete this project?"
 msgstr ""
 
@@ -1787,7 +1788,7 @@ msgid "Each step needs a title of 256 characters or fewer."
 msgstr ""
 
 #: web/src/lib/features/media/ProjectLightbox.svelte:271
-#: web/src/lib/features/projects/ProjectReader.svelte:1187
+#: web/src/lib/features/projects/ProjectReader.svelte:1195
 #: web/src/lib/features/yarns/YarnDetail.svelte:587
 msgid "Edit"
 msgstr ""
@@ -1806,11 +1807,11 @@ msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:1604
 #: web/src/lib/features/projects/ProjectEditor.svelte:1613
-#: web/src/lib/features/projects/ProjectReader.svelte:1182
+#: web/src/lib/features/projects/ProjectReader.svelte:1190
 msgid "Edit project"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:721
+#: web/src/lib/features/projects/ProjectTimer.svelte:770
 msgid "Edit time"
 msgstr ""
 
@@ -2120,7 +2121,7 @@ msgstr ""
 msgid "For your security, confirm your identity before changing how you sign in."
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:414
+#: web/src/lib/features/auth/PasskeysSection.svelte:455
 msgid "For your security, confirm your identity before changing your passkeys."
 msgstr ""
 
@@ -2193,7 +2194,7 @@ msgstr ""
 msgid "Give it a name and cast on your first stitches."
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:176
+#: web/src/lib/features/auth/PasskeysSection.svelte:221
 msgid "Give the passkey a name."
 msgstr ""
 
@@ -2284,8 +2285,8 @@ msgstr ""
 msgid "Home"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:668
-#: web/src/lib/features/projects/ProjectTimer.svelte:669
+#: web/src/lib/features/projects/ProjectTimer.svelte:717
+#: web/src/lib/features/projects/ProjectTimer.svelte:718
 msgid "Hours"
 msgstr ""
 
@@ -2512,7 +2513,7 @@ msgstr ""
 msgid "Includes photos"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1215
+#: web/src/lib/features/projects/ProjectReader.svelte:1223
 #: web/src/lib/features/yarns/YarnDetail.svelte:615
 msgid "Increase text size"
 msgstr ""
@@ -2534,7 +2535,7 @@ msgstr ""
 #: web/src/lib/features/categories/CategoryManager.svelte:392
 #: web/src/lib/features/projects/ProjectEditor.svelte:2546
 #: web/src/lib/features/projects/ProjectEditor.svelte:2553
-#: web/src/lib/features/projects/ProjectReader.svelte:1498
+#: web/src/lib/features/projects/ProjectReader.svelte:1506
 #: web/src/lib/features/yarns/YarnDetail.svelte:804
 #: web/src/lib/features/yarns/YarnForm.svelte:1347
 #: web/src/lib/features/yarns/YarnForm.svelte:1414
@@ -2581,7 +2582,7 @@ msgstr ""
 msgid "Keep my account"
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:397
+#: web/src/lib/features/auth/PasskeysSection.svelte:438
 msgid "Keep passkey"
 msgstr ""
 
@@ -2593,7 +2594,7 @@ msgstr ""
 msgid "Keep this page open. The result appears here."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:651
+#: web/src/lib/features/projects/ProjectTimer.svelte:675
 msgid "Keep timing"
 msgstr ""
 
@@ -2625,14 +2626,14 @@ msgid ""
 " choose to store."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1133
+#: web/src/lib/features/projects/ProjectReader.svelte:1139
 msgid "Knitting project"
 msgstr ""
 
 #: web/src/lib/features/history/change-format.ts:140
-#: web/src/lib/features/projects/ProjectReader.svelte:1285
-#: web/src/lib/features/projects/ProjectTimer.svelte:591
-#: web/src/lib/features/projects/ProjectTimer.svelte:611
+#: web/src/lib/features/projects/ProjectReader.svelte:1293
+#: web/src/lib/features/projects/ProjectTimer.svelte:615
+#: web/src/lib/features/projects/ProjectTimer.svelte:635
 msgid "Knitting time"
 msgstr ""
 
@@ -2657,7 +2658,7 @@ msgstr ""
 msgid "Large"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1474
+#: web/src/lib/features/projects/ProjectReader.svelte:1482
 msgid "Last updated"
 msgstr ""
 
@@ -2665,7 +2666,7 @@ msgstr ""
 msgid "Last used"
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:227
+#: web/src/lib/features/auth/PasskeysSection.svelte:272
 #, python-brace-format
 msgid "Last used {date}"
 msgstr ""
@@ -2861,7 +2862,7 @@ msgstr ""
 msgid "Loading ongoing projects…"
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:254
+#: web/src/lib/features/auth/PasskeysSection.svelte:299
 msgid "Loading passkeys…"
 msgstr ""
 
@@ -2886,7 +2887,7 @@ msgstr ""
 msgid "Loading resource details…"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:629
+#: web/src/lib/features/projects/ProjectTimer.svelte:653
 msgid "Loading timer…"
 msgstr ""
 
@@ -2922,7 +2923,7 @@ msgstr ""
 msgid "Location and camera data will be removed from new photos."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1018
+#: web/src/lib/features/projects/ProjectReader.svelte:1024
 #: web/src/lib/features/yarns/YarnDetail.svelte:498
 msgid "Long-press and drag to move"
 msgstr ""
@@ -2963,17 +2964,17 @@ msgstr ""
 msgid "Manual"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1270
+#: web/src/lib/features/projects/ProjectReader.svelte:1278
 msgid "Mark as done"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1269
+#: web/src/lib/features/projects/ProjectReader.svelte:1277
 msgid "Mark as in progress"
 msgstr ""
 
 #: web/src/lib/features/account/DetailCardOrderSettings.svelte:41
 #: web/src/lib/features/projects/ProjectEditor.svelte:2162
-#: web/src/lib/features/projects/ProjectReader.svelte:910
+#: web/src/lib/features/projects/ProjectReader.svelte:916
 msgid "Materials"
 msgstr ""
 
@@ -3005,8 +3006,8 @@ msgstr ""
 msgid "Mine"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:678
-#: web/src/lib/features/projects/ProjectTimer.svelte:679
+#: web/src/lib/features/projects/ProjectTimer.svelte:727
+#: web/src/lib/features/projects/ProjectTimer.svelte:728
 msgid "Minutes"
 msgstr ""
 
@@ -3032,7 +3033,7 @@ msgstr ""
 msgid "More about your data is in the"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1191
+#: web/src/lib/features/projects/ProjectReader.svelte:1199
 #: web/src/lib/features/yarns/YarnDetail.svelte:591
 msgid "More actions"
 msgstr ""
@@ -3116,7 +3117,7 @@ msgstr ""
 msgid "Never used"
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:231
+#: web/src/lib/features/auth/PasskeysSection.svelte:276
 msgid "Never used to sign in"
 msgstr ""
 
@@ -3272,11 +3273,11 @@ msgstr ""
 msgid "No one matches that search."
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:266
+#: web/src/lib/features/auth/PasskeysSection.svelte:307
 msgid "No passkeys yet."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1008
+#: web/src/lib/features/projects/ProjectReader.svelte:1014
 msgid "No pattern description yet."
 msgstr ""
 
@@ -3306,7 +3307,7 @@ msgid ""
 msgstr ""
 
 #: web/src/lib/features/projects/ProjectEditor.svelte:2444
-#: web/src/lib/features/projects/ProjectReader.svelte:1120
+#: web/src/lib/features/projects/ProjectReader.svelte:1126
 msgid "No steps have been added yet."
 msgstr ""
 
@@ -3351,7 +3352,7 @@ msgstr ""
 msgid "Not provided"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:956
+#: web/src/lib/features/projects/ProjectReader.svelte:962
 msgid "Not recorded"
 msgstr ""
 
@@ -3361,30 +3362,30 @@ msgstr ""
 #: web/src/lib/features/history/change-format.ts:128
 #: web/src/lib/features/history/change-format.ts:153
 #: web/src/lib/features/projects/ProjectEditor.svelte:2239
-#: web/src/lib/features/projects/ProjectReader.svelte:1014
-#: web/src/lib/features/projects/ProjectReader.svelte:1032
+#: web/src/lib/features/projects/ProjectReader.svelte:1020
+#: web/src/lib/features/projects/ProjectReader.svelte:1038
 #: web/src/lib/features/yarns/YarnDetail.svelte:495
 #: web/src/lib/features/yarns/YarnDetail.svelte:512
 #: web/src/lib/features/yarns/YarnForm.svelte:1256
 msgid "Notes"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1023
+#: web/src/lib/features/projects/ProjectReader.svelte:1029
 #: web/src/lib/features/yarns/YarnDetail.svelte:503
 msgid "Notes moved down"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1020
+#: web/src/lib/features/projects/ProjectReader.svelte:1026
 #: web/src/lib/features/yarns/YarnDetail.svelte:500
 msgid "Notes moved to the left"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1021
+#: web/src/lib/features/projects/ProjectReader.svelte:1027
 #: web/src/lib/features/yarns/YarnDetail.svelte:501
 msgid "Notes moved to the right"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1022
+#: web/src/lib/features/projects/ProjectReader.svelte:1028
 #: web/src/lib/features/yarns/YarnDetail.svelte:502
 msgid "Notes moved up"
 msgstr ""
@@ -3421,7 +3422,7 @@ msgstr ""
 msgid "Numbered list"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:752
+#: web/src/lib/features/projects/ProjectTimer.svelte:801
 msgid "Off"
 msgstr ""
 
@@ -3471,8 +3472,8 @@ msgstr ""
 msgid "Open Account in the web app, or the Account screen in the Android app."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:885
-#: web/src/lib/features/projects/ProjectReader.svelte:893
+#: web/src/lib/features/projects/ProjectReader.svelte:891
+#: web/src/lib/features/projects/ProjectReader.svelte:899
 #: web/src/lib/features/yarns/YarnDetail.svelte:458
 #: web/src/lib/features/yarns/YarnDetail.svelte:466
 msgid "Open archived copy"
@@ -3504,11 +3505,11 @@ msgstr ""
 msgid "Open on this phone"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:884
+#: web/src/lib/features/projects/ProjectReader.svelte:890
 msgid "Open original pattern"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1392
+#: web/src/lib/features/projects/ProjectReader.svelte:1400
 msgid "Open project photo"
 msgstr ""
 
@@ -3521,11 +3522,11 @@ msgstr ""
 msgid "Open server commit on GitHub"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1083
+#: web/src/lib/features/projects/ProjectReader.svelte:1089
 msgid "Open step photo"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:362
+#: web/src/lib/features/projects/ProjectTimer.svelte:369
 msgid "Open the project to stop the timer or keep timing."
 msgstr ""
 
@@ -3548,7 +3549,7 @@ msgstr ""
 msgid "Open your project library to continue."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:819
+#: web/src/lib/features/projects/ProjectReader.svelte:825
 msgid "Opening your pattern…"
 msgstr ""
 
@@ -3612,7 +3613,7 @@ msgstr ""
 #: web/src/lib/features/admin/AuditLifecycle.svelte:95
 #: web/src/lib/features/history/HistorySection.svelte:333
 #: web/src/lib/features/home/ActivityFeed.svelte:243
-#: web/src/lib/features/projects/ProjectReader.svelte:1153
+#: web/src/lib/features/projects/ProjectReader.svelte:1159
 #: web/src/lib/features/trash/TrashManager.svelte:372
 #: web/src/lib/features/trash/trash-state.ts:113
 #, python-brace-format
@@ -3652,15 +3653,15 @@ msgstr ""
 msgid "Pages"
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:158
+#: web/src/lib/features/auth/PasskeysSection.svelte:203
 msgid "Passkey added. You can rename it now."
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:274
+#: web/src/lib/features/auth/PasskeysSection.svelte:315
 msgid "Passkey name"
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:208
+#: web/src/lib/features/auth/PasskeysSection.svelte:253
 msgid "Passkey removed."
 msgstr ""
 
@@ -3668,16 +3669,16 @@ msgstr ""
 msgid "Passkey sign-in did not work. Try again."
 msgstr ""
 
-#: web/src/lib/components/SignInForm.svelte:110
+#: web/src/lib/components/SignInForm.svelte:109
 msgid "Passkey sign-in was cancelled. Try again or use your password."
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:121
+#: web/src/lib/features/auth/PasskeysSection.svelte:166
 #, python-brace-format
 msgid "Passkey {number}"
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:239
+#: web/src/lib/features/auth/PasskeysSection.svelte:284
 msgid "Passkeys"
 msgstr ""
 
@@ -3742,7 +3743,7 @@ msgstr ""
 #: web/src/lib/features/account/DetailCardOrderSettings.svelte:42
 #: web/src/lib/features/projects/ProjectEditor.svelte:2211
 #: web/src/lib/features/projects/ProjectEditor.svelte:2223
-#: web/src/lib/features/projects/ProjectReader.svelte:999
+#: web/src/lib/features/projects/ProjectReader.svelte:1005
 msgid "Pattern"
 msgstr ""
 
@@ -3758,7 +3759,7 @@ msgstr ""
 msgid "Pattern page URL"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:879
+#: web/src/lib/features/projects/ProjectReader.svelte:885
 msgid "Pattern source"
 msgstr ""
 
@@ -3850,7 +3851,7 @@ msgstr ""
 
 #: web/src/lib/features/admin/AdminResource.svelte:715
 #: web/src/lib/features/projects/ProjectEditor.svelte:1900
-#: web/src/lib/features/projects/ProjectReader.svelte:1391
+#: web/src/lib/features/projects/ProjectReader.svelte:1399
 #: web/src/lib/features/yarns/YarnDetail.svelte:744
 #: web/src/lib/features/yarns/YarnForm.svelte:1055
 #: web/src/lib/features/yarns/YarnForm.svelte:1096
@@ -3902,8 +3903,8 @@ msgstr ""
 msgid "Preferences"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1313
-#: web/src/lib/features/projects/ProjectReader.svelte:1337
+#: web/src/lib/features/projects/ProjectReader.svelte:1321
+#: web/src/lib/features/projects/ProjectReader.svelte:1345
 msgid "Preparing full-resolution photos…"
 msgstr ""
 
@@ -3938,7 +3939,7 @@ msgstr ""
 msgid "Previous yarn note"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1314
+#: web/src/lib/features/projects/ProjectReader.svelte:1322
 msgid "Print pattern"
 msgstr ""
 
@@ -3993,7 +3994,7 @@ msgstr ""
 msgid "Project"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1234
+#: web/src/lib/features/projects/ProjectReader.svelte:1242
 msgid "Project actions"
 msgstr ""
 
@@ -4016,7 +4017,7 @@ msgstr ""
 #: web/src/lib/features/account/DetailCardOrderSettings.svelte:40
 #: web/src/lib/features/admin/AdminResource.svelte:433
 #: web/src/lib/features/projects/ProjectEditor.svelte:2047
-#: web/src/lib/features/projects/ProjectReader.svelte:857
+#: web/src/lib/features/projects/ProjectReader.svelte:863
 msgid "Project details"
 msgstr ""
 
@@ -4060,11 +4061,11 @@ msgstr ""
 msgid "Project photos and files"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1141
+#: web/src/lib/features/projects/ProjectReader.svelte:1147
 msgid "Project tags"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:361
+#: web/src/lib/features/projects/ProjectTimer.svelte:368
 msgid "Project timer is still running"
 msgstr ""
 
@@ -4121,7 +4122,7 @@ msgid "Read the code, follow along or contribute."
 msgstr ""
 
 #: web/src/lib/features/admin/AdminResource.svelte:364
-#: web/src/lib/features/projects/ProjectReader.svelte:1149
+#: web/src/lib/features/projects/ProjectReader.svelte:1155
 msgid "Read-only view"
 msgstr ""
 
@@ -4141,7 +4142,7 @@ msgstr ""
 msgid "Ready to review"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:623
+#: web/src/lib/features/projects/ProjectTimer.svelte:647
 msgid "Ready when you are"
 msgstr ""
 
@@ -4189,11 +4190,11 @@ msgstr ""
 msgid "Recognized text"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1402
+#: web/src/lib/features/projects/ProjectReader.svelte:1410
 msgid "Recognized text from project photo"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1104
+#: web/src/lib/features/projects/ProjectReader.svelte:1110
 msgid "Recognized text from step photo"
 msgstr ""
 
@@ -4235,8 +4236,8 @@ msgstr ""
 msgid "Reload"
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:337
-#: web/src/lib/features/auth/PasskeysSection.svelte:404
+#: web/src/lib/features/auth/PasskeysSection.svelte:378
+#: web/src/lib/features/auth/PasskeysSection.svelte:445
 #: web/src/lib/features/media/QueuedPhotoList.svelte:54
 #: web/src/lib/features/projects/ProjectEditor.svelte:2314
 #: web/src/lib/features/projects/ProjectEditor.svelte:2586
@@ -4257,7 +4258,7 @@ msgid "Remove filter"
 msgstr ""
 
 #: web/src/lib/components/FavoriteButton.svelte:20
-#: web/src/lib/features/projects/ProjectReader.svelte:1250
+#: web/src/lib/features/projects/ProjectReader.svelte:1258
 #: web/src/lib/features/yarns/YarnDetail.svelte:650
 msgid "Remove from favorites"
 msgstr ""
@@ -4284,11 +4285,11 @@ msgstr ""
 msgid "Remove tag {name}"
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:382
+#: web/src/lib/features/auth/PasskeysSection.svelte:423
 msgid "Remove this passkey?"
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:381
+#: web/src/lib/features/auth/PasskeysSection.svelte:422
 #, python-brace-format
 msgid "Remove {name}?"
 msgstr ""
@@ -4335,7 +4336,7 @@ msgstr ""
 msgid "Removing…"
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:328
+#: web/src/lib/features/auth/PasskeysSection.svelte:369
 #: web/src/lib/features/categories/CategoryManager.svelte:361
 msgid "Rename"
 msgstr ""
@@ -4382,7 +4383,7 @@ msgstr ""
 msgid "Reset password"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1226
+#: web/src/lib/features/projects/ProjectReader.svelte:1234
 #: web/src/lib/features/yarns/YarnDetail.svelte:626
 msgid "Reset text size"
 msgstr ""
@@ -4578,8 +4579,8 @@ msgstr ""
 msgid "Rumour has it a cat was involved."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:745
-#: web/src/lib/features/projects/ProjectTimer.svelte:747
+#: web/src/lib/features/projects/ProjectTimer.svelte:794
+#: web/src/lib/features/projects/ProjectTimer.svelte:796
 msgid "Running reminder"
 msgstr ""
 
@@ -4588,7 +4589,7 @@ msgstr ""
 msgid "Safety copy: {name}"
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:291
+#: web/src/lib/features/auth/PasskeysSection.svelte:332
 #: web/src/lib/features/categories/CategoryManager.svelte:331
 #: web/src/lib/features/media/PhotoEditor.svelte:456
 msgid "Save"
@@ -4616,7 +4617,7 @@ msgstr ""
 msgid "Save this yarn first. You can add photos as soon as it has been created."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:711
+#: web/src/lib/features/projects/ProjectTimer.svelte:760
 msgid "Save time"
 msgstr ""
 
@@ -4739,8 +4740,8 @@ msgstr ""
 msgid "Search your yarns"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:688
-#: web/src/lib/features/projects/ProjectTimer.svelte:689
+#: web/src/lib/features/projects/ProjectTimer.svelte:737
+#: web/src/lib/features/projects/ProjectTimer.svelte:738
 msgid "Seconds"
 msgstr ""
 
@@ -4940,7 +4941,7 @@ msgstr ""
 msgid "Sign in to see your favorite projects and yarns."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:227
+#: web/src/lib/features/projects/ProjectTimer.svelte:234
 msgid "Sign in to use the project timer."
 msgstr ""
 
@@ -4965,7 +4966,7 @@ msgstr ""
 msgid "Sign in with a passkey"
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:241
+#: web/src/lib/features/auth/PasskeysSection.svelte:286
 msgid ""
 "Sign in with your fingerprint, face or screen lock instead of typing your"
 " password. A passkey stays on your devices and cannot be phished."
@@ -5050,7 +5051,7 @@ msgid ""
 " yarns below."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:978
+#: web/src/lib/features/projects/ProjectReader.svelte:984
 msgid "Some yarn details could not be loaded."
 msgstr ""
 
@@ -5076,7 +5077,8 @@ msgstr ""
 msgid "Sponsor on GitHub"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:737
+#: web/src/lib/features/projects/ProjectTimer.svelte:702
+#: web/src/lib/features/projects/ProjectTimer.svelte:786
 msgid "Start"
 msgstr ""
 
@@ -5154,7 +5156,7 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectEditor.svelte:1800
 #: web/src/lib/features/projects/ProjectEditor.svelte:2377
 #: web/src/lib/features/projects/ProjectEditor.svelte:2411
-#: web/src/lib/features/projects/ProjectReader.svelte:1075
+#: web/src/lib/features/projects/ProjectReader.svelte:1081
 msgid "Step photos"
 msgstr ""
 
@@ -5182,7 +5184,7 @@ msgstr ""
 #: web/src/lib/features/account/DetailCardOrderSettings.svelte:43
 #: web/src/lib/features/admin/AdminResource.svelte:527
 #: web/src/lib/features/history/change-format.ts:131
-#: web/src/lib/features/projects/ProjectReader.svelte:1048
+#: web/src/lib/features/projects/ProjectReader.svelte:1054
 msgid "Steps"
 msgstr ""
 
@@ -5211,7 +5213,7 @@ msgstr ""
 msgid "Stitches to cast on"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:729
+#: web/src/lib/features/projects/ProjectTimer.svelte:778
 msgid "Stop"
 msgstr ""
 
@@ -5219,7 +5221,7 @@ msgstr ""
 msgid "Stop impersonating"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:646
+#: web/src/lib/features/projects/ProjectTimer.svelte:670
 msgid "Stop timer"
 msgstr ""
 
@@ -5232,7 +5234,7 @@ msgstr ""
 msgid "Storage, retention, and deletion"
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:317
+#: web/src/lib/features/auth/PasskeysSection.svelte:358
 msgid "Stored on one device"
 msgstr ""
 
@@ -5293,7 +5295,7 @@ msgstr ""
 msgid "Swatch size"
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:316
+#: web/src/lib/features/auth/PasskeysSection.svelte:357
 msgid "Synced across your devices"
 msgstr ""
 
@@ -5372,7 +5374,7 @@ msgstr ""
 
 #: web/src/lib/features/account/AccountSettings.svelte:1121
 #: web/src/lib/features/account/AccountSettings.svelte:1131
-#: web/src/lib/features/projects/ProjectReader.svelte:1195
+#: web/src/lib/features/projects/ProjectReader.svelte:1203
 #: web/src/lib/features/yarns/YarnDetail.svelte:595
 #: web/src/lib/palette/entries.ts:51
 msgid "Text size"
@@ -5386,7 +5388,7 @@ msgstr ""
 msgid "That passkey could not be verified."
 msgstr ""
 
-#: web/src/lib/components/SignInForm.svelte:115
+#: web/src/lib/components/SignInForm.svelte:114
 msgid ""
 "That passkey is not registered for any account here. Use another passkey "
 "or your password."
@@ -5636,8 +5638,8 @@ msgstr ""
 msgid "The new photo order could not be saved. The previous order was restored."
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:102
-#: web/src/lib/features/auth/PasskeysSection.svelte:112
+#: web/src/lib/features/auth/PasskeysSection.svelte:147
+#: web/src/lib/features/auth/PasskeysSection.svelte:157
 msgid "The passkey could not be created. Try again."
 msgstr ""
 
@@ -5669,7 +5671,7 @@ msgstr ""
 msgid "The passwords do not match."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:838
+#: web/src/lib/features/projects/ProjectReader.svelte:844
 msgid "The pattern could not be opened."
 msgstr ""
 
@@ -5719,11 +5721,11 @@ msgstr ""
 msgid "The project media could not be updated."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:261
+#: web/src/lib/features/projects/ProjectTimer.svelte:268
 msgid "The project timer could not be loaded."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:510
+#: web/src/lib/features/projects/ProjectTimer.svelte:534
 msgid "The project timer could not be updated."
 msgstr ""
 
@@ -5747,7 +5749,7 @@ msgstr ""
 #: web/src/lib/features/auth/AdminUserIdentities.svelte:54
 #: web/src/lib/features/auth/LinkedLogins.svelte:84
 #: web/src/lib/features/auth/LinkedLogins.svelte:150
-#: web/src/lib/features/auth/PasskeysSection.svelte:115
+#: web/src/lib/features/auth/PasskeysSection.svelte:160
 #: web/src/lib/features/auth/ReauthDialog.svelte:162
 msgid "The request could not be completed."
 msgstr ""
@@ -6000,11 +6002,11 @@ msgid ""
 "least a very good cookie."
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:100
+#: web/src/lib/features/auth/PasskeysSection.svelte:145
 msgid "This browser cannot create a passkey here."
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:368
+#: web/src/lib/features/auth/PasskeysSection.svelte:409
 msgid ""
 "This browser cannot create passkeys. Open Stricknani in a current browser"
 " to add one."
@@ -6024,7 +6026,7 @@ msgid ""
 "administrator."
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:92
+#: web/src/lib/features/auth/PasskeysSection.svelte:137
 msgid "This device already has a passkey for your account."
 msgstr ""
 
@@ -6187,6 +6189,12 @@ msgstr ""
 msgid "This project is in the trash."
 msgstr ""
 
+#: web/src/lib/features/projects/ProjectTimer.svelte:684
+msgid ""
+"This project is marked as done. Starting the timer sets it back to in "
+"progress."
+msgstr ""
+
 #: web/src/lib/features/projects/ProjectReader.svelte:425
 #: web/src/lib/features/projects/ProjectReader.svelte:471
 msgid "This project is no longer available."
@@ -6242,7 +6250,7 @@ msgstr ""
 msgid "Three imports are already running. Wait until one is done."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:622
+#: web/src/lib/features/projects/ProjectTimer.svelte:646
 msgid "Time spent on this project"
 msgstr ""
 
@@ -6267,9 +6275,9 @@ msgstr ""
 msgid "Timer stopped · {time}"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:256
-#: web/src/lib/features/projects/ProjectTimer.svelte:303
-#: web/src/lib/features/projects/ProjectTimer.svelte:505
+#: web/src/lib/features/projects/ProjectTimer.svelte:263
+#: web/src/lib/features/projects/ProjectTimer.svelte:310
+#: web/src/lib/features/projects/ProjectTimer.svelte:529
 msgid "Timers are not available on this server yet."
 msgstr ""
 
@@ -6311,7 +6319,7 @@ msgstr ""
 msgid "Too many archive requests. Try again later."
 msgstr ""
 
-#: web/src/lib/api.ts:349 web/src/lib/components/SignInForm.svelte:120
+#: web/src/lib/api.ts:349 web/src/lib/components/SignInForm.svelte:119
 #: web/src/lib/features/account/DeleteAccountDialog.svelte:100
 #: web/src/lib/features/auth/ReauthDialog.svelte:155
 msgid "Too many attempts. Wait a moment and try again."
@@ -6392,7 +6400,7 @@ msgstr ""
 #: web/src/lib/features/admin/DiffPanel.svelte:135
 #: web/src/lib/features/auth/AdminUserIdentities.svelte:150
 #: web/src/lib/features/auth/LinkedLogins.svelte:267
-#: web/src/lib/features/auth/PasskeysSection.svelte:262
+#: web/src/lib/features/auth/PasskeysSection.svelte:303
 #: web/src/lib/features/categories/CategoryManager.svelte:241
 #: web/src/lib/features/history/HistoryEventDetail.svelte:68
 #: web/src/lib/features/history/HistorySection.svelte:260
@@ -6402,7 +6410,7 @@ msgstr ""
 #: web/src/lib/features/home/HomeDashboard.svelte:196
 #: web/src/lib/features/media/ArchiveControl.svelte:513
 #: web/src/lib/features/projects/ProjectLibrary.svelte:396
-#: web/src/lib/features/projects/ProjectReader.svelte:848
+#: web/src/lib/features/projects/ProjectReader.svelte:854
 #: web/src/lib/features/sharing/PeoplePicker.svelte:121
 #: web/src/lib/features/sharing/ShareDialog.svelte:253
 #: web/src/lib/features/trash/TrashManager.svelte:297
@@ -6514,7 +6522,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminResource.svelte:657
 #: web/src/lib/features/admin/audit-action.ts:30
 #: web/src/lib/features/home/ContinueCarousel.svelte:199
-#: web/src/lib/features/projects/ProjectReader.svelte:1136
+#: web/src/lib/features/projects/ProjectReader.svelte:1142
 #: web/src/lib/features/yarns/YarnDetail.svelte:442
 msgid "Updated"
 msgstr ""
@@ -6674,7 +6682,7 @@ msgid "Waiting for review"
 msgstr ""
 
 #: web/src/lib/components/SignInForm.svelte:271
-#: web/src/lib/features/auth/PasskeysSection.svelte:355
+#: web/src/lib/features/auth/PasskeysSection.svelte:396
 #: web/src/lib/features/auth/ReauthDialog.svelte:220
 msgid "Waiting for your passkey…"
 msgstr ""
@@ -6915,8 +6923,8 @@ msgid ""
 " deleting your account."
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:107
-#: web/src/lib/features/auth/PasskeysSection.svelte:361
+#: web/src/lib/features/auth/PasskeysSection.svelte:152
+#: web/src/lib/features/auth/PasskeysSection.svelte:402
 #, python-brace-format
 msgid "You can have up to {count} passkeys. Remove one to add another."
 msgstr ""
@@ -7040,7 +7048,7 @@ msgid ""
 "again later."
 msgstr ""
 
-#: web/src/lib/features/auth/PasskeysSection.svelte:386
+#: web/src/lib/features/auth/PasskeysSection.svelte:427
 msgid ""
 "You will no longer be able to sign in with this passkey. You can add it "
 "again later. Your password keeps working."
@@ -7127,7 +7135,7 @@ msgstr ""
 msgid "Your gauge (per 10cm)"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:638
+#: web/src/lib/features/projects/ProjectTimer.svelte:662
 msgid "Your knitting timer has been running for a while."
 msgstr ""
 
@@ -7157,7 +7165,7 @@ msgstr ""
 msgid "Your projects, yarns, steps, notes, and categories."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectReader.svelte:1001
+#: web/src/lib/features/projects/ProjectReader.svelte:1007
 msgid "Your reference"
 msgstr ""
 
@@ -7493,7 +7501,7 @@ msgstr ""
 msgid "{projects} projects"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:350
+#: web/src/lib/features/projects/ProjectTimer.svelte:357
 #, python-brace-format
 msgid "{time} spent so far. Open the project to stop the timer or keep timing."
 msgstr ""
