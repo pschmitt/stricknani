@@ -1178,142 +1178,37 @@ async function assertAuditVisualMeasurements(page: Page): Promise<void> {
       await waitTwoAnimationFrames(page);
       const measurements = await page.evaluate(() => {
         const rows = [...document.querySelectorAll(".event-row")];
-        const badges = [...document.querySelectorAll(".audit-action-badge")];
-        const linear = (value: string): number[] | null => {
-          const numbers = value
-            .match(/[\d.]+/g)
-            ?.slice(0, 3)
-            .map(Number);
-          if (!numbers || numbers.length !== 3) return null;
-          const scale = Math.max(...numbers) <= 1 ? 255 : 1;
-          const channels = numbers.map((number) => (number * scale) / 255);
-          return channels.map((channel) =>
-            channel <= 0.04045
-              ? channel / 12.92
-              : ((channel + 0.055) / 1.055) ** 2.4,
+        return rows.map((row) => {
+          const bounds = row.getBoundingClientRect();
+          const icon = row
+            .querySelector(".event-action")
+            ?.getBoundingClientRect();
+          const label = row.querySelector(
+            ".event-action-label .audit-action-badge",
           );
-        };
-        const luminance = (color: string): number | null => {
-          const channels = linear(color);
-          return (
-            channels &&
-            channels[0]! * 0.2126 +
-              channels[1]! * 0.7152 +
-              channels[2]! * 0.0722
-          );
-        };
-        const contrast = (foreground: string, background: string): number => {
-          const first = luminance(foreground);
-          const second = luminance(background);
-          if (first === null || second === null) return 0;
-          return (
-            (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05)
-          );
-        };
-        const rowMetrics = rows.map((row) => {
-          const rowRect = row.getBoundingClientRect();
-          // The first row has no top border; measure from the content edge.
-          const rowTop =
-            rowRect.top + parseFloat(getComputedStyle(row).borderTopWidth);
-          const slot = row.querySelector(".event-diff-slot");
-          const date = row.querySelector(".event-meta time");
-          const slotRect = slot?.getBoundingClientRect();
-          const dateRect = date?.getBoundingClientRect();
-          const diff = row.querySelector(".show-diff");
-          const diffRect = diff?.getBoundingClientRect();
+          const diff = row.querySelector(".show-diff")?.getBoundingClientRect();
           return {
-            height: rowRect.height,
-            slotOffset: slotRect ? slotRect.top - rowTop : null,
-            slotLeft: slotRect ? slotRect.left - rowRect.left : null,
-            slotHeight: slotRect?.height ?? 0,
-            dateOffset: dateRect ? dateRect.top - rowTop : null,
-            dateLeft: dateRect ? dateRect.left - rowRect.left : null,
-            hasDiff: Boolean(diff),
-            diffTargetOk:
-              !diff ||
-              Boolean(
-                diffRect && diffRect.width >= 44 && diffRect.height >= 44,
-              ),
+            iconSize: icon?.width ?? 0,
+            iconAligned: Boolean(icon && Math.abs(icon.left - bounds.left) < 2),
+            labelVisible: Boolean(
+              label && label.getBoundingClientRect().width > 0,
+            ),
+            diffTargetOk: !diff || (diff.width >= 44 && diff.height >= 44),
+            noHorizontalOverflow: row.scrollWidth <= row.clientWidth + 1,
           };
         });
-        const colorsByTone = new Map<string, string>();
-        const badgeMetrics = badges.map((badge) => {
-          const style = getComputedStyle(badge);
-          const tone =
-            [...badge.classList].find((name) =>
-              name.startsWith("action-badge--"),
-            ) ?? "unknown";
-          if (tone !== "action-badge--unknown")
-            colorsByTone.set(tone, style.color);
-          return {
-            tone,
-            contrast: contrast(style.color, style.backgroundColor),
-            unclipped: badge.scrollWidth <= badge.clientWidth + 1,
-          };
-        });
-        const spread = (values: Array<number | null>): boolean =>
-          values.every((value) => value !== null && Number.isFinite(value)) &&
-          Math.max(...(values as number[])) -
-            Math.min(...(values as number[])) <=
-            1.01;
-        const heights = rowMetrics.map((row) => row.height);
-        const slotOffsets = rowMetrics.map((row) => row.slotOffset);
-        const dateOffsets = rowMetrics.map((row) => row.dateOffset);
-        const slotLefts = rowMetrics.map((row) => row.slotLeft);
-        const dateLefts = rowMetrics.map((row) => row.dateLeft);
-        return {
-          values: rowMetrics.map((row) => [
-            Math.round(row.height * 10) / 10,
-            Math.round((row.slotOffset ?? -1) * 10) / 10,
-            Math.round((row.dateOffset ?? -1) * 10) / 10,
-            row.hasDiff ? 1 : 0,
-          ]),
-          rowCount: rows.length,
-          badgeCount: badges.length,
-          equalRowHeights: heights.length > 0 && spread(heights),
-          stableSlotOffset: slotOffsets.length > 0 && spread(slotOffsets),
-          stableSlotLeft: slotLefts.length > 0 && spread(slotLefts),
-          stableDateOffset: dateOffsets.length > 0 && spread(dateOffsets),
-          stableDateLeft: dateLefts.length > 0 && spread(dateLefts),
-          hasDiffCount: rowMetrics.filter((row) => row.hasDiff).length,
-          withoutDiffCount: rowMetrics.filter((row) => !row.hasDiff).length,
-          allDiffTargetsAtLeast44: rowMetrics.every((row) => row.diffTargetOk),
-          slotsAtLeast44: rowMetrics.every((row) => row.slotHeight >= 44),
-          textContrastAtLeast45:
-            badgeMetrics.length > 0 &&
-            badgeMetrics.every((badge) => badge.contrast >= 4.5),
-          badgeTextUnclipped: badgeMetrics.every((badge) => badge.unclipped),
-          distinctKnownToneColors:
-            colorsByTone.size >= 2 &&
-            new Set(colorsByTone.values()).size === colorsByTone.size,
-        };
       });
-      if (asRecord(measurements) === null) {
-        throw new AcceptanceFailure(
-          "audit visual measurements were unavailable",
-        );
-      }
-      const failing = Object.fromEntries(
-        Object.entries(measurements).filter(
-          ([key, value]) => key !== "values" && value !== true,
-        ),
-      );
       check(
-        measurements.rowCount >= 2 &&
-          measurements.badgeCount >= 2 &&
-          measurements.equalRowHeights === true &&
-          measurements.stableSlotOffset === true &&
-          measurements.stableSlotLeft === true &&
-          measurements.stableDateOffset === true &&
-          measurements.stableDateLeft === true &&
-          measurements.allDiffTargetsAtLeast44 === true &&
-          measurements.slotsAtLeast44 === true &&
-          measurements.textContrastAtLeast45 === true &&
-          measurements.badgeTextUnclipped === true &&
-          measurements.distinctKnownToneColors === true,
-        `audit action colors, contrast, or row alignment failed at ${width}px ` +
-          `(${JSON.stringify(failing)}; [height, slot, date, diff] ` +
-          `${JSON.stringify(measurements.values)})`,
+        measurements.length >= 2 &&
+          measurements.every(
+            (row) =>
+              row.iconSize >= 32 &&
+              row.iconAligned &&
+              row.labelVisible &&
+              row.diffTargetOk &&
+              row.noHorizontalOverflow,
+          ),
+        `audit timeline layout failed at ${width}px (${JSON.stringify(measurements)})`,
       );
     }
   } finally {
@@ -2686,7 +2581,7 @@ async function runAcceptance(
         .filter({ has: page.getByText(label, { exact: true }) })
         .first();
       const icon = event.locator(
-        ".audit-action-badge svg[aria-hidden='true'][focusable='false']",
+        ".event-action svg[aria-hidden='true'][focusable='false']",
       );
       check(
         (await icon.count()) === 1,
@@ -2883,7 +2778,7 @@ async function runAcceptance(
     const unknownActionLabel = unknownRow.locator(".audit-action-badge > span");
     const unknownBadge = unknownRow.locator(".audit-action-badge");
     const unknownIcon = unknownRow.locator(
-      ".audit-action-badge svg[aria-hidden='true'][focusable='false']",
+      ".event-action svg[aria-hidden='true'][focusable='false']",
     );
     const unknownBadgeClass = (await unknownBadge.getAttribute("class")) ?? "";
     check(

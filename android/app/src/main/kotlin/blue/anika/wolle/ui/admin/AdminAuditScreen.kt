@@ -17,8 +17,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -55,6 +57,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
@@ -93,8 +100,11 @@ import blue.anika.wolle.ui.common.YarnLoader
 import blue.anika.wolle.ui.history.HistoryActor
 import blue.anika.wolle.ui.history.MediaChangeCard
 import blue.anika.wolle.ui.history.mediaChangeRows
+import blue.anika.wolle.ui.home.activityIcon
+import blue.anika.wolle.ui.home.activityIconKind
 import blue.anika.wolle.ui.trash.daysLeft
 import blue.anika.wolle.ui.trash.daysLeftText
+import coil3.compose.AsyncImage
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -337,7 +347,7 @@ private fun AuditList(
         state = listState,
         modifier = Modifier.fillMaxSize().testTag("admin-audit-list"),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(0.dp),
     ) {
         groups.forEachIndexed { index, group ->
             item(key = "day-$index-${group.events.first().id}") {
@@ -346,9 +356,11 @@ private fun AuditList(
                     modifier = Modifier.padding(top = if (index == 0) 4.dp else 12.dp),
                 )
             }
-            items(group.events, key = { it.id }) { event ->
+            itemsIndexed(group.events, key = { _, event -> event.id }) { rowIndex, event ->
                 AuditRow(
                     event,
+                    first = rowIndex == 0,
+                    last = rowIndex == group.events.lastIndex,
                     filterUser = filterUser,
                     avatarUrl = avatarUrl,
                     onOpenDetails = { onOpen(event) },
@@ -446,6 +458,8 @@ private fun formatTime(event: AuditEventDto, style: FormatStyle = FormatStyle.SH
 @Composable
 private fun AuditRow(
     event: AuditEventDto,
+    first: Boolean,
+    last: Boolean,
     filterUser: AuditFilterUserDto?,
     avatarUrl: (String?) -> String?,
     onOpenDetails: () -> Unit,
@@ -455,8 +469,6 @@ private fun AuditRow(
     val tone = kind.tone().color()
     val title = entityTitle(event)
     val action = actionLabel(event.action, event.system)
-    val typeLabel =
-        entityTypeLabelRes(event.entityType)?.let { stringResource(it) } ?: event.entityType
     val time = formatTime(event)
     val actor =
         event.actorEmail ?: event.server?.actorEmail ?: stringResource(R.string.admin_actor_unknown)
@@ -468,10 +480,23 @@ private fun AuditRow(
     val description = stringResource(R.string.admin_event_description, action, title, actor, time)
     val detailKind = event.detailKind()
     Surface(
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).testTag("admin-audit-row"),
+        color = Color.Transparent,
+        modifier =
+            Modifier.fillMaxWidth()
+                .heightIn(min = 56.dp)
+                .drawBehind {
+                    val x = 32.dp.toPx()
+                    val centre = size.height / 2
+                    if (!first || !last) {
+                        drawLine(
+                            color = tone.copy(alpha = 0.35f),
+                            start = Offset(x, if (first) centre else 0f),
+                            end = Offset(x, if (last) centre else size.height),
+                            strokeWidth = 2.dp.toPx(),
+                        )
+                    }
+                }
+                .testTag("admin-audit-row"),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Row(
@@ -490,7 +515,23 @@ private fun AuditRow(
                         .semantics { contentDescription = description }
                         .testTag("admin-audit-row-main"),
             ) {
-                ActionBadge(kind)
+                Box(
+                    Modifier.size(40.dp)
+                        .clip(CircleShape)
+                        .background(
+                            tone
+                                .copy(alpha = 0.14f)
+                                .compositeOver(MaterialTheme.colorScheme.surface)
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        activityIcon(activityIconKind(event.action)),
+                        contentDescription = null,
+                        tint = tone,
+                        modifier = Modifier.size(21.dp),
+                    )
+                }
                 Column(Modifier.weight(1f)) {
                     Text(
                         title,
@@ -499,10 +540,10 @@ private fun AuditRow(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        "$action · $typeLabel",
+                        action,
                         style = MaterialTheme.typography.labelMedium,
                         color = tone,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
                     event.media?.let { media ->
@@ -578,19 +619,24 @@ private fun AuditRow(
                         )
                     }
                     AuditClientChip(event.client)
-                }
-                AuditMediaThumb(event.media, Modifier.padding(horizontal = 8.dp))
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.clearAndSetSemantics {},
-                ) {
                     Text(
                         time,
-                        style = MaterialTheme.typography.labelMedium,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+                avatarUrl(event.resource.previewUrl)?.let { preview ->
+                    AsyncImage(
+                        model = preview,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier =
+                            Modifier.padding(horizontal = 8.dp)
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(10.dp)),
+                    )
+                }
+                AuditMediaThumb(event.media, Modifier.padding(horizontal = 8.dp))
             }
             IconButton(
                 onClick = onOpenDetails,

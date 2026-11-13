@@ -489,7 +489,7 @@
     --tone: var(--ink-muted);
     position: relative;
     min-width: 0;
-    padding-left: 1.7rem;
+    padding-left: 2.85rem;
   }
 
   .entry[data-tone="create"] {
@@ -513,7 +513,7 @@
     position: absolute;
     top: 0;
     bottom: 0;
-    left: 0.45rem;
+    left: 1.05rem;
     width: 2px;
     background: color-mix(in srgb, var(--tone) 28%, var(--line));
   }
@@ -532,24 +532,21 @@
 
   .dot {
     position: absolute;
-    top: 1.05rem;
+    top: 0.3rem;
     left: 0;
     display: grid;
     place-items: center;
-    width: 1.5rem;
-    height: 1.5rem;
-    transform: translate(-0.275rem, -0.275rem);
+    width: 2.1rem;
+    height: 2.1rem;
     color: var(--tone);
-    border: 2px solid var(--surface);
     border-radius: 50%;
-    background: var(--surface);
-    box-shadow: 0 0 0 1px var(--tone);
+    background: color-mix(in srgb, var(--tone) 14%, var(--surface));
   }
 
   .dot :global(svg),
   .dot svg {
-    width: 1rem;
-    height: 1rem;
+    width: 1.1rem;
+    height: 1.1rem;
   }
 
   .entry-row {
@@ -674,7 +671,7 @@
     flex-wrap: wrap;
     gap: 0.4rem 1rem;
     margin-top: 0.6rem;
-    padding-left: 1.7rem;
+    padding-left: 2.85rem;
   }
 
   .history-link {

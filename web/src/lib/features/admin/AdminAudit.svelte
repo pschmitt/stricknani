@@ -22,7 +22,11 @@
     auditUserRoleSentence,
     impersonationTemplate,
   } from "./audit-people";
-  import { knownAuditActions } from "./audit-action";
+  import {
+    auditActionPresentation,
+    auditActionTone,
+    knownAuditActions,
+  } from "./audit-action";
   import { actionLabel } from "#lib/features/history/history-summary.ts";
   import { t } from "#lib/i18n.svelte.ts";
   import { accountUser, userLabelText } from "#lib/user-label.ts";
@@ -460,12 +464,18 @@
               {@const impersonated = auditImpersonatedBy(event, actor, locale)}
               {@const resourceKind = event.resource.kind ?? "resource"}
               <li class="event-row">
-                <div class="event-action">
-                  <AuditActionBadge
-                    action={event.action}
-                    {locale}
-                    system={event.system}
-                    mediaKind={event.media?.kind ?? null}
+                <div
+                  class="event-action"
+                  data-tone={auditActionTone(event.action, {
+                    system: event.system,
+                  })}
+                  aria-hidden="true"
+                >
+                  <NavIcon
+                    name={auditActionPresentation(event.action, {
+                      system: event.system,
+                      mediaKind: event.media?.kind ?? null,
+                    }).icon}
                   />
                 </div>
                 <div
@@ -542,6 +552,14 @@
                       {/if}
                     </div>
                   {/if}
+                  <div class="event-action-label">
+                    <AuditActionBadge
+                      action={event.action}
+                      {locale}
+                      system={event.system}
+                      mediaKind={event.media?.kind ?? null}
+                    />
+                  </div>
                 </div>
                 <p class="event-actor">
                   <span class="visually-hidden">{t("By", locale)}</span>
@@ -977,6 +995,120 @@
     }
     .event-meta {
       align-self: center;
+    }
+  }
+
+  /* Match the activity feed's icon rail while keeping audit details and actions. */
+  .event-list {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    overflow: visible;
+  }
+  .event-row {
+    position: relative;
+    grid-template-columns: 2.1rem minmax(0, 1fr) auto;
+    grid-template-areas: "action resource meta" "action actor meta";
+    align-items: start;
+    gap: 0.15rem 0.75rem;
+    min-height: 3.4rem;
+    padding: 0.3rem 0;
+  }
+  .event-row + .event-row {
+    border-top: 0;
+  }
+  .event-row::before {
+    content: "";
+    position: absolute;
+    left: 1.05rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--line);
+  }
+  .event-row:first-child::before {
+    top: 1.35rem;
+  }
+  .event-row:last-child::before {
+    bottom: calc(100% - 1.35rem);
+  }
+  .event-row:only-child::before {
+    display: none;
+  }
+  .event-action {
+    position: relative;
+    z-index: 0;
+  }
+  .event-action {
+    --action-color: var(--ink-muted);
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    width: 2.1rem;
+    height: 2.1rem;
+    color: var(--action-color);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--action-color) 14%, var(--surface));
+  }
+  .event-action[data-tone="create"] {
+    --action-color: var(--success);
+  }
+  .event-action[data-tone="update"] {
+    --action-color: var(--info);
+  }
+  .event-action[data-tone="upload"] {
+    --action-color: var(--warning);
+  }
+  .event-action[data-tone="delete"] {
+    --action-color: var(--danger);
+  }
+  .event-action :global(svg) {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+  .event-action-label :global(.audit-action-badge) {
+    border: 0;
+    padding: 0;
+    background: none;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+  .event-action-label :global(.audit-action-badge > svg) {
+    display: none;
+  }
+  .event-resource.no-media :global(.resource-card) {
+    transform: none;
+  }
+  .event-note {
+    min-height: 0;
+  }
+  .event-note:empty {
+    display: none;
+  }
+  .event-actor {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.65rem;
+    font-size: 0.82rem;
+  }
+  .client-chip {
+    margin-top: 0;
+  }
+  .event-meta {
+    align-self: start;
+  }
+  @media (max-width: 850px) {
+    .event-row {
+      grid-template-columns: 2.1rem minmax(0, 1fr) auto;
+      grid-template-areas: "action resource meta" "action actor meta";
+      padding: 0.3rem 0;
+    }
+    .event-action {
+      justify-self: auto;
+    }
+    .event-meta {
+      grid-template-columns: auto 2.75rem;
     }
   }
 </style>

@@ -108,8 +108,8 @@ msgstr "Garn erstellen"
 msgid "Content fingerprint"
 msgstr "Inhaltsfingerabdruck"
 
-#: src/import_service.rs:716 web/src/lib/features/admin/AdminAudit.svelte:282
-#: web/src/lib/features/admin/AdminAudit.svelte:373
+#: src/import_service.rs:716 web/src/lib/features/admin/AdminAudit.svelte:286
+#: web/src/lib/features/admin/AdminAudit.svelte:377
 #: web/src/lib/features/admin/AdminResource.svelte:238
 #: web/src/lib/features/admin/AdminResource.svelte:436
 #: web/src/lib/features/admin/DiffPanel.svelte:98
@@ -145,8 +145,8 @@ msgstr "Maschenprobe"
 msgid "Other materials"
 msgstr "Weitere Materialien"
 
-#: src/import_service.rs:720 web/src/lib/features/admin/AdminAudit.svelte:280
-#: web/src/lib/features/admin/AdminAudit.svelte:372
+#: src/import_service.rs:720 web/src/lib/features/admin/AdminAudit.svelte:284
+#: web/src/lib/features/admin/AdminAudit.svelte:376
 #: web/src/lib/features/admin/AdminResource.svelte:236
 #: web/src/lib/features/admin/AdminResource.svelte:440
 #: web/src/lib/features/admin/DiffPanel.svelte:96
@@ -464,7 +464,7 @@ msgstr ""
 "Als {name} handeln? Alles, was du tust, wird als von dieser Person getan "
 "aufgezeichnet und protokolliert."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:378
+#: web/src/lib/features/admin/AdminAudit.svelte:382
 msgid "Action"
 msgstr "Aktion"
 
@@ -612,8 +612,8 @@ msgstr "Anzahl Reihen"
 msgid "Adjusted stitches"
 msgstr "Anzahl Maschen"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:349
-#: web/src/lib/features/admin/AdminAudit.svelte:358
+#: web/src/lib/features/admin/AdminAudit.svelte:353
+#: web/src/lib/features/admin/AdminAudit.svelte:362
 #: web/src/lib/features/admin/AdminBackups.svelte:129
 #: web/src/lib/features/admin/AdminBackups.svelte:137
 #: web/src/lib/features/admin/AdminUsers.svelte:652
@@ -636,8 +636,8 @@ msgstr "Administrator"
 msgid "Administrator access"
 msgstr "Administratorzugriff"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:161
-#: web/src/lib/features/admin/AdminAudit.svelte:201
+#: web/src/lib/features/admin/AdminAudit.svelte:165
+#: web/src/lib/features/admin/AdminAudit.svelte:205
 #: web/src/lib/features/admin/AdminBackups.svelte:57
 #: web/src/lib/features/admin/AdminBackups.svelte:73
 #: web/src/lib/features/admin/AdminResource.svelte:124
@@ -690,7 +690,7 @@ msgstr "Alle"
 msgid "All changes saved"
 msgstr "Alle Änderungen gespeichert"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:370
+#: web/src/lib/features/admin/AdminAudit.svelte:374
 msgid "All entities"
 msgstr "Alle Objekttypen"
 
@@ -734,7 +734,7 @@ msgstr "Android"
 msgid "Android app and offline data"
 msgstr "Android-App und Offline-Daten"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:385
+#: web/src/lib/features/admin/AdminAudit.svelte:389
 msgid "Any action"
 msgstr "Beliebige Aktion"
 
@@ -857,21 +857,21 @@ msgstr "Anhang hochgeladen"
 msgid "Attachments"
 msgstr "Anhänge"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:453
+#: web/src/lib/features/admin/AdminAudit.svelte:457
 msgid "Audit events"
 msgstr "Audit-Protokoll"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:206
+#: web/src/lib/features/admin/AdminAudit.svelte:210
 #: web/src/lib/features/admin/DiffPanel.svelte:82
 msgid "Audit events could not be loaded."
 msgstr "Audit-Ereignisse konnten nicht geladen werden."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:349
+#: web/src/lib/features/admin/AdminAudit.svelte:353
 #: web/src/lib/features/admin/AdminTabs.svelte:22
 msgid "Audit log"
 msgstr "Prüfprotokoll"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:626
+#: web/src/lib/features/admin/AdminAudit.svelte:644
 msgid "Audit pages"
 msgstr "Audit-Seiten"
 
@@ -1014,7 +1014,7 @@ msgstr ""
 msgid "Bulleted list"
 msgstr "Aufzählung"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:547
+#: web/src/lib/features/admin/AdminAudit.svelte:565
 msgid "By"
 msgstr "Von"
 
@@ -2012,7 +2012,7 @@ msgstr ""
 msgid "Enter your current password."
 msgstr "Gib dein aktuelles Passwort ein."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:368
+#: web/src/lib/features/admin/AdminAudit.svelte:372
 msgid "Entity"
 msgstr "Objekttyp"
 
@@ -2140,13 +2140,13 @@ msgstr "Die Seite wird geladen"
 msgid "File"
 msgstr "Datei"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:393
+#: web/src/lib/features/admin/AdminAudit.svelte:397
 #: web/src/lib/features/projects/ProjectLibrary.svelte:325
 #: web/src/lib/features/yarns/YarnLibrary.svelte:247
 msgid "Filter"
 msgstr "Filtern"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:365
+#: web/src/lib/features/admin/AdminAudit.svelte:369
 msgid "Filter audit events"
 msgstr "Audit-Ereignisse filtern"
 
@@ -2987,7 +2987,7 @@ msgstr "Kontodaten werden geladen …"
 msgid "Loading archive status…"
 msgstr "Archivstatus wird geladen…"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:430
+#: web/src/lib/features/admin/AdminAudit.svelte:434
 msgid "Loading audit events…"
 msgstr "Audit-Ereignisse werden geladen …"
 
@@ -3132,7 +3132,7 @@ msgstr "Materialien"
 msgid "Media files"
 msgstr "Mediendateien"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:487
+#: web/src/lib/features/admin/AdminAudit.svelte:497
 msgid "Media files were kept"
 msgstr "Mediendateien wurden behalten"
 
@@ -3167,7 +3167,7 @@ msgstr "Minuten"
 msgid "Missing in the file"
 msgstr "Fehlten in der Datei"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:486
+#: web/src/lib/features/admin/AdminAudit.svelte:496
 msgid "Missing media files were added"
 msgstr "Fehlende Mediendateien wurden hinzugefügt"
 
@@ -3340,7 +3340,7 @@ msgstr "Weiter"
 msgid "Next image"
 msgstr "Nächstes Bild"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:646
+#: web/src/lib/features/admin/AdminAudit.svelte:664
 #: web/src/lib/features/admin/AdminUsers.svelte:892
 msgid "Next page"
 msgstr "Nächste Seite"
@@ -3376,7 +3376,7 @@ msgstr ""
 "Melde dich mit deinem Passwort an und verknüpfe {name} dann in deinen "
 "Kontoeinstellungen."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:450
+#: web/src/lib/features/admin/AdminAudit.svelte:454
 msgid "No audit events match these filters."
 msgstr "Keine Audit-Ereignisse entsprechen diesen Filtern."
 
@@ -3409,8 +3409,8 @@ msgstr "Noch keine Änderungen aufgezeichnet"
 msgid "No connection"
 msgstr "Keine Verbindung"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:600
-#: web/src/lib/features/admin/AdminAudit.svelte:602
+#: web/src/lib/features/admin/AdminAudit.svelte:618
+#: web/src/lib/features/admin/AdminAudit.svelte:620
 #: web/src/lib/features/history/HistoryEventDetail.svelte:35
 #: web/src/lib/features/history/HistoryEventDetail.svelte:58
 msgid "No details recorded"
@@ -3828,7 +3828,7 @@ msgstr "PDF"
 msgid "PDF link not attached"
 msgstr "PDF-Link nicht angehängt"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:637
+#: web/src/lib/features/admin/AdminAudit.svelte:655
 #: web/src/lib/features/admin/AdminUsers.svelte:884
 #: web/src/lib/features/projects/ProjectLibrary.svelte:460
 #: web/src/lib/features/yarns/YarnLibrary.svelte:346
@@ -4126,7 +4126,7 @@ msgstr "Zurück"
 msgid "Previous image"
 msgstr "Vorheriges Bild"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:635
+#: web/src/lib/features/admin/AdminAudit.svelte:653
 #: web/src/lib/features/admin/AdminUsers.svelte:882
 msgid "Previous page"
 msgstr "Vorherige Seite"
@@ -4194,8 +4194,8 @@ msgstr ""
 "ausschalten, und der Betreiber der Instanz kann es für die gesamte "
 "Instanz deaktivieren."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:278
-#: web/src/lib/features/admin/AdminAudit.svelte:371
+#: web/src/lib/features/admin/AdminAudit.svelte:282
+#: web/src/lib/features/admin/AdminAudit.svelte:375
 #: web/src/lib/features/admin/AdminResource.svelte:234
 #: web/src/lib/features/admin/DiffPanel.svelte:94
 #: web/src/lib/features/trash/trash-kinds.ts:43
@@ -4626,7 +4626,7 @@ msgstr "Auf Standardreihenfolge zurücksetzen"
 msgid "Resetting…"
 msgstr "Wird zurückgesetzt …"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:283
+#: web/src/lib/features/admin/AdminAudit.svelte:287
 #: web/src/lib/features/admin/DiffPanel.svelte:99
 msgid "Resource"
 msgstr "Ressource"
@@ -4809,7 +4809,7 @@ msgstr "Gerüchten zufolge war eine Katze beteiligt."
 msgid "Running reminder"
 msgstr "Erinnerung bei laufendem Timer"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:480
+#: web/src/lib/features/admin/AdminAudit.svelte:490
 #, python-brace-format
 msgid "Safety copy: {name}"
 msgstr "Sicherheitskopie: {name}"
@@ -5014,7 +5014,7 @@ msgstr ""
 "Sendet technische Details zu Fehlern, nie deine Inhalte, an den Betreiber"
 " der Instanz."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:374
+#: web/src/lib/features/admin/AdminAudit.svelte:378
 msgid "Server"
 msgstr "Server"
 
@@ -5099,8 +5099,8 @@ msgstr "Anzeigen"
 msgid "Show all changes"
 msgstr "Alle Änderungen anzeigen"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:610
-#: web/src/lib/features/admin/AdminAudit.svelte:611
+#: web/src/lib/features/admin/AdminAudit.svelte:628
+#: web/src/lib/features/admin/AdminAudit.svelte:629
 msgid "Show diff"
 msgstr "Änderungen anzeigen"
 
@@ -6702,7 +6702,7 @@ msgstr "Titelbild geändert"
 msgid "Title image uploaded"
 msgstr "Titelbild hochgeladen"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:318
+#: web/src/lib/features/admin/AdminAudit.svelte:322
 #: web/src/lib/features/admin/AdminBackups.svelte:102
 #: web/src/lib/features/home/activity.ts:413
 msgid "Today"
@@ -6806,7 +6806,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:930
 #: web/src/lib/features/account/AccountSettings.svelte:1525
 #: web/src/lib/features/account/BackupsSection.svelte:436
-#: web/src/lib/features/admin/AdminAudit.svelte:445
+#: web/src/lib/features/admin/AdminAudit.svelte:449
 #: web/src/lib/features/admin/AdminBackups.svelte:152
 #: web/src/lib/features/admin/AdminResource.svelte:386
 #: web/src/lib/features/admin/AdminUsers.svelte:695
@@ -7064,13 +7064,13 @@ msgstr "Benutzerkonten konnten nicht geladen werden."
 msgid "User agent"
 msgstr "User-Agent"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:203
+#: web/src/lib/features/admin/AdminAudit.svelte:207
 msgid "User was not found."
 msgstr "Benutzer wurde nicht gefunden."
 
-#: web/src/lib/features/admin/AdminAudit.svelte:400
-#: web/src/lib/features/admin/AdminAudit.svelte:416
-#: web/src/lib/features/admin/AdminAudit.svelte:421
+#: web/src/lib/features/admin/AdminAudit.svelte:404
+#: web/src/lib/features/admin/AdminAudit.svelte:420
+#: web/src/lib/features/admin/AdminAudit.svelte:425
 #, python-brace-format
 msgid "User: {name}"
 msgstr "Benutzer: {name}"
@@ -7313,7 +7313,7 @@ msgstr "Garndaten"
 msgid "Yarn weight"
 msgstr "Garnstärke"
 
-#: web/src/lib/features/admin/AdminAudit.svelte:320
+#: web/src/lib/features/admin/AdminAudit.svelte:324
 #: web/src/lib/features/admin/AdminBackups.svelte:103
 #: web/src/lib/features/home/activity.ts:414
 msgid "Yesterday"
