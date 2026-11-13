@@ -7,31 +7,14 @@ import type {
 } from "#lib/features/admin/admin-api.ts";
 import {
   auditActionPresentation,
-  type AuditActionIcon,
+  auditActionTone,
 } from "#lib/features/admin/audit-action.ts";
 
 /** Colour family of an action, matching the audit log badges. */
 export type HistoryTone = "create" | "update" | "delete" | "upload" | "other";
 
 export function actionTone(action: string): HistoryTone {
-  const presentation = auditActionPresentation(action);
-  const icon: AuditActionIcon | "action-default" = presentation.icon;
-  switch (icon) {
-    case "action-create":
-      return "create";
-    case "action-update":
-      return "update";
-    case "action-delete":
-    case "action-remove":
-    case "trash":
-      return "delete";
-    case "reset":
-      return "create";
-    case "action-upload":
-      return "upload";
-    default:
-      return "other";
-  }
+  return auditActionTone(action);
 }
 
 export function actionLabel(

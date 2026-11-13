@@ -95,3 +95,13 @@ internal val WarningInk = Color(0xFF7A5200)
 internal val WarningSurface = Color(0xFFFFF1CF)
 internal val WarningInkNight = Color(0xFFFFC768)
 internal val WarningSurfaceNight = Color(0xFF4A3410)
+
+// Home feed nodes: the web's `--tone-projects` (marigold) and `--tone-yarns` (teal) pairs.
+internal val ProjectToneInk = BackupRestoreInk
+internal val ProjectToneWash = BackupRestoreWash
+internal val ProjectToneInkNight = BackupRestoreInkNight
+internal val ProjectToneWashNight = BackupRestoreWashNight
+internal val YarnToneInk = BackupUpdateInk
+internal val YarnToneWash = BackupUpdateWash
+internal val YarnToneInkNight = BackupUpdateInkNight
+internal val YarnToneWashNight = BackupUpdateWashNight

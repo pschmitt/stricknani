@@ -40,8 +40,10 @@ enum class ActivityIconKind {
     Camera,
     /** deleted */
     Trash,
-    /** something was removed */
+    /** something was removed (destructive, red like a deletion) */
     Minus,
+    /** a share stopped or was left (neutral: not a deletion) */
+    Unshare,
     /** restored from the trash */
     Restore,
     /** the project timer */
@@ -82,8 +84,8 @@ private val exactIcons =
         "timer_total_changed" to ActivityIconKind.Timer,
         "shared" to ActivityIconKind.Share,
         "share_role_changed" to ActivityIconKind.Share,
-        "share_revoked" to ActivityIconKind.Minus,
-        "share_left" to ActivityIconKind.Minus,
+        "share_revoked" to ActivityIconKind.Unshare,
+        "share_left" to ActivityIconKind.Unshare,
         "ownership_transferred" to ActivityIconKind.Share,
         "step_trashed" to ActivityIconKind.Trash,
         "step_restored" to ActivityIconKind.Restore,

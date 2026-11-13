@@ -50,6 +50,8 @@ enum class AuditActionKind {
     Delete,
     Upload,
     Remove,
+    /** A share stopped or was left: not a deletion, so it stays neutral (web `share_revoked`). */
+    Unshare,
     /** Restored from the trash. */
     Restore,
     Impersonate,
@@ -111,11 +113,11 @@ private val knownActions: Map<String, Pair<AuditActionKind, Int>> =
         "shared" to (AuditActionKind.Create to R.string.admin_action_shared),
         "share_role_changed" to
             (AuditActionKind.Update to R.string.admin_action_share_role_changed),
-        "share_revoked" to (AuditActionKind.Remove to R.string.admin_action_share_revoked),
-        "share_left" to (AuditActionKind.Remove to R.string.admin_action_share_left),
+        "share_revoked" to (AuditActionKind.Unshare to R.string.admin_action_share_revoked),
+        "share_left" to (AuditActionKind.Unshare to R.string.admin_action_share_left),
         "ownership_transferred" to
             (AuditActionKind.Update to R.string.admin_action_ownership_transferred),
-        "backup_restored" to (AuditActionKind.Update to R.string.admin_action_backup_restored),
+        "backup_restored" to (AuditActionKind.Restore to R.string.admin_action_backup_restored),
         "impersonation_started" to
             (AuditActionKind.Impersonate to R.string.admin_action_impersonation_started),
         "impersonation_stopped" to
@@ -156,13 +158,18 @@ fun AuditActionKind.icon(): ImageVector =
         AuditActionKind.Update -> Icons.Filled.Edit
         AuditActionKind.Delete -> PhosphorIcons.Trash
         AuditActionKind.Upload -> Icons.Filled.CloudUpload
-        AuditActionKind.Remove -> Icons.Filled.RemoveCircle
+        AuditActionKind.Remove,
+        AuditActionKind.Unshare -> Icons.Filled.RemoveCircle
         AuditActionKind.Restore -> Icons.AutoMirrored.Filled.Undo
         AuditActionKind.Impersonate -> PhosphorIcons.UserCircle
         AuditActionKind.Other -> PhosphorIcons.ClockCounterClockwise
     }
 
-/** create: green, update: blue, delete/remove: red, upload: marigold, anything else: muted. */
+/**
+ * create/restore: green, update: blue, upload: marigold, anything else (impersonation, stopped
+ * shares): muted. Red is reserved for deletion: delete and remove. Same rules as the web's
+ * `auditActionTone`.
+ */
 fun AuditActionKind.tone(): AuditTone =
     when (this) {
         AuditActionKind.Create,
@@ -171,6 +178,7 @@ fun AuditActionKind.tone(): AuditTone =
         AuditActionKind.Delete,
         AuditActionKind.Remove -> AuditTone.Red
         AuditActionKind.Upload -> AuditTone.Marigold
+        AuditActionKind.Unshare,
         AuditActionKind.Impersonate,
         AuditActionKind.Other -> AuditTone.Muted
     }

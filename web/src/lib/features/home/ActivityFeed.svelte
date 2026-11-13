@@ -10,6 +10,7 @@
   import UserLabel from "#lib/components/UserLabel.svelte";
   import UserSentence from "#lib/components/UserSentence.svelte";
   import { t, type Locale } from "#lib/i18n.svelte.ts";
+  import { auditActionTone } from "#lib/features/admin/audit-action.ts";
   import {
     ACTIVITY_FULL_PAGE_SIZE,
     ACTIVITY_PAGE_SIZE,
@@ -197,10 +198,11 @@
               {@const detail = activityDetail(item, locale)}
               {@const note = activityStateNote(item, locale)}
               {@const icon = activityIcon(item.action)}
+              {@const destructive = auditActionTone(item.action) === "delete"}
               {#snippet row()}
                 <span
                   class="tl__node"
-                  class:tl__node--danger={icon === "trash"}
+                  class:tl__node--danger={destructive}
                   aria-hidden="true"
                 >
                   {#if icon === "sparkle"}

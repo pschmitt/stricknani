@@ -172,3 +172,34 @@ export function auditActionPresentation(
     ? { known: true, ...known }
     : { known: false, icon: "action-default", label: action };
 }
+
+/**
+ * The colour family of an action, shared by the audit log badges, the project history and the
+ * home feed (Android: `AuditActionKind.tone`). Red (`delete`) is reserved for deletion: trashing,
+ * deleting and purging. Stopping a share is not destructive, so it stays neutral.
+ */
+export type AuditActionTone =
+  "create" | "update" | "upload" | "delete" | "other";
+
+export function auditActionTone(
+  action: string,
+  options: { system?: boolean } = {},
+): AuditActionTone {
+  if (action === "share_revoked" || action === "share_left") return "other";
+  const icon = auditActionPresentation(action, options).icon;
+  switch (icon) {
+    case "action-create":
+    case "reset":
+      return "create";
+    case "action-update":
+      return "update";
+    case "action-upload":
+      return "upload";
+    case "action-delete":
+    case "action-remove":
+    case "trash":
+      return "delete";
+    default:
+      return "other";
+  }
+}

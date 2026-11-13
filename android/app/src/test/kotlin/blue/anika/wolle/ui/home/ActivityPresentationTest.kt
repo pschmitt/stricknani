@@ -149,6 +149,8 @@ class ActivityPresentationTest {
         assertEquals(ActivityIconKind.Attachment, activityIconKind("attachment_uploaded"))
         assertEquals(ActivityIconKind.Trash, activityIconKind("deleted"))
         assertEquals(ActivityIconKind.Minus, activityIconKind("removed"))
+        assertEquals(ActivityIconKind.Unshare, activityIconKind("share_revoked"))
+        assertEquals(ActivityIconKind.Unshare, activityIconKind("share_left"))
         assertEquals(ActivityIconKind.Sparkle, activityIconKind("pattern_created"))
         assertEquals(ActivityIconKind.Trash, activityIconKind("Pattern_Deleted"))
         assertEquals(ActivityIconKind.Timer, activityIconKind("timer_started"))

@@ -21,6 +21,7 @@ import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.Random
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -86,6 +87,24 @@ class AuditPresentationTest {
         assertEquals(AuditTone.Marigold, AuditActionKind.Upload.tone())
         assertEquals(AuditTone.Muted, AuditActionKind.Other.tone())
         assertEquals(AuditTone.Muted, AuditActionKind.Impersonate.tone())
+        assertEquals(AuditTone.Muted, AuditActionKind.Unshare.tone())
+    }
+
+    @Test
+    fun `red is reserved for deletion`() {
+        listOf(
+                "timer_started",
+                "timer_stopped",
+                "timer_total_changed",
+                "share_revoked",
+                "share_left",
+            )
+            .forEach { action ->
+                assertNotEquals(action, AuditTone.Red, auditActionPresentation(action).kind.tone())
+            }
+        assertEquals(AuditActionKind.Unshare, auditActionPresentation("share_revoked").kind)
+        assertEquals(AuditActionKind.Restore, auditActionPresentation("backup_restored").kind)
+        assertEquals(AuditTone.Red, auditActionPresentation("trashed").kind.tone())
     }
 
     @Test

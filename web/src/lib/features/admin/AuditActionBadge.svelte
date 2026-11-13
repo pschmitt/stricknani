@@ -1,7 +1,7 @@
 <script lang="ts">
   import NavIcon from "#lib/components/NavIcon.svelte";
   import { t } from "#lib/i18n.svelte.ts";
-  import { auditActionPresentation } from "./audit-action";
+  import { auditActionPresentation, auditActionTone } from "./audit-action";
 
   let {
     action,
@@ -17,6 +17,7 @@
   const presentation = $derived(
     auditActionPresentation(action, { system, mediaKind }),
   );
+  const tone = $derived(auditActionTone(action, { system }));
   const label = $derived(
     presentation.known
       ? t(presentation.messageKey, locale)
@@ -26,13 +27,10 @@
 
 <span
   class="audit-action-badge"
-  class:action-badge--update={presentation.icon === "action-update"}
-  class:action-badge--create={presentation.icon === "action-create" ||
-    presentation.icon === "reset"}
-  class:action-badge--upload={presentation.icon === "action-upload"}
-  class:action-badge--delete={presentation.icon === "action-delete" ||
-    presentation.icon === "action-remove" ||
-    presentation.icon === "trash"}
+  class:action-badge--update={tone === "update"}
+  class:action-badge--create={tone === "create"}
+  class:action-badge--upload={tone === "upload"}
+  class:action-badge--delete={tone === "delete"}
   class:action-badge--unknown={!presentation.known}
 >
   <NavIcon name={presentation.icon} />

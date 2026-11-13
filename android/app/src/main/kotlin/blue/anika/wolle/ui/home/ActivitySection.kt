@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -51,6 +52,14 @@ import blue.anika.wolle.ui.common.UserLabelSize
 import blue.anika.wolle.ui.history.SharingHeadline
 import blue.anika.wolle.ui.history.actionLabelText
 import blue.anika.wolle.ui.history.sharingEventLine
+import blue.anika.wolle.ui.theme.ProjectToneInk
+import blue.anika.wolle.ui.theme.ProjectToneInkNight
+import blue.anika.wolle.ui.theme.ProjectToneWash
+import blue.anika.wolle.ui.theme.ProjectToneWashNight
+import blue.anika.wolle.ui.theme.YarnToneInk
+import blue.anika.wolle.ui.theme.YarnToneInkNight
+import blue.anika.wolle.ui.theme.YarnToneWash
+import blue.anika.wolle.ui.theme.YarnToneWashNight
 import blue.anika.wolle.ui.trash.daysLeft
 import blue.anika.wolle.ui.trash.daysLeftText
 import coil3.compose.AsyncImage
@@ -341,16 +350,26 @@ private fun TimelineEntry(
     }
 }
 
-/** The rail node: a circle tinted by the kind of resource, carrying the action's icon. */
+/**
+ * The rail node: a circle tinted by the kind of resource (projects marigold, yarns teal, like the
+ * web's `--tone-projects` and `--tone-yarns`), carrying the action's icon. Red is reserved for
+ * deletion, as on the web.
+ */
 @Composable
 private fun TimelineNode(row: ActivityRowModel) {
     val colors = MaterialTheme.colorScheme
+    val dark = colors.background.luminance() < 0.5f
+    val destructive = row.icon == ActivityIconKind.Trash || row.icon == ActivityIconKind.Minus
     val (container, content) =
         when {
-            row.icon == ActivityIconKind.Trash -> colors.errorContainer to colors.onErrorContainer
+            destructive -> colors.errorContainer to colors.onErrorContainer
             row.deleted -> colors.surfaceContainerHighest to colors.onSurfaceVariant
-            row.isYarn -> colors.secondaryContainer to colors.onSecondaryContainer
-            else -> colors.primaryContainer to colors.onPrimaryContainer
+            row.isYarn ->
+                (if (dark) YarnToneWashNight else YarnToneWash) to
+                    (if (dark) YarnToneInkNight else YarnToneInk)
+            else ->
+                (if (dark) ProjectToneWashNight else ProjectToneWash) to
+                    (if (dark) ProjectToneInkNight else ProjectToneInk)
         }
     Box(
         Modifier.size(NODE_SIZE).clip(CircleShape).background(container),
@@ -371,7 +390,8 @@ private fun activityIcon(kind: ActivityIconKind): ImageVector =
         ActivityIconKind.Pencil -> PhosphorIcons.PencilSimple
         ActivityIconKind.Camera -> PhosphorIcons.Camera
         ActivityIconKind.Trash -> PhosphorIcons.Trash
-        ActivityIconKind.Minus -> PhosphorIcons.Minus
+        ActivityIconKind.Minus,
+        ActivityIconKind.Unshare -> PhosphorIcons.Minus
         ActivityIconKind.Restore -> Icons.AutoMirrored.Filled.Undo
         ActivityIconKind.Timer -> PhosphorIcons.Timer
         ActivityIconKind.Share -> PhosphorIcons.ShareNetwork
