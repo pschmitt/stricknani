@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -187,7 +186,6 @@ fun ActivitySection(
 private val NODE_SIZE = 36.dp
 private val NODE_GAP = 12.dp
 private val ROW_PAD = 6.dp
-private val ENTRY_HEIGHT = 76.dp
 
 /** Where the text column starts: past the rail node and its gap. */
 private val TEXT_INSET = NODE_SIZE + NODE_GAP
@@ -310,7 +308,7 @@ private fun TimelineEntry(
     val alpha = if (row.deleted) 0.6f else 1f
     Row(
         Modifier.fillMaxWidth()
-            .height(ENTRY_HEIGHT)
+            .heightIn(min = 48.dp)
             .rail(
                 tone.copy(alpha = 0.35f),
                 top = railTop,
@@ -340,28 +338,6 @@ private fun TimelineEntry(
                 modifier = Modifier.size(21.dp),
             )
         }
-        Box(
-            Modifier.size(40.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(colors.surfaceContainerHighest),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                if (row.isYarn) PhosphorIcons.Yarn else PhosphorIcons.Hoodie,
-                contentDescription = null,
-                tint = colors.onSurfaceVariant,
-                modifier = Modifier.size(22.dp),
-            )
-            if (previewUrl != null) {
-                AsyncImage(
-                    model = previewUrl,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    alpha = if (row.deleted) 0.5f else 1f,
-                    modifier = Modifier.size(40.dp),
-                )
-            }
-        }
         Column(
             Modifier.weight(1f).heightIn(min = NODE_SIZE),
             verticalArrangement = Arrangement.Center,
@@ -372,10 +348,19 @@ private fun TimelineEntry(
                 fontWeight = FontWeight.Bold,
                 textDecoration = if (row.deleted) TextDecoration.LineThrough else null,
                 color = colors.onSurface.copy(alpha = alpha),
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
             ActivityMeta(row, activityTimeOfDay(row.createdAt, zone), muted)
+        }
+        if (previewUrl != null) {
+            AsyncImage(
+                model = previewUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                alpha = if (row.deleted) 0.5f else 1f,
+                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)),
+            )
         }
     }
 }
@@ -409,7 +394,6 @@ private fun ActivityMeta(row: ActivityRowModel, time: String?, muted: Color) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
         itemVerticalAlignment = Alignment.CenterVertically,
-        maxLines = 3,
     ) {
         if (sharing != null) {
             SharingHeadline(
@@ -419,13 +403,25 @@ private fun ActivityMeta(row: ActivityRowModel, time: String?, muted: Color) {
                 color = muted,
             )
         } else {
-            Text(headline, style = style, fontWeight = FontWeight.Bold, color = muted)
+            Text(
+                headline,
+                style = style,
+                fontWeight = FontWeight.Bold,
+                color =
+                    if (row.action == "trashed" && row.target == ActivityTarget.Trash)
+                        MaterialTheme.colorScheme.primary
+                    else muted,
+                textDecoration =
+                    if (row.action == "trashed" && row.target == ActivityTarget.Trash)
+                        TextDecoration.Underline
+                    else null,
+            )
         }
-        if (time != null) Text(time, style = style, color = muted)
         UserLabel(row.actor, size = UserLabelSize.Inline, style = style, color = muted)
+        if (time != null) Text(time, style = style, color = muted)
         row.trashDaysLeft?.let { days ->
             Text(
-                stringResource(R.string.admin_state_in_trash, daysLeftText(daysLeft(days))),
+                daysLeftText(daysLeft(days)),
                 style = style,
                 color = muted,
             )

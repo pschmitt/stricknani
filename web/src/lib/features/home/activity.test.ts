@@ -488,7 +488,7 @@ describe("trash activity", () => {
       ...trashed,
       subject: { id: 2, name: "Anna", role: null, avatar_url: "/a.png" },
     });
-    expect(activityStateNote(item, "en")).toBe("In the trash · 89 days left");
+    expect(activityStateNote(item, "en")).toBe("89 days left");
     expect(activityOwner(item, "en")).toEqual({
       kind: "user",
       name: "Anna",

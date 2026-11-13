@@ -1,10 +1,6 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
   import { resolve } from "$app/paths";
-  import { publishFeedback } from "#lib/feedback.ts";
-  import { session } from "#lib/session.svelte.ts";
-  import { restoreTrashItem } from "../trash/trash-api";
-  import { restoreErrorMessage } from "../trash/trash-undo";
   import Button from "#lib/components/Button.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import UserLabel from "#lib/components/UserLabel.svelte";
@@ -16,8 +12,8 @@
     ACTIVITY_PAGE_SIZE,
     activityDetail,
     activityHeadline,
-    activityIcon,
     activitySharing,
+    activityIcon,
     activityItemActor,
     activityOwner,
     activityResourceName,
@@ -101,31 +97,6 @@
     }
   }
 
-  let restoringId = $state<number | null>(null);
-
-  async function restoreItem(item: ActivityItem): Promise<void> {
-    const currentSession = session.data;
-    if (!currentSession?.user || restoringId !== null) return;
-    restoringId = item.id;
-    try {
-      await restoreTrashItem(item.entity_type, item.entity_id, currentSession);
-      publishFeedback({
-        ownerId: currentSession.user.id,
-        kind: "restored",
-        message: t("Restored from the trash.", locale),
-      });
-      attempt += 1;
-    } catch (error) {
-      publishFeedback({
-        ownerId: currentSession.user.id,
-        kind: "error",
-        message: restoreErrorMessage(error, locale),
-      });
-    } finally {
-      restoringId = null;
-    }
-  }
-
   const title = $derived(t(full ? "My activity" : "Recent activity", locale));
   const days = $derived(groupActivity(items, locale));
 </script>
@@ -156,7 +127,7 @@
           {#each [0, 1, 2] as row (row)}
             <li class="tl__entry">
               <div class="tl__row">
-                <span class="tl__thumb tl__thumb--placeholder"></span>
+                <span class="tl__node tl__node--placeholder"></span>
                 <span class="tl__copy">
                   <span class="placeholder-line"></span>
                   <span class="placeholder-line placeholder-line--short"></span>
@@ -197,43 +168,45 @@
               {@const owner = activityOwner(item, locale)}
               {@const detail = activityDetail(item, locale)}
               {@const note = activityStateNote(item, locale)}
-              {@const tone = auditActionTone(item.action)}
               {@const icon = activityIcon(item.action)}
+              {@const tone = auditActionTone(item.action)}
               {#snippet row()}
-                <span class="tl__thumb" aria-hidden="true">
-                  <NavIcon
-                    name={item.entity_type === "yarn" ? "yarns" : "projects"}
-                  />
-                  {#if item.thumbnail_url}
-                    <img
-                      src={item.thumbnail_url}
-                      alt=""
-                      loading="lazy"
-                      width="40"
-                      height="40"
-                    />
+                <span class="tl__node" data-tone={tone} aria-hidden="true">
+                  {#if icon === "sparkle"}
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="1.8"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="m12 3.5 1.9 5.6 5.6 1.9-5.6 1.9-1.9 5.6-1.9-5.6L4.5 11l5.6-1.9zM19 3.5v3M17.5 5h3"
+                      />
+                    </svg>
+                  {:else}
+                    <NavIcon name={icon} />
                   {/if}
                 </span>
                 <span class="tl__copy">
-                  <span class="tl__sentence">{name}</span>
+                  <span class="tl__sentence"
+                    ><strong class="tl__name">{name}</strong></span
+                  >
                   <span class="tl__meta">
                     <span class="tl__action"
-                      >{#if sharing}<UserSentence
+                      >{#if item.action === "trashed" && item.state === "in_trash"}<a
+                          href={resolve("/trash")}
+                          data-testid="activity-open-trash">{headline}</a
+                        >{:else if sharing}<UserSentence
                           template={sharing.template}
                           users={sharing.users}
                           {locale}
                         />{:else}{headline}{/if}</span
                     >
+                    <UserLabel user={actor} {locale} size="inline" by />
                     <time datetime={item.created_at}
                       >{activityTime(item.created_at, locale)}</time
-                    >
-                    <span class="tl__actor"
-                      ><UserLabel
-                        user={actor}
-                        {locale}
-                        size="inline"
-                        by
-                      /></span
                     >
                     {#if detail}<span>{detail}</span>{/if}
                     {#if note}<span>{note}</span>{/if}
@@ -246,28 +219,22 @@
                     {/if}
                   </span>
                 </span>
+                {#if item.thumbnail_url}
+                  <img
+                    class="tl__thumb"
+                    src={item.thumbnail_url}
+                    alt=""
+                    loading="lazy"
+                  />
+                {/if}
               {/snippet}
               <li
                 class="tl__entry"
-                data-tone={tone}
                 data-deleted={!item.exists && item.state !== "in_trash"
                   ? ""
                   : undefined}
                 style:--i={Math.min(index, 8)}
               >
-                <span class="tl__dot" aria-hidden="true">
-                  {#if icon === "sparkle"}
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.8"
-                      ><path
-                        d="m12 3.5 1.9 5.6 5.6 1.9-5.6 1.9-1.9 5.6-1.9-5.6L4.5 11l5.6-1.9z"
-                      /></svg
-                    >
-                  {:else}<NavIcon name={icon} />{/if}
-                </span>
                 {#if item.exists && item.href}
                   <a
                     class="tl__row"
@@ -280,28 +247,6 @@
                   >
                 {:else}
                   <div class="tl__row">{@render row()}</div>
-                {/if}
-                {#if item.action === "trashed" && item.state === "in_trash" && item.trash !== null}
-                  <p class="tl__actions">
-                    <a
-                      href={resolve("/trash")}
-                      data-testid="activity-open-trash"
-                      >{t("Open trash", locale)}</a
-                    >
-                    {#if item.trash?.can_restore}
-                      <button
-                        type="button"
-                        class="tl__restore"
-                        data-testid="activity-restore"
-                        disabled={restoringId !== null}
-                        onclick={() => void restoreItem(item)}
-                      >
-                        {restoringId === item.id
-                          ? t("Restoring…", locale)
-                          : t("Restore", locale)}
-                      </button>
-                    {/if}
-                  </p>
                 {/if}
               </li>
             {/each}
@@ -362,40 +307,21 @@
     height: 1.1rem;
   }
 
-  /* The timeline, as in a project's "Recent changes": a rail with a dot coloured by what
-     happened, entries grouped under day labels. */
+  /* The timeline: one rail behind every node, entries grouped under day labels. */
   .tl {
-    --rail: 0.45rem;
-    --indent: 1.7rem;
+    --node: 2.1rem;
+    --pad: 0.3rem;
+    --gap: 0.75rem;
     position: relative;
     margin: 0;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    padding: clamp(1rem, 3vw, 1.4rem);
+    padding: 0;
     list-style: none;
-    background: var(--surface);
   }
   /* The rail is cut into pieces (one per entry and day label) so it follows
-     rows of any height; the first and last piece stop at their dot. */
+     rows of any height; the first and last piece stop at their node. */
   .tl__entry,
   .tl__daylabel {
     position: relative;
-  }
-  .tl__entry {
-    --tone: var(--ink-muted);
-    padding-left: var(--indent);
-  }
-  .tl__entry[data-tone="create"] {
-    --tone: var(--success);
-  }
-  .tl__entry[data-tone="update"] {
-    --tone: var(--info);
-  }
-  .tl__entry[data-tone="upload"] {
-    --tone: var(--warning);
-  }
-  .tl__entry[data-tone="delete"] {
-    --tone: var(--danger);
   }
   .tl__entry::before,
   .tl__daylabel::before {
@@ -403,45 +329,22 @@
     position: absolute;
     top: 0;
     bottom: 0;
-    left: var(--rail);
+    left: calc(var(--pad) + var(--node) / 2 - 1px);
     width: 2px;
-    background: color-mix(
-      in srgb,
-      var(--tone, var(--ink-muted)) 28%,
-      var(--line)
-    );
+    background: var(--line);
   }
   .tl__day:first-child .tl__daylabel::before {
     display: none;
   }
   .tl__day:first-child .tl__entry:first-child::before {
-    top: 2.375rem;
+    top: calc(var(--pad) + var(--node) / 2);
   }
   .tl__day:last-child .tl__entry:last-child::before {
-    bottom: calc(100% - 2.375rem);
+    bottom: auto;
+    height: calc(var(--pad) + var(--node) / 2);
   }
   .tl__day:only-child .tl__entry:only-child::before {
     display: none;
-  }
-  .tl__dot {
-    position: absolute;
-    top: 1.9rem;
-    left: 0;
-    display: grid;
-    place-items: center;
-    width: 1.5rem;
-    height: 1.5rem;
-    transform: translate(-0.275rem, -0.275rem);
-    color: var(--tone);
-    border: 2px solid var(--surface);
-    border-radius: 50%;
-    background: var(--surface);
-    box-shadow: 0 0 0 1px var(--tone);
-  }
-  .tl__dot :global(svg),
-  .tl__dot svg {
-    width: 1rem;
-    height: 1rem;
   }
   .tl__entries {
     margin: 0;
@@ -450,7 +353,7 @@
   }
   .tl__daylabel {
     margin: 0;
-    padding: 0.7rem 0 0.15rem var(--indent);
+    padding: 0.7rem 0 0.15rem calc(var(--pad) + var(--node) + var(--gap));
     color: var(--ink-muted);
     font-family: inherit;
     font-size: 0.78rem;
@@ -466,111 +369,116 @@
   }
   .tl__row {
     position: relative;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    box-sizing: border-box;
-    height: 4.75rem;
-    overflow: hidden;
-    border-radius: var(--radius-xs);
-    padding: 0.55rem 0.6rem;
+    display: grid;
+    grid-template-columns: var(--node) minmax(0, 1fr);
+    grid-auto-columns: auto;
+    grid-auto-flow: column;
+    align-items: start;
+    gap: var(--gap);
+    min-height: 44px;
+    border-radius: var(--radius-sm);
+    padding: var(--pad);
+    padding-right: 0.6rem;
     color: var(--ink);
     text-decoration: none;
   }
   a.tl__row:hover {
-    background: var(--surface-raised);
+    background: color-mix(in srgb, var(--surface) 80%, var(--accent) 20%);
   }
   a.tl__row:focus-visible {
-    outline: 3px solid var(--focus);
+    outline: 3px solid var(--accent);
     outline-offset: 2px;
+  }
+  .tl__node {
+    display: grid;
+    width: var(--node);
+    height: var(--node);
+    place-items: center;
+    border-radius: 50%;
+    color: var(--ink);
+    background: var(--surface-highest);
+  }
+  .tl__node[data-tone="create"] {
+    --node-ink: var(--success);
+  }
+  .tl__node[data-tone="update"] {
+    --node-ink: var(--info);
+  }
+  .tl__node[data-tone="upload"] {
+    --node-ink: var(--warning);
+  }
+  .tl__node[data-tone="delete"] {
+    --node-ink: var(--danger);
+  }
+  .tl__node[data-tone="create"],
+  .tl__node[data-tone="update"],
+  .tl__node[data-tone="upload"],
+  .tl__node[data-tone="delete"] {
+    color: var(--node-ink);
+    background: color-mix(in srgb, var(--node-ink) 14%, var(--surface));
+  }
+  .tl__node :global(svg),
+  .tl__node svg {
+    width: 1.1rem;
+    height: 1.1rem;
   }
   .tl__copy {
     display: grid;
-    flex: 1;
     min-width: 0;
-    gap: 0.15rem;
+    min-height: var(--node);
+    align-content: center;
+    gap: 0.05rem;
   }
   .tl__sentence {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-weight: 650;
+    overflow-wrap: anywhere;
+    font-size: 0.95rem;
+    line-height: 1.3;
+  }
+  .tl__name {
+    font-weight: 800;
   }
   .tl__meta {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.2rem 0.6rem;
+    gap: 0.1rem 0.6rem;
     color: var(--ink-muted);
-    font-size: 0.85rem;
-    max-height: 3.9em;
-    overflow: hidden;
+    font-size: 0.82rem;
+    line-height: 1.3;
     overflow-wrap: anywhere;
   }
   .tl__action {
-    color: var(--tone);
     font-weight: 700;
-  }
-  .tl__actor {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    min-width: 0;
   }
   .tl__meta time {
     font-variant-numeric: tabular-nums;
   }
-  .tl__actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 1rem;
-    margin: 0;
-    padding-left: 0.6rem;
-    font-size: 0.88rem;
-  }
-  .tl__actions a,
-  .tl__restore {
-    display: inline-flex;
-    min-height: 44px;
-    align-items: center;
-    border: 0;
-    padding: 0;
-    color: var(--accent-strong);
-    background: none;
-    font: inherit;
-    font-weight: 650;
-    cursor: pointer;
+  .tl__action a {
+    color: inherit;
+    text-decoration: underline;
   }
   .tl__thumb {
-    position: relative;
-    display: grid;
-    place-items: center;
-    color: var(--ink-muted);
-    flex: none;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 0.6rem;
+    width: 2.25rem;
+    height: 2.25rem;
+    align-self: center;
+    border-radius: 0.65rem;
     object-fit: cover;
     background: var(--surface-raised);
   }
-  .tl__thumb :global(svg) {
-    width: 1.4rem;
-    height: 1.4rem;
-  }
-  .tl__thumb img {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: inherit;
-  }
-  .tl__entry[data-deleted] .tl__sentence {
+  .tl__entry[data-deleted] .tl__name {
     text-decoration: line-through;
     text-decoration-thickness: 1.5px;
   }
   .tl__entry[data-deleted] .tl__row {
     color: var(--ink-muted);
+  }
+  .tl__entry[data-deleted] .tl__node {
+    color: var(--ink-muted);
+    background: var(--surface-highest);
+  }
+  .tl__entry .tl__node[data-tone="delete"] {
+    color: var(--danger);
+    background: color-mix(in srgb, var(--danger) 14%, var(--surface));
   }
   .tl__entry[data-deleted] .tl__thumb {
     opacity: 0.55;
@@ -598,7 +506,7 @@
   .activity__error p {
     margin: 0;
   }
-  .tl__thumb--placeholder,
+  .tl__node--placeholder,
   .placeholder-line {
     background: color-mix(in srgb, var(--ink-muted) 18%, transparent);
   }

@@ -1,3 +1,4 @@
+import { daysLeftLabel } from "../trash/trash-copy";
 import { ApiError, apiRequest } from "#lib/api.ts";
 import { msg, t, type Locale } from "#lib/i18n.svelte.ts";
 import {
@@ -292,8 +293,11 @@ export function activityAgo(
   return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(then);
 }
 
-/** Where a moved-to-trash item is now: "In the trash · 12 days left", "Restored"; else empty. */
+/** Days left for an item in the trash, or its later lifecycle state. */
 export function activityStateNote(item: ActivityItem, locale: Locale): string {
+  if (item.action === "trashed" && item.state === "in_trash") {
+    return item.trash ? daysLeftLabel(item.trash.days_remaining, locale) : "";
+  }
   return trashedStateText(item.action, item.state, item.trash, locale) ?? "";
 }
 

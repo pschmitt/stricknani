@@ -1891,11 +1891,11 @@ msgstr "Bearbeiten"
 msgid "Edit yarn"
 msgstr "Garn bearbeiten"
 
-#: web/src/lib/features/history/HistorySection.svelte:271
+#: web/src/lib/features/history/HistorySection.svelte:272
 msgid "Edits to this project will show up here."
 msgstr "Änderungen an diesem Projekt erscheinen hier."
 
-#: web/src/lib/features/history/HistorySection.svelte:272
+#: web/src/lib/features/history/HistorySection.svelte:273
 msgid "Edits to this yarn will show up here."
 msgstr "Änderungen an diesem Garn erscheinen hier."
 
@@ -3020,11 +3020,11 @@ msgstr "Passkeys werden geladen…"
 msgid "Loading project details…"
 msgstr "Projektdetails werden geladen …"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:171
+#: web/src/lib/features/home/ActivityFeed.svelte:142
 msgid "Loading recent activity…"
 msgstr "Letzte Aktivität wird geladen…"
 
-#: web/src/lib/features/history/HistorySection.svelte:254
+#: web/src/lib/features/history/HistorySection.svelte:255
 msgid "Loading recent changes…"
 msgstr "Letzte Änderungen werden geladen…"
 
@@ -3059,7 +3059,7 @@ msgstr "Garnoptionen werden geladen …"
 msgid "Loading your home…"
 msgstr "Startseite wird geladen…"
 
-#: web/src/lib/features/history/HistorySection.svelte:393
+#: web/src/lib/features/history/HistorySection.svelte:407
 #: web/src/lib/features/sharing/PeoplePicker.svelte:160
 #: web/src/lib/features/sharing/ShareDialog.svelte:248
 msgid "Loading…"
@@ -3190,7 +3190,7 @@ msgstr "Mehr zu deinen Daten steht in der"
 msgid "More actions"
 msgstr "Weitere Aktionen"
 
-#: web/src/lib/features/history/HistorySection.svelte:370
+#: web/src/lib/features/history/HistorySection.svelte:384
 msgid "More changes could not be loaded."
 msgstr "Weitere Änderungen konnten nicht geladen werden."
 
@@ -3401,7 +3401,7 @@ msgstr "Für dieses Ereignis wurde kein Änderungsstand gespeichert."
 msgid "No changes are available for this event."
 msgstr "Für dieses Ereignis sind keine Änderungen verfügbar."
 
-#: web/src/lib/features/history/HistorySection.svelte:267
+#: web/src/lib/features/history/HistorySection.svelte:268
 msgid "No changes recorded yet"
 msgstr "Noch keine Änderungen aufgezeichnet"
 
@@ -3563,7 +3563,7 @@ msgstr "Nichts gefunden"
 msgid "Nothing on the needles yet"
 msgstr "Noch nichts auf den Nadeln"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:182
+#: web/src/lib/features/home/ActivityFeed.svelte:153
 msgid "Nothing yet - your changes will show up here."
 msgstr "Noch nichts – deine Änderungen erscheinen hier."
 
@@ -3710,7 +3710,6 @@ msgstr "Öffne das Projekt, um den Timer zu stoppen oder weiterlaufen zu lassen.
 
 #: web/src/lib/features/admin/AuditLifecycle.svelte:106
 #: web/src/lib/features/admin/AuditLifecycle.svelte:113
-#: web/src/lib/features/home/ActivityFeed.svelte:282
 msgid "Open trash"
 msgstr "Papierkorb öffnen"
 
@@ -3796,8 +3795,8 @@ msgid "Owner"
 msgstr "Eigentümer"
 
 #: web/src/lib/features/admin/AuditLifecycle.svelte:95
-#: web/src/lib/features/history/HistorySection.svelte:333
-#: web/src/lib/features/home/ActivityFeed.svelte:241
+#: web/src/lib/features/history/HistorySection.svelte:347
+#: web/src/lib/features/home/ActivityFeed.svelte:215
 #: web/src/lib/features/projects/ProjectReader.svelte:1159
 #: web/src/lib/features/trash/TrashManager.svelte:372
 #: web/src/lib/features/trash/trash-state.ts:113
@@ -4366,17 +4365,17 @@ msgstr "Bereit zum Prüfen"
 msgid "Ready when you are"
 msgstr "Bereit, wenn du es bist"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:175
-#: web/src/lib/features/home/ActivityFeed.svelte:307
+#: web/src/lib/features/home/ActivityFeed.svelte:146
+#: web/src/lib/features/home/ActivityFeed.svelte:259
 msgid "Recent activity could not be loaded."
 msgstr "Die letzte Aktivität konnte nicht geladen werden."
 
-#: web/src/lib/features/history/HistorySection.svelte:245
-#: web/src/lib/features/history/HistorySection.svelte:276
+#: web/src/lib/features/history/HistorySection.svelte:246
+#: web/src/lib/features/history/HistorySection.svelte:277
 msgid "Recent changes"
 msgstr "Letzte Änderungen"
 
-#: web/src/lib/features/history/HistorySection.svelte:258
+#: web/src/lib/features/history/HistorySection.svelte:259
 msgid "Recent changes could not be loaded."
 msgstr "Letzte Änderungen konnten nicht geladen werden."
 
@@ -4656,7 +4655,6 @@ msgstr "Ressource nicht verfügbar"
 #: web/src/lib/features/account/BackupsSection.svelte:493
 #: web/src/lib/features/account/BackupsSection.svelte:535
 #: web/src/lib/features/admin/AuditLifecycle.svelte:127
-#: web/src/lib/features/home/ActivityFeed.svelte:294
 #: web/src/lib/features/trash/TrashManager.svelte:400
 #: web/src/lib/features/trash/TrashedBanner.svelte:135
 msgid "Restore"
@@ -4701,7 +4699,6 @@ msgid "Restored"
 msgstr "Wiederhergestellt"
 
 #: web/src/lib/features/admin/AuditLifecycle.svelte:78
-#: web/src/lib/features/home/ActivityFeed.svelte:115
 #: web/src/lib/features/trash/TrashManager.svelte:133
 #: web/src/lib/features/trash/TrashedBanner.svelte:75
 #: web/src/lib/features/trash/trash-undo.ts:53
@@ -4726,7 +4723,6 @@ msgstr "Wiederherstellen …"
 #: web/src/lib/features/account/BackupsSection.svelte:401
 #: web/src/lib/features/admin/AuditLifecycle.svelte:127
 #: web/src/lib/features/admin/RestoreBackupDialog.svelte:322
-#: web/src/lib/features/home/ActivityFeed.svelte:293
 #: web/src/lib/features/trash/TrashManager.svelte:400
 #: web/src/lib/features/trash/TrashedBanner.svelte:135
 msgid "Restoring…"
@@ -5099,7 +5095,7 @@ msgstr "Psst, alle schlafen!"
 msgid "Show"
 msgstr "Anzeigen"
 
-#: web/src/lib/features/history/HistorySection.svelte:382
+#: web/src/lib/features/history/HistorySection.svelte:396
 msgid "Show all changes"
 msgstr "Alle Änderungen anzeigen"
 
@@ -5108,17 +5104,17 @@ msgstr "Alle Änderungen anzeigen"
 msgid "Show diff"
 msgstr "Änderungen anzeigen"
 
-#: web/src/lib/features/history/HistorySection.svelte:402
+#: web/src/lib/features/history/HistorySection.svelte:416
 msgid "Show fewer"
 msgstr "Weniger anzeigen"
 
 #: web/src/lib/components/CommandPalette.svelte:344
-#: web/src/lib/features/home/ActivityFeed.svelte:315
+#: web/src/lib/features/home/ActivityFeed.svelte:267
 #: web/src/lib/features/sharing/PeoplePicker.svelte:149
 msgid "Show more"
 msgstr "Mehr anzeigen"
 
-#: web/src/lib/features/history/HistorySection.svelte:394
+#: web/src/lib/features/history/HistorySection.svelte:408
 msgid "Show older changes"
 msgstr "Ältere Änderungen anzeigen"
 
@@ -6708,7 +6704,7 @@ msgstr "Titelbild hochgeladen"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:318
 #: web/src/lib/features/admin/AdminBackups.svelte:102
-#: web/src/lib/features/home/activity.ts:409
+#: web/src/lib/features/home/activity.ts:413
 msgid "Today"
 msgstr "Heute"
 
@@ -6820,9 +6816,9 @@ msgstr ""
 #: web/src/lib/features/auth/PasskeysSection.svelte:303
 #: web/src/lib/features/categories/CategoryManager.svelte:241
 #: web/src/lib/features/history/HistoryEventDetail.svelte:68
-#: web/src/lib/features/history/HistorySection.svelte:260
-#: web/src/lib/features/home/ActivityFeed.svelte:177
-#: web/src/lib/features/home/ActivityFeed.svelte:309
+#: web/src/lib/features/history/HistorySection.svelte:261
+#: web/src/lib/features/home/ActivityFeed.svelte:148
+#: web/src/lib/features/home/ActivityFeed.svelte:261
 #: web/src/lib/features/home/ContinueCarousel.svelte:163
 #: web/src/lib/features/home/HomeDashboard.svelte:196
 #: web/src/lib/features/media/ArchiveControl.svelte:513
@@ -7319,7 +7315,7 @@ msgstr "Garnstärke"
 
 #: web/src/lib/features/admin/AdminAudit.svelte:320
 #: web/src/lib/features/admin/AdminBackups.svelte:103
-#: web/src/lib/features/home/activity.ts:410
+#: web/src/lib/features/home/activity.ts:414
 msgid "Yesterday"
 msgstr "Gestern"
 
@@ -7713,16 +7709,16 @@ msgid "Your yarns could not be loaded."
 msgstr "Deine Garne konnten nicht geladen werden."
 
 #: web/src/lib/features/history/history-summary.ts:202
-#: web/src/lib/features/home/activity.ts:308
+#: web/src/lib/features/home/activity.ts:312
 #: web/src/lib/features/trash/trash-state.ts:115 web/src/lib/user-label.ts:156
 msgid "a deleted account"
 msgstr "ein gelöschtes Konto"
 
-#: web/src/lib/features/home/activity.ts:224
+#: web/src/lib/features/home/activity.ts:225
 msgid "a project"
 msgstr "ein Projekt"
 
-#: web/src/lib/features/home/activity.ts:225
+#: web/src/lib/features/home/activity.ts:226
 msgid "a yarn"
 msgstr "ein Garn"
 
@@ -7734,7 +7730,7 @@ msgstr "ein Administrator"
 msgid "and"
 msgstr "und"
 
-#: web/src/lib/features/home/activity.ts:233
+#: web/src/lib/features/home/activity.ts:234
 msgid "attachments"
 msgstr "Anhänge"
 
@@ -7743,7 +7739,7 @@ msgid "brand"
 msgstr "Marke"
 
 #: web/src/lib/features/admin/audit-people.ts:64
-#: web/src/lib/features/history/HistorySection.svelte:322
+#: web/src/lib/features/history/HistorySection.svelte:336
 #: web/src/lib/features/history/history-summary.ts:330
 #, python-brace-format
 msgid "by {admin} as {user}"
@@ -7848,8 +7844,8 @@ msgstr "weitere Materialien"
 msgid "photo order"
 msgstr "Fotoreihenfolge"
 
-#: web/src/lib/features/home/activity.ts:230
 #: web/src/lib/features/home/activity.ts:231
+#: web/src/lib/features/home/activity.ts:232
 msgid "photos"
 msgstr "Fotos"
 
@@ -7883,7 +7879,7 @@ msgid "step picture order"
 msgstr "Schrittbilder-Reihenfolge"
 
 #: web/src/lib/features/history/history-summary.ts:43
-#: web/src/lib/features/home/activity.ts:232
+#: web/src/lib/features/home/activity.ts:233
 msgid "steps"
 msgstr "Schritte"
 
@@ -7964,7 +7960,7 @@ msgstr "Projekt von {name}"
 msgid "{name}'s yarn"
 msgstr "Garn von {name}"
 
-#: web/src/lib/features/home/activity.ts:242
+#: web/src/lib/features/home/activity.ts:243
 #, python-brace-format
 msgid "{n} changes"
 msgstr "{n} Änderungen"
@@ -7980,7 +7976,7 @@ msgid "{n} days left"
 msgstr "noch {n} Tage"
 
 #: web/src/lib/features/history/history-summary.ts:163
-#: web/src/lib/features/home/activity.ts:254
+#: web/src/lib/features/home/activity.ts:255
 #, python-brace-format
 msgid "{n} more"
 msgstr "{n} weitere"
