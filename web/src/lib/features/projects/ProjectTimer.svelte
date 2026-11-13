@@ -702,8 +702,7 @@
                 class="start-time"
                 variant="primary"
                 disabled={busy}
-                onclick={() => void confirmStart()}
-                >{t("Start", locale)}</Button
+                onclick={() => void confirmStart()}>{t("Start", locale)}</Button
               >
             </div>
           </div>
@@ -786,8 +785,7 @@
                 class="start-time"
                 variant="primary"
                 disabled={busy}
-                onclick={() => void requestStart()}
-                >{t("Start", locale)}</Button
+                onclick={() => void requestStart()}>{t("Start", locale)}</Button
               >
             {/if}
           </div>
