@@ -54,7 +54,9 @@
 
   const locale = $derived(session.data?.locale ?? "en");
   const pathname = $derived(page.url.pathname);
-  const parentHref = $derived(routeParent(pathname, resolve("/")));
+  const parentHref = $derived(
+    routeParent(pathname, resolve("/"), page.url.searchParams.get("from")),
+  );
   const signupRoute = $derived(pathname === linkTo("/signup"));
   const user = $derived(session.data?.user ?? null);
   $effect(() => {

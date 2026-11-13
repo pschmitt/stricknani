@@ -237,6 +237,7 @@ dependencies {
 
     // Project/yarn photo loading
     implementation(libs.coil.compose)
+    implementation(libs.androidx.exifinterface)
     implementation(libs.coil.network.okhttp)
 
     // Markdown rendering for descriptions/notes/steps (SNA-22) - the -coil3 artifact resolves

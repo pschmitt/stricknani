@@ -3,7 +3,11 @@ function normalizePath(pathname: string): string | null {
   return pathname.replace(/\/+$/, "") || "/";
 }
 
-export function routeParent(pathname: string, basePath: string): string | null {
+export function routeParent(
+  pathname: string,
+  basePath: string,
+  activitySource: string | null = null,
+): string | null {
   const currentPath = normalizePath(pathname);
   const normalizedBase =
     basePath === "" || basePath === "/" ? "" : normalizePath(basePath);
@@ -21,6 +25,13 @@ export function routeParent(pathname: string, basePath: string): string | null {
   const route =
     base === "" ? currentPath : currentPath.slice(base.length) || "/";
   let parent: string | null = null;
+
+  // Only activity links may override a resource detail's logical parent.
+  // Restrict the source to two app routes so a URL cannot send the header elsewhere.
+  if (/^\/(projects|yarns)\/(?!new$)[^/]+$/.test(route)) {
+    if (activitySource === "home") return `${base}/` || "/";
+    if (activitySource === "activity") return `${base}/activity`;
+  }
 
   if (route === "/privacy") {
     parent = "/about";

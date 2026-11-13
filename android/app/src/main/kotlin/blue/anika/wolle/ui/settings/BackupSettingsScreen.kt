@@ -9,6 +9,7 @@ import android.view.View
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -23,6 +24,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
@@ -32,6 +34,8 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -341,17 +345,31 @@ internal fun BackupSettingsScreen(
                         style = MaterialTheme.typography.labelLarge,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                     )
-                    SegmentedControl(
-                        options =
-                            ExportFormat.entries.map { SegmentedOption(it, ".${it.extension}") },
-                        selected = exportFormat,
-                        onSelect = { exportFormat = it },
-                        label = stringResource(R.string.data_export_archive_type),
-                        enabled = running == null && restoreRunning == null,
-                        fullWidth = true,
-                        modifier =
-                            Modifier.padding(horizontal = 16.dp).testTag("data-export-format"),
-                    )
+                    var exportFormatMenu by remember { mutableStateOf(false) }
+                    Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+                        OutlinedButton(
+                            onClick = { exportFormatMenu = true },
+                            enabled = running == null && restoreRunning == null,
+                            modifier = Modifier.fillMaxWidth().testTag("data-export-format"),
+                        ) {
+                            Text(".${exportFormat.extension}", Modifier.weight(1f))
+                            Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
+                        }
+                        DropdownMenu(
+                            expanded = exportFormatMenu,
+                            onDismissRequest = { exportFormatMenu = false },
+                        ) {
+                            ExportFormat.entries.forEach { format ->
+                                DropdownMenuItem(
+                                    text = { Text(".${format.extension}") },
+                                    onClick = {
+                                        exportFormat = format
+                                        exportFormatMenu = false
+                                    },
+                                )
+                            }
+                        }
+                    }
                     EncryptionOptions(
                         encrypt = encryptExport,
                         onEncryptChange = {

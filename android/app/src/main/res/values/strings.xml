@@ -502,6 +502,10 @@
     <string name="account_settings_sign_out_dialog_title">Sign out?</string>
     <!-- Account: picture, password, apps and devices -->
     <string name="account_avatar_change">Change profile picture</string>
+    <string name="account_use_gravatar">Use Gravatar</string>
+    <string name="account_gravatar_turn_off">Turn off Gravatar</string>
+    <string name="account_gravatar_enabled">Gravatar enabled.</string>
+    <string name="account_gravatar_disabled">Gravatar disabled.</string>
     <string name="account_avatar_remove">Remove picture</string>
     <string name="account_avatar_remove_title">Remove your picture?</string>
     <string name="account_avatar_remove_body">Your initial is shown instead.</string>
@@ -518,6 +522,7 @@
     <string name="account_error_reports_toggle_help">Sends technical details of errors, never your content, to the server operator. Applies to this account on all your devices.</string>
     <string name="account_error_reports_save_failed">Switched on or off on this device. The server could not record it, so your other devices may differ.</string>
     <string name="error_gravatar_save_failed">Couldn\'t save the Gravatar setting - try again.</string>
+    <string name="error_gravatar_enabled_avatar_remove_failed">Gravatar is enabled, but the uploaded picture could not be removed.</string>
     <string name="account_strip_metadata_toggle">Remove location and camera data from new photos</string>
     <string name="account_strip_metadata_toggle_help">Applies to photos you upload from now on. Photos already uploaded are not changed.</string>
     <string name="account_strip_metadata_on">Location and camera data will be removed from new photos.</string>

@@ -6,7 +6,6 @@
   import Button from "#lib/components/Button.svelte";
   import { fileDrop } from "#lib/components/file-drop.ts";
   import ConfirmDialog from "#lib/components/ConfirmDialog.svelte";
-  import SegmentedControl from "#lib/components/SegmentedControl.svelte";
   import { apiRequest, ApiError } from "#lib/api.ts";
   import {
     archiveTypes,
@@ -257,12 +256,22 @@
         locale,
       )}
     </p>
-    <SegmentedControl
-      options={archiveOptions}
-      value={archive}
-      label={t("Archive type", locale)}
-      onchange={chooseArchive}
-    />
+    <label class="archive-select">
+      <span>{t("Archive type", locale)}</span>
+      <span class="archive-select__control">
+        <select
+          aria-label={t("Archive type", locale)}
+          value={archive}
+          onchange={(event) =>
+            chooseArchive(event.currentTarget.value as ArchiveType)}
+        >
+          {#each archiveOptions as option (option.value)}
+            <option value={option.value}>{option.label}</option>
+          {/each}
+        </select>
+        <NavIcon name="chevron-down" />
+      </span>
+    </label>
     <label class="check-field">
       <input
         type="checkbox"
@@ -706,5 +715,65 @@
   .file-name {
     overflow-wrap: anywhere;
     font-weight: 600;
+  }
+
+  .archive-select {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-block: 0.4rem 1rem;
+    font-weight: 700;
+  }
+
+  .archive-select__control {
+    position: relative;
+    display: inline-flex;
+    min-width: 11rem;
+    align-items: center;
+  }
+
+  .archive-select select {
+    width: 100%;
+    min-height: 2.75rem;
+    appearance: none;
+    border: 1px solid var(--line);
+    border-radius: 0.85rem;
+    padding: 0.55rem 2.5rem 0.55rem 0.85rem;
+    color: var(--ink);
+    background: var(--surface-raised);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 7%, transparent);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .archive-select select:hover {
+    border-color: var(--accent-strong);
+  }
+
+  .archive-select select:focus-visible {
+    outline: 2px solid var(--accent-strong);
+    outline-offset: 2px;
+  }
+
+  .archive-select__control :global(svg) {
+    position: absolute;
+    right: 0.8rem;
+    width: 1rem;
+    height: 1rem;
+    color: var(--ink-muted);
+    pointer-events: none;
+  }
+
+  @media (max-width: 32rem) {
+    .archive-select {
+      align-items: stretch;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .archive-select__control {
+      width: 100%;
+    }
   }
 </style>

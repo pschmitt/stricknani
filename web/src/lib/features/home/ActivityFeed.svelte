@@ -238,12 +238,13 @@
                 {#if item.exists && item.href}
                   <a
                     class="tl__row"
-                    href={item.entity_type === "project"
-                      ? resolve("/projects/[id]", {
-                          id: String(item.entity_id),
-                        })
-                      : resolve("/yarns/[id]", { id: String(item.entity_id) })}
-                    >{@render row()}</a
+                    href={`${
+                      item.entity_type === "project"
+                        ? resolve("/projects/[id]", {
+                            id: String(item.entity_id),
+                          })
+                        : resolve("/yarns/[id]", { id: String(item.entity_id) })
+                    }?from=${full ? "activity" : "home"}`}>{@render row()}</a
                   >
                 {:else}
                   <div class="tl__row">{@render row()}</div>

@@ -501,6 +501,10 @@
     <string name="account_settings_sign_out_dialog_title">Abmelden?</string>
     <!-- Account: picture, password, apps and devices -->
     <string name="account_avatar_change">Profilbild ändern</string>
+    <string name="account_use_gravatar">Gravatar verwenden</string>
+    <string name="account_gravatar_turn_off">Gravatar ausschalten</string>
+    <string name="account_gravatar_enabled">Gravatar aktiviert.</string>
+    <string name="account_gravatar_disabled">Gravatar deaktiviert.</string>
     <string name="account_avatar_remove">Bild entfernen</string>
     <string name="account_avatar_remove_title">Bild entfernen?</string>
     <string name="account_avatar_remove_body">Stattdessen wird dein Anfangsbuchstabe angezeigt.</string>
@@ -517,6 +521,7 @@
     <string name="account_error_reports_toggle_help">Sendet technische Details zu Fehlern, nie deine Inhalte, an den Betreiber des Servers. Gilt für dieses Konto auf allen deinen Geräten.</string>
     <string name="account_error_reports_save_failed">Auf diesem Gerät umgestellt. Der Server konnte es nicht speichern, daher können deine anderen Geräte abweichen.</string>
     <string name="error_gravatar_save_failed">Die Gravatar-Einstellung konnte nicht gespeichert werden - versuche es erneut.</string>
+    <string name="error_gravatar_enabled_avatar_remove_failed">Gravatar ist aktiviert, aber das hochgeladene Bild konnte nicht entfernt werden.</string>
     <string name="account_strip_metadata_toggle">Standort- und Kameradaten aus neuen Fotos entfernen</string>
     <string name="account_strip_metadata_toggle_help">Gilt für Fotos, die du ab jetzt hochlädst. Bereits hochgeladene Fotos werden nicht geändert.</string>
     <string name="account_strip_metadata_on">Standort- und Kameradaten werden aus neuen Fotos entfernt.</string>

@@ -236,6 +236,7 @@ fun HomeScreen(
             }
         }
     val scope = rememberCoroutineScope()
+    val compactMenu by remember(flight) { derivedStateOf { flight.progress() >= 0.5f } }
 
     Scaffold(
         snackbarHost = { StricknaniSnackbarHost(snackbarHostState) },
@@ -282,6 +283,7 @@ fun HomeScreen(
                             padStatusBar = !signedOut,
                             status = subtitle,
                             signedOut = signedOut,
+                            showOverflow = !compactMenu,
                         )
                     }
                     availableUpdate?.let { update ->
@@ -454,6 +456,7 @@ fun HomeScreen(
             }
             CollapsedBar(
                 progress = flight::progress,
+                signedOut = signedOut,
                 onClick = { scope.launch { listState.animateScrollToItem(0) } },
             )
             // The one and only Winky Pom: it rides along with the greeting at the top and shrinks
@@ -496,6 +499,7 @@ private fun Greeting(
     padStatusBar: Boolean = true,
     status: GreetingStatus = GreetingStatus.Question,
     signedOut: Boolean = false,
+    showOverflow: Boolean = true,
 ) {
     val hour = remember { Calendar.getInstance().get(Calendar.HOUR_OF_DAY) }
     // One pick per screen entry: it survives recomposition, theme switches and rotation.
@@ -552,7 +556,7 @@ private fun Greeting(
             }
         }
         // Administrators: Mine / All for the home lists, like the web's header menu.
-        if (!signedOut) EveryoneMenu(Modifier.align(Alignment.Top))
+        if (!signedOut && showOverflow) EveryoneMenu(Modifier.align(Alignment.Top))
     }
 }
 
@@ -576,7 +580,11 @@ private fun greetingStatusText(status: GreetingStatus): String =
  * touches on the content below; once filled, tapping it scrolls Home back to the top.
  */
 @Composable
-private fun BoxScope.CollapsedBar(progress: () -> Float, onClick: () -> Unit) {
+private fun BoxScope.CollapsedBar(
+    progress: () -> Float,
+    signedOut: Boolean,
+    onClick: () -> Unit,
+) {
     val visible by remember(progress) { derivedStateOf { progress() > 0f } }
     if (!visible) return
     val tappable by remember(progress) { derivedStateOf { progress() >= 0.5f } }
@@ -592,30 +600,38 @@ private fun BoxScope.CollapsedBar(progress: () -> Float, onClick: () -> Unit) {
                     shape = RectangleShape
                 }
                 .drawBehind { drawRect(container, alpha = morphBarOpacity(progress())) }
-                .clickable(
-                    enabled = tappable,
-                    onClickLabel = stringResource(R.string.home_scroll_to_top),
-                    role = Role.Button,
-                    onClick = onClick,
-                )
                 .windowInsetsPadding(WindowInsets.statusBars)
                 .height(BAR_HEIGHT)
                 .padding(horizontal = BAR_PADDING),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // The logo slot: 0 wide at the top of Home, full width once the mascot sits in it.
-        Spacer(
-            Modifier.layout { measurable, constraints ->
-                val placeable = measurable.measure(constraints)
-                layout(morphSlotWidth(progress(), slotPx).roundToInt(), placeable.height) {}
-            }
-        )
-        Text(
-            stringResource(R.string.app_name),
-            style = MaterialTheme.typography.titleLarge,
-            maxLines = 1,
-            modifier = Modifier.graphicsLayer { alpha = morphBarOpacity(progress()) },
-        )
+        Row(
+            modifier =
+                Modifier.weight(1f)
+                    .height(BAR_HEIGHT)
+                    .clickable(
+                        enabled = tappable,
+                        onClickLabel = stringResource(R.string.home_scroll_to_top),
+                        role = Role.Button,
+                        onClick = onClick,
+                    ),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // The logo slot widens as the mascot reaches the bar.
+            Spacer(
+                Modifier.layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints)
+                    layout(morphSlotWidth(progress(), slotPx).roundToInt(), placeable.height) {}
+                }
+            )
+            Text(
+                stringResource(R.string.app_name),
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = 1,
+                modifier = Modifier.graphicsLayer { alpha = morphBarOpacity(progress()) },
+            )
+        }
+        if (!signedOut && tappable) EveryoneMenu()
     }
 }
 

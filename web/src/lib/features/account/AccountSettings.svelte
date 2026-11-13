@@ -6,14 +6,14 @@
   import { onDestroy, onMount, tick } from "svelte";
   import { ApiError, type SessionData } from "#lib/api.ts";
   import { chooseLocale } from "#lib/components/LocaleSwitcher.svelte";
-  import NavIcon, { type NavIconName } from "#lib/components/NavIcon.svelte";
+  import NavIcon from "#lib/components/NavIcon.svelte";
   import TakePhotoInput from "#lib/components/TakePhotoInput.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
-  import SegmentedControl from "#lib/components/SegmentedControl.svelte";
   import BackupsSection from "./BackupsSection.svelte";
   import DetailCardOrderSettings from "./DetailCardOrderSettings.svelte";
   import ConnectAppDialog from "./ConnectAppDialog.svelte";
   import DeleteAccountDialog from "./DeleteAccountDialog.svelte";
+  import AvatarEditorDialog from "./AvatarEditorDialog.svelte";
   import { formatLastUsed } from "./connect-app.ts";
   import LinkedLogins from "#lib/features/auth/LinkedLogins.svelte";
   import PasskeysSection from "#lib/features/auth/PasskeysSection.svelte";
@@ -28,7 +28,7 @@
     signOut,
   } from "#lib/session.svelte.ts";
   import { theme, setTheme } from "#lib/theme.svelte.ts";
-  import { themeChoices, type ThemeChoice } from "#lib/theme.ts";
+  import { themeChoices } from "#lib/theme.ts";
   import { textSize } from "#lib/text-size.svelte.ts";
   import { projectTimerPreference } from "#lib/timer-preference.svelte.ts";
   import { webNotifications } from "#lib/web-notifications.svelte.ts";
@@ -77,7 +77,7 @@
   let revokingId = $state<number | null>(null);
   let avatarFile = $state<File | null>(null);
   let tokenNameInput = $state<HTMLInputElement | null>(null);
-  let avatarInput = $state<HTMLInputElement | null>(null);
+  let avatarDialog = $state<ReturnType<typeof AvatarEditorDialog>>();
   let tokenDialog = $state<HTMLDialogElement | null>(null);
   let revokeDialog = $state<HTMLDialogElement | null>(null);
   let revokeTarget = $state<ApiToken | null>(null);
@@ -120,11 +120,6 @@
     accountActionsEnabled && session.data?.capabilities.media_delete === true,
   );
 
-  const themeIcons = {
-    system: "monitor",
-    light: "sun",
-    dark: "moon",
-  } as const satisfies Record<ThemeChoice, NavIconName>;
   const localeOptions: { value: Locale; label: string }[] = [
     { value: "en", label: "English" },
     { value: "de", label: "Deutsch" },
@@ -132,7 +127,6 @@
   const themeOptions = $derived(
     themeChoices.map((choice) => ({
       value: choice,
-      icon: themeIcons[choice],
       label:
         choice === "system"
           ? t("System", locale)
@@ -270,7 +264,6 @@
     newPassword = "";
     confirmPassword = "";
     revealedToken = null;
-    if (avatarInput) avatarInput.value = "";
   });
 
   let deleteDialog = $state<ReturnType<typeof DeleteAccountDialog>>();
@@ -535,7 +528,6 @@
       profile = { ...profile, avatar_url: avatarUrl, avatar_source: "upload" };
       patchSessionAvatar(activeSession, avatarUrl, "upload");
       avatarFile = null;
-      if (avatarInput) avatarInput.value = "";
       pageStatus = t("Profile picture updated.", locale);
     } catch (error) {
       if (userId !== capturedUserId || mutationId !== operationGeneration)
@@ -585,7 +577,6 @@
         profile.avatar_source,
       );
       avatarFile = null;
-      if (avatarInput) avatarInput.value = "";
       pageStatus = t("Profile picture removed.", locale);
     } catch (error) {
       if (userId !== capturedUserId || mutationId !== operationGeneration)
@@ -614,8 +605,22 @@
     pageStatus = "";
     operation = "gravatar";
     const mutationId = ++operationGeneration;
+    let preferenceSaved = false;
     try {
-      const next = await setUseGravatar(enabled, activeSession);
+      let next = await setUseGravatar(enabled, activeSession);
+      preferenceSaved = true;
+      // Gravatar is a fallback while no upload exists. Save the preference
+      // first, then remove the upload so selecting Gravatar actually switches
+      // the visible picture. If deletion fails, keep the upload and report it.
+      if (enabled && profile?.avatar_source === "upload") {
+        profile = next;
+        await deleteAvatar(activeSession);
+        next = await getAccount().catch(() => ({
+          ...next,
+          avatar_url: null,
+          avatar_source: null,
+        }));
+      }
       if (
         userId !== capturedUserId ||
         mutationId !== operationGeneration ||
@@ -633,7 +638,12 @@
         return;
       avatarError = errorMessage(
         error,
-        t("The Gravatar setting could not be saved.", locale),
+        preferenceSaved
+          ? t(
+              "Gravatar is enabled, but the uploaded picture could not be removed.",
+              locale,
+            )
+          : t("The Gravatar setting could not be saved.", locale),
       );
     } finally {
       if (userId === capturedUserId && mutationId === operationGeneration)
@@ -938,15 +948,21 @@
           accept: "image/*",
           label: t("Drop to use as profile picture", locale),
           onFiles: (files) => {
-            avatarFile = files[0];
-            avatarError = "";
+            avatarDialog?.openFile(files[0]);
           },
           onRejected: () =>
             (avatarError = t("Choose a supported image file.", locale)),
         }}
       >
         <div class="avatar">
-          <div class="avatar__portrait" aria-hidden="true">
+          <button
+            class="avatar__portrait"
+            type="button"
+            aria-label={t("Change profile picture", locale)}
+            disabled={operation !== null ||
+              (!avatarUploadEnabled && !profile.gravatar_enabled)}
+            onclick={() => avatarDialog?.open()}
+          >
             {#if profile.avatar_url && profile.avatar_url !== brokenAvatarUrl}
               {@const source = profile.avatar_url}
               {#key source}
@@ -959,25 +975,18 @@
             {:else}
               <span>{profile.email.slice(0, 1).toLocaleUpperCase(locale)}</span>
             {/if}
-          </div>
-          <label class="avatar__badge" title={t("Choose image", locale)}>
-            <input
-              bind:this={avatarInput}
-              type="file"
-              accept="image/*"
-              aria-label={t("Choose a profile picture", locale)}
-              disabled={operation !== null || !avatarUploadEnabled}
-              onchange={(event) => {
-                if (!avatarUploadEnabled) {
-                  event.currentTarget.value = "";
-                  return;
-                }
-                avatarFile = event.currentTarget.files?.[0] ?? null;
-                avatarError = "";
-              }}
-            />
+          </button>
+          <button
+            class="avatar__badge"
+            type="button"
+            aria-label={t("Change profile picture", locale)}
+            title={t("Change profile picture", locale)}
+            disabled={operation !== null ||
+              (!avatarUploadEnabled && !profile.gravatar_enabled)}
+            onclick={() => avatarDialog?.open()}
+          >
             <NavIcon name="camera" />
-          </label>
+          </button>
         </div>
         <div class="profile__copy">
           <p class="profile__email">
@@ -1002,8 +1011,8 @@
             disabled={operation !== null || !avatarUploadEnabled}
             onchange={(event) => {
               if (!(event.currentTarget instanceof HTMLInputElement)) return;
-              avatarFile = event.currentTarget.files?.[0] ?? null;
-              avatarError = "";
+              const file = event.currentTarget.files?.[0];
+              if (file) avatarDialog?.openFile(file);
               event.currentTarget.value = "";
             }}
           />
@@ -1024,27 +1033,6 @@
           {/if}
         </div>
       </div>
-
-      {#if profile.gravatar_enabled}
-        <label class="gravatar-toggle">
-          <input
-            type="checkbox"
-            checked={profile.use_gravatar}
-            disabled={operation !== null || !accountActionsEnabled}
-            onchange={(event) =>
-              void changeGravatar(event.currentTarget.checked)}
-          />
-          <span class="gravatar-toggle__copy">
-            <span>{t("Use Gravatar when no picture is uploaded", locale)}</span>
-            <small class="muted"
-              >{t(
-                "The server fetches it from Gravatar using your email address.",
-                locale,
-              )}</small
-            >
-          </span>
-        </label>
-      {/if}
 
       {#if avatarFile}
         <div class="avatar-pending">
@@ -1067,7 +1055,6 @@
               disabled={operation !== null}
               onclick={() => {
                 avatarFile = null;
-                if (avatarInput) avatarInput.value = "";
               }}
             >
               {t("Cancel", locale)}
@@ -1080,6 +1067,19 @@
         </p>{/if}
     {/if}
   </section>
+  <AvatarEditorDialog
+    bind:this={avatarDialog}
+    {locale}
+    gravatarEnabled={Boolean(profile?.gravatar_enabled)}
+    canChangeGravatar={accountActionsEnabled}
+    avatarSource={profile?.avatar_source ?? null}
+    busy={operation !== null}
+    ongravatar={(enabled) => void changeGravatar(enabled)}
+    oncropped={(file) => {
+      avatarFile = file;
+      avatarError = "";
+    }}
+  />
 
   <section class="card" aria-labelledby="preferences-title">
     <header class="card__header">
@@ -1094,25 +1094,41 @@
           >{t("Language", locale)}</span
         >
         <div class="row__control">
-          <SegmentedControl
-            options={localeOptions}
-            value={locale}
-            label={t("Language", locale)}
-            disabled={session.status !== "ready" || !session.data}
-            onchange={chooseLocale}
-          />
+          <label class="preference-select">
+            <span class="sr-only">{t("Language", locale)}</span>
+            <select
+              aria-label={t("Language", locale)}
+              value={locale}
+              disabled={session.status !== "ready" || !session.data}
+              onchange={(event) =>
+                chooseLocale(event.currentTarget.value as Locale)}
+            >
+              {#each localeOptions as option (option.value)}
+                <option value={option.value}>{option.label}</option>
+              {/each}
+            </select>
+            <NavIcon name="chevron-down" />
+          </label>
         </div>
       </div>
       <div class="row">
         <span class="row__label" id="pref-theme">{t("Appearance", locale)}</span
         >
         <div class="row__control">
-          <SegmentedControl
-            options={themeOptions}
-            value={theme.choice}
-            label={t("Theme", locale)}
-            onchange={setTheme}
-          />
+          <label class="preference-select">
+            <span class="sr-only">{t("Theme", locale)}</span>
+            <select
+              aria-label={t("Theme", locale)}
+              value={theme.choice}
+              onchange={(event) =>
+                setTheme(event.currentTarget.value as typeof theme.choice)}
+            >
+              {#each themeOptions as option (option.value)}
+                <option value={option.value}>{option.label}</option>
+              {/each}
+            </select>
+            <NavIcon name="chevron-down" />
+          </label>
         </div>
       </div>
       <div class="row">
@@ -1125,12 +1141,20 @@
           </p>
         </div>
         <div class="row__control">
-          <SegmentedControl
-            options={sizeOptions}
-            value={textSize.index}
-            label={t("Text size", locale)}
-            onchange={(next) => textSize.set(next)}
-          />
+          <label class="preference-select">
+            <span class="sr-only">{t("Text size", locale)}</span>
+            <select
+              aria-label={t("Text size", locale)}
+              value={textSize.index}
+              onchange={(event) =>
+                textSize.set(Number(event.currentTarget.value))}
+            >
+              {#each sizeOptions as option (option.value)}
+                <option value={option.value}>{option.label}</option>
+              {/each}
+            </select>
+            <NavIcon name="chevron-down" />
+          </label>
         </div>
       </div>
       {#if userId !== null}
@@ -1970,6 +1994,8 @@
     width: 5rem;
     aspect-ratio: 1;
     place-items: center;
+    border: 0;
+    padding: 0;
     overflow: hidden;
     border-radius: 50%;
     color: var(--accent-strong);
@@ -1979,6 +2005,19 @@
       0 0 0 5px var(--line);
     font-size: 1.9rem;
     font-weight: 700;
+    cursor: pointer;
+  }
+
+  .avatar__portrait:focus-visible,
+  .avatar__badge:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+  }
+
+  .avatar__portrait:disabled,
+  .avatar__badge:disabled {
+    cursor: not-allowed;
+    opacity: 0.62;
   }
 
   .avatar__portrait img {
@@ -1998,6 +2037,7 @@
     justify-content: center;
     border: 2px solid var(--surface);
     border-radius: 50%;
+    padding: 0;
     color: var(--on-accent);
     background: var(--accent-strong);
     font-size: 1.15rem;
@@ -2020,30 +2060,6 @@
 
   .avatar__badge:hover {
     transform: scale(1.08);
-  }
-
-  .avatar__badge:has(input:disabled) {
-    cursor: not-allowed;
-    opacity: 0.62;
-  }
-
-  .avatar__badge:focus-within {
-    outline: 3px solid var(--focus);
-    outline-offset: 2px;
-  }
-
-  .avatar__badge input {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    /* WebKit sizes the native file button from the font and lets it spill past
-       the box, where it would swallow clicks meant for neighbouring controls. */
-    overflow: hidden;
-    cursor: inherit;
-    font-size: 0;
-    opacity: 0;
   }
 
   .profile__copy {
@@ -2092,26 +2108,6 @@
     border-radius: var(--radius-sm);
     padding: 0.75rem;
     background: var(--surface-raised);
-  }
-
-  .gravatar-toggle {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.65rem;
-    cursor: pointer;
-  }
-
-  .gravatar-toggle input {
-    flex: 0 0 auto;
-    width: 1.2rem;
-    height: 1.2rem;
-    margin-top: 0.15rem;
-    accent-color: var(--accent-strong);
-  }
-
-  .gravatar-toggle__copy {
-    display: grid;
-    gap: 0.15rem;
   }
 
   .switch {
@@ -2244,6 +2240,65 @@
     flex: none;
     max-width: 100%;
     margin-inline-start: auto;
+  }
+
+  .preference-select {
+    position: relative;
+    display: inline-flex;
+    min-width: 10.5rem;
+    align-items: center;
+    color: var(--ink);
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    clip-path: inset(50%);
+  }
+
+  .preference-select select {
+    width: 100%;
+    min-height: 2.75rem;
+    appearance: none;
+    border: 1px solid var(--line);
+    border-radius: 0.85rem;
+    padding: 0.55rem 2.5rem 0.55rem 0.85rem;
+    color: inherit;
+    background: var(--surface-raised);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 7%, transparent);
+    font: inherit;
+    font-weight: 650;
+    cursor: pointer;
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+
+  .preference-select select:hover:not(:disabled) {
+    border-color: var(--accent-strong);
+  }
+
+  .preference-select select:focus-visible {
+    outline: 2px solid var(--accent-strong);
+    outline-offset: 2px;
+  }
+
+  .preference-select select:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+  }
+
+  .preference-select :global(svg) {
+    position: absolute;
+    right: 0.8rem;
+    width: 1rem;
+    height: 1rem;
+    color: var(--ink-muted);
+    pointer-events: none;
   }
 
   /* Smooth disclosure: the grid row animates between 0fr and 1fr. */
@@ -2525,7 +2580,7 @@
       margin-inline-start: 0;
     }
 
-    .row__control :global(.segmented),
+    .row__control :global(.preference-select),
     .row__control :global(.ui-button) {
       display: flex;
       width: 100%;

@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipDescription
 import android.content.ClipboardManager
 import android.content.Context
+import android.net.Uri
 import android.os.Build
 import android.os.PersistableBundle
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -36,8 +37,6 @@ import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -72,6 +71,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
 import blue.anika.wolle.data.account.ApiTokenDto
+import blue.anika.wolle.data.account.AvatarSource
 import blue.anika.wolle.data.account.formatTokenDate
 import blue.anika.wolle.data.oidc.OidcProvider
 import blue.anika.wolle.ui.common.AccountAvatar
@@ -89,21 +89,26 @@ internal fun ProfilePicture(
     email: String?,
     editable: Boolean,
     busy: Boolean,
+    gravatarEnabled: Boolean,
+    gravatarBusy: Boolean,
+    avatarSource: AvatarSource?,
     onPicked: (String) -> Unit,
     onCameraDenied: () -> Unit,
+    onToggleGravatar: (Boolean) -> Unit,
     content: @Composable () -> Unit,
 ) {
     val changeLabel = stringResource(R.string.account_avatar_change)
+    var editingSource by remember { mutableStateOf<Uri?>(null) }
     val picker =
         rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-            if (uri != null) onPicked(uri.toString())
+            if (uri != null) editingSource = uri
         }
     val capture =
         rememberPhotoCapture(
-            onPhoto = { uri -> onPicked(uri.toString()) },
+            onPhoto = { uri -> editingSource = uri },
             onPermissionDenied = onCameraDenied,
         )
-    var sourceMenu by remember { mutableStateOf(false) }
+    var sourceDialog by remember { mutableStateOf(false) }
     val pickFromGallery = {
         picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
     }
@@ -119,7 +124,14 @@ internal fun ProfilePicture(
                 avatarUrl,
                 email,
                 size = 80.dp,
-                modifier = Modifier.align(Alignment.TopStart),
+                modifier =
+                    Modifier.align(Alignment.TopStart).clickable(
+                        enabled = editable && !busy,
+                        role = Role.Button,
+                        onClickLabel = changeLabel,
+                    ) {
+                        sourceDialog = true
+                    },
             )
             if (busy) {
                 val uploading = stringResource(R.string.account_avatar_uploading)
@@ -154,7 +166,7 @@ internal fun ProfilePicture(
                                 onClickLabel = stringResource(R.string.account_avatar_change),
                             ) {
                                 // With a camera app around, ask where the picture comes from.
-                                if (capture.available) sourceMenu = true else pickFromGallery()
+                                sourceDialog = true
                             }
                             .semantics { contentDescription = changeLabel },
                     contentAlignment = Alignment.Center,
@@ -180,27 +192,77 @@ internal fun ProfilePicture(
                 }
             }
             if (editable) {
-                DropdownMenu(expanded = sourceMenu, onDismissRequest = { sourceMenu = false }) {
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.photo_choose)) },
-                        leadingIcon = { Icon(PhosphorIcons.Images, contentDescription = null) },
-                        onClick = {
-                            sourceMenu = false
-                            pickFromGallery()
+                if (sourceDialog) {
+                    AlertDialog(
+                        onDismissRequest = { sourceDialog = false },
+                        title = { Text(stringResource(R.string.account_avatar_change)) },
+                        text = {
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedButton(
+                                    onClick = {
+                                        sourceDialog = false
+                                        pickFromGallery()
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Icon(PhosphorIcons.Images, contentDescription = null)
+                                    Text(
+                                        stringResource(R.string.photo_choose),
+                                        Modifier.padding(start = 8.dp),
+                                    )
+                                }
+                                if (capture.available) {
+                                    OutlinedButton(
+                                        onClick = {
+                                            sourceDialog = false
+                                            capture.launch()
+                                        },
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Icon(PhosphorIcons.Camera, contentDescription = null)
+                                        Text(
+                                            stringResource(R.string.photo_take),
+                                            Modifier.padding(start = 8.dp),
+                                        )
+                                    }
+                                }
+                                if (gravatarEnabled) {
+                                    OutlinedButton(
+                                        onClick = {
+                                            sourceDialog = false
+                                            onToggleGravatar(avatarSource != AvatarSource.GRAVATAR)
+                                        },
+                                        enabled = !gravatarBusy && !busy,
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
+                                        Text(
+                                            stringResource(
+                                                if (avatarSource == AvatarSource.GRAVATAR)
+                                                    R.string.account_gravatar_turn_off
+                                                else R.string.account_use_gravatar
+                                            )
+                                        )
+                                    }
+                                }
+                            }
                         },
-                    )
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.photo_take)) },
-                        leadingIcon = { Icon(PhosphorIcons.Camera, contentDescription = null) },
-                        onClick = {
-                            sourceMenu = false
-                            capture.launch()
+                        confirmButton = {
+                            TextButton(onClick = { sourceDialog = false }) {
+                                Text(stringResource(R.string.common_cancel))
+                            }
                         },
                     )
                 }
             }
         }
         content()
+    }
+    editingSource?.let { source ->
+        AvatarCropDialog(
+            source = source,
+            onDismiss = { editingSource = null },
+            onReady = { onPicked(it.toString()) },
+        )
     }
 }
 

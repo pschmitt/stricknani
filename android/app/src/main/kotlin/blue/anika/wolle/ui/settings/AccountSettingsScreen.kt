@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.SettingsBrightness
@@ -29,6 +30,8 @@ import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -64,8 +67,6 @@ import blue.anika.wolle.data.settings.AppLanguage
 import blue.anika.wolle.data.settings.ThemeMode
 import blue.anika.wolle.ui.admin.AdminAccessViewModel
 import blue.anika.wolle.ui.common.PhosphorIcons
-import blue.anika.wolle.ui.common.SegmentedControl
-import blue.anika.wolle.ui.common.SegmentedOption
 import blue.anika.wolle.ui.oidc.LinkedLoginsCard
 import blue.anika.wolle.ui.oidc.LinkedLoginsPhase
 import blue.anika.wolle.ui.oidc.LinkedLoginsViewModel
@@ -151,8 +152,12 @@ internal fun AccountSettingsScreen(
                             email = profile.email,
                             editable = security.available,
                             busy = security.avatarBusy,
+                            gravatarEnabled = security.gravatarEnabled,
+                            gravatarBusy = security.gravatarBusy,
+                            avatarSource = security.avatarSource,
                             onPicked = securityModel::uploadAvatar,
                             onCameraDenied = securityModel::cameraDenied,
+                            onToggleGravatar = securityModel::setUseGravatar,
                         ) {
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 ProfileEmail(
@@ -186,13 +191,6 @@ internal fun AccountSettingsScreen(
                                 onClick = securityModel::askRemoveAvatar,
                             )
                         }
-                        if (security.available && security.gravatarEnabled) {
-                            GravatarToggleRow(
-                                checked = security.useGravatar,
-                                enabled = !security.gravatarBusy,
-                                onChange = securityModel::setUseGravatar,
-                            )
-                        }
                     }
                 }
             item {
@@ -201,7 +199,7 @@ internal fun AccountSettingsScreen(
                     icon = PhosphorIcons.SlidersHorizontal,
                 ) {
                     PreferenceRow(label = stringResource(R.string.account_pref_language)) {
-                        SegmentedChoice(
+                        PreferenceDropdown(
                             options = AppLanguage.entries,
                             groupLabel = stringResource(R.string.account_pref_language),
                             selected = appLanguage,
@@ -214,7 +212,7 @@ internal fun AccountSettingsScreen(
                     }
                     HorizontalDivider(Modifier.padding(horizontal = 16.dp))
                     PreferenceRow(label = stringResource(R.string.account_pref_appearance)) {
-                        SegmentedChoice(
+                        PreferenceDropdown(
                             options = ThemeMode.entries,
                             groupLabel = stringResource(R.string.account_pref_appearance),
                             selected = themeMode,
@@ -228,7 +226,7 @@ internal fun AccountSettingsScreen(
                         label = stringResource(R.string.account_pref_text_size),
                         hint = stringResource(R.string.account_pref_text_size_hint),
                     ) {
-                        SegmentedChoice(
+                        PreferenceDropdown(
                             options = listOf(0, 1, 2),
                             groupLabel = stringResource(R.string.account_pref_text_size),
                             selected = textStep,
@@ -611,9 +609,9 @@ private fun PreferenceRow(
     }
 }
 
-/** The shared [SegmentedControl] for every preference. */
+/** A compact, labelled selection menu shared by the account preferences. */
 @Composable
-private fun <T> SegmentedChoice(
+private fun <T> PreferenceDropdown(
     options: List<T>,
     selected: T,
     label: @Composable (T) -> String,
@@ -621,16 +619,33 @@ private fun <T> SegmentedChoice(
     groupLabel: String,
     icon: (@Composable (T) -> ImageVector)? = null,
 ) {
-    SegmentedControl(
-        options =
-            options.map { option ->
-                SegmentedOption(option, label(option), icon = icon?.invoke(option))
-            },
-        selected = selected,
-        onSelect = onSelect,
-        label = groupLabel,
-        fullWidth = true,
-    )
+    var expanded by remember { mutableStateOf(false) }
+    Box(Modifier.fillMaxWidth()) {
+        OutlinedButton(
+            onClick = { expanded = true },
+            modifier =
+                Modifier.fillMaxWidth()
+                    .testTag("account-pref-${groupLabel.lowercase().replace(' ', '-')}"),
+        ) {
+            icon?.invoke(selected)?.let { Icon(it, contentDescription = null) }
+            Text(label(selected), Modifier.weight(1f).padding(start = 8.dp), maxLines = 1)
+            Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(label(option)) },
+                    leadingIcon = {
+                        icon?.invoke(option)?.let { Icon(it, contentDescription = null) }
+                    },
+                    onClick = {
+                        expanded = false
+                        onSelect(option)
+                    },
+                )
+            }
+        }
+    }
 }
 
 @Composable

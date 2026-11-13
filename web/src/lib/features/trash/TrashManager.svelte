@@ -526,6 +526,11 @@
     height: 1.6rem;
   }
 
+  .trash__thumb-icon :global(svg) {
+    width: 100%;
+    height: 100%;
+  }
+
   .trash__main {
     display: grid;
     min-width: 0;

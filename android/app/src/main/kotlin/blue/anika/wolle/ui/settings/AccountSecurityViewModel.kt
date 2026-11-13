@@ -1,5 +1,6 @@
 package blue.anika.wolle.ui.settings
 
+import android.net.Uri
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -29,6 +30,7 @@ import blue.anika.wolle.ui.oidc.ReauthUiState
 import blue.anika.wolle.ui.oidc.StepUp
 import blue.anika.wolle.ui.oidc.showOidcFailure
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.io.File
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -251,15 +253,45 @@ constructor(
     }
 
     fun setUseGravatar(enabled: Boolean) {
-        if (_state.value.gravatarBusy) return
+        if (_state.value.gravatarBusy || _state.value.avatarBusy) return
         _state.update { it.copy(gravatarBusy = true) }
         viewModelScope.launch {
             val result = gateway.setUseGravatar(enabled)
-            _state.update { it.copy(gravatarBusy = false) }
             when (result) {
-                is AccountProfileResult.Loaded -> applyProfile(result.account)
+                is AccountProfileResult.Loaded -> {
+                    applyProfile(result.account)
+                    if (enabled && result.account.avatarSource == AvatarSource.UPLOAD) {
+                        _state.update { it.copy(avatarBusy = true) }
+                        val removal = gateway.deleteAvatar()
+                        _state.update { it.copy(avatarBusy = false) }
+                        if (removal == AvatarResult.Removed) {
+                            // The server now chooses its Gravatar fallback. Refresh the shared
+                            // profile repository and security state so every avatar updates.
+                            _state.update {
+                                it.copy(
+                                    avatarSource =
+                                        AvatarSource.GRAVATAR.takeIf {
+                                            result.account.gravatarEnabled
+                                        }
+                                )
+                            }
+                            loadProfile()
+                            feedback.show(R.string.account_gravatar_enabled)
+                        } else {
+                            // Keep the uploaded image visible; the preference is saved, but the
+                            // user can retry the switch after the failed delete.
+                            feedback.show(R.string.error_gravatar_enabled_avatar_remove_failed)
+                        }
+                    } else {
+                        feedback.show(
+                            if (enabled) R.string.account_gravatar_enabled
+                            else R.string.account_gravatar_disabled
+                        )
+                    }
+                }
                 else -> feedback.show(R.string.error_gravatar_save_failed)
             }
+            _state.update { it.copy(gravatarBusy = false, avatarBusy = false) }
         }
     }
 
@@ -267,7 +299,12 @@ constructor(
         if (_state.value.avatarBusy) return
         _state.update { it.copy(avatarBusy = true) }
         viewModelScope.launch {
-            val result = gateway.uploadAvatar(uri)
+            val result =
+                try {
+                    gateway.uploadAvatar(uri)
+                } finally {
+                    Uri.parse(uri).takeIf { it.scheme == "file" }?.path?.let(::File)?.delete()
+                }
             _state.update { it.copy(avatarBusy = false) }
             when (result) {
                 is AvatarResult.Uploaded -> {

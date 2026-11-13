@@ -26,6 +26,21 @@ describe("routeParent", () => {
   });
 
   it.each([
+    ["/app/projects/42", "home", "/app/"],
+    ["/app/yarns/17", "home", "/app/"],
+    ["/app/projects/42", "activity", "/app/activity"],
+    ["/app/yarns/17", "activity", "/app/activity"],
+    ["/app/projects/42", "https://example.invalid", "/app/projects"],
+    ["/app/projects/42/edit", "home", "/app/projects/42"],
+    ["/app/projects/new", "home", "/app/projects"],
+  ])(
+    "uses an activity source for %s only when safe",
+    (pathname, source, expected) => {
+      expect(routeParent(pathname, "/app", source)).toBe(expected);
+    },
+  );
+
+  it.each([
     ["/app", "/app"],
     ["/app/projects", "/app"],
     ["/app/yarns", "/app"],

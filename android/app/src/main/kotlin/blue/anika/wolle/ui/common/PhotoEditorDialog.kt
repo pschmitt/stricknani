@@ -409,7 +409,7 @@ private fun ToolButton(
  * [PhotoEditMath].
  */
 @Composable
-private fun CropStage(
+internal fun CropStage(
     painter: AsyncImagePainter,
     natural: Pair<Int, Int>,
     rotation: Int,

@@ -96,6 +96,16 @@ test("trash card and activity polish", async ({}, testInfo) => {
       });
       const row = page.locator('[data-testid="trash-list"] .trash__row');
       await row.waitFor({ state: "visible" });
+      const fallbackIcon = row.locator(".trash__thumb-icon svg");
+      await fallbackIcon.waitFor({ state: "visible" });
+      const iconSize = await fallbackIcon.evaluate((element) => {
+        const rect = element.getBoundingClientRect();
+        return { width: rect.width, height: rect.height };
+      });
+      check(
+        iconSize.width >= 24 && iconSize.height >= 24,
+        "trash placeholder icon is too small",
+      );
       const parent = page.getByTestId("trash-parent-link");
       check(
         (await parent.textContent())?.trim() ===
@@ -162,7 +172,7 @@ test("trash card and activity polish", async ({}, testInfo) => {
       await page.goto(`${fixture.origin}/app/activity`, {
         waitUntil: "networkidle",
       });
-      const dangerNode = page.locator(".tl__node--danger").first();
+      const dangerNode = page.locator('.tl__node[data-tone="delete"]').first();
       await dangerNode.waitFor({ state: "visible" });
       const colors = await dangerNode.evaluate((element) => {
         const probe = document.createElement("span");
@@ -182,17 +192,11 @@ test("trash card and activity polish", async ({}, testInfo) => {
       const attribution = page.locator(".tl__meta .user-label").first();
       await attribution.waitFor({ state: "visible" });
       const order = await attribution.evaluate((element) => {
-        const prefix = element.querySelector(".user-label__prefix");
         const avatar = element.querySelector(".user-avatar");
         const name = element.querySelector(".user-label__name");
         return (
-          !!prefix &&
           !!avatar &&
           !!name &&
-          !!(
-            prefix.compareDocumentPosition(avatar) &
-            Node.DOCUMENT_POSITION_FOLLOWING
-          ) &&
           !!(
             avatar.compareDocumentPosition(name) &
             Node.DOCUMENT_POSITION_FOLLOWING
@@ -201,7 +205,7 @@ test("trash card and activity polish", async ({}, testInfo) => {
       });
       check(
         order,
-        "activity attribution does not place by before avatar and name",
+        "activity attribution does not place the avatar before the name",
       );
     } finally {
       await context.close();

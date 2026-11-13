@@ -833,6 +833,42 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
       .toBe("none");
   }
   await page.emulateMedia({ reducedMotion: "reduce" });
+  markStage("checking activity header navigation");
+  const homeActivityHref = await activityRow.getAttribute("href");
+  check(homeActivityHref !== null, "Home activity entry has no resource link");
+  await activityRow.click();
+  await page.waitForURL((url) => url.searchParams.get("from") === "home");
+  const brand = page.locator(".app-header .brand-lockup");
+  check(
+    (await brand.getAttribute("href")) === "/app/",
+    "Home activity did not set Home as the header destination",
+  );
+  await brand.click();
+  await page.waitForURL((url) => url.pathname === "/app/" && url.search === "");
+  await page
+    .getByRole("heading", { name: "Recent activity" })
+    .waitFor({ state: "visible" });
+  await page.goto(`${origin}/app/activity`, { waitUntil: "networkidle" });
+  const fullActivityRow = page.locator("a.tl__row").first();
+  await fullActivityRow.waitFor({ state: "visible" });
+  await fullActivityRow.click();
+  await page.waitForURL((url) => url.searchParams.get("from") === "activity");
+  check(
+    (await brand.getAttribute("href")) === "/app/activity",
+    "My activity did not set its header destination",
+  );
+  await brand.click();
+  await page.waitForURL((url) => url.pathname === "/app/activity");
+  const directResource = new URL(homeActivityHref, origin);
+  directResource.search = "";
+  await page.goto(directResource.href, { waitUntil: "networkidle" });
+  const expectedParent = directResource.pathname.startsWith("/app/yarns/")
+    ? "/app/yarns"
+    : "/app/projects";
+  check(
+    (await brand.getAttribute("href")) === expectedParent,
+    "A direct resource link lost its logical parent",
+  );
   markStage("opening the authenticated project library");
   await page.goto(`${origin}/app/projects`, { waitUntil: "networkidle" });
   markStage("waiting for the seeded project card");
