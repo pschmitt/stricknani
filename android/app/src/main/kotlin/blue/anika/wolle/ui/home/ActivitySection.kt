@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -186,6 +187,7 @@ fun ActivitySection(
 private val NODE_SIZE = 36.dp
 private val NODE_GAP = 12.dp
 private val ROW_PAD = 6.dp
+private val ENTRY_HEIGHT = 76.dp
 
 /** Where the text column starts: past the rail node and its gap. */
 private val TEXT_INSET = NODE_SIZE + NODE_GAP
@@ -195,22 +197,26 @@ private val TEXT_INSET = NODE_SIZE + NODE_GAP
  * the node, for the first row) to its bottom (or to the node, for the last). Day labels draw a
  * plain through-line, so the rail is unbroken from the first node to the last.
  */
-private fun Modifier.rail(color: Color, top: Boolean, bottom: Boolean, nodeCenterY: Dp): Modifier =
-    drawBehind {
-        val x = NODE_SIZE.toPx() / 2
-        val centre = nodeCenterY.toPx()
-        val from = if (top) 0f else centre
-        val to = if (bottom) size.height else centre
-        if (to > from) {
-            drawLine(
-                color,
-                Offset(x, from),
-                Offset(x, to),
-                strokeWidth = 2.dp.toPx(),
-                cap = StrokeCap.Butt,
-            )
-        }
+private fun Modifier.rail(
+    color: Color,
+    top: Boolean,
+    bottom: Boolean,
+    nodeCenterY: Dp? = null,
+): Modifier = drawBehind {
+    val x = NODE_SIZE.toPx() / 2
+    val centre = nodeCenterY?.toPx() ?: size.height / 2
+    val from = if (top) 0f else centre
+    val to = if (bottom) size.height else centre
+    if (to > from) {
+        drawLine(
+            color,
+            Offset(x, from),
+            Offset(x, to),
+            strokeWidth = 2.dp.toPx(),
+            cap = StrokeCap.Butt,
+        )
     }
+}
 
 @Composable
 private fun DayLabelRow(label: DayLabel, first: Boolean) {
@@ -304,11 +310,12 @@ private fun TimelineEntry(
     val alpha = if (row.deleted) 0.6f else 1f
     Row(
         Modifier.fillMaxWidth()
+            .height(ENTRY_HEIGHT)
             .rail(
                 tone.copy(alpha = 0.35f),
                 top = railTop,
                 bottom = railBottom,
-                nodeCenterY = ROW_PAD + NODE_SIZE / 2,
+                nodeCenterY = null,
             )
             .clip(RoundedCornerShape(16.dp))
             .then(
@@ -318,6 +325,7 @@ private fun TimelineEntry(
             .padding(vertical = ROW_PAD)
             .semantics(mergeDescendants = true) {},
         horizontalArrangement = Arrangement.spacedBy(NODE_GAP),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             Modifier.size(NODE_SIZE)
@@ -332,14 +340,27 @@ private fun TimelineEntry(
                 modifier = Modifier.size(21.dp),
             )
         }
-        if (previewUrl != null) {
-            AsyncImage(
-                model = previewUrl,
+        Box(
+            Modifier.size(40.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(colors.surfaceContainerHighest),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                if (row.isYarn) PhosphorIcons.Yarn else PhosphorIcons.Hoodie,
                 contentDescription = null,
-                contentScale = ContentScale.Crop,
-                alpha = if (row.deleted) 0.5f else 1f,
-                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)),
+                tint = colors.onSurfaceVariant,
+                modifier = Modifier.size(22.dp),
             )
+            if (previewUrl != null) {
+                AsyncImage(
+                    model = previewUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    alpha = if (row.deleted) 0.5f else 1f,
+                    modifier = Modifier.size(40.dp),
+                )
+            }
         }
         Column(
             Modifier.weight(1f).heightIn(min = NODE_SIZE),
@@ -351,7 +372,7 @@ private fun TimelineEntry(
                 fontWeight = FontWeight.Bold,
                 textDecoration = if (row.deleted) TextDecoration.LineThrough else null,
                 color = colors.onSurface.copy(alpha = alpha),
-                maxLines = 2,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             ActivityMeta(row, activityTimeOfDay(row.createdAt, zone), muted)
@@ -388,6 +409,7 @@ private fun ActivityMeta(row: ActivityRowModel, time: String?, muted: Color) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
         itemVerticalAlignment = Alignment.CenterVertically,
+        maxLines = 3,
     ) {
         if (sharing != null) {
             SharingHeadline(

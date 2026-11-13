@@ -200,16 +200,20 @@
               {@const tone = auditActionTone(item.action)}
               {@const icon = activityIcon(item.action)}
               {#snippet row()}
-                {#if item.thumbnail_url}
-                  <img
-                    class="tl__thumb"
-                    src={item.thumbnail_url}
-                    alt=""
-                    loading="lazy"
-                    width="40"
-                    height="40"
+                <span class="tl__thumb" aria-hidden="true">
+                  <NavIcon
+                    name={item.entity_type === "yarn" ? "yarns" : "projects"}
                   />
-                {/if}
+                  {#if item.thumbnail_url}
+                    <img
+                      src={item.thumbnail_url}
+                      alt=""
+                      loading="lazy"
+                      width="40"
+                      height="40"
+                    />
+                  {/if}
+                </span>
                 <span class="tl__copy">
                   <span class="tl__sentence">{name}</span>
                   <span class="tl__meta">
@@ -411,17 +415,17 @@
     display: none;
   }
   .tl__day:first-child .tl__entry:first-child::before {
-    top: 1.35rem;
+    top: 2.375rem;
   }
   .tl__day:last-child .tl__entry:last-child::before {
-    bottom: calc(100% - 1.35rem);
+    bottom: calc(100% - 2.375rem);
   }
   .tl__day:only-child .tl__entry:only-child::before {
     display: none;
   }
   .tl__dot {
     position: absolute;
-    top: 1.05rem;
+    top: 1.9rem;
     left: 0;
     display: grid;
     place-items: center;
@@ -466,7 +470,8 @@
     align-items: center;
     gap: 0.6rem;
     box-sizing: border-box;
-    min-height: 44px;
+    height: 4.75rem;
+    overflow: hidden;
     border-radius: var(--radius-xs);
     padding: 0.55rem 0.6rem;
     color: var(--ink);
@@ -486,7 +491,9 @@
     gap: 0.15rem;
   }
   .tl__sentence {
-    overflow-wrap: anywhere;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-weight: 650;
   }
   .tl__meta {
@@ -496,6 +503,8 @@
     gap: 0.2rem 0.6rem;
     color: var(--ink-muted);
     font-size: 0.85rem;
+    max-height: 3.9em;
+    overflow: hidden;
     overflow-wrap: anywhere;
   }
   .tl__action {
@@ -533,12 +542,28 @@
     cursor: pointer;
   }
   .tl__thumb {
+    position: relative;
+    display: grid;
+    place-items: center;
+    color: var(--ink-muted);
     flex: none;
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 0.6rem;
     object-fit: cover;
     background: var(--surface-raised);
+  }
+  .tl__thumb :global(svg) {
+    width: 1.4rem;
+    height: 1.4rem;
+  }
+  .tl__thumb img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
   }
   .tl__entry[data-deleted] .tl__sentence {
     text-decoration: line-through;
