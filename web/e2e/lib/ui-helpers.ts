@@ -103,6 +103,34 @@ export const HOME_GREETING_NAME = new RegExp(
 export const UPLOAD_PICTURE_BUTTON_NAME = /^(?:Upload picture|Bild hochladen)$/;
 export const REMOVE_PICTURE_BUTTON_NAME = /^(?:Remove picture|Bild entfernen)$/;
 
+export async function selectAvatarPhoto(
+  page: Page,
+  file: { name: string; mimeType: string; buffer: Buffer },
+): Promise<string> {
+  const input = page.locator(
+    'input[type="file"][aria-label="Choose a profile picture"]',
+  );
+  check(
+    (await input.count()) === 1,
+    "the profile picture chooser is missing or ambiguous",
+  );
+  await input.setInputFiles(file);
+
+  const editor = page.getByRole("dialog", {
+    name: "Crop your profile picture",
+  });
+  await editor.waitFor({ state: "visible" });
+  const preview = editor.locator(".crop-stage img");
+  await preview.waitFor({ state: "visible" });
+  await editor.getByRole("button", { name: "Rotate right" }).click();
+  await expect(preview).toHaveAttribute("style", /rotate\(90deg\)/);
+  await editor.getByRole("button", { name: "Use this crop" }).click();
+  await editor.waitFor({ state: "hidden" });
+
+  const basename = file.name.replace(/\.[^.]+$/, "") || "profile";
+  return `${basename}.jpg`;
+}
+
 /**
  * The desktop sidebar's Account entry: a plain link to the Account page.
  * Phones have no such control: the More tab carries the avatar instead.
@@ -982,39 +1010,66 @@ export async function assertDesktopAccountTarget(page: Page): Promise<void> {
   );
 }
 
-/** The Account page language segmented control, found by role and name. */
-export function accountLanguageGroup(page: Page): Locator {
-  return page.getByRole("radiogroup", { name: /^(Language|Sprache)$/ });
+/** The Account page language dropdown trigger. */
+export function accountLanguageSelect(page: Page): Locator {
+  return page.getByRole("button", { name: /^(Language|Sprache)$/ });
+}
+
+export function accountLanguageOption(page: Page, name: string): Locator {
+  return page
+    .getByRole("listbox", { name: /^(Language|Sprache)$/ })
+    .getByRole("option", { name, exact: true });
+}
+
+export async function chooseAccountLanguage(
+  page: Page,
+  name: string,
+): Promise<void> {
+  await accountLanguageSelect(page).click();
+  await accountLanguageOption(page, name).click();
 }
 
 export async function assertAccountLanguageControl(page: Page): Promise<void> {
-  const group = accountLanguageGroup(page);
+  const control = accountLanguageSelect(page);
   check(
-    (await group.count()) === 1,
+    (await control.count()) === 1,
     "the Account page does not have exactly one language control",
   );
-  const buttons = group.getByRole("radio");
+  const label = await control.getAttribute("aria-label");
   check(
-    (await buttons.count()) === 2,
+    (label === "Language" || label === "Sprache") &&
+      (await control.isVisible()),
+    "the language control is missing its accessible name or visibility",
+  );
+  await control.click();
+  const options = page
+    .getByRole("listbox", { name: /^(Language|Sprache)$/ })
+    .getByRole("option");
+  check(
+    (await options.count()) === 2,
     "the language control does not have two options",
   );
+  const states = new Set<string | null>();
+  let selectedIndex = -1;
   for (const [index, name] of ["English", "Deutsch"].entries()) {
-    const button = buttons.nth(index);
-    const pressed = await button.getAttribute("aria-checked");
+    const option = options.nth(index);
+    const selected = await option.getAttribute("aria-selected");
     check(
-      (await button.innerText()).trim() === name &&
-        (pressed === "true" || pressed === "false"),
+      (await option.innerText()).trim().includes(name) &&
+        (selected === "true" || selected === "false"),
       "a language option lost its visible name or checked state",
     );
-  }
-  const states = new Set<string | null>();
-  for (const button of await buttons.all()) {
-    states.add(await button.getAttribute("aria-checked"));
+    states.add(selected);
+    if (selected === "true") selectedIndex = index;
   }
   check(
-    states.size === 2 && states.has("true") && states.has("false"),
+    states.size === 2 &&
+      states.has("true") &&
+      states.has("false") &&
+      selectedIndex >= 0,
     "the language control does not mark exactly one option as selected",
   );
+  await options.nth(selectedIndex).click();
 }
 
 export async function svgShapeSignature(icon: Locator): Promise<string> {
@@ -1656,31 +1711,24 @@ export async function exerciseGaugeCalculator(
     exact: true,
   });
   await gaugeHeading.waitFor({ state: "visible" });
-  let languageSwitcher: Locator;
-  let germanName: string;
   if (signedIn) {
     await openAccountSettings(page);
     await accountHeading.waitFor({ state: "visible" });
-    languageSwitcher = accountLanguageGroup(page);
-    germanName = "Deutsch";
+    await chooseAccountLanguage(page, "English");
   } else {
-    languageSwitcher = page.locator(".public-tool-header .locale-switcher");
-    germanName = "German";
+    const englishButton = page
+      .locator(".public-tool-header .locale-switcher")
+      .getByRole("radio", { name: "English", exact: true });
+    const germanButton = page
+      .locator(".public-tool-header .locale-switcher")
+      .getByRole("radio", { name: "German", exact: true });
+    check(
+      (await englishButton.isVisible()) && (await germanButton.isVisible()),
+      "the language switch is missing from the gauge page",
+    );
+    markStage(`checking ${accountState} language preference persistence`);
+    await englishButton.click();
   }
-  const englishButton = languageSwitcher.getByRole("radio", {
-    name: "English",
-    exact: true,
-  });
-  let germanButton = languageSwitcher.getByRole("radio", {
-    name: germanName,
-    exact: true,
-  });
-  check(
-    (await englishButton.isVisible()) && (await germanButton.isVisible()),
-    "the language switch is missing from the gauge page",
-  );
-  markStage(`checking ${accountState} language preference persistence`);
-  await englishButton.click();
   if (signedIn) {
     await accountHeading.waitFor({ state: "visible" });
     await page.goto(`${origin}/app/gauge`, { waitUntil: "networkidle" });
@@ -1690,12 +1738,13 @@ export async function exerciseGaugeCalculator(
   if (signedIn) {
     await openAccountSettings(page);
     await accountHeading.waitFor({ state: "visible" });
-    germanButton = accountLanguageGroup(page).getByRole("radio", {
-      name: "Deutsch",
-      exact: true,
-    });
+    await chooseAccountLanguage(page, "Deutsch");
+  } else {
+    await page
+      .locator(".public-tool-header .locale-switcher")
+      .getByRole("radio", { name: "German", exact: true })
+      .click();
   }
-  await germanButton.click();
   if (signedIn) {
     await page
       .getByRole("heading", { name: "Konto", exact: true })
@@ -1732,7 +1781,7 @@ export async function exerciseGaugeCalculator(
     await page
       .getByRole("heading", { name: "Konto", exact: true })
       .waitFor({ state: "visible" });
-    await accountLanguageGroup(page).getByRole("radio").nth(0).click();
+    await chooseAccountLanguage(page, "English");
     await page.goto(`${origin}/app/gauge`, { waitUntil: "networkidle" });
   } else {
     await page
@@ -2328,20 +2377,20 @@ export async function checkMobileLanguageAndScreenshots(
     exact: true,
   });
   await accountHeading.waitFor({ state: "visible" });
-  await accountLanguageGroup(page).waitFor({ state: "visible" });
+  await accountLanguageSelect(page).waitFor({ state: "visible" });
   check(
     (await page.locator(".app-header .locale-switcher").count()) === 0 &&
-      (await accountLanguageGroup(page).count()) === 1,
+      (await accountLanguageSelect(page).count()) === 1,
     "language controls did not move into Account",
   );
   await assertAccountLanguageControl(page);
   const languageTargets = await visibleHeights(
     page,
-    accountLanguageGroup(page).getByRole("radio"),
+    accountLanguageSelect(page),
   );
   check(
-    languageTargets.length === 2 && Math.min(...languageTargets) >= 44,
-    "a mobile account language target is below 44px",
+    languageTargets.length === 1 && languageTargets[0] >= 44,
+    "the mobile account language control is below a 44px target",
   );
   await assertNoHorizontalOverflow(page, 390);
   await maskFixtureIdentity(page);
@@ -2370,10 +2419,10 @@ export async function checkMobileLanguageAndScreenshots(
   let reachedLanguageByKeyboard = false;
   for (let attempt = 0; attempt < 18; attempt += 1) {
     await page.keyboard.press("Tab");
-    const focusedText = await page.evaluate(
-      () => document.activeElement?.textContent?.trim() || "",
+    const focusedLabel = await page.evaluate(
+      () => document.activeElement?.getAttribute("aria-label") ?? "",
     );
-    if (focusedText === "English" || focusedText === "Deutsch") {
+    if (focusedLabel === "Language" || focusedLabel === "Sprache") {
       reachedLanguageByKeyboard = true;
       break;
     }
@@ -2382,9 +2431,8 @@ export async function checkMobileLanguageAndScreenshots(
     reachedLanguageByKeyboard,
     "mobile language controls are not reachable in the keyboard tab order",
   );
-  await accountLanguageGroup(page)
-    .getByRole("radio", { name: "Deutsch", exact: true })
-    .focus();
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("ArrowDown");
   await page.keyboard.press("Enter");
   await page.waitForFunction(
     () => document.documentElement.lang === "de",
@@ -2409,22 +2457,22 @@ export async function checkMobileLanguageAndScreenshots(
       );
       await page.setViewportSize({ width, height: 844 });
       await assertNoHorizontalOverflow(page, width);
-      const languageGroup = accountLanguageGroup(page);
-      await languageGroup.waitFor({ state: "visible" });
+      const languageSelect = accountLanguageSelect(page);
+      await languageSelect.waitFor({ state: "visible" });
       await assertAccountLanguageControl(page);
-      const controlHeights = await visibleHeights(
-        page,
-        languageGroup.getByRole("radio"),
-      );
+      const controlHeights = await visibleHeights(page, languageSelect);
       check(
-        controlHeights.length === 2 && Math.min(...controlHeights) >= 44,
+        controlHeights.length === 1 && controlHeights[0] >= 44,
         `locale controls are not 44px targets at ${width}px`,
       );
       for (const [localeIndex, localeCode] of [
         [1, "de"],
         [0, "en"],
       ] as const) {
-        await languageGroup.getByRole("radio").nth(localeIndex).click();
+        await chooseAccountLanguage(
+          page,
+          localeIndex === 1 ? "Deutsch" : "English",
+        );
         await page.waitForFunction(
           (locale: string) => document.documentElement.lang === locale,
           localeCode,

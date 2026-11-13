@@ -10,6 +10,7 @@ import {
   type E2eConfig,
   type LiveFixture,
 } from "../lib/harness";
+import { selectAvatarPhoto } from "../lib/ui-helpers";
 
 function pathOf(url: string): string {
   try {
@@ -329,7 +330,7 @@ export async function runAccountJourney(
       );
 
       markStage("upload and remove avatar");
-      await page.locator('input[type="file"][accept="image/*"]').setInputFiles({
+      const croppedAvatarName = await selectAvatarPhoto(page, {
         name: "profile.png",
         mimeType: "image/png",
         buffer: tinyPngFixture(),
@@ -338,7 +339,7 @@ export async function runAccountJourney(
       await assertUnloadIsGuarded(page);
       await assertNavigationStays(page);
       check(
-        await page.getByText("profile.png", { exact: true }).isVisible(),
+        await page.getByText(croppedAvatarName, { exact: true }).isVisible(),
         "navigation discarded the selected avatar",
       );
       await page.getByRole("button", { name: "Upload picture" }).click();

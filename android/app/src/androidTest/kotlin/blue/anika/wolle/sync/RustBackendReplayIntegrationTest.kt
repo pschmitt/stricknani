@@ -137,11 +137,13 @@ class RustBackendReplayIntegrationTest {
             assertNull(yarnDao.getById(tempYarnId))
             assertTrue(pendingDao.getAll().isEmpty())
             val project =
-                projectRepository.observeAll().first().single {
+                projectRepository.observeAll().first().singleMatching("project") {
                     it.name == "$projectPrefix updated"
                 }
             val yarn =
-                yarnRepository.observeAll().first().single { it.name == "$yarnPrefix updated" }
+                yarnRepository.observeAll().first().singleMatching("yarn") {
+                    it.name == "$yarnPrefix updated"
+                }
             projectIds += project.id
             yarnIds += yarn.id
             assertTrue(project.id > 0)
@@ -168,7 +170,7 @@ class RustBackendReplayIntegrationTest {
             temporaryProjectIds += conflictTempId
             assertEquals(WorkInfo.State.SUCCEEDED, runReplay(context))
             val conflictProject =
-                projectRepository.observeAll().first().single {
+                projectRepository.observeAll().first().singleMatching("conflict project") {
                     it.name == "$projectPrefix conflict-created"
                 }
             projectIds += conflictProject.id
@@ -189,7 +191,7 @@ class RustBackendReplayIntegrationTest {
             assertEquals(remoteName, adopted.name)
             assertEquals(remoteName, graph.projectsApi().getProject(conflictProject.id).name)
             val resolved =
-                pendingDao.observeFailed().first().single {
+                pendingDao.observeFailed().first().singleMatching("failed mutation") {
                     it.entityType == MutationEntityType.PROJECT &&
                         it.localId == conflictProject.id &&
                         it.isConflict
@@ -450,4 +452,15 @@ class RustBackendReplayIntegrationTest {
         const val PROJECT_SYNC_TYPE = "project"
         const val YARN_SYNC_TYPE = "yarn"
     }
+}
+
+private inline fun <T> Iterable<T>.singleMatching(
+    candidateType: String,
+    predicate: (T) -> Boolean,
+): T {
+    val matches = filter(predicate)
+    check(matches.size == 1) {
+        "Expected exactly one matching $candidateType; found ${matches.size} candidates"
+    }
+    return matches.single()
 }

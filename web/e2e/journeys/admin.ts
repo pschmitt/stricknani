@@ -39,7 +39,7 @@ import {
   type E2eConfig,
   type LiveFixture,
 } from "../lib/harness";
-import { openAccountSettings } from "../lib/ui-helpers";
+import { openAccountSettings, selectAvatarPhoto } from "../lib/ui-helpers";
 
 type Json = Record<string, unknown>;
 type Mark = (stage: string) => void;
@@ -987,7 +987,7 @@ async function assertOwnerResourceCards(
 }
 
 async function uploadAccountAvatar(page: Page): Promise<void> {
-  await page.locator('input[type="file"][accept="image/*"]').setInputFiles({
+  await selectAvatarPhoto(page, {
     name: "synthetic-admin-avatar.png",
     mimeType: "image/png",
     buffer: tinyPngFixture(),

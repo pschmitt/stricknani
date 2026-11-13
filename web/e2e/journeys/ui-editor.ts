@@ -35,6 +35,7 @@ import {
   openAccountFromProfile,
   prepareScreenshot,
   saveRemoteProjectVersion,
+  selectAvatarPhoto,
   visibleHeights,
 } from "../lib/ui-helpers";
 import { settleObservers, urlPath, type UiCtx } from "../lib/ui-state";
@@ -955,7 +956,7 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
   await page.setViewportSize({ width: 1280, height: 844 });
   markStage("checking profile avatar propagation in app shell");
   await openAccountFromProfile(page);
-  await page.locator('input[type="file"][accept="image/*"]').setInputFiles({
+  await selectAvatarPhoto(page, {
     name: "synthetic-avatar.png",
     mimeType: "image/png",
     buffer: tinyPngFixture(),

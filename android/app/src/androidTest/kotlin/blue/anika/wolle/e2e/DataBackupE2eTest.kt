@@ -3,8 +3,6 @@ package blue.anika.wolle.e2e
 import android.content.Context
 import android.net.Uri
 import android.os.SystemClock
-import androidx.compose.ui.test.assertIsNotSelected
-import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasSetTextAction
@@ -428,8 +426,10 @@ class DataBackupE2eTest : StricknaniE2eTest() {
 
         waitForText("Your data")
         composeRule.onNodeWithText("Archive type").assertExists()
-        composeRule.onNodeWithText(".tar.gz").assertIsSelected()
-        composeRule.onNodeWithText(".zip").assertIsNotSelected()
+        composeRule.onNodeWithTag("data-export-format").assertTextEquals(".tar.gz")
+        composeRule.onNodeWithTag("data-export-format").performClick()
+        composeRule.onNodeWithText(".zip").performClick()
+        composeRule.onNodeWithTag("data-export-format").assertTextEquals(".zip")
         composeRule.onNodeWithTag("data-export-button").assertTextEquals("Download")
 
         scrollBackupsTo("Restore from a file")

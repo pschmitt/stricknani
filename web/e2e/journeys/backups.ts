@@ -464,15 +464,30 @@ export async function runBackupsJourney(
       "/app/backups did not redirect to /app/account#backups",
     );
 
-    const group = adaPage.getByRole("radiogroup", { name: "Archive type" });
-    const tarOption = group.getByRole("radio", { name: ".tar.gz" });
-    const zipOption = group.getByRole("radio", { name: ".zip" });
-    await expect(tarOption).toHaveAttribute("aria-checked", "true", {
+    const archiveSelect = adaPage.getByRole("button", {
+      name: "Archive type",
+      exact: true,
+    });
+    const archiveListbox = adaPage.getByRole("listbox", {
+      name: "Archive type",
+    });
+    const tarOption = archiveListbox.getByRole("option", {
+      name: ".tar.gz",
+      exact: true,
+    });
+    const zipOption = archiveListbox.getByRole("option", {
+      name: ".zip",
+      exact: true,
+    });
+    await archiveSelect.click();
+    await expect(tarOption).toHaveAttribute("aria-selected", "true", {
       timeout: WAIT,
     });
-    await expect(zipOption).toHaveAttribute("aria-checked", "false", {
+    await expect(zipOption).toHaveAttribute("aria-selected", "false", {
       timeout: WAIT,
     });
+    await tarOption.click();
+    await expect(archiveSelect).toHaveText(".tar.gz", { timeout: WAIT });
     const downloadLink = adaPage.getByRole("link", {
       name: "Download",
       exact: true,
@@ -558,10 +573,12 @@ export async function runBackupsJourney(
     check((own.steps as unknown[]).length === 2, "the steps are not exported");
 
     mark("ada downloads zip");
+    await archiveSelect.click();
     await zipOption.click();
-    await expect(zipOption).toHaveAttribute("aria-checked", "true", {
+    await expect(zipOption).toHaveAttribute("aria-selected", "true", {
       timeout: WAIT,
     });
+    await expect(archiveSelect).toHaveText(".zip", { timeout: WAIT });
     await expect(downloadLink).toHaveAttribute("href", /archive=zip$/, {
       timeout: WAIT,
     });
@@ -585,10 +602,12 @@ export async function runBackupsJourney(
     mark("ada downloads encrypted tar.gz");
     const secret = `Sch\u00e4fchen \u{1F9F6} ${randomBytes(6).toString("base64url")}`;
     maskGithubSecret(secret);
+    await archiveSelect.click();
     await tarOption.click();
-    await expect(tarOption).toHaveAttribute("aria-checked", "true", {
+    await expect(tarOption).toHaveAttribute("aria-selected", "true", {
       timeout: WAIT,
     });
+    await expect(archiveSelect).toHaveText(".tar.gz", { timeout: WAIT });
     await adaPage.getByLabel("Encrypt with a passphrase").check();
     const passField = adaPage.locator("#export-passphrase");
     const repeatField = adaPage.locator("#export-repeat");
@@ -895,9 +914,24 @@ export async function runBackupsJourney(
     await dePage
       .getByRole("heading", { name: "Deine Daten" })
       .waitFor({ timeout: WAIT });
-    await dePage
-      .getByRole("radiogroup", { name: "Archivtyp" })
-      .waitFor({ timeout: WAIT });
+    const archiveTypeSelect = dePage.getByRole("button", {
+      name: "Archivtyp",
+      exact: true,
+    });
+    await archiveTypeSelect.waitFor({ timeout: WAIT });
+    await archiveTypeSelect.click();
+    const germanArchiveListbox = dePage.getByRole("listbox", {
+      name: "Archivtyp",
+    });
+    await expect(
+      germanArchiveListbox.getByRole("option", {
+        name: ".tar.gz",
+        exact: true,
+      }),
+    ).toHaveAttribute("aria-selected", "true", { timeout: WAIT });
+    await germanArchiveListbox
+      .getByRole("option", { name: ".tar.gz", exact: true })
+      .click();
     await dePage
       .getByRole("link", { name: "Herunterladen", exact: true })
       .waitFor({
