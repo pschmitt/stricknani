@@ -23,10 +23,13 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.SettingsBrightness
 import androidx.compose.material.icons.filled.Smartphone
+import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
@@ -198,12 +201,16 @@ internal fun AccountSettingsScreen(
                     title = stringResource(R.string.account_preferences_title),
                     icon = PhosphorIcons.SlidersHorizontal,
                 ) {
-                    PreferenceRow(label = stringResource(R.string.account_pref_language)) {
+                    PreferenceRow(
+                        label = stringResource(R.string.account_pref_language),
+                        icon = PhosphorIcons.Translate,
+                    ) {
                         PreferenceDropdown(
                             options = AppLanguage.entries,
                             groupLabel = stringResource(R.string.account_pref_language),
                             selected = appLanguage,
                             label = { it.accountLabel() },
+                            icon = { Icons.Filled.Translate },
                             onSelect = {
                                 viewModel.setAppLanguage(it)
                                 activity?.recreate()
@@ -211,7 +218,10 @@ internal fun AccountSettingsScreen(
                         )
                     }
                     HorizontalDivider(Modifier.padding(horizontal = 16.dp))
-                    PreferenceRow(label = stringResource(R.string.account_pref_appearance)) {
+                    PreferenceRow(
+                        label = stringResource(R.string.account_pref_appearance),
+                        icon = PhosphorIcons.Palette,
+                    ) {
                         PreferenceDropdown(
                             options = ThemeMode.entries,
                             groupLabel = stringResource(R.string.account_pref_appearance),
@@ -225,12 +235,14 @@ internal fun AccountSettingsScreen(
                     PreferenceRow(
                         label = stringResource(R.string.account_pref_text_size),
                         hint = stringResource(R.string.account_pref_text_size_hint),
+                        icon = PhosphorIcons.Ruler,
                     ) {
                         PreferenceDropdown(
                             options = listOf(0, 1, 2),
                             groupLabel = stringResource(R.string.account_pref_text_size),
                             selected = textStep,
                             label = { it.textSizeLabel() },
+                            icon = { Icons.Filled.FormatSize },
                             onSelect = viewModel::setReadingTextStep,
                         )
                     }
@@ -572,19 +584,23 @@ private fun UseServerDialog(onConfirm: (bringData: Boolean) -> Unit, onDismiss: 
 private fun PreferenceRow(
     label: String,
     hint: String? = null,
+    icon: ImageVector,
     control: @Composable () -> Unit,
 ) {
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val wide = maxWidth >= 600.dp
         val text: @Composable (Modifier) -> Unit = { modifier ->
-            Column(modifier) {
-                Text(label, style = MaterialTheme.typography.bodyLarge)
-                hint?.let {
-                    Text(
-                        it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+            Row(modifier, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Column {
+                    Text(label, style = MaterialTheme.typography.bodyLarge)
+                    hint?.let {
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         }
@@ -637,6 +653,15 @@ private fun <T> PreferenceDropdown(
                     text = { Text(label(option)) },
                     leadingIcon = {
                         icon?.invoke(option)?.let { Icon(it, contentDescription = null) }
+                    },
+                    trailingIcon = {
+                        if (option == selected) {
+                            Icon(
+                                Icons.Filled.Check,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                        }
                     },
                     onClick = {
                         expanded = false

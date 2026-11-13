@@ -32,6 +32,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material3.AlertDialog
@@ -340,6 +342,7 @@ internal fun StripPhotoMetadataToggleRow(
                     role = Role.Switch,
                     onValueChange = onChange,
                 ),
+        leadingContent = { Icon(Icons.Filled.LocationOn, contentDescription = null) },
         headlineContent = { Text(stringResource(R.string.account_strip_metadata_toggle)) },
         supportingContent = { Text(stringResource(R.string.account_strip_metadata_toggle_help)) },
         trailingContent = { Switch(checked = checked, enabled = enabled, onCheckedChange = null) },
@@ -367,6 +370,7 @@ internal fun ErrorReportingToggleRow(
                     role = Role.Switch,
                     onValueChange = onChange,
                 ),
+        leadingContent = { Icon(Icons.Filled.BugReport, contentDescription = null) },
         headlineContent = { Text(stringResource(R.string.account_error_reports_toggle)) },
         supportingContent = {
             Text(

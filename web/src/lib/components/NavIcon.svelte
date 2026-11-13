@@ -93,7 +93,10 @@
     | "stopwatch"
     | "database"
     | "package"
-    | "hash";
+    | "hash"
+    | "bell"
+    | "bug"
+    | "location";
 
   let { name }: { name: NavIconName } = $props();
 </script>
@@ -565,6 +568,15 @@
     <path d="M12 3 4 7v10l8 4 8-4V7zM4 7l8 4 8-4M12 11v10" />
   {:else if name === "hash"}
     <path d="M9.5 4 7.5 20M16.5 4l-2 16M4.5 9h15.5M4 15h15.5" />
+  {:else if name === "bell"}
+    <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
+  {:else if name === "bug"}
+    <path
+      d="M8 8 6 5M16 8l2-3M4 13h3m10 0h3M5 18h3m8 0h3M8 8h8v8a4 4 0 0 1-8 0zM12 8V5a2 2 0 0 1 4 0"
+    />
+  {:else if name === "location"}
+    <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
+    <circle cx="12" cy="10" r="2.5" />
   {:else}
     <path d="M5 4.5h14v15H5zM8 8h8M8 12h8M8 16h5" />
   {/if}

@@ -7,6 +7,7 @@
   import { ApiError, type SessionData } from "#lib/api.ts";
   import { chooseLocale } from "#lib/components/LocaleSwitcher.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
+  import FancySelect from "#lib/components/FancySelect.svelte";
   import TakePhotoInput from "#lib/components/TakePhotoInput.svelte";
   import PageHeader from "#lib/components/PageHeader.svelte";
   import BackupsSection from "./BackupsSection.svelte";
@@ -1091,49 +1092,48 @@
     <div class="rows">
       <div class="row">
         <span class="row__label" id="pref-language"
+          ><span class="preference-icon" aria-hidden="true"
+            ><NavIcon name="flag" /></span
           >{t("Language", locale)}</span
         >
         <div class="row__control">
-          <label class="preference-select">
-            <span class="sr-only">{t("Language", locale)}</span>
-            <select
-              aria-label={t("Language", locale)}
-              value={locale}
-              disabled={session.status !== "ready" || !session.data}
-              onchange={(event) =>
-                chooseLocale(event.currentTarget.value as Locale)}
-            >
-              {#each localeOptions as option (option.value)}
-                <option value={option.value}>{option.label}</option>
-              {/each}
-            </select>
-            <NavIcon name="chevron-down" />
-          </label>
+          <FancySelect
+            label={t("Language", locale)}
+            value={locale}
+            options={localeOptions}
+            disabled={session.status !== "ready" || !session.data}
+            onselect={(value) => chooseLocale(value as Locale)}
+          />
         </div>
       </div>
       <div class="row">
-        <span class="row__label" id="pref-theme">{t("Appearance", locale)}</span
+        <span class="row__label" id="pref-theme"
+          ><span class="preference-icon" aria-hidden="true"
+            ><NavIcon name="palette" /></span
+          >{t("Appearance", locale)}</span
         >
         <div class="row__control">
-          <label class="preference-select">
-            <span class="sr-only">{t("Theme", locale)}</span>
-            <select
-              aria-label={t("Theme", locale)}
-              value={theme.choice}
-              onchange={(event) =>
-                setTheme(event.currentTarget.value as typeof theme.choice)}
-            >
-              {#each themeOptions as option (option.value)}
-                <option value={option.value}>{option.label}</option>
-              {/each}
-            </select>
-            <NavIcon name="chevron-down" />
-          </label>
+          <FancySelect
+            label={t("Theme", locale)}
+            value={theme.choice}
+            options={themeOptions.map((option) => ({
+              ...option,
+              icon:
+                option.value === "system"
+                  ? "monitor"
+                  : option.value === "light"
+                    ? "sun"
+                    : "moon",
+            }))}
+            onselect={(value) => setTheme(value as typeof theme.choice)}
+          />
         </div>
       </div>
       <div class="row">
         <div class="row__text">
           <span class="row__label" id="pref-text-size"
+            ><span class="preference-icon" aria-hidden="true"
+              ><NavIcon name="text-align" /></span
             >{t("Text size", locale)}</span
           >
           <p class="row__hint">
@@ -1141,26 +1141,24 @@
           </p>
         </div>
         <div class="row__control">
-          <label class="preference-select">
-            <span class="sr-only">{t("Text size", locale)}</span>
-            <select
-              aria-label={t("Text size", locale)}
-              value={textSize.index}
-              onchange={(event) =>
-                textSize.set(Number(event.currentTarget.value))}
-            >
-              {#each sizeOptions as option (option.value)}
-                <option value={option.value}>{option.label}</option>
-              {/each}
-            </select>
-            <NavIcon name="chevron-down" />
-          </label>
+          <FancySelect
+            label={t("Text size", locale)}
+            value={String(textSize.index)}
+            options={sizeOptions.map((option) => ({
+              ...option,
+              value: String(option.value),
+            }))}
+            onselect={(value) => textSize.set(Number(value))}
+          />
         </div>
       </div>
       {#if userId !== null}
         <div class="row">
           <div class="row__text">
             <label class="row__label" for="pref-project-timers">
+              <span class="preference-icon" aria-hidden="true"
+                ><NavIcon name="stopwatch" /></span
+              >
               {t("Project timers", locale)}
             </label>
             <p class="row__hint" id="pref-project-timers-hint">
@@ -1190,6 +1188,9 @@
       <div class="row">
         <div class="row__text">
           <label class="row__label" for="pref-notifications">
+            <span class="preference-icon" aria-hidden="true"
+              ><NavIcon name="bell" /></span
+            >
             {t("Notifications", locale)}
           </label>
           <p class="row__hint" id="pref-notifications-hint">
@@ -1235,6 +1236,8 @@
         <div class="row">
           <div class="row__text">
             <label class="row__label" for="pref-error-reports"
+              ><span class="preference-icon" aria-hidden="true"
+                ><NavIcon name="bug" /></span
               >{t("Send error reports", locale)}</label
             >
             <p class="row__hint" id="pref-error-reports-hint">
@@ -1267,6 +1270,8 @@
         <div class="row">
           <div class="row__text">
             <label class="row__label" for="pref-strip-photo-metadata"
+              ><span class="preference-icon" aria-hidden="true"
+                ><NavIcon name="location" /></span
               >{t(
                 "Remove location and camera data from new photos",
                 locale,
@@ -2228,7 +2233,27 @@
   }
 
   .row__label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
     font-weight: 700;
+  }
+
+  .preference-icon {
+    display: inline-grid;
+    width: 1.8rem;
+    height: 1.8rem;
+    flex: none;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line));
+    border-radius: 0.6rem;
+    color: var(--accent-strong);
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface-raised));
+  }
+
+  .preference-icon :global(svg) {
+    width: 1rem;
+    height: 1rem;
   }
 
   .row__hint {
@@ -2240,65 +2265,6 @@
     flex: none;
     max-width: 100%;
     margin-inline-start: auto;
-  }
-
-  .preference-select {
-    position: relative;
-    display: inline-flex;
-    min-width: 10.5rem;
-    align-items: center;
-    color: var(--ink);
-  }
-
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    clip-path: inset(50%);
-  }
-
-  .preference-select select {
-    width: 100%;
-    min-height: 2.75rem;
-    appearance: none;
-    border: 1px solid var(--line);
-    border-radius: 0.85rem;
-    padding: 0.55rem 2.5rem 0.55rem 0.85rem;
-    color: inherit;
-    background: var(--surface-raised);
-    box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 7%, transparent);
-    font: inherit;
-    font-weight: 650;
-    cursor: pointer;
-    transition:
-      border-color 150ms ease,
-      box-shadow 150ms ease;
-  }
-
-  .preference-select select:hover:not(:disabled) {
-    border-color: var(--accent-strong);
-  }
-
-  .preference-select select:focus-visible {
-    outline: 2px solid var(--accent-strong);
-    outline-offset: 2px;
-  }
-
-  .preference-select select:disabled {
-    cursor: not-allowed;
-    opacity: 0.65;
-  }
-
-  .preference-select :global(svg) {
-    position: absolute;
-    right: 0.8rem;
-    width: 1rem;
-    height: 1rem;
-    color: var(--ink-muted);
-    pointer-events: none;
   }
 
   /* Smooth disclosure: the grid row animates between 0fr and 1fr. */

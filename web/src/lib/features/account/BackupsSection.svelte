@@ -1,6 +1,7 @@
 <script lang="ts">
   import ActionLabel from "#lib/components/ActionLabel.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
+  import FancySelect from "#lib/components/FancySelect.svelte";
   import { onDestroy, onMount } from "svelte";
   import { resolve } from "$app/paths";
   import Button from "#lib/components/Button.svelte";
@@ -259,17 +260,12 @@
     <label class="archive-select">
       <span>{t("Archive type", locale)}</span>
       <span class="archive-select__control">
-        <select
-          aria-label={t("Archive type", locale)}
+        <FancySelect
+          label={t("Archive type", locale)}
           value={archive}
-          onchange={(event) =>
-            chooseArchive(event.currentTarget.value as ArchiveType)}
-        >
-          {#each archiveOptions as option (option.value)}
-            <option value={option.value}>{option.label}</option>
-          {/each}
-        </select>
-        <NavIcon name="chevron-down" />
+          options={archiveOptions}
+          onselect={(value) => chooseArchive(value as ArchiveType)}
+        />
       </span>
     </label>
     <label class="check-field">
@@ -727,42 +723,9 @@
   }
 
   .archive-select__control {
-    position: relative;
     display: inline-flex;
     min-width: 11rem;
     align-items: center;
-  }
-
-  .archive-select select {
-    width: 100%;
-    min-height: 2.75rem;
-    appearance: none;
-    border: 1px solid var(--line);
-    border-radius: 0.85rem;
-    padding: 0.55rem 2.5rem 0.55rem 0.85rem;
-    color: var(--ink);
-    background: var(--surface-raised);
-    box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 7%, transparent);
-    font: inherit;
-    cursor: pointer;
-  }
-
-  .archive-select select:hover {
-    border-color: var(--accent-strong);
-  }
-
-  .archive-select select:focus-visible {
-    outline: 2px solid var(--accent-strong);
-    outline-offset: 2px;
-  }
-
-  .archive-select__control :global(svg) {
-    position: absolute;
-    right: 0.8rem;
-    width: 1rem;
-    height: 1rem;
-    color: var(--ink-muted);
-    pointer-events: none;
   }
 
   @media (max-width: 32rem) {

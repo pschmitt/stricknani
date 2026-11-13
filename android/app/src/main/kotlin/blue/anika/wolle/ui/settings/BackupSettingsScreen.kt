@@ -25,6 +25,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
@@ -362,6 +363,15 @@ internal fun BackupSettingsScreen(
                             ExportFormat.entries.forEach { format ->
                                 DropdownMenuItem(
                                     text = { Text(".${format.extension}") },
+                                    trailingIcon = {
+                                        if (format == exportFormat) {
+                                            Icon(
+                                                Icons.Filled.Check,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                            )
+                                        }
+                                    },
                                     onClick = {
                                         exportFormat = format
                                         exportFormatMenu = false
