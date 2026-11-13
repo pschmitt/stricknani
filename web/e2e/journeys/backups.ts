@@ -575,9 +575,11 @@ export async function runBackupsJourney(
     mark("ada downloads zip");
     await archiveSelect.click();
     await zipOption.click();
+    await archiveSelect.click();
     await expect(zipOption).toHaveAttribute("aria-selected", "true", {
       timeout: WAIT,
     });
+    await zipOption.press("Escape");
     await expect(archiveSelect).toHaveText(".zip", { timeout: WAIT });
     await expect(downloadLink).toHaveAttribute("href", /archive=zip$/, {
       timeout: WAIT,
@@ -604,9 +606,11 @@ export async function runBackupsJourney(
     maskGithubSecret(secret);
     await archiveSelect.click();
     await tarOption.click();
+    await archiveSelect.click();
     await expect(tarOption).toHaveAttribute("aria-selected", "true", {
       timeout: WAIT,
     });
+    await tarOption.press("Escape");
     await expect(archiveSelect).toHaveText(".tar.gz", { timeout: WAIT });
     await adaPage.getByLabel("Encrypt with a passphrase").check();
     const passField = adaPage.locator("#export-passphrase");
