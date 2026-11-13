@@ -805,9 +805,10 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
   );
   markStage("checking Home hover motion");
   const recentProject = page
-    .locator(".recent-list a.resource-card__link")
+    .getByRole("list", { name: "Recent projects", exact: true })
+    .locator("a.tile")
     .first();
-  const recentImage = recentProject.locator(".resource-card__image");
+  const recentImage = recentProject.locator(".tile__image");
   const activityRow = page.locator("a.tl__row").first();
   const activityIcon = activityRow.locator(".tl__node");
   await recentProject.waitFor({ state: "visible" });

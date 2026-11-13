@@ -55,8 +55,6 @@ import blue.anika.wolle.ui.common.UserLabelSize
 import blue.anika.wolle.ui.history.SharingHeadline
 import blue.anika.wolle.ui.history.actionLabelText
 import blue.anika.wolle.ui.history.sharingEventLine
-import blue.anika.wolle.ui.trash.daysLeft
-import blue.anika.wolle.ui.trash.daysLeftText
 import coil3.compose.AsyncImage
 import java.time.LocalDate
 import java.time.ZoneId
@@ -419,22 +417,6 @@ private fun ActivityMeta(row: ActivityRowModel, time: String?, muted: Color) {
         }
         UserLabel(row.actor, size = UserLabelSize.Inline, style = style, color = muted)
         if (time != null) Text(time, style = style, color = muted)
-        row.trashDaysLeft?.let { days ->
-            Text(
-                daysLeftText(daysLeft(days)),
-                style = style,
-                color = muted,
-            )
-        }
-        row.owner?.let { owner ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(stringResource(R.string.user_owner_prefix), style = style, color = muted)
-                UserLabel(owner, size = UserLabelSize.Inline, style = style, color = muted)
-            }
-        }
         if (row.count > 1) {
             Text(
                 pluralStringResource(R.plurals.activity_changes_count, row.count, row.count),

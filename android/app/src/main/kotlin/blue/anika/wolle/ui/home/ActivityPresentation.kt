@@ -8,7 +8,6 @@ import blue.anika.wolle.ui.admin.DayLabel
 import blue.anika.wolle.ui.admin.dayLabelFor
 import blue.anika.wolle.ui.common.UserRef
 import blue.anika.wolle.ui.common.activityActorRef
-import blue.anika.wolle.ui.common.subjectRef
 import blue.anika.wolle.ui.history.fieldNounRes
 import java.time.Instant
 import java.time.LocalDate
@@ -123,9 +122,6 @@ sealed interface ActivityTarget {
     data object Trash : ActivityTarget
 }
 
-/** Actions that move an item through the trash: the row names the owner next to the actor. */
-private val lifecycleActions = setOf("trashed", "restored", "purged")
-
 /** One row, ready to draw. */
 data class ActivityRowModel(
     val key: Long,
@@ -151,10 +147,6 @@ data class ActivityRowModel(
     val thumbnailUrl: String?,
     val target: ActivityTarget?,
     val createdAt: String,
-    /** Days left while the item sits in the trash; null when it is not in the trash. */
-    val trashDaysLeft: Int? = null,
-    /** The owner of the item, for trash events an administrator did and the automatic purge. */
-    val owner: UserRef? = null,
 ) {
     /** A deleted resource: muted and not tappable. An item in the trash leads to the trash. */
     val deleted: Boolean
@@ -190,11 +182,11 @@ fun activityRow(item: ActivityItemDto): ActivityRowModel {
         count = item.count.coerceAtLeast(1),
         fieldNounRes = nouns.take(ACTIVITY_MAX_FIELDS),
         moreFields = (nouns.size - ACTIVITY_MAX_FIELDS).coerceAtLeast(0),
-        thumbnailUrl = item.thumbnailUrl.takeIf { item.exists },
+        // The owner and administrators still see a trashed item's picture; the server sends none
+        // to anyone else.
+        thumbnailUrl = item.thumbnailUrl.takeIf { item.exists || inTrash },
         target = target,
         createdAt = item.createdAt,
-        trashDaysLeft = if (inTrash) item.trash?.daysRemaining ?: 0 else null,
-        owner = if (item.action in lifecycleActions) subjectRef(item.subject) else null,
     )
 }
 

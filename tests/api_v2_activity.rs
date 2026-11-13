@@ -243,6 +243,74 @@ async fn activity_shape_name_thumbnail_and_changed_fields() {
 }
 
 #[tokio::test]
+async fn trashed_items_keep_their_thumbnail_for_the_owner_and_administrators_only() {
+    let f = fixture().await;
+    let pid = project(&f.pool, f.owner_id, "Binned").await;
+    sqlx::query(
+        "INSERT INTO media_files(owner_id, project_id, kind, public_id, filename, \
+         original_filename, content_type, size_bytes, is_primary) \
+         VALUES (?, ?, 'title', 43, 'binned.jpg', 'binned.jpg', 'image/jpeg', 1, 1)",
+    )
+    .bind(f.owner_id)
+    .bind(pid)
+    .execute(&f.pool)
+    .await
+    .unwrap();
+    share(&f.pool, "project", pid, f.other_id, "viewer").await;
+    ev(
+        &f,
+        "project",
+        pid,
+        "updated",
+        "2026-04-01T00:00:00Z",
+        Some(f.other_id),
+    )
+    .await;
+    ev(
+        &f,
+        "project",
+        pid,
+        "updated",
+        "2026-04-01T00:01:00Z",
+        Some(f.admin_id),
+    )
+    .await;
+    ev(
+        &f,
+        "project",
+        pid,
+        "trashed",
+        "2026-04-01T00:02:00Z",
+        Some(f.owner_id),
+    )
+    .await;
+    sqlx::query("UPDATE projects SET deleted_at = '2026-04-01T00:02:00Z' WHERE id = ?")
+        .bind(pid)
+        .execute(&f.pool)
+        .await
+        .unwrap();
+    let thumbnail = format!("/media/thumbnails/projects/{pid}/thumb_binned.jpg");
+
+    let (_, owner) = get(&f, "/activity", OWNER_PAT).await;
+    let owner_item = &owner["data"][0];
+    assert_eq!(owner_item["action"], "trashed");
+    assert_eq!(owner_item["state"], "in_trash");
+    assert_eq!(owner_item["thumbnail_url"], thumbnail);
+
+    let (_, admin) = get(&f, "/activity", ADMIN_PAT).await;
+    let admin_items = admin["data"].as_array().unwrap();
+    assert!(!admin_items.is_empty());
+    for item in admin_items.iter().filter(|item| item["entity_id"] == pid) {
+        assert_eq!(item["thumbnail_url"], thumbnail);
+    }
+
+    let (_, other) = get(&f, "/activity", OTHER_PAT).await;
+    for item in other["data"].as_array().unwrap() {
+        assert_eq!(item["thumbnail_url"], serde_json::Value::Null);
+    }
+}
+
+#[tokio::test]
 async fn activity_is_owner_scoped() {
     let f = fixture().await;
     let own = project(&f.pool, f.owner_id, "Mine").await;

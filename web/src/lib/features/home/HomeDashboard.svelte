@@ -12,12 +12,13 @@
   import Button from "#lib/components/Button.svelte";
   import Mascot from "#lib/components/Mascot.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
-  import ResourceCard from "#lib/components/ResourceCard.svelte";
   import OwnerBadge from "#lib/components/OwnerBadge.svelte";
   import ScopeFilter from "#lib/components/ScopeFilter.svelte";
   import { t } from "#lib/i18n.svelte.ts";
   import { scopeFor } from "#lib/library-scope.svelte.ts";
   import { foreignOwner } from "#lib/owner.ts";
+  import type { ProjectSummary } from "#lib/features/projects/project-api.ts";
+  import type { YarnSummary } from "#lib/features/yarns/yarn-api.ts";
   import { session } from "#lib/session.svelte.ts";
   import ImportDraftCards from "#lib/features/imports/ImportDraftCards.svelte";
   import {
@@ -210,43 +211,17 @@
               >{t("See all", locale)}<NavIcon name="next" /></a
             >
           </div>
-          <ul class="tile-grid" aria-label={group.title}>
-            {#each group.section.items as item, index (item.id)}
-              <li>
-                <a
-                  class="tile"
-                  data-tint={(index + (group.kind === "yarn" ? 1 : 0)) % 3}
-                  href={group.kind === "project"
-                    ? resolve("/projects/[id]", { id: String(item.id) })
-                    : resolve("/yarns/[id]", { id: String(item.id) })}
-                >
-                  <span class="tile__image">
-                    {#if item.preview_url}
-                      <img src={item.preview_url} alt="" loading="lazy" />
-                    {:else}
-                      <NavIcon
-                        name={group.kind === "project" ? "projects" : "yarns"}
-                      />
-                    {/if}
-                  </span>
-                  {#if foreignOwner(item.owner, userId)}
-                    {@const foreign = foreignOwner(item.owner, userId)}
-                    {#if foreign}
-                      <span class="owner-corner"
-                        ><OwnerBadge owner={foreign} {locale} compact /></span
-                      >
-                    {/if}
-                  {/if}
-                  <span class="tile__name">{item.name}</span>
-                </a>
-              </li>
-            {/each}
-          </ul>
+          {@render tiles(
+            group.section.items,
+            group.kind,
+            group.kind === "yarn" ? 1 : 0,
+            group.title,
+          )}
         </section>
       {/if}
     {/each}
 
-    <!-- 3. Recently updated projects, compact. -->
+    <!-- 3. Recently updated projects, as photo tiles like the favourites. -->
     {#if recentProjects.items.length > 0}
       <section class="home-section" aria-labelledby="recent-projects-title">
         <div class="home-section__heading">
@@ -259,23 +234,12 @@
             >{t("See all", locale)}<NavIcon name="next" /></a
           >
         </div>
-        <ul class="recent-list" aria-label={t("Recent projects", locale)}>
-          {#each recentProjects.items as item (item.id)}
-            <li>
-              <ResourceCard
-                kind="project"
-                href={resolve("/projects/[id]", { id: String(item.id) })}
-                imageUrl={item.preview_url}
-                name={item.name}
-                owner={foreignOwner(item.owner, userId)}
-                subtitle={[item.category, updatedAgo(item.updated_at)]
-                  .filter(Boolean)
-                  .join(" · ")}
-                titleTag="h3"
-              />
-            </li>
-          {/each}
-        </ul>
+        {@render tiles(
+          recentProjects.items,
+          "project",
+          2,
+          t("Recent projects", locale),
+        )}
       </section>
     {/if}
 
@@ -298,6 +262,43 @@
     {/if}
   {/if}
 </section>
+
+<!-- Photo tiles of the favourites and the recent projects; the tint cycles per section. -->
+{#snippet tiles(
+  items: (ProjectSummary | YarnSummary)[],
+  kind: "project" | "yarn",
+  tintOffset: number,
+  label: string,
+)}
+  <ul class="tile-grid" aria-label={label}>
+    {#each items as item, index (item.id)}
+      {@const foreign = foreignOwner(item.owner, userId)}
+      <li>
+        <a
+          class="tile"
+          data-tint={(index + tintOffset) % 3}
+          href={kind === "project"
+            ? resolve("/projects/[id]", { id: String(item.id) })
+            : resolve("/yarns/[id]", { id: String(item.id) })}
+        >
+          <span class="tile__image">
+            {#if item.preview_url}
+              <img src={item.preview_url} alt="" loading="lazy" />
+            {:else}
+              <NavIcon name={kind === "project" ? "projects" : "yarns"} />
+            {/if}
+          </span>
+          {#if foreign}
+            <span class="owner-corner"
+              ><OwnerBadge owner={foreign} {locale} compact /></span
+            >
+          {/if}
+          <span class="tile__name">{item.name}</span>
+        </a>
+      </li>
+    {/each}
+  </ul>
+{/snippet}
 
 <style>
   .owner-corner {
@@ -483,25 +484,6 @@
     white-space: nowrap;
   }
 
-  .recent-list {
-    display: grid;
-    gap: 0.55rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .recent-list :global(.resource-card__image) {
-      transition: transform 200ms cubic-bezier(0.3, 1.6, 0.5, 1);
-    }
-    .recent-list :global(a.resource-card__link:hover .resource-card__image),
-    .recent-list
-      :global(a.resource-card__link:focus-visible .resource-card__image) {
-      transform: translateY(-3px) rotate(-1.5deg);
-    }
-  }
-
   .home-hint {
     display: flex;
     align-items: center;
@@ -544,12 +526,6 @@
   @media (max-width: 560px) {
     .home-greeting :global(.mascot) {
       --mascot-size: 4.5rem;
-    }
-  }
-
-  @media (min-width: 900px) {
-    .recent-list {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 

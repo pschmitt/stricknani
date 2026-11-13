@@ -303,7 +303,7 @@ class ActivityPresentationTest {
     }
 
     @Test
-    fun `an item in the trash opens the trash, not its page, and shows its days left`() {
+    fun `an item in the trash opens the trash, not its page, and keeps its thumbnail`() {
         val row =
             activityRow(
                 item(action = "trashed", exists = false)
@@ -314,7 +314,7 @@ class ActivityPresentationTest {
             )
 
         assertEquals(ActivityTarget.Trash, row.target)
-        assertEquals(88, row.trashDaysLeft)
+        assertEquals("/media/t.jpg", row.thumbnailUrl)
         assertEquals(false, row.deleted)
         assertEquals("trashed", row.action)
     }
@@ -327,12 +327,10 @@ class ActivityPresentationTest {
         )
         val old = activityRow(item(action = "deleted", exists = false))
         assertNull(old.target)
-        assertNull(old.trashDaysLeft)
-        assertNull(old.owner)
     }
 
     @Test
-    fun `the automatic purge has no actor and names the owner`() {
+    fun `the automatic purge has no actor`() {
         val row =
             activityRow(
                 item(action = "purged", exists = false, self = false, actorName = null)
@@ -347,7 +345,6 @@ class ActivityPresentationTest {
         assertEquals("purged", row.action)
         assertTrue(row.system)
         assertEquals(UserKind.System, row.actor.kind)
-        assertEquals(UserRef(UserKind.User, "Anika"), row.owner)
         assertNull(row.target)
     }
 
@@ -368,7 +365,7 @@ class ActivityPresentationTest {
     }
 
     @Test
-    fun `a restore an administrator did names the actor and keeps the owner apart`() {
+    fun `a restore an administrator did names the actor`() {
         val row =
             activityRow(
                 item(action = "restored")
@@ -380,16 +377,14 @@ class ActivityPresentationTest {
             )
 
         assertEquals(UserRef(UserKind.Self, "Admin"), row.actor)
-        assertEquals(UserRef(UserKind.User, "Anika Bergmann"), row.owner)
     }
 
     @Test
-    fun `only trash entries show an owner, a share names its subject instead`() {
+    fun `a share names its subject`() {
         val shared =
             activityRow(
                 item(action = "shared").copy(subject = AuditSubjectDto(id = 2, name = "Anna"))
             )
-        assertNull(shared.owner)
         assertEquals("Anna", shared.subject?.name)
     }
 }

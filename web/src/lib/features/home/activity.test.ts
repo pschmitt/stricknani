@@ -10,7 +10,6 @@ import {
   activityDetail,
   activityHeadline,
   activityItemActor,
-  activityOwner,
   activityResourceName,
   activityStateNote,
   loadActivity,
@@ -483,24 +482,12 @@ describe("trash activity", () => {
     expect(mergeActivityRuns([a, b])).toHaveLength(2);
   });
 
-  it("names the owner and the state apart", () => {
+  it("leaves the days left to the Trash page", () => {
     const item = parseActivityItem({
       ...trashed,
       subject: { id: 2, name: "Anna", role: null, avatar_url: "/a.png" },
     });
-    expect(activityStateNote(item, "en")).toBe("89 days left");
-    expect(activityOwner(item, "en")).toEqual({
-      kind: "user",
-      name: "Anna",
-      avatarUrl: "/a.png",
-    });
+    expect(activityStateNote(item, "en")).toBe("");
     expect(activityStateNote(parseActivityItem(raw), "en")).toBe("");
-    expect(activityOwner(parseActivityItem(raw), "en")).toBeNull();
-    const restored = parseActivityItem({
-      ...trashed,
-      action: "restored",
-      subject: { id: 2, name: "Anna", role: null },
-    });
-    expect(activityOwner(restored, "en")?.name).toBe("Anna");
   });
 });

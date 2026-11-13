@@ -1,4 +1,3 @@
-import { daysLeftLabel } from "../trash/trash-copy";
 import { ApiError, apiRequest } from "#lib/api.ts";
 import { msg, t, type Locale } from "#lib/i18n.svelte.ts";
 import {
@@ -9,13 +8,11 @@ import {
 } from "#lib/features/history/history-summary.ts";
 import {
   activityActor,
-  avatarPath,
   parseUserKind,
   type UserKind,
   type UserRef,
 } from "#lib/user-label.ts";
 import {
-  isLifecycleAction,
   parseLifecycleSubject,
   parseResourceState,
   parseTrashStatus,
@@ -293,25 +290,13 @@ export function activityAgo(
   return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(then);
 }
 
-/** Days left for an item in the trash, or its later lifecycle state. */
+/**
+ * What became of a trashed item later (restored, deleted permanently); empty while it is still in
+ * the trash, which the "Moved to trash" link already says.
+ */
 export function activityStateNote(item: ActivityItem, locale: Locale): string {
-  if (item.action === "trashed" && item.state === "in_trash") {
-    return item.trash ? daysLeftLabel(item.trash.days_remaining, locale) : "";
-  }
+  if (item.action === "trashed" && item.state === "in_trash") return "";
   return trashedStateText(item.action, item.state, item.trash, locale) ?? "";
-}
-
-/** The owner of a trash, restore or purge entry, for an "Owner: {name}" hint; null otherwise. */
-export function activityOwner(
-  item: ActivityItem,
-  locale: Locale,
-): UserRef | null {
-  if (!isLifecycleAction(item.action) || !item.subject) return null;
-  return {
-    kind: "user",
-    name: item.subject.name ?? t("a deleted account", locale),
-    avatarUrl: avatarPath(item.subject.avatar_url),
-  };
 }
 
 /** Icon of a timeline node: what happened, not what it happened to. */

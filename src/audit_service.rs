@@ -910,7 +910,17 @@ fn activity_item(
         state: event.resource.state,
         trash: event.resource.trash.filter(|_| can_open),
         href: event.resource.href.filter(|_| can_open),
-        thumbnail_url: event.resource.preview_url.filter(|_| can_open),
+        // Administrators read any trashed item's pictures, like on the Trash page.
+        thumbnail_url: event
+            .resource
+            .preview_url
+            .or_else(|| {
+                (viewer_is_admin && event.resource.state == "in_trash")
+                    .then_some(event.resource.kind)
+                    .flatten()
+                    .and_then(|kind| owner_preview_url(row, kind, event.resource.id))
+            })
+            .filter(|_| can_open),
         actor: ActivityActor {
             kind,
             name: event.actor_name.filter(|_| shows_actor),
@@ -1418,9 +1428,16 @@ fn make_event(
                 can_restore,
             }
         });
-    // Administrators still read a trashed item's pictures; owners do not (the
-    // media routes hide it until it is restored).
-    let show_preview = exists || (in_trash && matches!(audience, AuditAudience::Administrator));
+    // A trashed item's pictures stay readable for its owner and administrators
+    // (the Trash page shows them too); everyone else sees none until it is restored.
+    let show_preview = exists
+        || (in_trash
+            && match audience {
+                AuditAudience::Administrator => true,
+                AuditAudience::Owner { viewer_id, .. } => {
+                    row.get::<Option<i64>, _>("current_owner_id") == Some(viewer_id)
+                }
+            });
     let preview_media_id = row.get::<Option<i64>, _>("current_preview_media_id");
     let resource = AuditResource {
         kind,
@@ -1467,20 +1484,7 @@ fn make_event(
                             true,
                         )
                     }),
-                    AuditAudience::Owner { .. } => row
-                        .get::<Option<String>, _>("current_preview_filename")
-                        .map(|filename| {
-                            let parent = match kind {
-                                Entity::Project => "projects",
-                                Entity::Yarn => "yarns",
-                                Entity::Category => return String::new(),
-                            };
-                            format!(
-                                "/media/thumbnails/{parent}/{entity_id}/{}",
-                                crate::media::avatar_thumbnail_name(&filename)
-                            )
-                        })
-                        .filter(|url| !url.is_empty()),
+                    AuditAudience::Owner { .. } => owner_preview_url(row, kind, entity_id),
                 }
             })
         } else {
@@ -1691,6 +1695,27 @@ fn make_media(
         url,
         thumbnail_url,
     })
+}
+
+/// The plain media thumbnail of a project's or yarn's cover, as its owner,
+/// share recipients and administrators load it.
+fn owner_preview_url(
+    row: &sqlx::sqlite::SqliteRow,
+    kind: Entity,
+    entity_id: i64,
+) -> Option<String> {
+    let parent = match kind {
+        Entity::Project => "projects",
+        Entity::Yarn => "yarns",
+        Entity::Category => return None,
+    };
+    row.get::<Option<String>, _>("current_preview_filename")
+        .map(|filename| {
+            format!(
+                "/media/thumbnails/{parent}/{entity_id}/{}",
+                crate::media::avatar_thumbnail_name(&filename)
+            )
+        })
 }
 
 fn current_name_present(row: &sqlx::sqlite::SqliteRow) -> bool {

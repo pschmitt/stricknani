@@ -15,7 +15,6 @@
     activitySharing,
     activityIcon,
     activityItemActor,
-    activityOwner,
     activityResourceName,
     activityStateNote,
     activityTime,
@@ -165,7 +164,6 @@
               {@const headline = activityHeadline(item, locale)}
               {@const sharing = activitySharing(item, locale)}
               {@const actor = activityItemActor(item)}
-              {@const owner = activityOwner(item, locale)}
               {@const detail = activityDetail(item, locale)}
               {@const note = activityStateNote(item, locale)}
               {@const icon = activityIcon(item.action)}
@@ -210,13 +208,6 @@
                     >
                     {#if detail}<span>{detail}</span>{/if}
                     {#if note}<span>{note}</span>{/if}
-                    {#if owner}
-                      <UserSentence
-                        template={t("Owner: {name}", locale)}
-                        users={{ name: owner }}
-                        {locale}
-                      />
-                    {/if}
                   </span>
                 </span>
                 {#if item.thumbnail_url}
