@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -182,8 +183,8 @@ fun ActivitySection(
     }
 }
 
-private val NODE_SIZE = 20.dp
-private val NODE_GAP = 8.dp
+private val NODE_SIZE = 36.dp
+private val NODE_GAP = 12.dp
 private val ROW_PAD = 6.dp
 
 /** Where the text column starts: past the rail node and its gap. */
@@ -318,12 +319,17 @@ private fun TimelineEntry(
             .semantics(mergeDescendants = true) {},
         horizontalArrangement = Arrangement.spacedBy(NODE_GAP),
     ) {
-        Box(Modifier.size(NODE_SIZE), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier.size(NODE_SIZE)
+                .clip(CircleShape)
+                .background(tone.copy(alpha = 0.16f).compositeOver(colors.surface)),
+            contentAlignment = Alignment.Center,
+        ) {
             Icon(
                 activityIcon(row.icon),
                 contentDescription = null,
                 tint = tone,
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(21.dp),
             )
         }
         if (previewUrl != null) {
