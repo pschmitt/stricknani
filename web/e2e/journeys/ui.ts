@@ -803,6 +803,36 @@ export async function uiPartA(ctx: UiCtx): Promise<void> {
       .getAttribute("href")) === "/app/projects?status=in_progress",
     "Continue knitting's See all does not open the in-progress filter",
   );
+  markStage("checking Home hover motion");
+  const recentProject = page
+    .locator(".recent-list a.resource-card__link")
+    .first();
+  const recentImage = recentProject.locator(".resource-card__image");
+  const activityRow = page.locator("a.tl__row").first();
+  const activityIcon = activityRow.locator(".tl__node");
+  await recentProject.waitFor({ state: "visible" });
+  await activityRow.waitFor({ state: "visible" });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  for (const [link, image] of [
+    [recentProject, recentImage],
+    [activityRow, activityIcon],
+  ] as const) {
+    await link.hover();
+    await expect
+      .poll(() => image.evaluate((el) => getComputedStyle(el).transform))
+      .not.toBe("none");
+  }
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  for (const [link, image] of [
+    [recentProject, recentImage],
+    [activityRow, activityIcon],
+  ] as const) {
+    await link.hover();
+    await expect
+      .poll(() => image.evaluate((el) => getComputedStyle(el).transform))
+      .toBe("none");
+  }
+  await page.emulateMedia({ reducedMotion: "reduce" });
   markStage("opening the authenticated project library");
   await page.goto(`${origin}/app/projects`, { waitUntil: "networkidle" });
   markStage("waiting for the seeded project card");

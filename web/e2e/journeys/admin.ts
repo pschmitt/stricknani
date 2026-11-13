@@ -2536,6 +2536,17 @@ async function runAcceptance(
     }
     await page.goto(`${origin}/app/admin/audit`, { waitUntil: "networkidle" });
     page.off("request", recordAuditDetailRequest);
+    mark("check client details for an event without changes");
+    const simpleEvent = page
+      .getByRole("link", { name: "Show details", exact: true })
+      .first();
+    await simpleEvent.waitFor({ state: "visible" });
+    await simpleEvent.click();
+    await page
+      .locator("[data-audit-client-details]")
+      .waitFor({ state: "visible" });
+    await page.goBack({ waitUntil: "domcontentloaded" });
+    await page.locator(".event-row").first().waitFor({ state: "visible" });
     mark("check audit actor avatar and known action icons");
     const adminActorRow = page
       .locator(".event-row")

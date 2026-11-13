@@ -498,169 +498,186 @@ private fun AuditRow(
                 }
                 .testTag("admin-audit-row"),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier =
-                    Modifier.weight(1f)
-                        .clip(MaterialTheme.shapes.medium)
-                        .clickable(
-                            onClickLabel =
-                                if (navigable) stringResource(R.string.admin_open_item, title)
-                                else stringResource(R.string.admin_event_open),
-                            onClick = { if (navigable) onOpenItem(target) else onOpenDetails() },
-                        )
-                        .padding(start = 12.dp, top = 10.dp, bottom = 10.dp)
-                        .semantics { contentDescription = description }
-                        .testTag("admin-audit-row-main"),
-            ) {
-                Box(
-                    Modifier.size(40.dp)
-                        .clip(CircleShape)
-                        .background(
-                            tone
-                                .copy(alpha = 0.14f)
-                                .compositeOver(MaterialTheme.colorScheme.surface)
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        activityIcon(activityIconKind(event.action)),
-                        contentDescription = null,
-                        tint = tone,
-                        modifier = Modifier.size(21.dp),
-                    )
-                }
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        title,
-                        style = MaterialTheme.typography.titleSmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        action,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = tone,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    event.media?.let { media ->
-                        Text(
-                            auditMediaNote(media),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                    event.server?.let { server ->
-                        Text(
-                            stringResource(R.string.admin_server_safety_copy, server.preRestore),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.testTag("admin-audit-row-server"),
-                        )
-                        Text(
-                            stringResource(
-                                if (server.media == "add_missing") R.string.admin_server_media_added
-                                else R.string.admin_server_media_kept
-                            ),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                    if (target is AuditTarget.Deleted) {
-                        Text(
-                            stringResource(R.string.admin_item_deleted),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.testTag("admin-audit-row-deleted"),
-                        )
-                    }
-                    event.inTrashState()?.let { inTrash ->
-                        Text(
-                            inTrashText(inTrash),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.testTag("admin-audit-row-in-trash"),
-                        )
-                    }
-                    event.lifecycleOwnerRef()?.let { owner ->
-                        UserSentence(
-                            R.string.admin_owner_line,
-                            owner,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    HistoryActor(event, actorRef, UserLabelSize.Inline, by = false)
-                    val role = filterUser?.let { event.userRole(it) }
-                    if (role != null && filterUser != null) {
-                        val person = filterUser.ref()
-                        UserSentence(
-                            when (role) {
-                                AuditUserRole.Actor -> R.string.admin_role_actor
-                                AuditUserRole.Impersonator -> R.string.admin_role_impersonator
-                                AuditUserRole.SubjectOfAccount ->
-                                    R.string.admin_role_subject_account
-                                AuditUserRole.Subject -> R.string.admin_role_subject
-                            },
-                            *(if (role == AuditUserRole.Impersonator) arrayOf(person, actorRef)
-                            else arrayOf(person)),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.testTag("admin-audit-user-role"),
-                        )
-                    }
-                    AuditClientChip(event.client)
-                    Text(
-                        time,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                avatarUrl(event.resource.previewUrl)?.let { preview ->
-                    AsyncImage(
-                        model = preview,
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier =
-                            Modifier.padding(horizontal = 8.dp)
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(10.dp)),
-                    )
-                }
-                AuditMediaThumb(event.media, Modifier.padding(horizontal = 8.dp))
-            }
-            IconButton(
-                onClick = onOpenDetails,
-                modifier = Modifier.testTag("admin-audit-details"),
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(start = 12.dp, top = 4.dp, bottom = 4.dp),
+        ) {
+            Box(
+                Modifier.size(40.dp)
+                    .clip(CircleShape)
+                    .background(
+                        tone.copy(alpha = 0.14f).compositeOver(MaterialTheme.colorScheme.surface)
+                    ),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    when (detailKind) {
-                        AuditDetailKind.Media -> Icons.Filled.Image
-                        AuditDetailKind.Changes -> PhosphorIcons.ClockCounterClockwise
-                        AuditDetailKind.None -> Icons.Filled.Info
-                    },
-                    contentDescription =
-                        stringResource(
-                            when (detailKind) {
-                                AuditDetailKind.Media ->
-                                    if (event.media?.isImage == true)
-                                        R.string.admin_media_show_picture
-                                    else R.string.admin_media_open_file
-                                AuditDetailKind.Changes -> R.string.admin_event_open
-                                AuditDetailKind.None -> R.string.admin_no_details
-                            }
-                        ),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    activityIcon(activityIconKind(event.action)),
+                    contentDescription = null,
+                    tint = tone,
+                    modifier = Modifier.size(21.dp),
                 )
+            }
+            Surface(
+                modifier = Modifier.weight(1f),
+                shape = MaterialTheme.shapes.medium,
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier =
+                            Modifier.weight(1f)
+                                .clickable(
+                                    onClickLabel =
+                                        if (navigable)
+                                            stringResource(R.string.admin_open_item, title)
+                                        else stringResource(R.string.admin_event_open),
+                                    onClick = {
+                                        if (navigable) onOpenItem(target) else onOpenDetails()
+                                    },
+                                )
+                                .padding(start = 12.dp, top = 10.dp, bottom = 10.dp)
+                                .semantics { contentDescription = description }
+                                .testTag("admin-audit-row-main"),
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                title,
+                                style = MaterialTheme.typography.titleSmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                action,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = tone,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            event.media?.let { media ->
+                                Text(
+                                    auditMediaNote(media),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                            event.server?.let { server ->
+                                Text(
+                                    stringResource(
+                                        R.string.admin_server_safety_copy,
+                                        server.preRestore,
+                                    ),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.testTag("admin-audit-row-server"),
+                                )
+                                Text(
+                                    stringResource(
+                                        if (server.media == "add_missing")
+                                            R.string.admin_server_media_added
+                                        else R.string.admin_server_media_kept
+                                    ),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
+                            if (target is AuditTarget.Deleted) {
+                                Text(
+                                    stringResource(R.string.admin_item_deleted),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.testTag("admin-audit-row-deleted"),
+                                )
+                            }
+                            event.inTrashState()?.let { inTrash ->
+                                Text(
+                                    inTrashText(inTrash),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.testTag("admin-audit-row-in-trash"),
+                                )
+                            }
+                            event.lifecycleOwnerRef()?.let { owner ->
+                                UserSentence(
+                                    R.string.admin_owner_line,
+                                    owner,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            HistoryActor(event, actorRef, UserLabelSize.Inline, by = false)
+                            val role = filterUser?.let { event.userRole(it) }
+                            if (role != null && filterUser != null) {
+                                val person = filterUser.ref()
+                                UserSentence(
+                                    when (role) {
+                                        AuditUserRole.Actor -> R.string.admin_role_actor
+                                        AuditUserRole.Impersonator ->
+                                            R.string.admin_role_impersonator
+                                        AuditUserRole.SubjectOfAccount ->
+                                            R.string.admin_role_subject_account
+                                        AuditUserRole.Subject -> R.string.admin_role_subject
+                                    },
+                                    *(if (role == AuditUserRole.Impersonator)
+                                        arrayOf(person, actorRef)
+                                    else arrayOf(person)),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.testTag("admin-audit-user-role"),
+                                )
+                            }
+                            Text(
+                                time,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        avatarUrl(event.resource.previewUrl)?.let { preview ->
+                            AsyncImage(
+                                model = preview,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier =
+                                    Modifier.padding(horizontal = 8.dp)
+                                        .size(40.dp)
+                                        .clip(RoundedCornerShape(10.dp)),
+                            )
+                        }
+                        AuditMediaThumb(event.media, Modifier.padding(horizontal = 8.dp))
+                    }
+                    IconButton(
+                        onClick = onOpenDetails,
+                        modifier = Modifier.testTag("admin-audit-details"),
+                    ) {
+                        Icon(
+                            when (detailKind) {
+                                AuditDetailKind.Media -> Icons.Filled.Image
+                                AuditDetailKind.Changes -> PhosphorIcons.ClockCounterClockwise
+                                AuditDetailKind.None -> Icons.Filled.Info
+                            },
+                            contentDescription =
+                                stringResource(
+                                    when (detailKind) {
+                                        AuditDetailKind.Media ->
+                                            if (event.media?.isImage == true)
+                                                R.string.admin_media_show_picture
+                                            else R.string.admin_media_open_file
+                                        AuditDetailKind.Changes -> R.string.admin_event_open
+                                        AuditDetailKind.None -> R.string.admin_no_details
+                                    }
+                                ),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
             }
         }
     }

@@ -14,8 +14,6 @@
   import AuditActionBadge from "./AuditActionBadge.svelte";
   import AuditLifecycle from "./AuditLifecycle.svelte";
   import AuditMediaPreview from "./AuditMediaPreview.svelte";
-  import ClientIcon from "./ClientIcon.svelte";
-  import { clientLabel } from "./audit-client";
   import {
     auditActor,
     auditImpersonatedBy,
@@ -591,16 +589,6 @@
                       </span>
                     {/if}
                   {/if}
-                  <span
-                    class="client-chip"
-                    data-audit-client={event.client.kind}
-                    title={event.client.user_agent ?? undefined}
-                  >
-                    <ClientIcon kind={event.client.kind} />
-                    <span class="client-name"
-                      >{clientLabel(event.client, locale)}</span
-                    >
-                  </span>
                 </p>
                 <div class="event-meta">
                   <time
@@ -611,26 +599,19 @@
                   <div class="event-diff-slot">
                     {#if event.media}
                       <AuditMediaPreview media={event.media} {locale} />
-                    {:else if !event.has_changes}
-                      <span
-                        class="no-details"
-                        data-audit-no-details
-                        title={t("No details recorded", locale)}
-                        ><span class="visually-hidden"
-                          >{t("No details recorded", locale)}</span
-                        ></span
-                      >
                     {/if}
-                    {#if event.has_changes}
-                      <a
-                        class="ui-button ui-button--ghost ui-button--sm show-diff"
-                        href={`/app/admin/audit/${event.id}`}
-                        aria-label={t("Show diff", locale)}
-                        title={t("Show diff", locale)}
-                      >
-                        <NavIcon name="diff" />
-                      </a>
-                    {/if}
+                    <a
+                      class="ui-button ui-button--ghost ui-button--sm show-diff"
+                      href={`/app/admin/audit/${event.id}`}
+                      aria-label={event.has_changes
+                        ? t("Show diff", locale)
+                        : t("Show details", locale)}
+                      title={event.has_changes
+                        ? t("Show diff", locale)
+                        : t("Show details", locale)}
+                    >
+                      <NavIcon name={event.has_changes ? "diff" : "info"} />
+                    </a>
                   </div>
                 </div>
               </li>
@@ -839,21 +820,6 @@
   .actor-identity :global(.user-avatar) {
     flex: none;
   }
-  .client-chip {
-    display: flex;
-    min-width: 0;
-    align-items: center;
-    gap: 0.3rem;
-    margin-top: 0.1rem;
-    font-size: 0.78rem;
-    line-height: 1.2;
-  }
-  .client-name {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
   .event-meta {
     grid-area: meta;
     display: grid;
@@ -874,11 +840,6 @@
     min-height: 44px;
     align-items: center;
     justify-content: end;
-  }
-  .no-details {
-    color: var(--ink-muted);
-    font-size: 0.8rem;
-    text-align: right;
   }
   .show-diff {
     width: 44px;
@@ -1017,6 +978,23 @@
   .event-row + .event-row {
     border-top: 0;
   }
+  .event-row {
+    isolation: isolate;
+  }
+  .event-row::after {
+    content: "";
+    position: absolute;
+    inset: 0.15rem 0 0.15rem 2.85rem;
+    z-index: -1;
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+  }
+  .event-row:hover {
+    background: transparent;
+  }
+  .event-row:hover::after {
+    background: var(--surface-raised);
+  }
   .event-row::before {
     content: "";
     position: absolute;
@@ -1091,9 +1069,6 @@
     align-items: center;
     gap: 0.25rem 0.65rem;
     font-size: 0.82rem;
-  }
-  .client-chip {
-    margin-top: 0;
   }
   .event-meta {
     align-self: start;

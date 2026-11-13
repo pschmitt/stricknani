@@ -716,10 +716,7 @@ export async function uiPartC(ctx: UiCtx): Promise<void> {
   ).replace(/\s+/g, " ");
   const latestActor = historyRows.first().locator(".entry-actor .user-label");
   check(
-    (await latestActor.locator(".user-label__prefix").textContent()) ===
-      "by " &&
-      (await latestActor.locator(".user-label__name").textContent()) ===
-        "You" &&
+    (await latestActor.locator(".user-label__name").textContent()) === "You" &&
       (await latestActor.locator(".user-avatar").count()) === 1,
     `a Recent changes entry did not show its actor avatar and name: ${latestEntryText.slice(0, 80)}`,
   );

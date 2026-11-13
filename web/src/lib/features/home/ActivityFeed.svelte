@@ -417,6 +417,18 @@
     color: var(--node-ink);
     background: color-mix(in srgb, var(--node-ink) 14%, var(--surface));
   }
+  @media (prefers-reduced-motion: no-preference) {
+    .tl__node,
+    .tl__thumb {
+      transition: transform 200ms cubic-bezier(0.3, 1.6, 0.5, 1);
+    }
+    a.tl__row:hover .tl__node,
+    a.tl__row:focus-visible .tl__node,
+    a.tl__row:hover .tl__thumb,
+    a.tl__row:focus-visible .tl__thumb {
+      transform: translateY(-3px) rotate(-1.5deg);
+    }
+  }
   .tl__node :global(svg),
   .tl__node svg {
     width: 1.1rem;

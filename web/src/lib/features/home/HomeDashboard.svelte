@@ -491,6 +491,17 @@
     list-style: none;
   }
 
+  @media (prefers-reduced-motion: no-preference) {
+    .recent-list :global(.resource-card__image) {
+      transition: transform 200ms cubic-bezier(0.3, 1.6, 0.5, 1);
+    }
+    .recent-list :global(a.resource-card__link:hover .resource-card__image),
+    .recent-list
+      :global(a.resource-card__link:focus-visible .resource-card__image) {
+      transform: translateY(-3px) rotate(-1.5deg);
+    }
+  }
+
   .home-hint {
     display: flex;
     align-items: center;
