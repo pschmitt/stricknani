@@ -434,11 +434,18 @@ export async function runSharingJourney(
     await beaPage.goto(`${origin}/app/projects`, { waitUntil: "networkidle" });
     const card = beaPage.getByRole("link", { name: /Shared Cardigan/ }).first();
     await card.waitFor({ state: "visible" });
-    await beaPage
-      .getByTestId("owner-badge")
-      .filter({ hasText: /olga/i })
-      .first()
-      .waitFor();
+    const ownerBadge = card.getByRole("img", { name: /olga/i });
+    await ownerBadge.waitFor({ state: "visible" });
+    check(
+      /(?:Owned by|Gehört) Olga/i.test(
+        (await ownerBadge.getAttribute("aria-label")) ?? "",
+      ),
+      "the shared project card does not expose Olga as its accessible owner",
+    );
+    check(
+      (await card.getAttribute("href")) === `/app/projects/${project1}`,
+      "the shared project card does not link to its project",
+    );
     await beaPage.goto(`${origin}/app/projects/${project1}`, {
       waitUntil: "networkidle",
     });
