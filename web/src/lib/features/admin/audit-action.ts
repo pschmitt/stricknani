@@ -7,6 +7,7 @@ export type AuditActionIcon =
   | "action-upload"
   | "action-remove"
   | "action-default"
+  | "stopwatch"
   | "trash"
   | "reset";
 
@@ -81,10 +82,10 @@ const knownActions: Record<
     icon: "action-update",
     messageKey: msg("Ownership transferred"),
   },
-  timer_started: { icon: "action-create", messageKey: msg("Timer started") },
-  timer_stopped: { icon: "action-update", messageKey: msg("Timer stopped") },
+  timer_started: { icon: "stopwatch", messageKey: msg("Timer started") },
+  timer_stopped: { icon: "stopwatch", messageKey: msg("Timer stopped") },
   timer_total_changed: {
-    icon: "action-update",
+    icon: "stopwatch",
     messageKey: msg("Knitting time changed"),
   },
   photo_promoted: {
@@ -176,7 +177,8 @@ export function auditActionPresentation(
 /**
  * The colour family of an action, shared by the audit log badges, the project history and the
  * home feed (Android: `AuditActionKind.tone`). Red (`delete`) is reserved for deletion: trashing,
- * deleting and purging. Stopping a share is not destructive, so it stays neutral.
+ * deleting and purging. Stopping a share is not destructive, and a timer is bookkeeping, not a
+ * change of the project: both stay neutral.
  */
 export type AuditActionTone =
   "create" | "update" | "upload" | "delete" | "other";

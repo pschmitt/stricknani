@@ -14,7 +14,7 @@
   //   locale  Locale for "You", "System", ... .
   //   size    `inline` (1.1rem avatar, inside a sentence or a meta line), `compact` (1.4rem,
   //           the default: list rows) or `regular` (2.25rem, headers and cards).
-  //   by      Word it as an author ("by You", "by Anika Bergmann", "by an administrator").
+  //   by      Kept for callers that ask for the author wording; it is the plain label (no "by").
   //           For other sentences with people in them use `UserSentence`.
   //
   // The text is never an email: names come from the server's display-name helper.

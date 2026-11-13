@@ -30,7 +30,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -45,21 +45,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import blue.anika.wolle.R
+import blue.anika.wolle.ui.admin.AuditTone
 import blue.anika.wolle.ui.admin.DayLabel
+import blue.anika.wolle.ui.admin.auditActionPresentation
+import blue.anika.wolle.ui.admin.color
+import blue.anika.wolle.ui.admin.tone
 import blue.anika.wolle.ui.common.PhosphorIcons
 import blue.anika.wolle.ui.common.UserLabel
 import blue.anika.wolle.ui.common.UserLabelSize
 import blue.anika.wolle.ui.history.SharingHeadline
 import blue.anika.wolle.ui.history.actionLabelText
 import blue.anika.wolle.ui.history.sharingEventLine
-import blue.anika.wolle.ui.theme.ProjectToneInk
-import blue.anika.wolle.ui.theme.ProjectToneInkNight
-import blue.anika.wolle.ui.theme.ProjectToneWash
-import blue.anika.wolle.ui.theme.ProjectToneWashNight
-import blue.anika.wolle.ui.theme.YarnToneInk
-import blue.anika.wolle.ui.theme.YarnToneInkNight
-import blue.anika.wolle.ui.theme.YarnToneWash
-import blue.anika.wolle.ui.theme.YarnToneWashNight
 import blue.anika.wolle.ui.trash.daysLeft
 import blue.anika.wolle.ui.trash.daysLeftText
 import coil3.compose.AsyncImage
@@ -351,25 +347,20 @@ private fun TimelineEntry(
 }
 
 /**
- * The rail node: a circle tinted by the kind of resource (projects marigold, yarns teal, like the
- * web's `--tone-projects` and `--tone-yarns`), carrying the action's icon. Red is reserved for
- * deletion, as on the web.
+ * The rail node: a circle tinted by what happened, with the web's colours (created and restored
+ * green, updated blue, uploads marigold, deletion red, timers, shares and the rest neutral),
+ * carrying the action's icon. Red is reserved for deletion.
  */
 @Composable
 private fun TimelineNode(row: ActivityRowModel) {
     val colors = MaterialTheme.colorScheme
-    val dark = colors.background.luminance() < 0.5f
-    val destructive = row.icon == ActivityIconKind.Trash || row.icon == ActivityIconKind.Minus
+    val tone = auditActionPresentation(row.action, row.system).kind.tone()
     val (container, content) =
         when {
-            destructive -> colors.errorContainer to colors.onErrorContainer
+            tone == AuditTone.Red -> colors.errorContainer to colors.onErrorContainer
             row.deleted -> colors.surfaceContainerHighest to colors.onSurfaceVariant
-            row.isYarn ->
-                (if (dark) YarnToneWashNight else YarnToneWash) to
-                    (if (dark) YarnToneInkNight else YarnToneInk)
-            else ->
-                (if (dark) ProjectToneWashNight else ProjectToneWash) to
-                    (if (dark) ProjectToneInkNight else ProjectToneInk)
+            tone == AuditTone.Muted -> colors.surfaceContainerHighest to colors.onSurface
+            else -> tone.color().copy(alpha = 0.16f).compositeOver(colors.surface) to tone.color()
         }
     Box(
         Modifier.size(NODE_SIZE).clip(CircleShape).background(container),

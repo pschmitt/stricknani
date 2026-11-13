@@ -57,22 +57,11 @@ export function userLabelText(user: UserRef, locale?: Locale): string {
 }
 
 /**
- * "by You", "by Anika Bergmann", "by an administrator", "by System": the actor of an entry as a
- * phrase. Separate messages so German can decline them ("von dir", "von einem Administrator").
+ * The actor of an entry, worded like the label itself ("You", "Anika Bergmann", "an
+ * administrator", "System"): no "by" in front, the avatar and the position say who did it.
  */
 export function userByText(user: UserRef, locale?: Locale): string {
-  switch (user.kind) {
-    case "self":
-      return t("by You", locale);
-    case "admin":
-      return t("by an administrator", locale);
-    case "system":
-      return t("by System", locale);
-    case "unknown":
-      return t("by Unknown", locale);
-    case "user":
-      return `${t("by", locale)} ${userLabelText(user, locale)}`;
-  }
+  return userLabelText(user, locale);
 }
 
 /** A piece of a sentence: plain text, or a person to render as a `UserLabel`. */

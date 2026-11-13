@@ -112,8 +112,9 @@ describe("actionTone", () => {
     expect(actionTone("photo_uploaded")).toBe("upload");
     expect(actionTone("mystery")).toBe("other");
     // Red is for deletion only: timers and stopped shares never read as destructive.
-    expect(actionTone("timer_started")).toBe("create");
-    expect(actionTone("timer_stopped")).toBe("update");
+    expect(actionTone("timer_started")).toBe("other");
+    expect(actionTone("timer_stopped")).toBe("other");
+    expect(actionTone("timer_total_changed")).toBe("other");
     expect(actionTone("share_revoked")).toBe("other");
     expect(actionTone("share_left")).toBe("other");
     expect(actionTone("trashed")).toBe("delete");

@@ -254,7 +254,7 @@ msgstr "noch 1 Tag"
 msgid "1 filter suggestion"
 msgstr "1 Filtervorschlag"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:803
+#: web/src/lib/features/projects/ProjectTimer.svelte:805
 msgid "1 hour"
 msgstr "1 Stunde"
 
@@ -262,11 +262,11 @@ msgstr "1 Stunde"
 msgid "1 linked yarn"
 msgstr "1 verknüpftes Garn"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:804
+#: web/src/lib/features/projects/ProjectTimer.svelte:806
 msgid "2 hours"
 msgstr "2 Stunden"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:802
+#: web/src/lib/features/projects/ProjectTimer.svelte:804
 msgid "30 minutes"
 msgstr "30 Minuten"
 
@@ -368,8 +368,8 @@ msgstr ""
 msgid "AI enhanced"
 msgstr "Mit KI ergänzt"
 
-#: web/src/lib/features/history/history-summary.ts:61
-#: web/src/lib/features/history/history-summary.ts:79
+#: web/src/lib/features/history/history-summary.ts:44
+#: web/src/lib/features/history/history-summary.ts:62
 msgid "AI enhancement"
 msgstr "KI-Ergänzung"
 
@@ -556,15 +556,15 @@ msgstr "Garn hinzufügen"
 msgid "Added"
 msgstr "Hinzugefügt"
 
-#: web/src/lib/features/history/history-summary.ts:110
+#: web/src/lib/features/history/history-summary.ts:93
 msgid "Added a photo"
 msgstr "Foto hinzugefügt"
 
-#: web/src/lib/features/history/history-summary.ts:117
+#: web/src/lib/features/history/history-summary.ts:100
 msgid "Added a step"
 msgstr "Schritt hinzugefügt"
 
-#: web/src/lib/features/history/history-summary.ts:124
+#: web/src/lib/features/history/history-summary.ts:107
 msgid "Added an attachment"
 msgstr "Anhang hinzugefügt"
 
@@ -573,17 +573,17 @@ msgstr "Anhang hinzugefügt"
 msgid "Added {date}"
 msgstr "Hinzugefügt am {date}"
 
-#: web/src/lib/features/history/history-summary.ts:128
+#: web/src/lib/features/history/history-summary.ts:111
 #, python-brace-format
 msgid "Added {n} attachments"
 msgstr "{n} Anhänge hinzugefügt"
 
-#: web/src/lib/features/history/history-summary.ts:112
+#: web/src/lib/features/history/history-summary.ts:95
 #, python-brace-format
 msgid "Added {n} photos"
 msgstr "{n} Fotos hinzugefügt"
 
-#: web/src/lib/features/history/history-summary.ts:119
+#: web/src/lib/features/history/history-summary.ts:102
 #, python-brace-format
 msgid "Added {n} steps"
 msgstr "{n} Schritte hinzugefügt"
@@ -600,7 +600,7 @@ msgstr ""
 "Fügt die Projekte, Garne und Fotos aus einem Stricknani-Download als neue"
 " Einträge hinzu. Bestehendes bleibt unverändert."
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:715
+#: web/src/lib/features/projects/ProjectTimer.svelte:718
 msgid "Adjust total time"
 msgstr "Gesamtzeit anpassen"
 
@@ -831,23 +831,23 @@ msgstr "Anhang"
 msgid "Attachment count"
 msgstr "Anzahl Anhänge"
 
-#: web/src/lib/features/admin/audit-action.ts:65
+#: web/src/lib/features/admin/audit-action.ts:66
 msgid "Attachment deleted"
 msgstr "Anhang gelöscht"
 
-#: web/src/lib/features/admin/audit-action.ts:130
+#: web/src/lib/features/admin/audit-action.ts:131
 msgid "Attachment deleted forever"
 msgstr "Anhang endgültig gelöscht"
 
-#: web/src/lib/features/admin/audit-action.ts:120
+#: web/src/lib/features/admin/audit-action.ts:121
 msgid "Attachment moved to trash"
 msgstr "Anhang in den Papierkorb verschoben"
 
-#: web/src/lib/features/admin/audit-action.ts:125
+#: web/src/lib/features/admin/audit-action.ts:126
 msgid "Attachment restored from trash"
 msgstr "Anhang aus dem Papierkorb wiederhergestellt"
 
-#: web/src/lib/features/admin/audit-action.ts:61
+#: web/src/lib/features/admin/audit-action.ts:62
 msgid "Attachment uploaded"
 msgstr "Anhang hochgeladen"
 
@@ -940,7 +940,7 @@ msgid "Back to yarns"
 msgstr "Zurück zu den Garnen"
 
 #: web/src/lib/features/admin/RestoreBackupDialog.svelte:318
-#: web/src/lib/features/admin/audit-action.ts:98
+#: web/src/lib/features/admin/audit-action.ts:99
 msgid "Backup restored"
 msgstr "Backup wiederhergestellt"
 
@@ -1042,7 +1042,7 @@ msgstr "Wird berechnet …"
 msgid "Calculation results"
 msgstr "Berechnungsergebnisse"
 
-#: web/src/lib/features/history/history-summary.ts:223
+#: web/src/lib/features/history/history-summary.ts:206
 #: web/src/lib/features/sharing/AccessNotice.svelte:38
 #: web/src/lib/features/sharing/ShareDialog.svelte:87
 #: web/src/lib/features/sharing/ShareDialog.svelte:294
@@ -1050,7 +1050,7 @@ msgstr "Berechnungsergebnisse"
 msgid "Can edit"
 msgstr "Kann bearbeiten"
 
-#: web/src/lib/features/history/history-summary.ts:223
+#: web/src/lib/features/history/history-summary.ts:206
 #: web/src/lib/features/sharing/AccessNotice.svelte:38
 #: web/src/lib/features/sharing/ShareDialog.svelte:87
 #: web/src/lib/features/sharing/ShareDialog.svelte:293
@@ -1078,8 +1078,8 @@ msgstr "Kann ansehen"
 #: web/src/lib/features/projects/ProjectEditor.svelte:2575
 #: web/src/lib/features/projects/ProjectEditor.svelte:2657
 #: web/src/lib/features/projects/ProjectReader.svelte:1526
-#: web/src/lib/features/projects/ProjectTimer.svelte:695
-#: web/src/lib/features/projects/ProjectTimer.svelte:751
+#: web/src/lib/features/projects/ProjectTimer.svelte:699
+#: web/src/lib/features/projects/ProjectTimer.svelte:754
 #: web/src/lib/features/sharing/AccessNotice.svelte:135
 #: web/src/lib/features/sharing/TransferDialog.svelte:135
 #: web/src/lib/features/yarns/YarnForm.svelte:1314
@@ -1148,7 +1148,7 @@ msgstr "Größe der Maschenprobe ändern"
 msgid "Changed"
 msgstr "Geändert"
 
-#: web/src/lib/features/history/history-summary.ts:184
+#: web/src/lib/features/history/history-summary.ts:167
 #, python-brace-format
 msgid "Changed {fields}"
 msgstr "{fields} geändert"
@@ -1478,7 +1478,7 @@ msgstr "Abendle!"
 msgid "Could not sign out."
 msgstr "Abmelden nicht möglich."
 
-#: web/src/lib/features/admin/audit-action.ts:92
+#: web/src/lib/features/admin/audit-action.ts:93
 msgid "Cover photo changed"
 msgstr "Coverfoto geändert"
 
@@ -1521,7 +1521,7 @@ msgstr "Benutzer erstellen"
 #: web/src/lib/features/account/AccountSettings.svelte:1541
 #: web/src/lib/features/admin/AdminResource.svelte:452
 #: web/src/lib/features/admin/AdminResource.svelte:653
-#: web/src/lib/features/admin/audit-action.ts:29
+#: web/src/lib/features/admin/audit-action.ts:30
 msgid "Created"
 msgstr "Erstellt"
 
@@ -1645,7 +1645,7 @@ msgstr "Dein Konto löschen"
 msgid "Delete your account?"
 msgstr "Dein Konto löschen?"
 
-#: web/src/lib/features/admin/audit-action.ts:35
+#: web/src/lib/features/admin/audit-action.ts:36
 msgid "Deleted forever"
 msgstr "Endgültig gelöscht"
 
@@ -1658,7 +1658,7 @@ msgstr ""
 "Gelöschte Elemente bleiben hier {days} Tage lang. Stelle sie wieder her "
 "oder lösche sie endgültig."
 
-#: web/src/lib/features/admin/audit-action.ts:32
+#: web/src/lib/features/admin/audit-action.ts:33
 #: web/src/lib/features/trash/trash-state.ts:104
 msgid "Deleted permanently"
 msgstr "Endgültig gelöscht"
@@ -1881,7 +1881,7 @@ msgstr "Foto bearbeiten"
 msgid "Edit project"
 msgstr "Projekt bearbeiten"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:770
+#: web/src/lib/features/projects/ProjectTimer.svelte:773
 msgid "Edit time"
 msgstr "Bearbeiten"
 
@@ -2398,8 +2398,8 @@ msgstr ""
 msgid "Home"
 msgstr "Start"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:717
-#: web/src/lib/features/projects/ProjectTimer.svelte:718
+#: web/src/lib/features/projects/ProjectTimer.svelte:720
+#: web/src/lib/features/projects/ProjectTimer.svelte:721
 msgid "Hours"
 msgstr "Stunden"
 
@@ -2485,19 +2485,19 @@ msgstr "Bild"
 msgid "Image count"
 msgstr "Anzahl Fotos"
 
-#: web/src/lib/features/admin/audit-action.ts:67
+#: web/src/lib/features/admin/audit-action.ts:68
 msgid "Image deleted"
 msgstr "Bild gelöscht"
 
-#: web/src/lib/features/admin/audit-action.ts:129
+#: web/src/lib/features/admin/audit-action.ts:130
 msgid "Image deleted forever"
 msgstr "Bild endgültig gelöscht"
 
-#: web/src/lib/features/admin/audit-action.ts:119
+#: web/src/lib/features/admin/audit-action.ts:120
 msgid "Image moved to trash"
 msgstr "Bild in den Papierkorb verschoben"
 
-#: web/src/lib/features/admin/audit-action.ts:124
+#: web/src/lib/features/admin/audit-action.ts:125
 msgid "Image restored from trash"
 msgstr "Bild aus dem Papierkorb wiederhergestellt"
 
@@ -2515,13 +2515,13 @@ msgid "Impersonate this account?"
 msgstr "Die Identität dieses Kontos übernehmen?"
 
 #: web/src/lib/features/admin/audit-people.ts:75
-#: web/src/lib/features/history/history-summary.ts:334
+#: web/src/lib/features/history/history-summary.ts:317
 #, python-brace-format
 msgid "Impersonation by {admin} started"
 msgstr "Identitätswechsel durch {admin} gestartet"
 
 #: web/src/lib/features/admin/audit-people.ts:77
-#: web/src/lib/features/history/history-summary.ts:336
+#: web/src/lib/features/history/history-summary.ts:319
 #, python-brace-format
 msgid "Impersonation by {admin} stopped"
 msgstr "Identitätswechsel durch {admin} beendet"
@@ -2538,11 +2538,11 @@ msgstr "Der Identitätswechsel konnte nicht beendet werden. Versuche es erneut."
 msgid "Impersonation has ended. Reload the page to continue."
 msgstr "Der Identitätswechsel ist beendet. Lade die Seite neu, um fortzufahren."
 
-#: web/src/lib/features/admin/audit-action.ts:101
+#: web/src/lib/features/admin/audit-action.ts:102
 msgid "Impersonation started"
 msgstr "Identitätswechsel gestartet"
 
-#: web/src/lib/features/admin/audit-action.ts:105
+#: web/src/lib/features/admin/audit-action.ts:106
 msgid "Impersonation stopped"
 msgstr "Identitätswechsel beendet"
 
@@ -2780,12 +2780,12 @@ msgstr "Strickprojekt"
 msgid "Knitting time"
 msgstr "Strickzeit"
 
-#: web/src/lib/features/admin/audit-action.ts:88
-#: web/src/lib/features/history/history-summary.ts:304
+#: web/src/lib/features/admin/audit-action.ts:89
+#: web/src/lib/features/history/history-summary.ts:287
 msgid "Knitting time changed"
 msgstr "Strickzeit geändert"
 
-#: web/src/lib/features/history/history-summary.ts:300
+#: web/src/lib/features/history/history-summary.ts:283
 #, python-brace-format
 msgid "Knitting time changed to {time}"
 msgstr "Strickzeit geändert auf {time}"
@@ -2857,7 +2857,7 @@ msgstr "Projekt ohne Speichern verlassen?"
 msgid "Leave without saving your yarn changes?"
 msgstr "Garnänderungen ohne Speichern verlassen?"
 
-#: web/src/lib/features/admin/audit-action.ts:78
+#: web/src/lib/features/admin/audit-action.ts:79
 msgid "Left the shared item"
 msgstr "Geteiltes verlassen"
 
@@ -3020,7 +3020,7 @@ msgstr "Passkeys werden geladen…"
 msgid "Loading project details…"
 msgstr "Projektdetails werden geladen …"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:170
+#: web/src/lib/features/home/ActivityFeed.svelte:171
 msgid "Loading recent activity…"
 msgstr "Letzte Aktivität wird geladen…"
 
@@ -3158,8 +3158,8 @@ msgstr "Mitglied"
 msgid "Mine"
 msgstr "Meine"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:727
-#: web/src/lib/features/projects/ProjectTimer.svelte:728
+#: web/src/lib/features/projects/ProjectTimer.svelte:730
+#: web/src/lib/features/projects/ProjectTimer.svelte:731
 msgid "Minutes"
 msgstr "Minuten"
 
@@ -3252,7 +3252,7 @@ msgstr "Verschoben"
 msgid "Moved to the trash."
 msgstr "In den Papierkorb verschoben."
 
-#: web/src/lib/features/admin/audit-action.ts:33
+#: web/src/lib/features/admin/audit-action.ts:34
 msgid "Moved to trash"
 msgstr "In den Papierkorb verschoben"
 
@@ -3563,7 +3563,7 @@ msgstr "Nichts gefunden"
 msgid "Nothing on the needles yet"
 msgstr "Noch nichts auf den Nadeln"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:181
+#: web/src/lib/features/home/ActivityFeed.svelte:182
 msgid "Nothing yet - your changes will show up here."
 msgstr "Noch nichts – deine Änderungen erscheinen hier."
 
@@ -3588,7 +3588,7 @@ msgstr "Jetzt"
 msgid "Numbered list"
 msgstr "Nummerierte Liste"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:801
+#: web/src/lib/features/projects/ProjectTimer.svelte:803
 msgid "Off"
 msgstr "Aus"
 
@@ -3710,7 +3710,7 @@ msgstr "Öffne das Projekt, um den Timer zu stoppen oder weiterlaufen zu lassen.
 
 #: web/src/lib/features/admin/AuditLifecycle.svelte:106
 #: web/src/lib/features/admin/AuditLifecycle.svelte:113
-#: web/src/lib/features/home/ActivityFeed.svelte:285
+#: web/src/lib/features/home/ActivityFeed.svelte:282
 msgid "Open trash"
 msgstr "Papierkorb öffnen"
 
@@ -3797,7 +3797,7 @@ msgstr "Eigentümer"
 
 #: web/src/lib/features/admin/AuditLifecycle.svelte:95
 #: web/src/lib/features/history/HistorySection.svelte:333
-#: web/src/lib/features/home/ActivityFeed.svelte:243
+#: web/src/lib/features/home/ActivityFeed.svelte:241
 #: web/src/lib/features/projects/ProjectReader.svelte:1159
 #: web/src/lib/features/trash/TrashManager.svelte:372
 #: web/src/lib/features/trash/trash-state.ts:113
@@ -3817,7 +3817,7 @@ msgstr ""
 "Der Besitz geht sofort an die gewählte Person. Du bleibst Bearbeiter und "
 "kannst später austreten."
 
-#: web/src/lib/features/admin/audit-action.ts:82
+#: web/src/lib/features/admin/audit-action.ts:83
 msgid "Ownership transferred"
 msgstr "Besitz übertragen"
 
@@ -4010,11 +4010,11 @@ msgstr "Foto"
 msgid "Photo count"
 msgstr "Anzahl Fotos"
 
-#: web/src/lib/features/admin/audit-action.ts:69
+#: web/src/lib/features/admin/audit-action.ts:70
 msgid "Photo deleted"
 msgstr "Foto gelöscht"
 
-#: web/src/lib/features/admin/audit-action.ts:131
+#: web/src/lib/features/admin/audit-action.ts:132
 msgid "Photo deleted forever"
 msgstr "Foto endgültig gelöscht"
 
@@ -4023,7 +4023,7 @@ msgstr "Foto endgültig gelöscht"
 msgid "Photo moved to position {position} of {total}."
 msgstr "Foto an Position {position} von {total} verschoben."
 
-#: web/src/lib/features/admin/audit-action.ts:121
+#: web/src/lib/features/admin/audit-action.ts:122
 msgid "Photo moved to trash"
 msgstr "Foto in den Papierkorb verschoben"
 
@@ -4031,11 +4031,11 @@ msgstr "Foto in den Papierkorb verschoben"
 msgid "Photo order"
 msgstr "Reihenfolge der Fotos"
 
-#: web/src/lib/features/admin/audit-action.ts:126
+#: web/src/lib/features/admin/audit-action.ts:127
 msgid "Photo restored from trash"
 msgstr "Foto aus dem Papierkorb wiederhergestellt"
 
-#: web/src/lib/features/admin/audit-action.ts:68
+#: web/src/lib/features/admin/audit-action.ts:69
 msgid "Photo uploaded"
 msgstr "Foto hochgeladen"
 
@@ -4311,7 +4311,7 @@ msgstr ""
 "Projekte, Garne, Kategorien, Fotos und Anhänge in einem Archiv, auch was "
 "mit dir geteilt ist."
 
-#: web/src/lib/features/admin/audit-action.ts:166
+#: web/src/lib/features/admin/audit-action.ts:167
 msgid "Purged automatically after 90 days"
 msgstr "Nach 90 Tagen automatisch gelöscht"
 
@@ -4366,8 +4366,8 @@ msgstr "Bereit zum Prüfen"
 msgid "Ready when you are"
 msgstr "Bereit, wenn du es bist"
 
-#: web/src/lib/features/home/ActivityFeed.svelte:174
-#: web/src/lib/features/home/ActivityFeed.svelte:310
+#: web/src/lib/features/home/ActivityFeed.svelte:175
+#: web/src/lib/features/home/ActivityFeed.svelte:307
 msgid "Recent activity could not be loaded."
 msgstr "Die letzte Aktivität konnte nicht geladen werden."
 
@@ -4516,35 +4516,35 @@ msgstr "Diesen Passkey entfernen?"
 msgid "Remove {name}?"
 msgstr "{name} entfernen?"
 
-#: web/src/lib/features/admin/audit-action.ts:43
+#: web/src/lib/features/admin/audit-action.ts:44
 #: web/src/lib/features/history/MediaStrip.svelte:27
 #: web/src/lib/features/history/change-format.ts:82
 msgid "Removed"
 msgstr "Entfernt"
 
-#: web/src/lib/features/history/history-summary.ts:110
+#: web/src/lib/features/history/history-summary.ts:93
 msgid "Removed a photo"
 msgstr "Foto entfernt"
 
-#: web/src/lib/features/history/history-summary.ts:117
+#: web/src/lib/features/history/history-summary.ts:100
 msgid "Removed a step"
 msgstr "Schritt entfernt"
 
-#: web/src/lib/features/history/history-summary.ts:125
+#: web/src/lib/features/history/history-summary.ts:108
 msgid "Removed an attachment"
 msgstr "Anhang entfernt"
 
-#: web/src/lib/features/history/history-summary.ts:129
+#: web/src/lib/features/history/history-summary.ts:112
 #, python-brace-format
 msgid "Removed {n} attachments"
 msgstr "{n} Anhänge entfernt"
 
-#: web/src/lib/features/history/history-summary.ts:112
+#: web/src/lib/features/history/history-summary.ts:95
 #, python-brace-format
 msgid "Removed {n} photos"
 msgstr "{n} Fotos entfernt"
 
-#: web/src/lib/features/history/history-summary.ts:119
+#: web/src/lib/features/history/history-summary.ts:102
 #, python-brace-format
 msgid "Removed {n} steps"
 msgstr "{n} Schritte entfernt"
@@ -4656,7 +4656,7 @@ msgstr "Ressource nicht verfügbar"
 #: web/src/lib/features/account/BackupsSection.svelte:493
 #: web/src/lib/features/account/BackupsSection.svelte:535
 #: web/src/lib/features/admin/AuditLifecycle.svelte:127
-#: web/src/lib/features/home/ActivityFeed.svelte:297
+#: web/src/lib/features/home/ActivityFeed.svelte:294
 #: web/src/lib/features/trash/TrashManager.svelte:400
 #: web/src/lib/features/trash/TrashedBanner.svelte:135
 msgid "Restore"
@@ -4701,7 +4701,7 @@ msgid "Restored"
 msgstr "Wiederhergestellt"
 
 #: web/src/lib/features/admin/AuditLifecycle.svelte:78
-#: web/src/lib/features/home/ActivityFeed.svelte:114
+#: web/src/lib/features/home/ActivityFeed.svelte:115
 #: web/src/lib/features/trash/TrashManager.svelte:133
 #: web/src/lib/features/trash/TrashedBanner.svelte:75
 #: web/src/lib/features/trash/trash-undo.ts:53
@@ -4709,7 +4709,7 @@ msgstr "Wiederhergestellt"
 msgid "Restored from the trash."
 msgstr "Aus dem Papierkorb wiederhergestellt."
 
-#: web/src/lib/features/admin/audit-action.ts:34
+#: web/src/lib/features/admin/audit-action.ts:35
 msgid "Restored from trash"
 msgstr "Aus dem Papierkorb wiederhergestellt"
 
@@ -4726,7 +4726,7 @@ msgstr "Wiederherstellen …"
 #: web/src/lib/features/account/BackupsSection.svelte:401
 #: web/src/lib/features/admin/AuditLifecycle.svelte:127
 #: web/src/lib/features/admin/RestoreBackupDialog.svelte:322
-#: web/src/lib/features/home/ActivityFeed.svelte:296
+#: web/src/lib/features/home/ActivityFeed.svelte:293
 #: web/src/lib/features/trash/TrashManager.svelte:400
 #: web/src/lib/features/trash/TrashedBanner.svelte:135
 msgid "Restoring…"
@@ -4777,7 +4777,7 @@ msgstr "Rolle"
 msgid "Role of {name}"
 msgstr "Rolle von {name}"
 
-#: web/src/lib/features/history/history-summary.ts:230
+#: web/src/lib/features/history/history-summary.ts:213
 #, python-brace-format
 msgid "Role of {name} changed to {role}"
 msgstr "Rolle von {name} geändert auf {role}"
@@ -4808,8 +4808,8 @@ msgstr "Reihen zu stricken"
 msgid "Rumour has it a cat was involved."
 msgstr "Gerüchten zufolge war eine Katze beteiligt."
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:794
 #: web/src/lib/features/projects/ProjectTimer.svelte:796
+#: web/src/lib/features/projects/ProjectTimer.svelte:798
 msgid "Running reminder"
 msgstr "Erinnerung bei laufendem Timer"
 
@@ -4846,7 +4846,7 @@ msgstr "Neues Passwort speichern"
 msgid "Save this yarn first. You can add photos as soon as it has been created."
 msgstr "Speichere dieses Garn zuerst. Danach kannst du sofort Fotos hinzufügen."
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:760
+#: web/src/lib/features/projects/ProjectTimer.svelte:763
 msgid "Save time"
 msgstr "Zeit speichern"
 
@@ -4977,8 +4977,8 @@ msgstr "Garne durchsuchen"
 msgid "Search your yarns"
 msgstr "Deine Garne durchsuchen"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:737
-#: web/src/lib/features/projects/ProjectTimer.svelte:738
+#: web/src/lib/features/projects/ProjectTimer.svelte:740
+#: web/src/lib/features/projects/ProjectTimer.svelte:741
 msgid "Seconds"
 msgstr "Sekunden"
 
@@ -5057,7 +5057,7 @@ msgstr "Link teilen"
 msgid "Share with {name}"
 msgstr "Mit {name} teilen"
 
-#: web/src/lib/features/admin/audit-action.ts:70
+#: web/src/lib/features/admin/audit-action.ts:71
 msgid "Shared"
 msgstr "Geteilt"
 
@@ -5071,7 +5071,7 @@ msgstr "Geteilt von {name}"
 msgid "Shared with me"
 msgstr "Mit mir geteilt"
 
-#: web/src/lib/features/history/history-summary.ts:227
+#: web/src/lib/features/history/history-summary.ts:210
 #, python-brace-format
 msgid "Shared with {name} · {role}"
 msgstr "Geteilt mit {name} · {role}"
@@ -5081,11 +5081,11 @@ msgstr "Geteilt mit {name} · {role}"
 msgid "Shared with {name}."
 msgstr "Mit {name} geteilt."
 
-#: web/src/lib/features/admin/audit-action.ts:73
+#: web/src/lib/features/admin/audit-action.ts:74
 msgid "Sharing role changed"
 msgstr "Freigaberolle geändert"
 
-#: web/src/lib/features/admin/audit-action.ts:75
+#: web/src/lib/features/admin/audit-action.ts:76
 msgid "Sharing stopped"
 msgstr "Teilen beendet"
 
@@ -5113,7 +5113,7 @@ msgid "Show fewer"
 msgstr "Weniger anzeigen"
 
 #: web/src/lib/components/CommandPalette.svelte:344
-#: web/src/lib/features/home/ActivityFeed.svelte:318
+#: web/src/lib/features/home/ActivityFeed.svelte:315
 #: web/src/lib/features/sharing/PeoplePicker.svelte:149
 msgid "Show more"
 msgstr "Mehr anzeigen"
@@ -5337,8 +5337,8 @@ msgstr "Quellcode auf GitHub"
 msgid "Sponsor on GitHub"
 msgstr "Auf GitHub unterstützen"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:702
-#: web/src/lib/features/projects/ProjectTimer.svelte:786
+#: web/src/lib/features/projects/ProjectTimer.svelte:705
+#: web/src/lib/features/projects/ProjectTimer.svelte:788
 msgid "Start"
 msgstr "Start"
 
@@ -5387,19 +5387,19 @@ msgstr "Schritt"
 msgid "Step count"
 msgstr "Anzahl Schritte"
 
-#: web/src/lib/features/admin/audit-action.ts:44
+#: web/src/lib/features/admin/audit-action.ts:45
 msgid "Step created"
 msgstr "Schritt erstellt"
 
-#: web/src/lib/features/admin/audit-action.ts:46
+#: web/src/lib/features/admin/audit-action.ts:47
 msgid "Step deleted"
 msgstr "Schritt gelöscht"
 
-#: web/src/lib/features/admin/audit-action.ts:40
+#: web/src/lib/features/admin/audit-action.ts:41
 msgid "Step deleted forever"
 msgstr "Schritt endgültig gelöscht"
 
-#: web/src/lib/features/admin/audit-action.ts:57
+#: web/src/lib/features/admin/audit-action.ts:58
 msgid "Step image uploaded"
 msgstr "Schrittbild hochgeladen"
 
@@ -5407,7 +5407,7 @@ msgstr "Schrittbild hochgeladen"
 msgid "Step instructions"
 msgstr "Schrittanleitung"
 
-#: web/src/lib/features/admin/audit-action.ts:36
+#: web/src/lib/features/admin/audit-action.ts:37
 msgid "Step moved to trash"
 msgstr "Schritt in den Papierkorb verschoben"
 
@@ -5426,7 +5426,7 @@ msgstr "Schrittfotos"
 msgid "Step picture order"
 msgstr "Reihenfolge der Schrittbilder"
 
-#: web/src/lib/features/admin/audit-action.ts:37
+#: web/src/lib/features/admin/audit-action.ts:38
 msgid "Step restored from trash"
 msgstr "Schritt aus dem Papierkorb wiederhergestellt"
 
@@ -5434,7 +5434,7 @@ msgstr "Schritt aus dem Papierkorb wiederhergestellt"
 msgid "Step title"
 msgstr "Schritttitel"
 
-#: web/src/lib/features/admin/audit-action.ts:45
+#: web/src/lib/features/admin/audit-action.ts:46
 msgid "Step updated"
 msgstr "Schritt aktualisiert"
 
@@ -5462,7 +5462,7 @@ msgstr "Noch wach?"
 msgid "Still knitting?"
 msgstr "Noch am Stricken?"
 
-#: web/src/lib/features/admin/audit-action.ts:53
+#: web/src/lib/features/admin/audit-action.ts:54
 msgid "Stitch sample image uploaded"
 msgstr "Maschenprobenbild hochgeladen"
 
@@ -5475,7 +5475,7 @@ msgstr "Maschen"
 msgid "Stitches to cast on"
 msgstr "Anschlagmaschen"
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:778
+#: web/src/lib/features/projects/ProjectTimer.svelte:781
 msgid "Stop"
 msgstr "Stop"
 
@@ -5487,7 +5487,7 @@ msgstr "Identitätswechsel beenden"
 msgid "Stop timer"
 msgstr "Timer stoppen"
 
-#: web/src/lib/features/history/history-summary.ts:233
+#: web/src/lib/features/history/history-summary.ts:216
 #, python-brace-format
 msgid "Stopped sharing with {name}"
 msgstr "Teilen mit {name} beendet"
@@ -6592,7 +6592,7 @@ msgstr "Dieses Projekt enthält KI-gestützte Angaben."
 msgid "This project is in the trash."
 msgstr "Dieses Projekt ist im Papierkorb."
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:684
+#: web/src/lib/features/projects/ProjectTimer.svelte:688
 msgid ""
 "This project is marked as done. Starting the timer sets it back to in "
 "progress."
@@ -6673,17 +6673,17 @@ msgstr ""
 "Zeit zum Abketten? Dein Stricknani-Konto kannst du selbst auftrennen, in "
 "etwa einer Minute. Ohne E-Mail und ohne auf jemanden zu warten."
 
-#: web/src/lib/features/admin/audit-action.ts:84
-#: web/src/lib/features/history/history-summary.ts:290
+#: web/src/lib/features/admin/audit-action.ts:85
+#: web/src/lib/features/history/history-summary.ts:273
 msgid "Timer started"
 msgstr "Timer gestartet"
 
-#: web/src/lib/features/admin/audit-action.ts:85
-#: web/src/lib/features/history/history-summary.ts:297
+#: web/src/lib/features/admin/audit-action.ts:86
+#: web/src/lib/features/history/history-summary.ts:280
 msgid "Timer stopped"
 msgstr "Timer gestoppt"
 
-#: web/src/lib/features/history/history-summary.ts:293
+#: web/src/lib/features/history/history-summary.ts:276
 #, python-brace-format
 msgid "Timer stopped · {time}"
 msgstr "Timer gestoppt · {time}"
@@ -6698,11 +6698,11 @@ msgstr "Timer sind auf diesem Server noch nicht verfügbar."
 msgid "Tip: a missing page is just a very large yarn over."
 msgstr "Tipp: Eine fehlende Seite ist nur ein sehr großer Umschlag."
 
-#: web/src/lib/features/admin/audit-action.ts:96
+#: web/src/lib/features/admin/audit-action.ts:97
 msgid "Title image changed"
 msgstr "Titelbild geändert"
 
-#: web/src/lib/features/admin/audit-action.ts:49
+#: web/src/lib/features/admin/audit-action.ts:50
 msgid "Title image uploaded"
 msgstr "Titelbild hochgeladen"
 
@@ -6786,7 +6786,7 @@ msgstr "Besitz übertragen"
 msgid "Transfer to {name}"
 msgstr "An {name} übertragen"
 
-#: web/src/lib/features/history/history-summary.ts:239
+#: web/src/lib/features/history/history-summary.ts:222
 #, python-brace-format
 msgid "Transferred to {name}"
 msgstr "An {name} übertragen"
@@ -6821,8 +6821,8 @@ msgstr ""
 #: web/src/lib/features/categories/CategoryManager.svelte:241
 #: web/src/lib/features/history/HistoryEventDetail.svelte:68
 #: web/src/lib/features/history/HistorySection.svelte:260
-#: web/src/lib/features/home/ActivityFeed.svelte:176
-#: web/src/lib/features/home/ActivityFeed.svelte:312
+#: web/src/lib/features/home/ActivityFeed.svelte:177
+#: web/src/lib/features/home/ActivityFeed.svelte:309
 #: web/src/lib/features/home/ContinueCarousel.svelte:163
 #: web/src/lib/features/home/HomeDashboard.svelte:196
 #: web/src/lib/features/media/ArchiveControl.svelte:513
@@ -6937,7 +6937,7 @@ msgstr "Na, schon wach?"
 #: web/src/lib/features/admin/AdminResource.svelte:395
 #: web/src/lib/features/admin/AdminResource.svelte:456
 #: web/src/lib/features/admin/AdminResource.svelte:657
-#: web/src/lib/features/admin/audit-action.ts:30
+#: web/src/lib/features/admin/audit-action.ts:31
 #: web/src/lib/features/home/ContinueCarousel.svelte:199
 #: web/src/lib/features/projects/ProjectReader.svelte:1142
 #: web/src/lib/features/yarns/YarnDetail.svelte:442
@@ -6952,7 +6952,7 @@ msgstr "Datei hochladen"
 msgid "Upload picture"
 msgstr "Bild hochladen"
 
-#: web/src/lib/features/admin/audit-action.ts:42
+#: web/src/lib/features/admin/audit-action.ts:43
 msgid "Uploaded"
 msgstr "Hochgeladen"
 
@@ -7712,9 +7712,9 @@ msgstr "Dein Arbeitsbereich braucht noch einen Moment."
 msgid "Your yarns could not be loaded."
 msgstr "Deine Garne konnten nicht geladen werden."
 
-#: web/src/lib/features/history/history-summary.ts:219
+#: web/src/lib/features/history/history-summary.ts:202
 #: web/src/lib/features/home/activity.ts:308
-#: web/src/lib/features/trash/trash-state.ts:115 web/src/lib/user-label.ts:167
+#: web/src/lib/features/trash/trash-state.ts:115 web/src/lib/user-label.ts:156
 msgid "a deleted account"
 msgstr "ein gelöschtes Konto"
 
@@ -7738,29 +7738,13 @@ msgstr "und"
 msgid "attachments"
 msgstr "Anhänge"
 
-#: web/src/lib/features/history/history-summary.ts:70
+#: web/src/lib/features/history/history-summary.ts:53
 msgid "brand"
 msgstr "Marke"
 
-#: web/src/lib/user-label.ts:70
-msgid "by System"
-msgstr "vom System"
-
-#: web/src/lib/user-label.ts:72
-msgid "by Unknown"
-msgstr "von Unbekannt"
-
-#: web/src/lib/user-label.ts:66
-msgid "by You"
-msgstr "von dir"
-
-#: web/src/lib/user-label.ts:68
-msgid "by an administrator"
-msgstr "von einem Administrator"
-
 #: web/src/lib/features/admin/audit-people.ts:64
 #: web/src/lib/features/history/HistorySection.svelte:322
-#: web/src/lib/features/history/history-summary.ts:347
+#: web/src/lib/features/history/history-summary.ts:330
 #, python-brace-format
 msgid "by {admin} as {user}"
 msgstr "von {admin} als {user}"
@@ -7769,15 +7753,15 @@ msgstr "von {admin} als {user}"
 msgid "categories"
 msgstr "Kategorien"
 
-#: web/src/lib/features/history/history-summary.ts:51
+#: web/src/lib/features/history/history-summary.ts:34
 msgid "category"
 msgstr "Kategorie"
 
-#: web/src/lib/features/history/history-summary.ts:71
+#: web/src/lib/features/history/history-summary.ts:54
 msgid "colorway"
 msgstr "Farbe"
 
-#: web/src/lib/features/history/history-summary.ts:63
+#: web/src/lib/features/history/history-summary.ts:46
 msgid "cover picture"
 msgstr "Titelbild"
 
@@ -7785,16 +7769,16 @@ msgstr "Titelbild"
 msgid "deleted"
 msgstr "gelöscht"
 
-#: web/src/lib/features/history/history-summary.ts:56
-#: web/src/lib/features/history/history-summary.ts:69
+#: web/src/lib/features/history/history-summary.ts:39
+#: web/src/lib/features/history/history-summary.ts:52
 msgid "description"
 msgstr "Beschreibung"
 
-#: web/src/lib/features/history/history-summary.ts:72
+#: web/src/lib/features/history/history-summary.ts:55
 msgid "dye lot"
 msgstr "Partie"
 
-#: web/src/lib/features/history/history-summary.ts:73
+#: web/src/lib/features/history/history-summary.ts:56
 msgid "fiber content"
 msgstr "Faseranteil"
 
@@ -7802,7 +7786,7 @@ msgstr "Faseranteil"
 msgid "g"
 msgstr "g"
 
-#: web/src/lib/features/history/history-summary.ts:53
+#: web/src/lib/features/history/history-summary.ts:36
 msgid "linked yarns"
 msgstr "verknüpfte Garne"
 
@@ -7810,7 +7794,7 @@ msgstr "verknüpfte Garne"
 msgid "m"
 msgstr "m"
 
-#: web/src/lib/features/history/history-summary.ts:66
+#: web/src/lib/features/history/history-summary.ts:49
 msgid "main photo"
 msgstr "Hauptfoto"
 
@@ -7818,18 +7802,18 @@ msgstr "Hauptfoto"
 msgid "move"
 msgstr "bewegen"
 
-#: web/src/lib/features/history/history-summary.ts:50
-#: web/src/lib/features/history/history-summary.ts:68
-#: web/src/lib/features/history/history-summary.ts:81
+#: web/src/lib/features/history/history-summary.ts:33
+#: web/src/lib/features/history/history-summary.ts:51
+#: web/src/lib/features/history/history-summary.ts:64
 msgid "name"
 msgstr "Name"
 
-#: web/src/lib/features/history/history-summary.ts:54
+#: web/src/lib/features/history/history-summary.ts:37
 msgid "needles"
 msgstr "Nadeln"
 
-#: web/src/lib/features/history/history-summary.ts:57
-#: web/src/lib/features/history/history-summary.ts:78
+#: web/src/lib/features/history/history-summary.ts:40
+#: web/src/lib/features/history/history-summary.ts:61
 msgid "notes"
 msgstr "Notizen"
 
@@ -7856,11 +7840,11 @@ msgstr "oder Dateien hierher ziehen"
 msgid "or drop images here"
 msgstr "oder Bilder hierher ziehen"
 
-#: web/src/lib/features/history/history-summary.ts:58
+#: web/src/lib/features/history/history-summary.ts:41
 msgid "other materials"
 msgstr "weitere Materialien"
 
-#: web/src/lib/features/history/history-summary.ts:67
+#: web/src/lib/features/history/history-summary.ts:50
 msgid "photo order"
 msgstr "Fotoreihenfolge"
 
@@ -7869,11 +7853,11 @@ msgstr "Fotoreihenfolge"
 msgid "photos"
 msgstr "Fotos"
 
-#: web/src/lib/features/history/history-summary.ts:64
+#: web/src/lib/features/history/history-summary.ts:47
 msgid "picture order"
 msgstr "Bilderreihenfolge"
 
-#: web/src/lib/features/history/history-summary.ts:75
+#: web/src/lib/features/history/history-summary.ts:58
 msgid "recommended needles"
 msgstr "empfohlene Nadeln"
 
@@ -7881,29 +7865,29 @@ msgstr "empfohlene Nadeln"
 msgid "rows"
 msgstr "Reihen"
 
-#: web/src/lib/features/history/history-summary.ts:77
+#: web/src/lib/features/history/history-summary.ts:60
 msgid "skein length"
 msgstr "Lauflänge"
 
-#: web/src/lib/features/history/history-summary.ts:76
+#: web/src/lib/features/history/history-summary.ts:59
 msgid "skein weight"
 msgstr "Knäuelgewicht"
 
-#: web/src/lib/features/history/history-summary.ts:62
-#: web/src/lib/features/history/history-summary.ts:80
+#: web/src/lib/features/history/history-summary.ts:45
+#: web/src/lib/features/history/history-summary.ts:63
 msgid "source link"
 msgstr "Quelllink"
 
-#: web/src/lib/features/history/history-summary.ts:65
+#: web/src/lib/features/history/history-summary.ts:48
 msgid "step picture order"
 msgstr "Schrittbilder-Reihenfolge"
 
-#: web/src/lib/features/history/history-summary.ts:60
+#: web/src/lib/features/history/history-summary.ts:43
 #: web/src/lib/features/home/activity.ts:232
 msgid "steps"
 msgstr "Schritte"
 
-#: web/src/lib/features/history/history-summary.ts:55
+#: web/src/lib/features/history/history-summary.ts:38
 msgid "stitch sample"
 msgstr "Maschenprobe"
 
@@ -7911,15 +7895,15 @@ msgstr "Maschenprobe"
 msgid "stitches"
 msgstr "Maschen"
 
-#: web/src/lib/features/history/history-summary.ts:59
+#: web/src/lib/features/history/history-summary.ts:42
 msgid "tags"
 msgstr "Tags"
 
-#: web/src/lib/features/history/history-summary.ts:52
+#: web/src/lib/features/history/history-summary.ts:35
 msgid "yarn"
 msgstr "Garn"
 
-#: web/src/lib/features/history/history-summary.ts:74
+#: web/src/lib/features/history/history-summary.ts:57
 msgid "yarn weight"
 msgstr "Garnstärke"
 
@@ -7934,7 +7918,7 @@ msgstr "{count} Filtervorschläge"
 msgid "{count} linked yarns"
 msgstr "{count} verknüpfte Garne"
 
-#: web/src/lib/features/history/history-summary.ts:236
+#: web/src/lib/features/history/history-summary.ts:219
 #, python-brace-format
 msgid "{name} left"
 msgstr "{name} hat verlassen"
@@ -7995,7 +7979,7 @@ msgstr "{n} Tage"
 msgid "{n} days left"
 msgstr "noch {n} Tage"
 
-#: web/src/lib/features/history/history-summary.ts:180
+#: web/src/lib/features/history/history-summary.ts:163
 #: web/src/lib/features/home/activity.ts:254
 #, python-brace-format
 msgid "{n} more"
@@ -8720,3 +8704,15 @@ msgstr "{yarns} Garne"
 
 #~ msgid "Unknown actor"
 #~ msgstr "Unbekannte Person"
+
+#~ msgid "by System"
+#~ msgstr "vom System"
+
+#~ msgid "by Unknown"
+#~ msgstr "von Unbekannt"
+
+#~ msgid "by You"
+#~ msgstr "von dir"
+
+#~ msgid "by an administrator"
+#~ msgstr "von einem Administrator"

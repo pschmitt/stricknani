@@ -88,6 +88,7 @@ class AuditPresentationTest {
         assertEquals(AuditTone.Muted, AuditActionKind.Other.tone())
         assertEquals(AuditTone.Muted, AuditActionKind.Impersonate.tone())
         assertEquals(AuditTone.Muted, AuditActionKind.Unshare.tone())
+        assertEquals(AuditTone.Muted, AuditActionKind.Timer.tone())
     }
 
     @Test
@@ -103,6 +104,9 @@ class AuditPresentationTest {
                 assertNotEquals(action, AuditTone.Red, auditActionPresentation(action).kind.tone())
             }
         assertEquals(AuditActionKind.Unshare, auditActionPresentation("share_revoked").kind)
+        listOf("timer_started", "timer_stopped", "timer_total_changed").forEach { action ->
+            assertEquals(AuditActionKind.Timer, auditActionPresentation(action).kind)
+        }
         assertEquals(AuditActionKind.Restore, auditActionPresentation("backup_restored").kind)
         assertEquals(AuditTone.Red, auditActionPresentation("trashed").kind.tone())
     }

@@ -50,6 +50,8 @@ enum class AuditActionKind {
     Delete,
     Upload,
     Remove,
+    /** The project timer: bookkeeping, neutral (web `stopwatch`). */
+    Timer,
     /** A share stopped or was left: not a deletion, so it stays neutral (web `share_revoked`). */
     Unshare,
     /** Restored from the trash. */
@@ -103,10 +105,10 @@ private val knownActions: Map<String, Pair<AuditActionKind, Int>> =
         "image_deleted" to (AuditActionKind.Delete to R.string.admin_action_image_deleted),
         "photo_uploaded" to (AuditActionKind.Upload to R.string.admin_action_photo_uploaded),
         "photo_deleted" to (AuditActionKind.Delete to R.string.admin_action_photo_deleted),
-        "timer_started" to (AuditActionKind.Create to R.string.admin_action_timer_started),
-        "timer_stopped" to (AuditActionKind.Update to R.string.admin_action_timer_stopped),
+        "timer_started" to (AuditActionKind.Timer to R.string.admin_action_timer_started),
+        "timer_stopped" to (AuditActionKind.Timer to R.string.admin_action_timer_stopped),
         "timer_total_changed" to
-            (AuditActionKind.Update to R.string.admin_action_timer_total_changed),
+            (AuditActionKind.Timer to R.string.admin_action_timer_total_changed),
         "photo_promoted" to (AuditActionKind.Update to R.string.admin_action_photo_promoted),
         "title_image_promoted" to
             (AuditActionKind.Update to R.string.admin_action_title_image_promoted),
@@ -160,14 +162,15 @@ fun AuditActionKind.icon(): ImageVector =
         AuditActionKind.Upload -> Icons.Filled.CloudUpload
         AuditActionKind.Remove,
         AuditActionKind.Unshare -> Icons.Filled.RemoveCircle
+        AuditActionKind.Timer -> PhosphorIcons.Timer
         AuditActionKind.Restore -> Icons.AutoMirrored.Filled.Undo
         AuditActionKind.Impersonate -> PhosphorIcons.UserCircle
         AuditActionKind.Other -> PhosphorIcons.ClockCounterClockwise
     }
 
 /**
- * create/restore: green, update: blue, upload: marigold, anything else (impersonation, stopped
- * shares): muted. Red is reserved for deletion: delete and remove. Same rules as the web's
+ * create/restore: green, update: blue, upload: marigold, anything else (timers, impersonation,
+ * stopped shares): muted. Red is reserved for deletion: delete and remove. Same rules as the web's
  * `auditActionTone`.
  */
 fun AuditActionKind.tone(): AuditTone =
@@ -178,6 +181,7 @@ fun AuditActionKind.tone(): AuditTone =
         AuditActionKind.Delete,
         AuditActionKind.Remove -> AuditTone.Red
         AuditActionKind.Upload -> AuditTone.Marigold
+        AuditActionKind.Timer,
         AuditActionKind.Unshare,
         AuditActionKind.Impersonate,
         AuditActionKind.Other -> AuditTone.Muted

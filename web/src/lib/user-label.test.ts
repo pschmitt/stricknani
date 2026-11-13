@@ -24,11 +24,11 @@ describe("userLabelText", () => {
     expect(userLabelText(ref("system"), "en")).toBe("System");
     expect(userLabelText(ref("unknown"), "en")).toBe("Unknown");
     expect(userLabelText({ ...ref("user"), name: " " }, "en")).toBe("Unknown");
-    expect(userByText(ref("self"), "en")).toBe("by You");
-    expect(userByText(ref("system"), "en")).toBe("by System");
-    expect(userByText(ref("unknown"), "en")).toBe("by Unknown");
-    expect(userByText(ref("user"), "en")).toBe("by Anika Bergmann");
-    expect(userByText(ref("admin"), "en")).toBe("by an administrator");
+    expect(userByText(ref("self"), "en")).toBe("You");
+    expect(userByText(ref("system"), "en")).toBe("System");
+    expect(userByText(ref("unknown"), "en")).toBe("Unknown");
+    expect(userByText(ref("user"), "en")).toBe("Anika Bergmann");
+    expect(userByText(ref("admin"), "en")).toBe("an administrator");
   });
 });
 

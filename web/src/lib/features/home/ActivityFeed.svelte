@@ -198,13 +198,9 @@
               {@const detail = activityDetail(item, locale)}
               {@const note = activityStateNote(item, locale)}
               {@const icon = activityIcon(item.action)}
-              {@const destructive = auditActionTone(item.action) === "delete"}
+              {@const tone = auditActionTone(item.action)}
               {#snippet row()}
-                <span
-                  class="tl__node"
-                  class:tl__node--danger={destructive}
-                  aria-hidden="true"
-                >
+                <span class="tl__node" data-tone={tone} aria-hidden="true">
                   {#if icon === "sparkle"}
                     <svg
                       viewBox="0 0 24 24"
@@ -260,7 +256,6 @@
               {/snippet}
               <li
                 class="tl__entry"
-                data-tone={item.entity_type}
                 data-deleted={!item.exists && item.state !== "in_trash"
                   ? ""
                   : undefined}
@@ -448,12 +443,27 @@
     height: var(--node);
     place-items: center;
     border-radius: 50%;
-    color: var(--tone-projects);
-    background: var(--tone-projects-wash);
+    color: var(--ink);
+    background: var(--surface-highest);
   }
-  .tl__entry[data-tone="yarn"] .tl__node {
-    color: var(--tone-yarns);
-    background: var(--tone-yarns-wash);
+  .tl__node[data-tone="create"] {
+    --node-ink: var(--success);
+  }
+  .tl__node[data-tone="update"] {
+    --node-ink: var(--info);
+  }
+  .tl__node[data-tone="upload"] {
+    --node-ink: var(--warning);
+  }
+  .tl__node[data-tone="delete"] {
+    --node-ink: var(--danger);
+  }
+  .tl__node[data-tone="create"],
+  .tl__node[data-tone="update"],
+  .tl__node[data-tone="upload"],
+  .tl__node[data-tone="delete"] {
+    color: var(--node-ink);
+    background: color-mix(in srgb, var(--node-ink) 14%, var(--surface));
   }
   .tl__node :global(svg),
   .tl__node svg {
@@ -531,7 +541,7 @@
     color: var(--ink-muted);
     background: var(--surface-highest);
   }
-  .tl__entry .tl__node.tl__node--danger {
+  .tl__entry .tl__node[data-tone="delete"] {
     color: var(--danger);
     background: color-mix(in srgb, var(--danger) 14%, var(--surface));
   }

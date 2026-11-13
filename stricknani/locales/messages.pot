@@ -254,7 +254,7 @@ msgstr ""
 msgid "1 filter suggestion"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:803
+#: web/src/lib/features/projects/ProjectTimer.svelte:805
 msgid "1 hour"
 msgstr ""
 
@@ -262,11 +262,11 @@ msgstr ""
 msgid "1 linked yarn"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:804
+#: web/src/lib/features/projects/ProjectTimer.svelte:806
 msgid "2 hours"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:802
+#: web/src/lib/features/projects/ProjectTimer.svelte:804
 msgid "30 minutes"
 msgstr ""
 
@@ -354,8 +354,8 @@ msgstr ""
 msgid "AI enhanced"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:61
-#: web/src/lib/features/history/history-summary.ts:79
+#: web/src/lib/features/history/history-summary.ts:44
+#: web/src/lib/features/history/history-summary.ts:62
 msgid "AI enhancement"
 msgstr ""
 
@@ -530,15 +530,15 @@ msgstr ""
 msgid "Added"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:110
+#: web/src/lib/features/history/history-summary.ts:93
 msgid "Added a photo"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:117
+#: web/src/lib/features/history/history-summary.ts:100
 msgid "Added a step"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:124
+#: web/src/lib/features/history/history-summary.ts:107
 msgid "Added an attachment"
 msgstr ""
 
@@ -547,17 +547,17 @@ msgstr ""
 msgid "Added {date}"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:128
+#: web/src/lib/features/history/history-summary.ts:111
 #, python-brace-format
 msgid "Added {n} attachments"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:112
+#: web/src/lib/features/history/history-summary.ts:95
 #, python-brace-format
 msgid "Added {n} photos"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:119
+#: web/src/lib/features/history/history-summary.ts:102
 #, python-brace-format
 msgid "Added {n} steps"
 msgstr ""
@@ -572,7 +572,7 @@ msgid ""
 "items. Nothing you already have is changed."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:715
+#: web/src/lib/features/projects/ProjectTimer.svelte:718
 msgid "Adjust total time"
 msgstr ""
 
@@ -788,23 +788,23 @@ msgstr ""
 msgid "Attachment count"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:65
+#: web/src/lib/features/admin/audit-action.ts:66
 msgid "Attachment deleted"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:130
+#: web/src/lib/features/admin/audit-action.ts:131
 msgid "Attachment deleted forever"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:120
+#: web/src/lib/features/admin/audit-action.ts:121
 msgid "Attachment moved to trash"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:125
+#: web/src/lib/features/admin/audit-action.ts:126
 msgid "Attachment restored from trash"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:61
+#: web/src/lib/features/admin/audit-action.ts:62
 msgid "Attachment uploaded"
 msgstr ""
 
@@ -893,7 +893,7 @@ msgid "Back to yarns"
 msgstr ""
 
 #: web/src/lib/features/admin/RestoreBackupDialog.svelte:318
-#: web/src/lib/features/admin/audit-action.ts:98
+#: web/src/lib/features/admin/audit-action.ts:99
 msgid "Backup restored"
 msgstr ""
 
@@ -988,7 +988,7 @@ msgstr ""
 msgid "Calculation results"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:223
+#: web/src/lib/features/history/history-summary.ts:206
 #: web/src/lib/features/sharing/AccessNotice.svelte:38
 #: web/src/lib/features/sharing/ShareDialog.svelte:87
 #: web/src/lib/features/sharing/ShareDialog.svelte:294
@@ -996,7 +996,7 @@ msgstr ""
 msgid "Can edit"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:223
+#: web/src/lib/features/history/history-summary.ts:206
 #: web/src/lib/features/sharing/AccessNotice.svelte:38
 #: web/src/lib/features/sharing/ShareDialog.svelte:87
 #: web/src/lib/features/sharing/ShareDialog.svelte:293
@@ -1024,8 +1024,8 @@ msgstr ""
 #: web/src/lib/features/projects/ProjectEditor.svelte:2575
 #: web/src/lib/features/projects/ProjectEditor.svelte:2657
 #: web/src/lib/features/projects/ProjectReader.svelte:1526
-#: web/src/lib/features/projects/ProjectTimer.svelte:695
-#: web/src/lib/features/projects/ProjectTimer.svelte:751
+#: web/src/lib/features/projects/ProjectTimer.svelte:699
+#: web/src/lib/features/projects/ProjectTimer.svelte:754
 #: web/src/lib/features/sharing/AccessNotice.svelte:135
 #: web/src/lib/features/sharing/TransferDialog.svelte:135
 #: web/src/lib/features/yarns/YarnForm.svelte:1314
@@ -1094,7 +1094,7 @@ msgstr ""
 msgid "Changed"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:184
+#: web/src/lib/features/history/history-summary.ts:167
 #, python-brace-format
 msgid "Changed {fields}"
 msgstr ""
@@ -1410,7 +1410,7 @@ msgstr ""
 msgid "Could not sign out."
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:92
+#: web/src/lib/features/admin/audit-action.ts:93
 msgid "Cover photo changed"
 msgstr ""
 
@@ -1453,7 +1453,7 @@ msgstr ""
 #: web/src/lib/features/account/AccountSettings.svelte:1541
 #: web/src/lib/features/admin/AdminResource.svelte:452
 #: web/src/lib/features/admin/AdminResource.svelte:653
-#: web/src/lib/features/admin/audit-action.ts:29
+#: web/src/lib/features/admin/audit-action.ts:30
 msgid "Created"
 msgstr ""
 
@@ -1577,7 +1577,7 @@ msgstr ""
 msgid "Delete your account?"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:35
+#: web/src/lib/features/admin/audit-action.ts:36
 msgid "Deleted forever"
 msgstr ""
 
@@ -1588,7 +1588,7 @@ msgid ""
 " good."
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:32
+#: web/src/lib/features/admin/audit-action.ts:33
 #: web/src/lib/features/trash/trash-state.ts:104
 msgid "Deleted permanently"
 msgstr ""
@@ -1811,7 +1811,7 @@ msgstr ""
 msgid "Edit project"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:770
+#: web/src/lib/features/projects/ProjectTimer.svelte:773
 msgid "Edit time"
 msgstr ""
 
@@ -2285,8 +2285,8 @@ msgstr ""
 msgid "Home"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:717
-#: web/src/lib/features/projects/ProjectTimer.svelte:718
+#: web/src/lib/features/projects/ProjectTimer.svelte:720
+#: web/src/lib/features/projects/ProjectTimer.svelte:721
 msgid "Hours"
 msgstr ""
 
@@ -2355,19 +2355,19 @@ msgstr ""
 msgid "Image count"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:67
+#: web/src/lib/features/admin/audit-action.ts:68
 msgid "Image deleted"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:129
+#: web/src/lib/features/admin/audit-action.ts:130
 msgid "Image deleted forever"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:119
+#: web/src/lib/features/admin/audit-action.ts:120
 msgid "Image moved to trash"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:124
+#: web/src/lib/features/admin/audit-action.ts:125
 msgid "Image restored from trash"
 msgstr ""
 
@@ -2385,13 +2385,13 @@ msgid "Impersonate this account?"
 msgstr ""
 
 #: web/src/lib/features/admin/audit-people.ts:75
-#: web/src/lib/features/history/history-summary.ts:334
+#: web/src/lib/features/history/history-summary.ts:317
 #, python-brace-format
 msgid "Impersonation by {admin} started"
 msgstr ""
 
 #: web/src/lib/features/admin/audit-people.ts:77
-#: web/src/lib/features/history/history-summary.ts:336
+#: web/src/lib/features/history/history-summary.ts:319
 #, python-brace-format
 msgid "Impersonation by {admin} stopped"
 msgstr ""
@@ -2408,11 +2408,11 @@ msgstr ""
 msgid "Impersonation has ended. Reload the page to continue."
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:101
+#: web/src/lib/features/admin/audit-action.ts:102
 msgid "Impersonation started"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:105
+#: web/src/lib/features/admin/audit-action.ts:106
 msgid "Impersonation stopped"
 msgstr ""
 
@@ -2637,12 +2637,12 @@ msgstr ""
 msgid "Knitting time"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:88
-#: web/src/lib/features/history/history-summary.ts:304
+#: web/src/lib/features/admin/audit-action.ts:89
+#: web/src/lib/features/history/history-summary.ts:287
 msgid "Knitting time changed"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:300
+#: web/src/lib/features/history/history-summary.ts:283
 #, python-brace-format
 msgid "Knitting time changed to {time}"
 msgstr ""
@@ -2714,7 +2714,7 @@ msgstr ""
 msgid "Leave without saving your yarn changes?"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:78
+#: web/src/lib/features/admin/audit-action.ts:79
 msgid "Left the shared item"
 msgstr ""
 
@@ -2870,7 +2870,7 @@ msgstr ""
 msgid "Loading project details…"
 msgstr ""
 
-#: web/src/lib/features/home/ActivityFeed.svelte:170
+#: web/src/lib/features/home/ActivityFeed.svelte:171
 msgid "Loading recent activity…"
 msgstr ""
 
@@ -3006,8 +3006,8 @@ msgstr ""
 msgid "Mine"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:727
-#: web/src/lib/features/projects/ProjectTimer.svelte:728
+#: web/src/lib/features/projects/ProjectTimer.svelte:730
+#: web/src/lib/features/projects/ProjectTimer.svelte:731
 msgid "Minutes"
 msgstr ""
 
@@ -3100,7 +3100,7 @@ msgstr ""
 msgid "Moved to the trash."
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:33
+#: web/src/lib/features/admin/audit-action.ts:34
 msgid "Moved to trash"
 msgstr ""
 
@@ -3399,7 +3399,7 @@ msgstr ""
 msgid "Nothing on the needles yet"
 msgstr ""
 
-#: web/src/lib/features/home/ActivityFeed.svelte:181
+#: web/src/lib/features/home/ActivityFeed.svelte:182
 msgid "Nothing yet - your changes will show up here."
 msgstr ""
 
@@ -3422,7 +3422,7 @@ msgstr ""
 msgid "Numbered list"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:801
+#: web/src/lib/features/projects/ProjectTimer.svelte:803
 msgid "Off"
 msgstr ""
 
@@ -3532,7 +3532,7 @@ msgstr ""
 
 #: web/src/lib/features/admin/AuditLifecycle.svelte:106
 #: web/src/lib/features/admin/AuditLifecycle.svelte:113
-#: web/src/lib/features/home/ActivityFeed.svelte:285
+#: web/src/lib/features/home/ActivityFeed.svelte:282
 msgid "Open trash"
 msgstr ""
 
@@ -3612,7 +3612,7 @@ msgstr ""
 
 #: web/src/lib/features/admin/AuditLifecycle.svelte:95
 #: web/src/lib/features/history/HistorySection.svelte:333
-#: web/src/lib/features/home/ActivityFeed.svelte:243
+#: web/src/lib/features/home/ActivityFeed.svelte:241
 #: web/src/lib/features/projects/ProjectReader.svelte:1159
 #: web/src/lib/features/trash/TrashManager.svelte:372
 #: web/src/lib/features/trash/trash-state.ts:113
@@ -3630,7 +3630,7 @@ msgid ""
 "editor and can leave later."
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:82
+#: web/src/lib/features/admin/audit-action.ts:83
 msgid "Ownership transferred"
 msgstr ""
 
@@ -3811,11 +3811,11 @@ msgstr ""
 msgid "Photo count"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:69
+#: web/src/lib/features/admin/audit-action.ts:70
 msgid "Photo deleted"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:131
+#: web/src/lib/features/admin/audit-action.ts:132
 msgid "Photo deleted forever"
 msgstr ""
 
@@ -3824,7 +3824,7 @@ msgstr ""
 msgid "Photo moved to position {position} of {total}."
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:121
+#: web/src/lib/features/admin/audit-action.ts:122
 msgid "Photo moved to trash"
 msgstr ""
 
@@ -3832,11 +3832,11 @@ msgstr ""
 msgid "Photo order"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:126
+#: web/src/lib/features/admin/audit-action.ts:127
 msgid "Photo restored from trash"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:68
+#: web/src/lib/features/admin/audit-action.ts:69
 msgid "Photo uploaded"
 msgstr ""
 
@@ -4093,7 +4093,7 @@ msgid ""
 "including items shared with you."
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:166
+#: web/src/lib/features/admin/audit-action.ts:167
 msgid "Purged automatically after 90 days"
 msgstr ""
 
@@ -4146,8 +4146,8 @@ msgstr ""
 msgid "Ready when you are"
 msgstr ""
 
-#: web/src/lib/features/home/ActivityFeed.svelte:174
-#: web/src/lib/features/home/ActivityFeed.svelte:310
+#: web/src/lib/features/home/ActivityFeed.svelte:175
+#: web/src/lib/features/home/ActivityFeed.svelte:307
 msgid "Recent activity could not be loaded."
 msgstr ""
 
@@ -4294,35 +4294,35 @@ msgstr ""
 msgid "Remove {name}?"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:43
+#: web/src/lib/features/admin/audit-action.ts:44
 #: web/src/lib/features/history/MediaStrip.svelte:27
 #: web/src/lib/features/history/change-format.ts:82
 msgid "Removed"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:110
+#: web/src/lib/features/history/history-summary.ts:93
 msgid "Removed a photo"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:117
+#: web/src/lib/features/history/history-summary.ts:100
 msgid "Removed a step"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:125
+#: web/src/lib/features/history/history-summary.ts:108
 msgid "Removed an attachment"
-msgstr ""
-
-#: web/src/lib/features/history/history-summary.ts:129
-#, python-brace-format
-msgid "Removed {n} attachments"
 msgstr ""
 
 #: web/src/lib/features/history/history-summary.ts:112
 #, python-brace-format
+msgid "Removed {n} attachments"
+msgstr ""
+
+#: web/src/lib/features/history/history-summary.ts:95
+#, python-brace-format
 msgid "Removed {n} photos"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:119
+#: web/src/lib/features/history/history-summary.ts:102
 #, python-brace-format
 msgid "Removed {n} steps"
 msgstr ""
@@ -4429,7 +4429,7 @@ msgstr ""
 #: web/src/lib/features/account/BackupsSection.svelte:493
 #: web/src/lib/features/account/BackupsSection.svelte:535
 #: web/src/lib/features/admin/AuditLifecycle.svelte:127
-#: web/src/lib/features/home/ActivityFeed.svelte:297
+#: web/src/lib/features/home/ActivityFeed.svelte:294
 #: web/src/lib/features/trash/TrashManager.svelte:400
 #: web/src/lib/features/trash/TrashedBanner.svelte:135
 msgid "Restore"
@@ -4472,7 +4472,7 @@ msgid "Restored"
 msgstr ""
 
 #: web/src/lib/features/admin/AuditLifecycle.svelte:78
-#: web/src/lib/features/home/ActivityFeed.svelte:114
+#: web/src/lib/features/home/ActivityFeed.svelte:115
 #: web/src/lib/features/trash/TrashManager.svelte:133
 #: web/src/lib/features/trash/TrashedBanner.svelte:75
 #: web/src/lib/features/trash/trash-undo.ts:53
@@ -4480,7 +4480,7 @@ msgstr ""
 msgid "Restored from the trash."
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:34
+#: web/src/lib/features/admin/audit-action.ts:35
 msgid "Restored from trash"
 msgstr ""
 
@@ -4497,7 +4497,7 @@ msgstr ""
 #: web/src/lib/features/account/BackupsSection.svelte:401
 #: web/src/lib/features/admin/AuditLifecycle.svelte:127
 #: web/src/lib/features/admin/RestoreBackupDialog.svelte:322
-#: web/src/lib/features/home/ActivityFeed.svelte:296
+#: web/src/lib/features/home/ActivityFeed.svelte:293
 #: web/src/lib/features/trash/TrashManager.svelte:400
 #: web/src/lib/features/trash/TrashedBanner.svelte:135
 msgid "Restoring…"
@@ -4548,7 +4548,7 @@ msgstr ""
 msgid "Role of {name}"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:230
+#: web/src/lib/features/history/history-summary.ts:213
 #, python-brace-format
 msgid "Role of {name} changed to {role}"
 msgstr ""
@@ -4579,8 +4579,8 @@ msgstr ""
 msgid "Rumour has it a cat was involved."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:794
 #: web/src/lib/features/projects/ProjectTimer.svelte:796
+#: web/src/lib/features/projects/ProjectTimer.svelte:798
 msgid "Running reminder"
 msgstr ""
 
@@ -4617,7 +4617,7 @@ msgstr ""
 msgid "Save this yarn first. You can add photos as soon as it has been created."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:760
+#: web/src/lib/features/projects/ProjectTimer.svelte:763
 msgid "Save time"
 msgstr ""
 
@@ -4740,8 +4740,8 @@ msgstr ""
 msgid "Search your yarns"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:737
-#: web/src/lib/features/projects/ProjectTimer.svelte:738
+#: web/src/lib/features/projects/ProjectTimer.svelte:740
+#: web/src/lib/features/projects/ProjectTimer.svelte:741
 msgid "Seconds"
 msgstr ""
 
@@ -4818,7 +4818,7 @@ msgstr ""
 msgid "Share with {name}"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:70
+#: web/src/lib/features/admin/audit-action.ts:71
 msgid "Shared"
 msgstr ""
 
@@ -4832,7 +4832,7 @@ msgstr ""
 msgid "Shared with me"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:227
+#: web/src/lib/features/history/history-summary.ts:210
 #, python-brace-format
 msgid "Shared with {name} · {role}"
 msgstr ""
@@ -4842,11 +4842,11 @@ msgstr ""
 msgid "Shared with {name}."
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:73
+#: web/src/lib/features/admin/audit-action.ts:74
 msgid "Sharing role changed"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:75
+#: web/src/lib/features/admin/audit-action.ts:76
 msgid "Sharing stopped"
 msgstr ""
 
@@ -4874,7 +4874,7 @@ msgid "Show fewer"
 msgstr ""
 
 #: web/src/lib/components/CommandPalette.svelte:344
-#: web/src/lib/features/home/ActivityFeed.svelte:318
+#: web/src/lib/features/home/ActivityFeed.svelte:315
 #: web/src/lib/features/sharing/PeoplePicker.svelte:149
 msgid "Show more"
 msgstr ""
@@ -5077,8 +5077,8 @@ msgstr ""
 msgid "Sponsor on GitHub"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:702
-#: web/src/lib/features/projects/ProjectTimer.svelte:786
+#: web/src/lib/features/projects/ProjectTimer.svelte:705
+#: web/src/lib/features/projects/ProjectTimer.svelte:788
 msgid "Start"
 msgstr ""
 
@@ -5125,19 +5125,19 @@ msgstr ""
 msgid "Step count"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:44
+#: web/src/lib/features/admin/audit-action.ts:45
 msgid "Step created"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:46
+#: web/src/lib/features/admin/audit-action.ts:47
 msgid "Step deleted"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:40
+#: web/src/lib/features/admin/audit-action.ts:41
 msgid "Step deleted forever"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:57
+#: web/src/lib/features/admin/audit-action.ts:58
 msgid "Step image uploaded"
 msgstr ""
 
@@ -5145,7 +5145,7 @@ msgstr ""
 msgid "Step instructions"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:36
+#: web/src/lib/features/admin/audit-action.ts:37
 msgid "Step moved to trash"
 msgstr ""
 
@@ -5164,7 +5164,7 @@ msgstr ""
 msgid "Step picture order"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:37
+#: web/src/lib/features/admin/audit-action.ts:38
 msgid "Step restored from trash"
 msgstr ""
 
@@ -5172,7 +5172,7 @@ msgstr ""
 msgid "Step title"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:45
+#: web/src/lib/features/admin/audit-action.ts:46
 msgid "Step updated"
 msgstr ""
 
@@ -5200,7 +5200,7 @@ msgstr ""
 msgid "Still knitting?"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:53
+#: web/src/lib/features/admin/audit-action.ts:54
 msgid "Stitch sample image uploaded"
 msgstr ""
 
@@ -5213,7 +5213,7 @@ msgstr ""
 msgid "Stitches to cast on"
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:778
+#: web/src/lib/features/projects/ProjectTimer.svelte:781
 msgid "Stop"
 msgstr ""
 
@@ -5225,7 +5225,7 @@ msgstr ""
 msgid "Stop timer"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:233
+#: web/src/lib/features/history/history-summary.ts:216
 #, python-brace-format
 msgid "Stopped sharing with {name}"
 msgstr ""
@@ -6189,7 +6189,7 @@ msgstr ""
 msgid "This project is in the trash."
 msgstr ""
 
-#: web/src/lib/features/projects/ProjectTimer.svelte:684
+#: web/src/lib/features/projects/ProjectTimer.svelte:688
 msgid ""
 "This project is marked as done. Starting the timer sets it back to in "
 "progress."
@@ -6260,17 +6260,17 @@ msgid ""
 "about a minute. No email to write and no waiting for anyone."
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:84
-#: web/src/lib/features/history/history-summary.ts:290
+#: web/src/lib/features/admin/audit-action.ts:85
+#: web/src/lib/features/history/history-summary.ts:273
 msgid "Timer started"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:85
-#: web/src/lib/features/history/history-summary.ts:297
+#: web/src/lib/features/admin/audit-action.ts:86
+#: web/src/lib/features/history/history-summary.ts:280
 msgid "Timer stopped"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:293
+#: web/src/lib/features/history/history-summary.ts:276
 #, python-brace-format
 msgid "Timer stopped · {time}"
 msgstr ""
@@ -6285,11 +6285,11 @@ msgstr ""
 msgid "Tip: a missing page is just a very large yarn over."
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:96
+#: web/src/lib/features/admin/audit-action.ts:97
 msgid "Title image changed"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:49
+#: web/src/lib/features/admin/audit-action.ts:50
 msgid "Title image uploaded"
 msgstr ""
 
@@ -6371,7 +6371,7 @@ msgstr ""
 msgid "Transfer to {name}"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:239
+#: web/src/lib/features/history/history-summary.ts:222
 #, python-brace-format
 msgid "Transferred to {name}"
 msgstr ""
@@ -6404,8 +6404,8 @@ msgstr ""
 #: web/src/lib/features/categories/CategoryManager.svelte:241
 #: web/src/lib/features/history/HistoryEventDetail.svelte:68
 #: web/src/lib/features/history/HistorySection.svelte:260
-#: web/src/lib/features/home/ActivityFeed.svelte:176
-#: web/src/lib/features/home/ActivityFeed.svelte:312
+#: web/src/lib/features/home/ActivityFeed.svelte:177
+#: web/src/lib/features/home/ActivityFeed.svelte:309
 #: web/src/lib/features/home/ContinueCarousel.svelte:163
 #: web/src/lib/features/home/HomeDashboard.svelte:196
 #: web/src/lib/features/media/ArchiveControl.svelte:513
@@ -6520,7 +6520,7 @@ msgstr ""
 #: web/src/lib/features/admin/AdminResource.svelte:395
 #: web/src/lib/features/admin/AdminResource.svelte:456
 #: web/src/lib/features/admin/AdminResource.svelte:657
-#: web/src/lib/features/admin/audit-action.ts:30
+#: web/src/lib/features/admin/audit-action.ts:31
 #: web/src/lib/features/home/ContinueCarousel.svelte:199
 #: web/src/lib/features/projects/ProjectReader.svelte:1142
 #: web/src/lib/features/yarns/YarnDetail.svelte:442
@@ -6535,7 +6535,7 @@ msgstr ""
 msgid "Upload picture"
 msgstr ""
 
-#: web/src/lib/features/admin/audit-action.ts:42
+#: web/src/lib/features/admin/audit-action.ts:43
 msgid "Uploaded"
 msgstr ""
 
@@ -7207,9 +7207,9 @@ msgstr ""
 msgid "Your yarns could not be loaded."
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:219
+#: web/src/lib/features/history/history-summary.ts:202
 #: web/src/lib/features/home/activity.ts:308
-#: web/src/lib/features/trash/trash-state.ts:115 web/src/lib/user-label.ts:167
+#: web/src/lib/features/trash/trash-state.ts:115 web/src/lib/user-label.ts:156
 msgid "a deleted account"
 msgstr ""
 
@@ -7233,29 +7233,13 @@ msgstr ""
 msgid "attachments"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:70
+#: web/src/lib/features/history/history-summary.ts:53
 msgid "brand"
-msgstr ""
-
-#: web/src/lib/user-label.ts:70
-msgid "by System"
-msgstr ""
-
-#: web/src/lib/user-label.ts:72
-msgid "by Unknown"
-msgstr ""
-
-#: web/src/lib/user-label.ts:66
-msgid "by You"
-msgstr ""
-
-#: web/src/lib/user-label.ts:68
-msgid "by an administrator"
 msgstr ""
 
 #: web/src/lib/features/admin/audit-people.ts:64
 #: web/src/lib/features/history/HistorySection.svelte:322
-#: web/src/lib/features/history/history-summary.ts:347
+#: web/src/lib/features/history/history-summary.ts:330
 #, python-brace-format
 msgid "by {admin} as {user}"
 msgstr ""
@@ -7264,15 +7248,15 @@ msgstr ""
 msgid "categories"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:51
+#: web/src/lib/features/history/history-summary.ts:34
 msgid "category"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:71
+#: web/src/lib/features/history/history-summary.ts:54
 msgid "colorway"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:63
+#: web/src/lib/features/history/history-summary.ts:46
 msgid "cover picture"
 msgstr ""
 
@@ -7280,16 +7264,16 @@ msgstr ""
 msgid "deleted"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:56
-#: web/src/lib/features/history/history-summary.ts:69
+#: web/src/lib/features/history/history-summary.ts:39
+#: web/src/lib/features/history/history-summary.ts:52
 msgid "description"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:72
+#: web/src/lib/features/history/history-summary.ts:55
 msgid "dye lot"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:73
+#: web/src/lib/features/history/history-summary.ts:56
 msgid "fiber content"
 msgstr ""
 
@@ -7297,7 +7281,7 @@ msgstr ""
 msgid "g"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:53
+#: web/src/lib/features/history/history-summary.ts:36
 msgid "linked yarns"
 msgstr ""
 
@@ -7305,7 +7289,7 @@ msgstr ""
 msgid "m"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:66
+#: web/src/lib/features/history/history-summary.ts:49
 msgid "main photo"
 msgstr ""
 
@@ -7313,18 +7297,18 @@ msgstr ""
 msgid "move"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:50
-#: web/src/lib/features/history/history-summary.ts:68
-#: web/src/lib/features/history/history-summary.ts:81
+#: web/src/lib/features/history/history-summary.ts:33
+#: web/src/lib/features/history/history-summary.ts:51
+#: web/src/lib/features/history/history-summary.ts:64
 msgid "name"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:54
+#: web/src/lib/features/history/history-summary.ts:37
 msgid "needles"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:57
-#: web/src/lib/features/history/history-summary.ts:78
+#: web/src/lib/features/history/history-summary.ts:40
+#: web/src/lib/features/history/history-summary.ts:61
 msgid "notes"
 msgstr ""
 
@@ -7351,11 +7335,11 @@ msgstr ""
 msgid "or drop images here"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:58
+#: web/src/lib/features/history/history-summary.ts:41
 msgid "other materials"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:67
+#: web/src/lib/features/history/history-summary.ts:50
 msgid "photo order"
 msgstr ""
 
@@ -7364,11 +7348,11 @@ msgstr ""
 msgid "photos"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:64
+#: web/src/lib/features/history/history-summary.ts:47
 msgid "picture order"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:75
+#: web/src/lib/features/history/history-summary.ts:58
 msgid "recommended needles"
 msgstr ""
 
@@ -7376,29 +7360,29 @@ msgstr ""
 msgid "rows"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:77
+#: web/src/lib/features/history/history-summary.ts:60
 msgid "skein length"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:76
+#: web/src/lib/features/history/history-summary.ts:59
 msgid "skein weight"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:62
-#: web/src/lib/features/history/history-summary.ts:80
+#: web/src/lib/features/history/history-summary.ts:45
+#: web/src/lib/features/history/history-summary.ts:63
 msgid "source link"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:65
+#: web/src/lib/features/history/history-summary.ts:48
 msgid "step picture order"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:60
+#: web/src/lib/features/history/history-summary.ts:43
 #: web/src/lib/features/home/activity.ts:232
 msgid "steps"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:55
+#: web/src/lib/features/history/history-summary.ts:38
 msgid "stitch sample"
 msgstr ""
 
@@ -7406,15 +7390,15 @@ msgstr ""
 msgid "stitches"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:59
+#: web/src/lib/features/history/history-summary.ts:42
 msgid "tags"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:52
+#: web/src/lib/features/history/history-summary.ts:35
 msgid "yarn"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:74
+#: web/src/lib/features/history/history-summary.ts:57
 msgid "yarn weight"
 msgstr ""
 
@@ -7429,7 +7413,7 @@ msgstr ""
 msgid "{count} linked yarns"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:236
+#: web/src/lib/features/history/history-summary.ts:219
 #, python-brace-format
 msgid "{name} left"
 msgstr ""
@@ -7490,7 +7474,7 @@ msgstr ""
 msgid "{n} days left"
 msgstr ""
 
-#: web/src/lib/features/history/history-summary.ts:180
+#: web/src/lib/features/history/history-summary.ts:163
 #: web/src/lib/features/home/activity.ts:254
 #, python-brace-format
 msgid "{n} more"

@@ -1129,7 +1129,7 @@
     <string name="history_show_older">Show older changes</string>
     <string name="history_show_fewer">Show fewer</string>
     <string name="history_loading">Loading…</string>
-    <string name="history_by">by %1$s</string>
+    <string name="history_by">%1$s</string>
     <string name="history_open_changes">Show details</string>
     <string name="history_show_date">Show full date</string>
     <string name="history_list_and">and</string>
@@ -1282,11 +1282,11 @@
     <string name="user_label_admin">an administrator</string>
     <string name="user_label_system">System</string>
     <string name="user_label_unknown">Unknown</string>
-    <string name="user_by_you">by You</string>
-    <string name="user_by_admin">by an administrator</string>
-    <string name="user_by_system">by System</string>
-    <string name="user_by_unknown">by Unknown</string>
-    <string name="user_by_deleted">by a deleted account</string>
+    <string name="user_by_you">You</string>
+    <string name="user_by_admin">an administrator</string>
+    <string name="user_by_system">System</string>
+    <string name="user_by_unknown">Unknown</string>
+    <string name="user_by_deleted">a deleted account</string>
     <string name="user_owner_prefix">Owner:</string>
     <string name="user_as">as</string>
     <string name="activity_title">Recent activity</string>
