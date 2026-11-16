@@ -22,7 +22,8 @@ name: Release
 # Assets (tag release and "latest" alike): the eight APKs (release + debug, four ABIs), static musl
 # `stricknani-server` binaries for Linux x86_64 and aarch64 (built natively with Nix, aarch64 on
 # GitHub's arm runners), the built web app as `stricknani-web-<tag>.tar.gz`, and `SHA256SUMS` over all
-# of them (also the subject of the build-provenance attestation).
+# of them (also the subject of the build-provenance attestation). The F-Droid metadata archive
+# `fdroid-metadata.zip` (built from `fdroid/`) is attached too, covered by `SHA256SUMS` as well.
 #
 # Builds and publishing are separate jobs. A newer push cancels the older run's *builds* (job-level
 # concurrency), but never its `publish` job: cancelling an upload midway used to leave "latest"
@@ -529,7 +530,7 @@ jobs:
           path: ${{ runner.temp }}/downloaded
           merge-multiple: true
 
-      - name: Assemble the assets and checksums
+      - name: Assemble the assets
         id: assets
         if: steps.stale.outputs.superseded != 'true'
         run: |
@@ -537,11 +538,28 @@ jobs:
           dir="$RUNNER_TEMP/assets"
           mkdir -p "$dir"
           cp "$RUNNER_TEMP"/downloaded/* "$dir/"
-          # 8 APKs, 2 server binaries, the web app.
+          # 8 APKs, 2 server binaries, the web app (the F-Droid metadata archive is added next).
           [ "$(ls -1 "$dir" | wc -l)" -eq 11 ]
-          (cd "$dir" && sha256sum -- * > SHA256SUMS)
-          cat "$dir/SHA256SUMS"
           echo "dir=$dir" >> "$GITHUB_OUTPUT"
+
+      - name: Build the F-Droid metadata archive
+        # fdroid/<package>/ describes the app for the F-Droid publisher; the archive is
+        # attached beside the APKs (schema: ci-workflows docs/fdroid-metadata.md).
+        if: steps.stale.outputs.superseded != 'true'
+        uses: pschmitt/ci-workflows/.github/actions/fdroid-metadata@main
+        with:
+          directory: fdroid
+          output-directory: ${{ steps.assets.outputs.dir }}
+
+      - name: Write the checksums
+        if: steps.stale.outputs.superseded != 'true'
+        env:
+          ASSETS_DIR: ${{ steps.assets.outputs.dir }}
+        run: |
+          set -euo pipefail
+          cd "$ASSETS_DIR"
+          sha256sum -- * > SHA256SUMS
+          cat SHA256SUMS
 
       - name: Generate release notes
         if: steps.stale.outputs.superseded != 'true'
