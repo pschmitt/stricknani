@@ -9,7 +9,7 @@ androidx-biometric = "1.1.0"
 androidx-browser = "1.10.0"
 # QR scanning for SNA-13's onboarding flow - same versions as the sibling apps' scanners
 # (nyetbox/jollyfin), so the fleet stays on one known-good CameraX/ZXing combination.
-androidx-camera = "1.6.2"
+androidx-camera = "1.7.0"
 androidx-compose = "1.12.1"
 # Decoupled from androidx-compose above - this artifact's release cadence lags the rest of
 # Compose, but it's just a large set of static ImageVector vals with no API coupling to newer
