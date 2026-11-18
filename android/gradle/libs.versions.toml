@@ -35,7 +35,7 @@ androidx-espresso = "3.7.0"
 androidx-exifinterface = "1.4.2"
 androidx-work = "2.12.0"
 coil = "3.6.3"
-errorprone-annotations = "2.52.0"
+errorprone-annotations = "2.53.0"
 fastlane-screengrab = "2.1.1"
 # Silent self-update through Shizuku (GitHub APK builds only, see app/src/selfupdate).
 hiddenapibypass = "6.2"
