@@ -83,7 +83,7 @@
         android-nixpkgs = androidNixpkgsPatched;
         appName = "Stricknani";
         buildToolsVersion = "37.0.0";
-        platformVersion = "37-0";
+        platformVersion = "37-1";
         gitHooksLib = git-hooks.lib;
         # No physical test devices or local AVD-based screenshot capture set up yet (SNA-12).
         screenshotsSystemImage = null;

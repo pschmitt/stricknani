@@ -80,7 +80,9 @@ val configuredVersionName =
 
 android {
     namespace = "blue.anika.wolle"
-    compileSdk = 37
+    compileSdk {
+        version = release(37) { minorApiLevel = 1 }
+    }
     buildToolsVersion = "37.0.0"
     testBuildType = instrumentationBuildType
 
