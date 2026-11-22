@@ -49,6 +49,19 @@ function chooseRun(runs, context) {
     return match ?? null;
   }
 
+  const isCircusProducer = (run) =>
+    run.event === "status" && run.display_title === "Circus artifacts ready";
+  if (context.event === "status") {
+    return (
+      ordered.find(
+        (run) =>
+          isCircusProducer(run) &&
+          run.head_branch === context.refName &&
+          run.head_sha === context.sourceSha,
+      ) ?? null
+    );
+  }
+
   if (context.event === "push" && context.refType === "branch") {
     return (
       ordered.find(
@@ -66,7 +79,8 @@ function chooseRun(runs, context) {
     ordered.find(
       (run) =>
         run.head_sha === context.sourceSha &&
-        ["push", "workflow_dispatch"].includes(run.event),
+        (["push", "workflow_dispatch"].includes(run.event) ||
+          isCircusProducer(run)),
     ) ?? null
   );
 }
@@ -331,16 +345,18 @@ export async function waitForProducer({
       const eventFilters =
         event === "pull_request"
           ? ["pull_request"]
-          : event === "push" && refType === "branch"
-            ? ["push"]
-            : ["push", "workflow_dispatch"];
+          : event === "status"
+            ? ["status"]
+            : event === "push" && refType === "branch"
+              ? ["push"]
+              : ["push", "workflow_dispatch", "status"];
       const responses = await Promise.all(
         eventFilters.map((eventFilter) => {
           const query = new URLSearchParams({
             event: eventFilter,
             per_page: "100",
           });
-          if (event === "push" && refType === "branch")
+          if ((event === "push" && refType === "branch") || event === "status")
             query.set("branch", refName);
           query.set(
             "head_sha",

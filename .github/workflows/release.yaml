@@ -39,11 +39,10 @@ name: Release
 
 on:
   push:
-    branches:
-      - main
     tags:
       - v*
       - "*.*.*"
+  status:
   workflow_dispatch:
     inputs:
       lane:
@@ -96,6 +95,7 @@ permissions:
 
 jobs:
   local-server-libs:
+    if: ${{ github.event_name != 'status' || (github.event.context == 'circus/artifacts' && github.event.state == 'success' && github.event.sha == github.sha) }}
     # T130: the Rust server as a JNI library for the local-only mode (docs/local-only.md), packaged
     # into the APKs and the Play bundle from android/local-server-libs.
     name: In-app server libraries
@@ -152,7 +152,7 @@ jobs:
 
   params:
     name: Release parameters
-    if: ${{ github.event_name == 'push' || inputs.lane == 'github-release' }}
+    if: ${{ github.event_name == 'push' || inputs.lane == 'github-release' || (github.event_name == 'status' && github.event.context == 'circus/artifacts' && github.event.state == 'success' && github.event.sha == github.sha) }}
     runs-on: ubuntu-26.04
     outputs:
       tag_name: ${{ steps.params.outputs.tag_name }}
@@ -366,7 +366,7 @@ jobs:
         run: node ci/wait-for-nix-producer.mjs --verify
 
       - name: Build the web app
-        run: nix build --print-build-logs --out-link result-web '.#stricknani-web'
+        run: nix --option max-jobs '${{ github.event_name != 'workflow_dispatch' && '0' || 'auto' }}' --option builders '' --option fallback false --option allow-import-from-derivation false build --print-build-logs --out-link result-web '.#stricknani-web'
 
       - name: Archive the web app
         shell: bash
@@ -426,7 +426,7 @@ jobs:
             nix-path = nixpkgs=channel:nixos-unstable
 
       - name: Build the static server
-        run: nix build --print-build-logs --out-link result-server '.#stricknani-server-static'
+        run: nix --option max-jobs '${{ github.event_name != 'workflow_dispatch' && '0' || 'auto' }}' --option builders '' --option fallback false --option allow-import-from-derivation false build --print-build-logs --out-link result-server '.#stricknani-server-static'
 
       - name: Extract the web app
         shell: bash
@@ -513,7 +513,7 @@ jobs:
       - name: Skip a superseded build
         # A newer push to main has its own run; do not let an older commit replace "latest" after it.
         id: stale
-        if: ${{ github.ref_type != 'tag' && github.event_name == 'push' }}
+        if: ${{ github.ref_type != 'tag' && github.event_name == 'status' }}
         run: |
           head="$(git ls-remote origin "refs/heads/$GITHUB_REF_NAME" | cut -f1)"
           if [[ -n "$head" && "$head" != "$GITHUB_SHA" ]]

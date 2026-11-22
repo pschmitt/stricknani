@@ -1,14 +1,15 @@
 name: Build
+run-name: ${{ github.event_name == 'status' && github.event.context == 'circus/artifacts' && github.event.state == 'success' && github.event.sha == github.sha && 'Circus artifacts ready' || 'Build' }}
 
-# Run every lane and let Nix substitute unchanged derivations from the S3 cache.
-# Native producers finish before their checks; E2E can consume the amd64 producer
-# while validation continues. Container publication waits for all native gates.
+# Main consumes the exact commit's Circus outputs once they reach the S3 cache.
+# Pull requests and manual dispatches retain native producers for now.
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
+  status:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
@@ -19,11 +20,13 @@ permissions:
 
 jobs:
   nix:
+    if: ${{ github.event_name != 'push' && (github.event_name != 'status' || (github.event.context == 'circus/artifacts' && github.event.state == 'success' && github.event.sha == github.sha)) }}
     permissions:
       contents: read
       id-token: write
     uses: pschmitt/ci-workflows/.github/workflows/nix-build.yaml@main
     with:
+      circus-cache-only: ${{ github.event_name == 'status' }}
       pin-prefix: gh-stricknani-main
       image-package: stricknani-docker
       image-artifact: nix-container-amd64
@@ -41,6 +44,7 @@ jobs:
       id-token: write
     uses: pschmitt/ci-workflows/.github/workflows/nix-checks.yaml@main
     with:
+      circus-cache-only: ${{ github.event_name == 'status' }}
       pin-prefix: gh-stricknani-main
     secrets:
       s3_store: ${{ secrets.NIKS3_S3_STORE }}
@@ -48,11 +52,13 @@ jobs:
       s3_secret_key: ${{ secrets.NIKS3_S3_SECRET_KEY }}
 
   nix-aarch64:
+    if: ${{ github.event_name != 'push' && (github.event_name != 'status' || (github.event.context == 'circus/artifacts' && github.event.state == 'success' && github.event.sha == github.sha)) }}
     permissions:
       contents: read
       id-token: write
     uses: pschmitt/ci-workflows/.github/workflows/nix-build.yaml@main
     with:
+      circus-cache-only: ${{ github.event_name == 'status' }}
       runner: ubuntu-26.04-arm
       system: aarch64-linux
       pin-prefix: gh-stricknani-main
@@ -71,6 +77,7 @@ jobs:
       id-token: write
     uses: pschmitt/ci-workflows/.github/workflows/nix-checks.yaml@main
     with:
+      circus-cache-only: ${{ github.event_name == 'status' }}
       runner: ubuntu-26.04-arm
       system: aarch64-linux
       full-flake-check: false
@@ -96,6 +103,7 @@ jobs:
       publish: ${{ github.event_name != 'pull_request' }}
 
   android:
+    if: ${{ github.event_name != 'status' }}
     uses: pschmitt/ci-workflows/.github/workflows/build.yaml@main
     with:
       project-directory: android

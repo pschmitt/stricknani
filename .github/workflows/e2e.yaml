@@ -1,4 +1,5 @@
 name: E2E
+run-name: ${{ github.event_name == 'status' && github.event.context == 'circus/artifacts' && github.event.state == 'success' && github.event.sha == github.sha && 'Circus artifacts ready' || 'E2E' }}
 
 # The end-to-end suites in one workflow, in parallel; each job runs only when
 # its files change.
@@ -9,9 +10,9 @@ name: E2E
 # - android-replay: Room replay against the server; on pushes to main and
 #   manual dispatches, not on pull requests.
 on:
-  push:
+  pull_request:
     branches: [main]
-    paths: &paths
+    paths:
       - "web/**"
       - "nix/web-package.nix"
       - "nix/rust-package.nix"
@@ -33,9 +34,7 @@ on:
       - "ci/wait-for-nix-producer.test.mjs"
       - "docs/rust-replay-ci.md"
       - ".github/workflows/e2e.yaml"
-  pull_request:
-    branches: [main]
-    paths: *paths
+  status:
   workflow_dispatch:
     inputs:
       lane:
@@ -62,15 +61,16 @@ permissions:
 jobs:
   # Which jobs this change needs; a manual dispatch runs them all.
   changes:
+    if: ${{ github.event_name != 'status' || (github.event.context == 'circus/artifacts' && github.event.state == 'success' && github.event.sha == github.sha) }}
     runs-on: ubuntu-latest
     permissions:
       actions: read
       contents: read
       pull-requests: read
     outputs:
-      web: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.web == 'true' }}
-      android: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.android == 'true' }}
-      replay: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.replay == 'true' }}
+      web: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'status' && steps.base.outputs.sha == '') || steps.filter.outputs.web == 'true' }}
+      android: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'status' && steps.base.outputs.sha == '') || steps.filter.outputs.android == 'true' }}
+      replay: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'status' && steps.base.outputs.sha == '') || steps.filter.outputs.replay == 'true' }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -78,11 +78,9 @@ jobs:
 
       - name: Test Nix producer synchronization helper
         run: node --test ci/wait-for-nix-producer.test.mjs
-      # On main, compare against the last commit this workflow passed on, not just the previous
-      # push: a run GitHub replaced in the queue (or one that failed) must not leave its commit's
-      # changes untested. Without such a run, paths-filter falls back to the previous push.
+      # Compare with the last successful Circus-backed run. If none exists, run all suites.
       - id: base
-        if: github.event_name == 'push'
+        if: github.event_name == 'status'
         env:
           GH_TOKEN: ${{ github.token }}
           WORKFLOW_REF: ${{ github.workflow_ref }}
@@ -91,18 +89,19 @@ jobs:
           set -Eeuo pipefail
           workflow_file="${WORKFLOW_REF%@*}"
           workflow_file="${workflow_file##*/}"
-          sha="$(gh api \
-            "repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow_file}/runs?branch=${GITHUB_REF_NAME}&event=push&status=success&per_page=1" \
-            --jq '.workflow_runs[0].head_sha // empty')"
-          if [[ -n "$sha" ]] && git merge-base --is-ancestor "$sha" HEAD
-          then
-            printf 'sha=%s\n' "$sha" >> "$GITHUB_OUTPUT"
-            printf 'Comparing with the last passed run: %s\n' "$sha"
-          else
-            printf '%s\n' 'No passed run on this branch; comparing with the previous push.'
-          fi
+          while IFS= read -r sha
+          do
+            if [[ -n "$sha" ]] && git merge-base --is-ancestor "$sha" HEAD
+            then
+              printf 'sha=%s\n' "$sha" >> "$GITHUB_OUTPUT"
+              printf 'Comparing with the last passed run: %s\n' "$sha"
+              break
+            fi
+          done < <(gh api \
+            "repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow_file}/runs?branch=${GITHUB_REF_NAME}&event=status&status=success&per_page=100" \
+            --jq '.workflow_runs[] | select(.display_title == "Circus artifacts ready") | .head_sha')
       - id: filter
-        if: github.event_name != 'workflow_dispatch'
+        if: ${{ github.event_name != 'workflow_dispatch' && (github.event_name != 'status' || steps.base.outputs.sha != '') }}
         uses: dorny/paths-filter@v4
         with:
           base: ${{ steps.base.outputs.sha }}
@@ -242,7 +241,7 @@ jobs:
 
       - name: Build the canonical packaged web app
         working-directory: .
-        run: nix build --print-build-logs --out-link result-web '.#stricknani-web'
+        run: nix --option max-jobs '${{ github.event_name == 'status' && '0' || 'auto' }}' --option builders '' --option fallback false --option allow-import-from-derivation false build --print-build-logs --out-link result-web '.#stricknani-web'
 
       - name: Copy packaged web app for browser acceptance
         working-directory: .
@@ -312,7 +311,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          server="$(nix build --no-link --print-out-paths '.#stricknani')"
+          server="$(nix --option max-jobs '${{ github.event_name == 'status' && '0' || 'auto' }}' --option builders '' --option fallback false --option allow-import-from-derivation false build --no-link --print-out-paths '.#stricknani')"
           # Use the underlying executable so fixture WEB_ROOT overrides are respected.
           printf 'STRICKNANI_SERVER_BINARY=%s/bin/.stricknani-server-wrapped\n' "$server" >> "$GITHUB_ENV"
 
@@ -447,7 +446,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          nix build --no-link --print-out-paths '.#stricknani' > "$RUNNER_TEMP/rust-out-path"
+          nix --option max-jobs '${{ github.event_name == 'status' && '0' || 'auto' }}' --option builders '' --option fallback false --option allow-import-from-derivation false build --no-link --print-out-paths '.#stricknani' > "$RUNNER_TEMP/rust-out-path"
           printf 'RUST_SERVER_BINARY=%s/bin/stricknani-server\n' "$(<"$RUNNER_TEMP/rust-out-path")" >> "$GITHUB_ENV"
 
       # The backups lane also covers the local-only mode (LocalModeBackupE2eTest), which needs the
@@ -683,7 +682,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          nix build --no-link --print-out-paths '.#stricknani' > "$RUNNER_TEMP/rust-out-path"
+          nix --option max-jobs '${{ github.event_name == 'status' && '0' || 'auto' }}' --option builders '' --option fallback false --option allow-import-from-derivation false build --no-link --print-out-paths '.#stricknani' > "$RUNNER_TEMP/rust-out-path"
           printf 'binary=%s/bin/stricknani-server\n' "$(<"$RUNNER_TEMP/rust-out-path")" >> "$GITHUB_OUTPUT"
 
       # Keep Gradle away from the emulator's CPU and memory during boot and tests.

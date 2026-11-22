@@ -25,7 +25,8 @@ function fixture({
     id: runId,
     run_attempt: 1,
     event,
-    head_branch: event === "push" ? "main" : "feature",
+    head_branch: ["push", "status"].includes(event) ? "main" : "feature",
+    display_title: event === "status" ? "Circus artifacts ready" : "Build",
     head_sha: event === "pull_request" ? prHeadSha : sourceSha,
     status: "completed",
     conclusion: "success",
@@ -89,6 +90,43 @@ function fixture({
     },
   };
 }
+
+test("uses the exact source Circus artifact producer", async () => {
+  const api = fixture({ event: "status" });
+  const result = await waitForProducer({
+    env: env({ GITHUB_EVENT_NAME: "status" }),
+    fetcher: api.fetcher,
+    sleep: async () => {},
+    log: () => {},
+  });
+  assert.equal(result.runId, api.run.id);
+});
+
+test("rejects unrelated or stale status producer runs", async () => {
+  for (const mutate of [
+    (run) => {
+      run.display_title = "Build";
+    },
+    (run) => {
+      run.head_sha = sha("b");
+    },
+    (run) => {
+      run.head_branch = "other";
+    },
+  ]) {
+    const api = fixture({ event: "status" });
+    mutate(api.run);
+    await assert.rejects(
+      waitForProducer({
+        env: env({ GITHUB_EVENT_NAME: "status", MAX_ATTEMPTS: "1" }),
+        fetcher: api.fetcher,
+        sleep: async () => {},
+        log: () => {},
+      }),
+      /No matching Build producer run/,
+    );
+  }
+});
 
 function env(overrides = {}) {
   return {
