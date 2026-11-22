@@ -1804,7 +1804,7 @@
     <string name="error_passkey_offline">The server could not be reached. Check your connection and try again.</string>
     <string name="error_passkey_generic">The passkey request could not be completed. Try again.</string>
     <string name="unlock_reason_remove_passkey">remove passkey</string>
-    <string name="washing_instructions">Washing instructions</string>
+    <string name="washing_instructions">Care instructions</string>
     <string name="washing_temperature">Washing temperature</string>
     <string name="washing_drying">Drying</string>
     <string name="washing_dry_flat">Dry flat</string>

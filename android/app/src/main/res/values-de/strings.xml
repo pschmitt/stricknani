@@ -1801,7 +1801,7 @@
     <string name="error_passkey_offline">Der Server ist nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.</string>
     <string name="error_passkey_generic">Die Passkey-Anfrage konnte nicht abgeschlossen werden. Versuche es erneut.</string>
     <string name="unlock_reason_remove_passkey">Passkey entfernen</string>
-    <string name="washing_instructions">Waschanleitung</string>
+    <string name="washing_instructions">Pflegehinweise</string>
     <string name="washing_temperature">Waschtemperatur</string>
     <string name="washing_drying">Trocknen</string>
     <string name="washing_dry_flat">Liegend trocknen</string>

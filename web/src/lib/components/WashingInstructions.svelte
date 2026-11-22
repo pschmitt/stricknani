@@ -82,7 +82,7 @@
 {#if onInput || value || symbols?.temperature || symbols?.drying}
   <section class="washing-card" aria-labelledby={headingId}>
     <SectionHeading icon="laundry" tone="yarns" id={headingId}
-      >{t("Washing instructions", locale)}</SectionHeading
+      >{t("Care instructions", locale)}</SectionHeading
     >
     {#if onSymbols}
       <div class="symbol-group">

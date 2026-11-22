@@ -25,7 +25,7 @@ class ProjectPrintDocumentTest {
             description = "Description",
             steps = "Instructions",
             notes = "Notes",
-            washingInstructions = "Washing instructions",
+            washingInstructions = "Care instructions",
         )
 
     private fun image(id: Int, stepId: Int? = null) =
