@@ -218,9 +218,9 @@
 
   <section class="card" aria-labelledby="version-title">
     <header class="card__header">
-      <span class="card__icon card__icon--version" aria-hidden="true"
-        ><NavIcon name="info" /></span
-      >
+      <span class="card__icon card__icon--version" aria-hidden="true">
+        <NavIcon name="info" />
+      </span>
       <h2 id="version-title">{t("Version", locale)}</h2>
     </header>
     <dl class="facts">
@@ -240,9 +240,9 @@
               aria-label={t("Open server commit on GitHub", locale)}
             >
               <NavIcon name="github" />
-              <span class="visually-hidden"
-                >{t("(opens in a new tab)", locale)}</span
-              >
+              <span class="visually-hidden">
+                {t("(opens in a new tab)", locale)}
+              </span>
             </a>
             <span class="commit-press__value">{serverRevision.display}</span>
           </span>
@@ -264,9 +264,9 @@
               aria-label={t("Open commit on GitHub", locale)}
             >
               <NavIcon name="github" />
-              <span class="visually-hidden"
-                >{t("(opens in a new tab)", locale)}</span
-              >
+              <span class="visually-hidden">
+                {t("(opens in a new tab)", locale)}
+              </span>
             </a>
             <button
               type="button"
@@ -303,9 +303,9 @@
 
   <section class="card" aria-labelledby="android-title">
     <header class="card__header">
-      <span class="card__icon card__icon--version" aria-hidden="true"
-        ><NavIcon name="download" /></span
-      >
+      <span class="card__icon card__icon--version" aria-hidden="true">
+        <NavIcon name="download" />
+      </span>
       <h2 id="android-title">{t("Get the Android app", locale)}</h2>
     </header>
     <p class="card__intro">
@@ -347,9 +347,9 @@
       transition:slide={{ duration: motionMs(220) }}
     >
       <header class="card__header">
-        <span class="card__icon card__icon--version" aria-hidden="true"
-          ><NavIcon name="code" /></span
-        >
+        <span class="card__icon card__icon--version" aria-hidden="true">
+          <NavIcon name="code" />
+        </span>
         <h2 id="developer-title">{t("Developer", locale)}</h2>
       </header>
       <label class="switch-row">
@@ -400,24 +400,24 @@
             target={link.external ? "_blank" : undefined}
             rel={link.external ? "noopener noreferrer" : undefined}
           >
-            <span class="chip chip--{link.tone}" aria-hidden="true"
-              ><NavIcon name={link.icon} /></span
-            >
+            <span class="chip chip--{link.tone}" aria-hidden="true">
+              <NavIcon name={link.icon} />
+            </span>
             <span class="link-row__text">
               <span class="link-row__label">{link.label}</span>
               <span class="link-row__hint">{link.description}</span>
             </span>
             {#if link.external}
-              <span class="link-row__go" aria-hidden="true"
-                ><NavIcon name="external-link" /></span
-              >
-              <span class="visually-hidden"
-                >{t("(opens in a new tab)", locale)}</span
-              >
+              <span class="link-row__go" aria-hidden="true">
+                <NavIcon name="external-link" />
+              </span>
+              <span class="visually-hidden">
+                {t("(opens in a new tab)", locale)}
+              </span>
             {:else}
-              <span class="link-row__go" aria-hidden="true"
-                ><NavIcon name="next" /></span
-              >
+              <span class="link-row__go" aria-hidden="true">
+                <NavIcon name="next" />
+              </span>
             {/if}
           </a>
         </li>
@@ -427,26 +427,26 @@
 
   <section class="card" aria-labelledby="credits-title">
     <header class="card__header">
-      <span class="card__icon card__icon--credits" aria-hidden="true"
-        ><NavIcon name="heart" /></span
-      >
+      <span class="card__icon card__icon--credits" aria-hidden="true">
+        <NavIcon name="heart" />
+      </span>
       <h2 id="credits-title">{t("Credits and licences", locale)}</h2>
     </header>
     <p class="card__intro">
       {t("Stricknani is free software, licensed under the", locale)}
-      <a href={appLicence.url} target="_blank" rel="noopener noreferrer"
-        >{appLicence.name}</a
-      >.
+      <a href={appLicence.url} target="_blank" rel="noopener noreferrer">
+        {appLicence.name}
+      </a>.
     </p>
     <ul class="credits">
       {#each credits as credit (credit.name)}
         <li>
-          <a href={credit.url} target="_blank" rel="noopener noreferrer"
-            >{credit.name}</a
-          >
-          <span class="credit-detail"
-            >{t(credit.detail, locale)}, {credit.licence}</span
-          >
+          <a href={credit.url} target="_blank" rel="noopener noreferrer">
+            {credit.name}
+          </a>
+          <span class="credit-detail">
+            {t(credit.detail, locale)}, {credit.licence}
+          </span>
         </li>
       {/each}
     </ul>

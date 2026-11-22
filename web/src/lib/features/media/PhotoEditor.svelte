@@ -305,9 +305,9 @@
     <p class="editor-hint" id={hintId}>
       {t("Drag the corners to crop.", locale)}
       {#if resultSize}
-        <span class="editor-size" aria-hidden="true"
-          >{resultSize.width} × {resultSize.height}</span
-        >
+        <span class="editor-size" aria-hidden="true">
+          {resultSize.width} × {resultSize.height}
+        </span>
       {/if}
     </p>
 
@@ -390,24 +390,30 @@
         size="sm"
         icon="rotate-left"
         disabled={saving}
-        onclick={() => turn(-1)}>{t("Rotate left", locale)}</Button
+        onclick={() => turn(-1)}
       >
+        {t("Rotate left", locale)}
+      </Button>
       <Button
         class="tool-button"
         variant="secondary"
         size="sm"
         icon="rotate-right"
         disabled={saving}
-        onclick={() => turn(1)}>{t("Rotate right", locale)}</Button
+        onclick={() => turn(1)}
       >
+        {t("Rotate right", locale)}
+      </Button>
       <Button
         class="tool-button"
         variant="ghost"
         size="sm"
         icon="reset"
         disabled={saving || unchanged}
-        onclick={resetAll}>{t("Reset", locale)}</Button
+        onclick={resetAll}
       >
+        {t("Reset", locale)}
+      </Button>
     </div>
 
     {#if showDescription}
@@ -422,12 +428,12 @@
           autocomplete="off"
           aria-describedby={`${descriptionId}-hint`}
         />
-        <small id={`${descriptionId}-hint`}
-          >{t(
+        <small id={`${descriptionId}-hint`}>
+          {t(
             "Read aloud by screen readers and shown when the photo cannot load.",
             locale,
-          )}</small
-        >
+          )}
+        </small>
       </div>
     {/if}
 
@@ -446,15 +452,19 @@
         variant="secondary"
         icon="cancel"
         disabled={saving}
-        onclick={close}>{t("Cancel", locale)}</Button
+        onclick={close}
       >
+        {t("Cancel", locale)}
+      </Button>
       <Button
         variant="primary"
         icon="save"
         disabled={!canSave}
         aria-busy={saving}
-        onclick={() => void save()}>{t("Save", locale)}</Button
+        onclick={() => void save()}
       >
+        {t("Save", locale)}
+      </Button>
     </footer>
   </div>
 </dialog>

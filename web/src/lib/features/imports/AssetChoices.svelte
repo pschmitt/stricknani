@@ -42,11 +42,9 @@
             />
           {/if}
           <span class="asset-text">
-            <span class="asset-kind"
-              >{asset.kind === "pdf"
-                ? t("PDF", locale)
-                : t("Diagram", locale)}</span
-            >
+            <span class="asset-kind">
+              {asset.kind === "pdf" ? t("PDF", locale) : t("Diagram", locale)}
+            </span>
             <strong>{asset.label || host(asset.url)}</strong>
             <small>{host(asset.url)}</small>
           </span>

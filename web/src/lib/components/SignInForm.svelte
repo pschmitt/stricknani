@@ -246,9 +246,9 @@
           >
             {#if submitting}
               <span class="spinner spinner-light" aria-hidden="true"></span>
-              <ActionLabel icon="sign-in"
-                >{t("Signing in…", locale)}</ActionLabel
-              >
+              <ActionLabel icon="sign-in">
+                {t("Signing in…", locale)}
+              </ActionLabel>
             {:else}
               <ActionLabel icon="sign-in">{t("Sign in", locale)}</ActionLabel>
             {/if}

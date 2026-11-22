@@ -51,9 +51,9 @@
       />
     {/if}
     <span class="media-note__name">{label}</span>
-    <span class="media-note__state"
-      >· {kindLabel}{available ? "" : ` · ${deletedLabel}`}</span
-    >
+    <span class="media-note__state">
+      · {kindLabel}{available ? "" : ` · ${deletedLabel}`}
+    </span>
   </span>
 {:else if available && media.url}
   {#if isFile}

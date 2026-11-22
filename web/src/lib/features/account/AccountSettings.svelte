@@ -902,28 +902,28 @@
 
   {#if canManageAdmin}
     <a class="admin-card" href={resolve("/admin/users")}>
-      <span class="admin-card__icon" aria-hidden="true"
-        ><NavIcon name="admin" /></span
-      >
-      <span class="admin-card__copy">
-        <span class="admin-card__title"
-          >{t("Looking for the admin page?", locale)}</span
-        >
-        <span class="admin-card__hint"
-          >{t("Manage users and audit log", locale)}</span
-        >
+      <span class="admin-card__icon" aria-hidden="true">
+        <NavIcon name="admin" />
       </span>
-      <span class="admin-card__go" aria-hidden="true"
-        ><NavIcon name="next" /></span
-      >
+      <span class="admin-card__copy">
+        <span class="admin-card__title">
+          {t("Looking for the admin page?", locale)}
+        </span>
+        <span class="admin-card__hint">
+          {t("Manage users and audit log", locale)}
+        </span>
+      </span>
+      <span class="admin-card__go" aria-hidden="true">
+        <NavIcon name="next" />
+      </span>
     </a>
   {/if}
 
   <section class="card" aria-labelledby="profile-title">
     <header class="card__header">
-      <span class="card__icon card__icon--profile" aria-hidden="true"
-        ><NavIcon name="account" /></span
-      >
+      <span class="card__icon card__icon--profile" aria-hidden="true">
+        <NavIcon name="account" />
+      </span>
       <h2 id="profile-title">{t("Profile", locale)}</h2>
     </header>
 
@@ -994,17 +994,17 @@
             {#if profile.email.lastIndexOf("@") > 0}{profile.email.slice(
                 0,
                 profile.email.lastIndexOf("@"),
-              )}<wbr /><span class="profile__domain"
-                >{profile.email.slice(profile.email.lastIndexOf("@"))}</span
-              >{:else}{profile.email}{/if}
+              )}<wbr /><span class="profile__domain">
+                {profile.email.slice(profile.email.lastIndexOf("@"))}
+              </span>{:else}{profile.email}{/if}
           </p>
           <p class="role-chip">
             <NavIcon name={profile.is_admin ? "admin" : "account"} />
-            <span
-              >{profile.is_admin
+            <span>
+              {profile.is_admin
                 ? t("Administrator", locale)
-                : t("Member", locale)}</span
-            >
+                : t("Member", locale)}
+            </span>
           </p>
           <TakePhotoInput
             {locale}
@@ -1084,18 +1084,18 @@
 
   <section class="card" aria-labelledby="preferences-title">
     <header class="card__header">
-      <span class="card__icon card__icon--prefs" aria-hidden="true"
-        ><NavIcon name="sliders" /></span
-      >
+      <span class="card__icon card__icon--prefs" aria-hidden="true">
+        <NavIcon name="sliders" />
+      </span>
       <h2 id="preferences-title">{t("Preferences", locale)}</h2>
     </header>
     <div class="rows">
       <div class="row">
-        <span class="row__label" id="pref-language"
-          ><span class="preference-icon" aria-hidden="true"
-            ><NavIcon name="flag" /></span
-          >{t("Language", locale)}</span
-        >
+        <span class="row__label" id="pref-language">
+          <span class="preference-icon" aria-hidden="true">
+            <NavIcon name="flag" />
+          </span>{t("Language", locale)}
+        </span>
         <div class="row__control">
           <FancySelect
             label={t("Language", locale)}
@@ -1107,11 +1107,11 @@
         </div>
       </div>
       <div class="row">
-        <span class="row__label" id="pref-theme"
-          ><span class="preference-icon" aria-hidden="true"
-            ><NavIcon name="palette" /></span
-          >{t("Appearance", locale)}</span
-        >
+        <span class="row__label" id="pref-theme">
+          <span class="preference-icon" aria-hidden="true">
+            <NavIcon name="palette" />
+          </span>{t("Appearance", locale)}
+        </span>
         <div class="row__control">
           <FancySelect
             label={t("Theme", locale)}
@@ -1131,11 +1131,11 @@
       </div>
       <div class="row">
         <div class="row__text">
-          <span class="row__label" id="pref-text-size"
-            ><span class="preference-icon" aria-hidden="true"
-              ><NavIcon name="text-align" /></span
-            >{t("Text size", locale)}</span
-          >
+          <span class="row__label" id="pref-text-size">
+            <span class="preference-icon" aria-hidden="true">
+              <NavIcon name="text-align" />
+            </span>{t("Text size", locale)}
+          </span>
           <p class="row__hint">
             {t("Used when reading projects and yarns.", locale)}
           </p>
@@ -1156,9 +1156,9 @@
         <div class="row">
           <div class="row__text">
             <label class="row__label" for="pref-project-timers">
-              <span class="preference-icon" aria-hidden="true"
-                ><NavIcon name="stopwatch" /></span
-              >
+              <span class="preference-icon" aria-hidden="true">
+                <NavIcon name="stopwatch" />
+              </span>
               {t("Project timers", locale)}
             </label>
             <p class="row__hint" id="pref-project-timers-hint">
@@ -1188,9 +1188,9 @@
       <div class="row">
         <div class="row__text">
           <label class="row__label" for="pref-notifications">
-            <span class="preference-icon" aria-hidden="true"
-              ><NavIcon name="bell" /></span
-            >
+            <span class="preference-icon" aria-hidden="true">
+              <NavIcon name="bell" />
+            </span>
             {t("Notifications", locale)}
           </label>
           <p class="row__hint" id="pref-notifications-hint">
@@ -1235,11 +1235,11 @@
       {#if profile?.error_reporting_available}
         <div class="row">
           <div class="row__text">
-            <label class="row__label" for="pref-error-reports"
-              ><span class="preference-icon" aria-hidden="true"
-                ><NavIcon name="bug" /></span
-              >{t("Send error reports", locale)}</label
-            >
+            <label class="row__label" for="pref-error-reports">
+              <span class="preference-icon" aria-hidden="true">
+                <NavIcon name="bug" />
+              </span>{t("Send error reports", locale)}
+            </label>
             <p class="row__hint" id="pref-error-reports-hint">
               {t(
                 "Sends technical details of errors, never your content, to the instance operator.",
@@ -1269,14 +1269,14 @@
       {#if profile}
         <div class="row">
           <div class="row__text">
-            <label class="row__label" for="pref-strip-photo-metadata"
-              ><span class="preference-icon" aria-hidden="true"
-                ><NavIcon name="location" /></span
-              >{t(
+            <label class="row__label" for="pref-strip-photo-metadata">
+              <span class="preference-icon" aria-hidden="true">
+                <NavIcon name="location" />
+              </span>{t(
                 "Remove location and camera data from new photos",
                 locale,
-              )}</label
-            >
+              )}
+            </label>
             <p class="row__hint" id="pref-strip-photo-metadata-hint">
               {t(
                 "Applies to photos you upload from now on. Photos already uploaded are not changed.",
@@ -1312,9 +1312,9 @@
 
   <section class="card" aria-labelledby="security-title">
     <header class="card__header">
-      <span class="card__icon card__icon--security" aria-hidden="true"
-        ><NavIcon name="lock" /></span
-      >
+      <span class="card__icon card__icon--security" aria-hidden="true">
+        <NavIcon name="lock" />
+      </span>
       <h2 id="security-title">{t("Sign-in and security", locale)}</h2>
     </header>
     <div class="rows">
@@ -1369,8 +1369,10 @@
               {#if currentPasswordError}<small
                   id="current-password-error"
                   class="field-error"
-                  role="alert">{currentPasswordError}</small
-                >{/if}
+                  role="alert"
+                >
+                  {currentPasswordError}
+                </small>{/if}
             </label>
             <label class="form-field" for="new-password">
               <span>{t("New password", locale)}</span>
@@ -1385,17 +1387,16 @@
                   : "password-rule"}
                 disabled={operation !== null || !accountActionsEnabled}
               />
-              <small id="password-rule" class="muted"
-                >{t(
-                  "At least 12 characters. Avoid common passwords.",
-                  locale,
-                )}</small
-              >
+              <small id="password-rule" class="muted">
+                {t("At least 12 characters. Avoid common passwords.", locale)}
+              </small>
               {#if newPasswordError}<small
                   id="new-password-error"
                   class="field-error"
-                  role="alert">{newPasswordError}</small
-                >{/if}
+                  role="alert"
+                >
+                  {newPasswordError}
+                </small>{/if}
             </label>
             <label class="form-field" for="confirm-password">
               <span>{t("Confirm new password", locale)}</span>
@@ -1413,8 +1414,10 @@
               {#if confirmPasswordError}<small
                   id="confirm-password-error"
                   class="field-error"
-                  role="alert">{confirmPasswordError}</small
-                >{/if}
+                  role="alert"
+                >
+                  {confirmPasswordError}
+                </small>{/if}
             </label>
             <div class="button-row">
               <SharedButton
@@ -1448,9 +1451,9 @@
   <section class="card" aria-labelledby="tokens-title">
     <header class="card__header card__header--split">
       <div class="card__title">
-        <span class="card__icon card__icon--apps" aria-hidden="true"
-          ><NavIcon name="device" /></span
-        >
+        <span class="card__icon card__icon--apps" aria-hidden="true">
+          <NavIcon name="device" />
+        </span>
         <h2 id="tokens-title">{t("Apps and devices", locale)}</h2>
       </div>
       <div class="button-row">
@@ -1562,24 +1565,25 @@
       <ul class="token-list" aria-label={t("Active API tokens", locale)}>
         {#each tokens as token (token.id)}
           <li class="token-row">
-            <span class="token-row__icon" aria-hidden="true"
-              ><NavIcon name="device" /></span
-            >
+            <span class="token-row__icon" aria-hidden="true">
+              <NavIcon name="device" />
+            </span>
             <div class="token-detail">
               <strong>{token.name}</strong>
               <span>{t("Created", locale)} {formatDate(token.created_at)}</span>
               {#if token.last_used_at}
-                <span
-                  >{t("Last used", locale)}
-                  {formatLastUsed(token.last_used_at, locale)}</span
-                >
+                <span>
+                  {t("Last used", locale)}
+                  {formatLastUsed(token.last_used_at, locale)}
+                </span>
               {:else}
                 <span>{t("Never used", locale)}</span>
               {/if}
               {#if token.expires_at}
-                <span
-                  >{t("Expires", locale)} {formatDate(token.expires_at)}</span
-                >
+                <span>
+                  {t("Expires", locale)}
+                  {formatDate(token.expires_at)}
+                </span>
               {/if}
             </div>
             <SharedButton
@@ -1605,9 +1609,9 @@
   <section class="card card--danger" aria-labelledby="delete-account-heading">
     <header class="card__header">
       <div class="card__title">
-        <span class="card__icon card__icon--danger" aria-hidden="true"
-          ><NavIcon name="action-delete" /></span
-        >
+        <span class="card__icon card__icon--danger" aria-hidden="true">
+          <NavIcon name="action-delete" />
+        </span>
         <h2 id="delete-account-heading">{t("Delete account", locale)}</h2>
       </div>
     </header>
@@ -1616,9 +1620,9 @@
         "Permanently delete your account and everything in it. You will be asked to confirm it is you first.",
         locale,
       )}
-      <a class="inline-link" href={resolve("/delete-account")}
-        >{t("What gets deleted?", locale)}</a
-      >
+      <a class="inline-link" href={resolve("/delete-account")}>
+        {t("What gets deleted?", locale)}
+      </a>
     </p>
     <SharedButton
       variant="danger-ghost"

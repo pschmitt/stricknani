@@ -246,9 +246,9 @@
 <div class="backups" id="backups">
   <section class="card" aria-labelledby="export-title">
     <header class="card__header">
-      <span class="card__icon" aria-hidden="true"
-        ><NavIcon name="download" /></span
-      >
+      <span class="card__icon" aria-hidden="true">
+        <NavIcon name="download" />
+      </span>
       <h2 id="export-title">{t("Your data", locale)}</h2>
     </header>
     <p class="card__intro">
@@ -367,9 +367,9 @@
     }}
   >
     <header class="card__header">
-      <span class="card__icon" aria-hidden="true"
-        ><NavIcon name="upload" /></span
-      >
+      <span class="card__icon" aria-hidden="true">
+        <NavIcon name="upload" />
+      </span>
       <h2 id="restore-title">{t("Restore from a file", locale)}</h2>
     </header>
     <p class="card__intro">

@@ -29,9 +29,9 @@
 >
   {#if leading}{@render leading()}{/if}
   {#if content}
-    <span class="filter-chip__content" data-label={label}
-      >{@render content()}</span
-    >
+    <span class="filter-chip__content" data-label={label}>
+      {@render content()}
+    </span>
   {:else}
     <span class="filter-chip__label" data-label={label}>{label}</span>
   {/if}

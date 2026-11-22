@@ -72,9 +72,9 @@
           "You need to be signed in to delete your account, so that nobody else can do it for you.",
           locale,
         )}
-        <a class="inline-link" href={resolve("/login")}
-          >{t("Sign in to continue", locale)}</a
-        >
+        <a class="inline-link" href={resolve("/login")}>
+          {t("Sign in to continue", locale)}
+        </a>
       </p>
     {/if}
   </section>
@@ -153,9 +153,9 @@
     </p>
     <p>
       {t("Questions about the software itself are welcome on the", locale)}
-      <a href={issuesUrl} target="_blank" rel="noopener noreferrer"
-        >{t("GitHub issue tracker", locale)}</a
-      >.
+      <a href={issuesUrl} target="_blank" rel="noopener noreferrer">
+        {t("GitHub issue tracker", locale)}
+      </a>.
       {t("More about your data is in the", locale)}
       <a href={resolve("/privacy")}>{t("Privacy Policy", locale)}</a>.
     </p>

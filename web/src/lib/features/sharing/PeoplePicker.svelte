@@ -84,9 +84,9 @@
   <div class="people-picker">
     <span class="people-picker__label">{t("Selected person", locale)}</span>
     <div class="people-picker__selected">
-      <span class="people-picker__name"
-        ><UserLabel user={personUser(selected)} {locale} /></span
-      >
+      <span class="people-picker__name">
+        <UserLabel user={personUser(selected)} {locale} />
+      </span>
       <Button
         type="button"
         variant="ghost"
@@ -118,8 +118,10 @@
         <button
           type="button"
           class="people-picker__retry"
-          onclick={() => void load(true)}>{t("Try again", locale)}</button
+          onclick={() => void load(true)}
         >
+          {t("Try again", locale)}
+        </button>
       </p>
     {/if}
     {#if visible.length}
@@ -131,9 +133,9 @@
               class="people-picker__person"
               onclick={() => onselect(person)}
             >
-              <span class="people-picker__name"
-                ><UserLabel user={personUser(person)} {locale} /></span
-              >
+              <span class="people-picker__name">
+                <UserLabel user={personUser(person)} {locale} />
+              </span>
             </button>
           </li>
         {/each}

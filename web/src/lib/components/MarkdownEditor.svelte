@@ -326,13 +326,13 @@
         placeholder="https://"
         onkeydown={onLinkKey}
       />
-      <button type="button" class="md-editor__link-ok" onclick={applyLink}
-        >{t("Apply", locale)}</button
-      >
+      <button type="button" class="md-editor__link-ok" onclick={applyLink}>
+        {t("Apply", locale)}
+      </button>
       {#if linkHadHref}
-        <button type="button" onclick={removeLink}
-          >{t("Remove link", locale)}</button
-        >
+        <button type="button" onclick={removeLink}>
+          {t("Remove link", locale)}
+        </button>
       {/if}
       <button type="button" onclick={closeLink}>{t("Cancel", locale)}</button>
     </div>
@@ -357,12 +357,12 @@
       class="md-editor__raw"
       oninput={onRawInput}></textarea>
     {#if unsupported}
-      <small class="md-editor__note"
-        >{t(
+      <small class="md-editor__note">
+        {t(
           "This text uses formatting the visual editor cannot show, so it is edited as Markdown.",
           locale,
-        )}</small
-      >
+        )}
+      </small>
     {/if}
   {/if}
 </div>

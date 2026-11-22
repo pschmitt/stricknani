@@ -23,9 +23,9 @@
 
 <details class="disclosure {className}" bind:open bind:this={element}>
   <summary class="disclosure__summary">
-    <span class="disclosure__icon" data-tone={tone} aria-hidden="true"
-      ><NavIcon name={icon} /></span
-    >
+    <span class="disclosure__icon" data-tone={tone} aria-hidden="true">
+      <NavIcon name={icon} />
+    </span>
     <span class="disclosure__label">{label}</span>
     <span class="disclosure__chevron"><NavIcon name="chevron-down" /></span>
   </summary>

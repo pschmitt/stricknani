@@ -264,8 +264,9 @@
       <a
         class="ui-button ui-button--secondary ui-button--md"
         href={linkTo("/login")}
-        ><ActionLabel icon="sign-in">{t("Sign in", locale)}</ActionLabel></a
       >
+        <ActionLabel icon="sign-in">{t("Sign in", locale)}</ActionLabel>
+      </a>
     </header>
     <main id="main-content" class="public-tool-main">
       {@render children()}
@@ -337,9 +338,9 @@
             data-tone={item.icon}
             href={linkTo(item.href)}
           >
-            <span class="nav-icon" data-tone={item.icon}
-              ><NavIcon name={item.icon} /></span
-            >
+            <span class="nav-icon" data-tone={item.icon}>
+              <NavIcon name={item.icon} />
+            </span>
             <span>{t(item.label, locale)}</span>
           </a>
         {/each}
@@ -355,9 +356,9 @@
             data-tone={item.icon}
             href={linkTo(item.href)}
           >
-            <span class="nav-icon" data-tone={item.icon}
-              ><NavIcon name={item.icon} /></span
-            >
+            <span class="nav-icon" data-tone={item.icon}>
+              <NavIcon name={item.icon} />
+            </span>
             <span>{t(item.label, locale)}</span>
           </a>
         {/each}
@@ -390,9 +391,9 @@
             data-tone="admin"
             href={linkTo("/admin/users")}
           >
-            <span class="nav-icon" data-tone="admin"
-              ><NavIcon name="admin" /></span
-            >
+            <span class="nav-icon" data-tone="admin">
+              <NavIcon name="admin" />
+            </span>
             <span>{t("Admin", locale)}</span>
           </a>
         {/if}
@@ -418,9 +419,9 @@
               {t("You do not have access to this page.", locale)}
             </h1>
             <p>{t("Ask an administrator if you need access.", locale)}</p>
-            <a class="inline-link" href={linkTo("/projects")}
-              >{t("Back to projects", locale)}</a
-            >
+            <a class="inline-link" href={linkTo("/projects")}>
+              {t("Back to projects", locale)}
+            </a>
           </section>
         </main>
       {:else}
@@ -437,9 +438,9 @@
             data-tone={item.icon}
             href={linkTo(item.href)}
           >
-            <span class="nav-icon" data-tone={item.icon}
-              ><NavIcon name={item.icon} /></span
-            >
+            <span class="nav-icon" data-tone={item.icon}>
+              <NavIcon name={item.icon} />
+            </span>
             <span>{t(item.label, locale)}</span>
           </a>
         {/each}

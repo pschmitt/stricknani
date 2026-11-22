@@ -125,10 +125,9 @@
   }
 </script>
 
-<svelte:head
-  ><title>Stricknani · {t("Admin", locale)} · {t("Backups", locale)}</title
-  ></svelte:head
->
+<svelte:head>
+  <title>Stricknani · {t("Admin", locale)} · {t("Backups", locale)}</title>
+</svelte:head>
 
 <section
   class="backups-page page-container page-container--wide"
@@ -178,8 +177,9 @@
               "{name}",
               list.last_restore.backup,
             )}
-            {#if list.last_restore.error}<code>{list.last_restore.error}</code
-              >{/if}
+            {#if list.last_restore.error}<code>
+                {list.last_restore.error}
+              </code>{/if}
           {:else}
             <UserSentence
               template={t("{name} was restored on {time} by {user}.", locale)
@@ -207,9 +207,9 @@
         aria-labelledby="undo-title"
         data-testid="undo-card"
       >
-        <span class="undo-icon" aria-hidden="true"
-          ><NavIcon name="reset" /></span
-        >
+        <span class="undo-icon" aria-hidden="true">
+          <NavIcon name="reset" />
+        </span>
         <div class="undo-text">
           <h2 id="undo-title">{t("Undo the last restore", locale)}</h2>
           <p>
@@ -263,8 +263,9 @@
                       class="backup-time"
                       datetime={entry.created_at}
                       title={formatTime(entry.created_at)}
-                      >{formatClock(entry.created_at)}</time
                     >
+                      {formatClock(entry.created_at)}
+                    </time>
                     {#if age}<span class="backup-age">{age}</span>{/if}
                   </div>
                   <p class="backup-file" title={entry.name}>

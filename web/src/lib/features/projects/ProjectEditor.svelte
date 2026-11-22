@@ -1643,9 +1643,9 @@
   {:else if project && !mayEdit(project.access)}
     <div class="notice" role="status">
       <p>{t("You can view this project but not edit it.", locale)}</p>
-      <a href={resolve("/projects/[id]", { id: String(project.id) })}
-        >{t("Back to the project", locale)}</a
-      >
+      <a href={resolve("/projects/[id]", { id: String(project.id) })}>
+        {t("Back to the project", locale)}
+      </a>
     </div>
   {:else}
     {#if conflictProject}
@@ -1726,8 +1726,9 @@
                 {#if warning.code === "looks_like_yarn_page" && draft.link}
                   <a
                     href={`${resolve("/yarns/new")}${importStartQuery(draft.link)}`}
-                    >{t("New yarn", locale)}</a
                   >
+                    {t("New yarn", locale)}
+                  </a>
                 {/if}
               </p>{/each}
           {/if}
@@ -1741,12 +1742,9 @@
           <section class="form-card">
             <div class="field-grid">
               <div class="field field-wide">
-                <label for="project-name"
-                  ><LabelIcon name="projects" />{t(
-                    "Project name",
-                    locale,
-                  )}</label
-                >
+                <label for="project-name">
+                  <LabelIcon name="projects" />{t("Project name", locale)}
+                </label>
                 <input
                   id="project-name"
                   bind:value={draft.name}
@@ -1878,12 +1876,12 @@
                   max={uploadProgress.total}
                   value={uploadProgress.done}
                 ></progress>
-                <span
-                  >{uploadKind === "photo"
+                <span>
+                  {uploadKind === "photo"
                     ? t("Uploading photo", locale)
                     : t("Uploading file", locale)}
-                  {uploadProgress.current}/{uploadProgress.total}…</span
-                >
+                  {uploadProgress.current}/{uploadProgress.total}…
+                </span>
               </div>
             {/if}
             <div
@@ -1992,18 +1990,14 @@
                 <ul class="attachment-list">
                   {#each viewAttachments as attachment (attachment.id)}
                     <li>
-                      <a href={attachment.url}
-                        >{attachment.original_filename ??
-                          attachment.filename}</a
-                      >
-                      <span
-                        >{(attachment.size_bytes / 1024).toLocaleString(
-                          locale,
-                          {
-                            maximumFractionDigits: 1,
-                          },
-                        )} KB</span
-                      >
+                      <a href={attachment.url}>
+                        {attachment.original_filename ?? attachment.filename}
+                      </a>
+                      <span>
+                        {(attachment.size_bytes / 1024).toLocaleString(locale, {
+                          maximumFractionDigits: 1,
+                        })} KB
+                      </span>
                       <Button
                         type="button"
                         class="remove-button"
@@ -2048,20 +2042,20 @@
             <h2 id="basics-heading">{t("Project details", locale)}</h2>
             <div class="field-grid">
               <div class="field">
-                <label for="project-status"
-                  ><LabelIcon name="flag" />{t("Status", locale)}</label
-                >
+                <label for="project-status">
+                  <LabelIcon name="flag" />{t("Status", locale)}
+                </label>
                 <select id="project-status" bind:value={draft.status}>
-                  <option value="in_progress"
-                    >{t("Project in progress", locale)}</option
-                  >
+                  <option value="in_progress">
+                    {t("Project in progress", locale)}
+                  </option>
                   <option value="done">{t("Done", locale)}</option>
                 </select>
               </div>
               <div class="field">
-                <label for="project-category"
-                  ><LabelIcon name="folder" />{t("Category", locale)}</label
-                >
+                <label for="project-category">
+                  <LabelIcon name="folder" />{t("Category", locale)}
+                </label>
                 <CategorySelect
                   id="project-category"
                   bind:value={draft.category}
@@ -2069,25 +2063,26 @@
                   loading={categoryLoading}
                   {locale}
                 />
-                {#if categoryLoading}<span class="field-hint"
-                    >{t("Loading categories…", locale)}</span
-                  >{/if}
-                {#if categoryError}<span class="field-hint field-error"
-                    >{categoryError}</span
-                  >{/if}
+                {#if categoryLoading}<span class="field-hint">
+                    {t("Loading categories…", locale)}
+                  </span>{/if}
+                {#if categoryError}<span class="field-hint field-error">
+                    {categoryError}
+                  </span>{/if}
               </div>
               <div class="field">
-                <label for="project-needles"
-                  ><LabelIcon name="needle" />{t("Needles", locale)}</label
-                >
+                <label for="project-needles">
+                  <LabelIcon name="needle" />{t("Needles", locale)}
+                </label>
                 <input id="project-needles" bind:value={draft.needles} />
               </div>
               <div class="field field-wide">
                 <label
                   for="project-stitch-sample"
                   id="project-stitch-sample-label"
-                  ><LabelIcon name="gauge" />{t("Stitch sample", locale)}</label
                 >
+                  <LabelIcon name="gauge" />{t("Stitch sample", locale)}
+                </label>
                 <MarkdownEditor
                   id="project-stitch-sample"
                   labelledBy="project-stitch-sample-label"
@@ -2098,9 +2093,9 @@
                 />
               </div>
               <div class="field field-wide">
-                <label for="project-tag-entry"
-                  ><LabelIcon name="categories" />{t("Tags", locale)}</label
-                >
+                <label for="project-tag-entry">
+                  <LabelIcon name="categories" />{t("Tags", locale)}
+                </label>
                 <TagChipInput
                   bind:this={tagChips}
                   id="project-tag-entry"
@@ -2110,12 +2105,9 @@
                 />
               </div>
               <div class="field field-wide">
-                <label for="project-link"
-                  ><LabelIcon name="link" />{t(
-                    "Pattern source URL",
-                    locale,
-                  )}</label
-                >
+                <label for="project-link">
+                  <LabelIcon name="link" />{t("Pattern source URL", locale)}
+                </label>
                 <UrlField
                   id="project-link"
                   bind:value={draft.link}
@@ -2191,12 +2183,9 @@
                   onRemove={removeYarn}
                 />
                 <div class="field field-wide yarn-other-materials">
-                  <label for="project-materials" id="project-materials-label"
-                    ><LabelIcon name="scissors" />{t(
-                      "Other materials",
-                      locale,
-                    )}</label
-                  >
+                  <label for="project-materials" id="project-materials-label">
+                    <LabelIcon name="scissors" />{t("Other materials", locale)}
+                  </label>
                   <MarkdownEditor
                     id="project-materials"
                     labelledBy="project-materials-label"
@@ -2228,11 +2217,9 @@
                     <label
                       for="project-description"
                       id="project-description-label"
-                      ><LabelIcon name="text-align" />{t(
-                        "Pattern",
-                        locale,
-                      )}</label
                     >
+                      <LabelIcon name="text-align" />{t("Pattern", locale)}
+                    </label>
                     <MarkdownEditor
                       id="project-description"
                       labelledBy="project-description-label"
@@ -2324,12 +2311,12 @@
                           </div>
                         </div>
                         <div class="field">
-                          <label for={`step-title-${step.key}`}
-                            ><LabelIcon name="list-numbers" />{t(
+                          <label for={`step-title-${step.key}`}>
+                            <LabelIcon name="list-numbers" />{t(
                               "Step title",
                               locale,
-                            )}</label
-                          >
+                            )}
+                          </label>
                           <input
                             id={`step-title-${step.key}`}
                             bind:value={step.title}
@@ -2351,11 +2338,12 @@
                           <label
                             for={`step-description-${step.key}`}
                             id={`step-description-${step.key}-label`}
-                            ><LabelIcon name="text-align" />{t(
+                          >
+                            <LabelIcon name="text-align" />{t(
                               "Step instructions",
                               locale,
-                            )}</label
-                          >
+                            )}
+                          </label>
                           <MarkdownEditor
                             id={`step-description-${step.key}`}
                             labelledBy={`step-description-${step.key}-label`}
@@ -2497,19 +2485,22 @@
               href={projectId === null
                 ? resolve("/projects")
                 : resolve("/projects/[id]", { id: String(projectId) })}
-              ><ActionLabel icon="cancel">{t("Cancel", locale)}</ActionLabel></a
             >
+              <ActionLabel icon="cancel">{t("Cancel", locale)}</ActionLabel>
+            </a>
           {/snippet}
           {#snippet status()}
             {#if serverError}
               <span
                 aria-hidden="true"
-                class="action-status action-status--error">{serverError}</span
+                class="action-status action-status--error"
               >
+                {serverError}
+              </span>
             {:else if statusMessage}
-              <span aria-hidden="true" class="action-status"
-                >{statusMessage}</span
-              >
+              <span aria-hidden="true" class="action-status">
+                {statusMessage}
+              </span>
             {:else if isDirty || !isCreating}
               <!-- One span for both states: replacing the element on the first
                    keystroke splits the undo history of the name field. -->
@@ -2517,15 +2508,16 @@
                 class="dirty-note"
                 role="status"
                 data-testid={isDirty ? undefined : "saved-state"}
-                >{isDirty
+              >
+                {isDirty
                   ? stagedRemovalCount(staged) > 0
                     ? t(
                         "Unsaved changes. Removed items go to the trash when you save.",
                         locale,
                       )
                     : t("Unsaved changes", locale)
-                  : t("All changes saved", locale)}</span
-              >
+                  : t("All changes saved", locale)}
+              </span>
             {/if}
           {/snippet}
         </StickyActionBar>

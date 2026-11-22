@@ -96,12 +96,12 @@
     </div>
     <p class="import-progress__meta">
       <span>{formatElapsed(elapsed)}</span>
-      {#if ai}<span
-          >{t(
+      {#if ai}<span>
+          {t(
             "Some pages take a minute when the AI opens them in a browser.",
             locale,
-          )}</span
-        >{/if}
+          )}
+        </span>{/if}
     </p>
   </div>
 </div>
