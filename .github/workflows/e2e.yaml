@@ -60,7 +60,7 @@ concurrency:
   # diff still covers every change). On main every run finishes: the next
   # push may not match a job's paths, so a cancelled run would leave its
   # commit unchecked. Manual dispatches keep their own group.
-  group: E2E-${{ github.event_name }}-${{ github.ref }}
+  group: E2E-${{ github.event_name }}-${{ inputs.circus_pr_number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
@@ -88,6 +88,7 @@ jobs:
           pr-sha: ${{ inputs.circus_pr_sha }}
       - uses: actions/checkout@v7
         with:
+          ref: ${{ inputs.circus_pr_number != '' && inputs.circus_pr_sha || github.sha }}
           fetch-depth: 0
 
       - name: Test Nix producer synchronization helper
@@ -198,6 +199,8 @@ jobs:
         working-directory: web
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.circus_pr_number != '' && inputs.circus_pr_sha || github.sha }}
 
       - uses: actions/setup-node@v7
         with:
@@ -217,21 +220,32 @@ jobs:
           s3-access-key: ${{ secrets.NIKS3_S3_ACCESS_KEY }}
           s3-secret-key: ${{ secrets.NIKS3_S3_SECRET_KEY }}
 
+      - name: Checkout trusted producer helper
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.circus_pr_number != '' }}
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          path: .ci-main
+          persist-credentials: false
+          sparse-checkout: ci/wait-for-nix-producer.mjs
+          sparse-checkout-cone-mode: false
+
       - name: Wait for the Build Nix producer
         id: producer
         working-directory: .
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          SOURCE_SHA: ${{ github.sha }}
+          SOURCE_SHA: ${{ inputs.circus_pr_number != '' && inputs.circus_pr_sha || github.sha }}
           REF_NAME: ${{ github.ref_name }}
           REF_TYPE: ${{ github.ref_type }}
           PRODUCER_WORKFLOW: build.yaml
+          CIRCUS_PR_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.circus_pr_number != '' && inputs.circus_pr_sha || '' }}
           PRODUCER_JOB: nix / build
           PRODUCER_JOBS: nix / build
           ALLOW_STANDALONE: ${{ github.event_name == 'workflow_dispatch' && inputs.circus_pr_number == '' }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: node ci/wait-for-nix-producer.mjs
+        run: node ${{ inputs.circus_pr_number != '' && '.ci-main/ci/wait-for-nix-producer.mjs' || 'ci/wait-for-nix-producer.mjs' }}
 
       - name: Download producer source metadata
         if: steps.producer.outputs.standalone != 'true'
@@ -246,12 +260,12 @@ jobs:
         if: steps.producer.outputs.standalone != 'true'
         working-directory: .
         env:
-          SOURCE_SHA: ${{ github.sha }}
+          SOURCE_SHA: ${{ inputs.circus_pr_number != '' && inputs.circus_pr_sha || github.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PRODUCER_RUN_ID: ${{ steps.producer.outputs.producer_run_id }}
           PRODUCER_RUN_ATTEMPT: ${{ steps.producer.outputs.producer_run_attempt }}
           PRODUCER_METADATA_FILE: ${{ runner.temp }}/nix-producer/nix-producer.json
-        run: node ci/wait-for-nix-producer.mjs --verify
+        run: node ${{ inputs.circus_pr_number != '' && '.ci-main/ci/wait-for-nix-producer.mjs' || 'ci/wait-for-nix-producer.mjs' }} --verify
 
       - name: Build the canonical packaged web app
         working-directory: .
@@ -291,6 +305,8 @@ jobs:
       STRICKNANI_WEB_ROOT: ${{ github.workspace }}/web/build
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.circus_pr_number != '' && inputs.circus_pr_sha || github.sha }}
 
       - name: Download static app
         uses: actions/download-artifact@v8
@@ -393,21 +409,34 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.circus_pr_number != '' && inputs.circus_pr_sha || github.sha }}
+
+      - name: Checkout trusted producer helper
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.circus_pr_number != '' }}
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          path: .ci-main
+          persist-credentials: false
+          sparse-checkout: ci/wait-for-nix-producer.mjs
+          sparse-checkout-cone-mode: false
 
       - name: Wait for the Build Nix producer
         id: producer
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          SOURCE_SHA: ${{ github.sha }}
+          SOURCE_SHA: ${{ inputs.circus_pr_number != '' && inputs.circus_pr_sha || github.sha }}
           REF_NAME: ${{ github.ref_name }}
           REF_TYPE: ${{ github.ref_type }}
           PRODUCER_WORKFLOW: build.yaml
+          CIRCUS_PR_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.circus_pr_number != '' && inputs.circus_pr_sha || '' }}
           PRODUCER_JOB: nix / build
           PRODUCER_JOBS: nix / build
           ALLOW_STANDALONE: ${{ github.event_name == 'workflow_dispatch' && inputs.circus_pr_number == '' }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: node ci/wait-for-nix-producer.mjs
+        run: node ${{ inputs.circus_pr_number != '' && '.ci-main/ci/wait-for-nix-producer.mjs' || 'ci/wait-for-nix-producer.mjs' }}
 
       - name: Download producer source metadata
         if: steps.producer.outputs.standalone != 'true'
@@ -421,12 +450,12 @@ jobs:
       - name: Verify producer source metadata
         if: steps.producer.outputs.standalone != 'true'
         env:
-          SOURCE_SHA: ${{ github.sha }}
+          SOURCE_SHA: ${{ inputs.circus_pr_number != '' && inputs.circus_pr_sha || github.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PRODUCER_RUN_ID: ${{ steps.producer.outputs.producer_run_id }}
           PRODUCER_RUN_ATTEMPT: ${{ steps.producer.outputs.producer_run_attempt }}
           PRODUCER_METADATA_FILE: ${{ runner.temp }}/nix-producer/nix-producer.json
-        run: node ci/wait-for-nix-producer.mjs --verify
+        run: node ${{ inputs.circus_pr_number != '' && '.ci-main/ci/wait-for-nix-producer.mjs' || 'ci/wait-for-nix-producer.mjs' }} --verify
 
       - name: Prepare private fixture paths
         shell: bash
@@ -638,21 +667,34 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.circus_pr_number != '' && inputs.circus_pr_sha || github.sha }}
+
+      - name: Checkout trusted producer helper
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.circus_pr_number != '' }}
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          path: .ci-main
+          persist-credentials: false
+          sparse-checkout: ci/wait-for-nix-producer.mjs
+          sparse-checkout-cone-mode: false
 
       - name: Wait for the Build Nix producer
         id: producer
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          SOURCE_SHA: ${{ github.sha }}
+          SOURCE_SHA: ${{ inputs.circus_pr_number != '' && inputs.circus_pr_sha || github.sha }}
           REF_NAME: ${{ github.ref_name }}
           REF_TYPE: ${{ github.ref_type }}
           PRODUCER_WORKFLOW: build.yaml
+          CIRCUS_PR_SHA: ${{ github.event_name == 'workflow_dispatch' && inputs.circus_pr_number != '' && inputs.circus_pr_sha || '' }}
           PRODUCER_JOB: nix / build
           PRODUCER_JOBS: nix / build
           ALLOW_STANDALONE: ${{ github.event_name == 'workflow_dispatch' && inputs.circus_pr_number == '' }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: node ci/wait-for-nix-producer.mjs
+        run: node ${{ inputs.circus_pr_number != '' && '.ci-main/ci/wait-for-nix-producer.mjs' || 'ci/wait-for-nix-producer.mjs' }}
 
       - name: Download producer source metadata
         if: steps.producer.outputs.standalone != 'true'
@@ -666,12 +708,12 @@ jobs:
       - name: Verify producer source metadata
         if: steps.producer.outputs.standalone != 'true'
         env:
-          SOURCE_SHA: ${{ github.sha }}
+          SOURCE_SHA: ${{ inputs.circus_pr_number != '' && inputs.circus_pr_sha || github.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           PRODUCER_RUN_ID: ${{ steps.producer.outputs.producer_run_id }}
           PRODUCER_RUN_ATTEMPT: ${{ steps.producer.outputs.producer_run_attempt }}
           PRODUCER_METADATA_FILE: ${{ runner.temp }}/nix-producer/nix-producer.json
-        run: node ci/wait-for-nix-producer.mjs --verify
+        run: node ${{ inputs.circus_pr_number != '' && '.ci-main/ci/wait-for-nix-producer.mjs' || 'ci/wait-for-nix-producer.mjs' }} --verify
 
       - name: Set up Node.js
         uses: actions/setup-node@v7

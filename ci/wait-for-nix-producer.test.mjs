@@ -102,6 +102,37 @@ test("uses the exact source Circus artifact producer", async () => {
   assert.equal(result.runId, api.run.id);
 });
 
+test("matches a PR artifact producer dispatched from trusted main by exact PR source", async () => {
+  const api = fixture({ event: "workflow_dispatch" });
+  api.run.head_branch = "main";
+  api.run.head_sha = sha("c");
+  api.run.display_title = `Circus PR artifacts ${sha("a")}`;
+  const fetcher = async (url) => {
+    if (new URL(url).pathname.endsWith(`/workflows/${workflowId}/runs`)) {
+      assert.equal(new URL(url).searchParams.get("branch"), "main");
+      assert.equal(new URL(url).searchParams.get("head_sha"), null);
+      return Response.json({ workflow_runs: [
+        { ...api.run, id: 999, display_title: `Circus PR artifacts ${sha("b")}`, created_at: "2026-11-12T13:00:00Z" },
+        api.run,
+      ] });
+    }
+    return api.fetcher(url);
+  };
+  const result = await waitForProducer({
+    env: env({ GITHUB_EVENT_NAME: "workflow_dispatch", CIRCUS_PR_SHA: sha("a") }),
+    fetcher, sleep: async () => {}, log: () => {},
+  });
+  assert.equal(result.runId, api.run.id);
+  assert.equal(result.sourceSha, sha("a"));
+});
+
+test("rejects a mismatched PR source before looking up a producer", async () => {
+  await assert.rejects(waitForProducer({
+    env: env({ GITHUB_EVENT_NAME: "workflow_dispatch", CIRCUS_PR_SHA: sha("b") }),
+    fetcher: async () => assert.fail("must reject before API lookup"), sleep: async () => {}, log: () => {},
+  }), /exact dispatched PR source SHA/);
+});
+
 test("rejects unrelated or stale status producer runs", async () => {
   for (const mutate of [
     (run) => {

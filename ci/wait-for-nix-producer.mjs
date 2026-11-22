@@ -40,6 +40,16 @@ function chooseRun(runs, context) {
   const ordered = runs.toSorted(
     (a, b) => Date.parse(b.created_at) - Date.parse(a.created_at),
   );
+  if (context.circusPrSha) {
+    return (
+      ordered.find(
+        (run) =>
+          run.event === "workflow_dispatch" &&
+          run.head_branch === "main" &&
+          run.display_title === `Circus PR artifacts ${context.circusPrSha}`,
+      ) ?? null
+    );
+  }
   if (context.event === "pull_request") {
     const match = ordered.find(
       (run) =>
@@ -307,6 +317,7 @@ export async function waitForProducer({
   const refType = env.REF_TYPE ?? "";
   const prNumber = Number(env.PR_NUMBER ?? "");
   const prHeadSha = env.PR_HEAD_SHA ?? "";
+  const circusPrSha = env.CIRCUS_PR_SHA ?? "";
   const requiredNames = requiredEnv(env, "PRODUCER_JOBS")
     .split(",")
     .map((name) => name.trim())
@@ -327,10 +338,14 @@ export async function waitForProducer({
     "POLL_INTERVAL_MS",
   );
   const runUrl = `${API}/repos/${repo}/actions/workflows/${encodeURIComponent(workflow)}/runs`;
-  const context = { event, sourceSha, refName, refType, prNumber, prHeadSha };
+  const context = { event, sourceSha, refName, refType, prNumber, prHeadSha, circusPrSha };
   const standaloneAllowed =
-    standalone &&
+    !circusPrSha && standalone &&
     (event === "workflow_dispatch" || (event === "push" && refType === "tag"));
+
+  if (circusPrSha && (event !== "workflow_dispatch" || circusPrSha !== sourceSha || !/^[0-9a-f]{40}$/.test(circusPrSha))) {
+    fail("Circus PR producer lookup requires the exact dispatched PR source SHA.");
+  }
 
   if (
     event === "pull_request" &&
@@ -343,7 +358,9 @@ export async function waitForProducer({
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     if (!run) {
       const eventFilters =
-        event === "pull_request"
+        circusPrSha
+          ? ["workflow_dispatch"]
+          : event === "pull_request"
           ? ["pull_request"]
           : event === "status"
             ? ["status"]
@@ -356,12 +373,14 @@ export async function waitForProducer({
             event: eventFilter,
             per_page: "100",
           });
-          if ((event === "push" && refType === "branch") || event === "status")
+          if (circusPrSha) query.set("branch", "main");
+          else if ((event === "push" && refType === "branch") || event === "status")
             query.set("branch", refName);
-          query.set(
-            "head_sha",
-            event === "pull_request" ? prHeadSha : sourceSha,
-          );
+          if (!circusPrSha)
+            query.set(
+              "head_sha",
+              event === "pull_request" ? prHeadSha : sourceSha,
+            );
           return apiJson(
             fetcher,
             token,
