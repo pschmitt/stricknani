@@ -70,6 +70,7 @@ import blue.anika.wolle.ui.common.StickyNoteField
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.SuggestionTextField
 import blue.anika.wolle.ui.common.UrlTextField
+import blue.anika.wolle.ui.common.WashingInstructionsCard
 import blue.anika.wolle.ui.common.photoAutoScroll
 import blue.anika.wolle.ui.common.rememberCameraDeniedNotifier
 import blue.anika.wolle.ui.common.rememberPhotoCapture
@@ -613,6 +614,14 @@ fun YarnEditorScreen(
                             )
                         }
                     }
+                }
+                item(key = "washing-instructions") {
+                    WashingInstructionsCard(
+                        value = form.washingInstructions,
+                        onValueChange = { value ->
+                            viewModel.updateForm { it.copy(washingInstructions = value) }
+                        },
+                    )
                 }
             }
         }

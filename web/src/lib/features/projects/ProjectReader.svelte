@@ -1,4 +1,5 @@
 <script lang="ts">
+  import WashingInstructions from "#lib/components/WashingInstructions.svelte";
   import StickyNote from "#lib/components/StickyNote.svelte";
   import { onDestroy, tick, untrack } from "svelte";
   import ErrorPanel from "#lib/components/ErrorPanel.svelte";
@@ -1472,6 +1473,11 @@
           {@render stepsSection()}
         {/if}
       {/each}
+      <WashingInstructions
+        {locale}
+        value={currentProject.washing_instructions}
+        {textSizeClass}
+      />
     </div>
 
     {#if !adminData && !trashed}

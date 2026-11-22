@@ -433,6 +433,10 @@ fn project_value(
 ) -> Result<Value, sqlx::Error> {
     let project_id = project.id;
     let mut map = object(serde_json::to_value(&project).map_err(db_error)?)?;
+    map.insert(
+        "washing_instructions".into(),
+        json!(project.washing_instructions),
+    );
     // The canonical cover is the lowest-id image flagged as cover.
     let cover = rows
         .iter()
@@ -489,6 +493,10 @@ fn yarn_value(
 ) -> Result<Value, sqlx::Error> {
     let yarn_id = yarn.id;
     let mut map = object(serde_json::to_value(&yarn).map_err(db_error)?)?;
+    map.insert(
+        "washing_instructions".into(),
+        json!(yarn.washing_instructions),
+    );
     let primary = rows.iter().find(|row| row.8).map(|row| row.0);
     let photos = rows
         .iter()

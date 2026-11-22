@@ -1,4 +1,5 @@
 <script lang="ts">
+  import WashingInstructions from "#lib/components/WashingInstructions.svelte";
   import StickyNote from "#lib/components/StickyNote.svelte";
   import ErrorPanel from "#lib/components/ErrorPanel.svelte";
   import { untrack } from "svelte";
@@ -774,6 +775,11 @@
             {@render usedInSection()}
           {/if}
         {/each}
+        <WashingInstructions
+          {locale}
+          value={currentYarn.washing_instructions}
+          {textSizeClass}
+        />
       </div>
     </div>
 

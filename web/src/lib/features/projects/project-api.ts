@@ -105,6 +105,7 @@ export interface ProjectDetail extends ProjectSummary {
   description: string | null;
   description_html: string | null;
   notes: string | null;
+  washing_instructions?: string | null;
   notes_html: string | null;
   other_materials: string | null;
   other_materials_html: string | null;
@@ -134,6 +135,7 @@ export interface ProjectWrite {
   stitch_sample: string | null;
   description: string | null;
   notes: string | null;
+  washing_instructions?: string | null;
   other_materials: string | null;
   tags: string[];
   link: string | null;
@@ -591,6 +593,8 @@ function parseProjectDetailValue(value: unknown): ProjectDetail {
     !nullableString(value.description) ||
     !nullableString(value.description_html) ||
     !nullableString(value.notes) ||
+    (value.washing_instructions !== undefined &&
+      !nullableString(value.washing_instructions)) ||
     !nullableString(value.notes_html) ||
     !nullableString(value.other_materials) ||
     !nullableString(value.other_materials_html) ||
@@ -632,6 +636,9 @@ function parseProjectDetailValue(value: unknown): ProjectDetail {
     description: value.description,
     description_html: value.description_html,
     notes: value.notes,
+    ...(value.washing_instructions !== undefined
+      ? { washing_instructions: value.washing_instructions }
+      : {}),
     notes_html: value.notes_html,
     other_materials: value.other_materials,
     other_materials_html: value.other_materials_html,

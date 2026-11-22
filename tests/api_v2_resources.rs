@@ -739,3 +739,75 @@ async fn yarn_validation_accepts_large_resource_bodies_and_rejects_over_limit_pa
         "payload_too_large"
     );
 }
+
+#[tokio::test]
+async fn washing_instructions_are_optional_and_can_be_updated_or_cleared() {
+    let (app, pool) = fixture().await;
+    let email = "washing@example.test";
+    let password = "washing-test-password";
+    db::create_user(&pool, email, password.to_owned())
+        .await
+        .unwrap();
+    let (session, csrf) = signed_in(&app, email, password).await;
+
+    for resource in ["projects", "yarns"] {
+        let collection = format!("/{resource}");
+        let create = app
+            .clone()
+            .oneshot(request(
+                "POST",
+                &collection,
+                &session,
+                Some(&csrf),
+                Some(r#"{"name":"Wool"}"#.to_owned()),
+            ))
+            .await
+            .unwrap();
+        assert_eq!(create.status(), StatusCode::CREATED);
+        let created = json(create).await;
+        let id = created["data"]["id"].as_i64().unwrap();
+        assert_eq!(
+            created["data"]["washing_instructions"],
+            serde_json::Value::Null
+        );
+        let path = format!("{collection}/{id}");
+
+        for (body, expected) in [
+            (
+                serde_json::json!({"name":"Wool","washing_instructions":"  Hand wash\nDry flat  "}),
+                Some("Hand wash\nDry flat"),
+            ),
+            (
+                serde_json::json!({"name":"Renamed"}),
+                Some("Hand wash\nDry flat"),
+            ),
+            (
+                serde_json::json!({"name":"Renamed","washing_instructions":""}),
+                None,
+            ),
+        ] {
+            let update = app
+                .clone()
+                .oneshot(request(
+                    "PUT",
+                    &path,
+                    &session,
+                    Some(&csrf),
+                    Some(body.to_string()),
+                ))
+                .await
+                .unwrap();
+            assert_eq!(update.status(), StatusCode::OK);
+            let detail = app
+                .clone()
+                .oneshot(request("GET", &path, &session, None, None))
+                .await
+                .unwrap();
+            assert_eq!(detail.status(), StatusCode::OK);
+            assert_eq!(
+                json(detail).await["data"]["washing_instructions"],
+                serde_json::json!(expected)
+            );
+        }
+    }
+}

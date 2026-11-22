@@ -1,4 +1,5 @@
 <script lang="ts">
+  import WashingInstructions from "#lib/components/WashingInstructions.svelte";
   import ErrorPanel from "#lib/components/ErrorPanel.svelte";
   import CategorySelect from "../categories/CategorySelect.svelte";
   import LabelIcon from "#lib/components/LabelIcon.svelte";
@@ -2447,6 +2448,11 @@
               </section>
             </div>
           </details>
+          <WashingInstructions
+            {locale}
+            value={draft.washingInstructions}
+            onInput={(value) => (draft.washingInstructions = value)}
+          />
         </fieldset>
 
         {#if project && mayManage(project.access)}

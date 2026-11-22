@@ -18,6 +18,7 @@ data class YarnPrintLabels(
     val description: String,
     val notes: String,
     val usedIn: String,
+    val washingInstructions: String,
 )
 
 /**
@@ -105,6 +106,13 @@ object YarnPrintDocument {
         if (!yarn.notes.isNullOrBlank()) {
             body.append("<h2>").append(PrintHtml.escape(labels.notes)).append("</h2>")
             body.append(markdown(yarn.notes))
+        }
+        if (!yarn.washingInstructions.isNullOrBlank()) {
+            body.append("<h2>").append(PrintHtml.escape(labels.washingInstructions)).append("</h2>")
+            body
+                .append("<p style=\"white-space: pre-wrap\">")
+                .append(PrintHtml.escape(yarn.washingInstructions))
+                .append("</p>")
         }
         return PrintHtml.document(yarn.name, body.toString())
     }

@@ -42,6 +42,7 @@ data class YarnDto(
     @SerialName("weight_grams") val weightGrams: Int? = null,
     @SerialName("length_meters") val lengthMeters: Int? = null,
     val notes: String? = null,
+    @SerialName("washing_instructions") val washingInstructions: String? = null,
     val link: String? = null,
     @SerialName("link_archive") val linkArchive: String? = null,
     @SerialName("is_ai_enhanced") val isAiEnhanced: Boolean,
@@ -92,6 +93,7 @@ data class YarnWriteRequest(
     @SerialName("weight_grams") val weightGrams: Int? = null,
     @SerialName("length_meters") val lengthMeters: Int? = null,
     val notes: String? = null,
+    @SerialName("washing_instructions") val washingInstructions: String? = null,
     val link: String? = null,
     @SerialName("is_ai_enhanced") val isAiEnhanced: Boolean = false,
     /** SNA-33: see `ProjectWriteRequest.expectedUpdatedAt`'s kdoc - same contract. */

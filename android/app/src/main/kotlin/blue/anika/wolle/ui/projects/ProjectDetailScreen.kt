@@ -124,6 +124,7 @@ import blue.anika.wolle.ui.common.SourceRows
 import blue.anika.wolle.ui.common.StickyNoteEmpty
 import blue.anika.wolle.ui.common.StricknaniSnackbarHost
 import blue.anika.wolle.ui.common.TextSizeMenuSection
+import blue.anika.wolle.ui.common.WashingInstructionsCard
 import blue.anika.wolle.ui.common.YarnLoader
 import blue.anika.wolle.ui.common.copyLines
 import blue.anika.wolle.ui.common.extractMarkdownImageReferences
@@ -209,6 +210,7 @@ fun ProjectDetailScreen(
             description = stringResource(R.string.project_detail_description_title),
             steps = stringResource(R.string.project_detail_steps_title),
             notes = stringResource(R.string.project_detail_notes_title),
+            washingInstructions = stringResource(R.string.washing_instructions),
         )
 
     val deleted by viewModel.deleted.collectAsStateWithLifecycle()
@@ -964,6 +966,13 @@ internal fun ProjectDetailContent(
                         }
                 }
             }
+            detail.washingInstructions
+                ?.takeIf { it.isNotBlank() }
+                ?.let { instructions ->
+                    item(key = "washing-instructions") {
+                        WashingInstructionsCard(value = instructions)
+                    }
+                }
             if (detail.notes == null && canEdit) {
                 item(key = "notes-empty") {
                     StickyNoteEmpty(

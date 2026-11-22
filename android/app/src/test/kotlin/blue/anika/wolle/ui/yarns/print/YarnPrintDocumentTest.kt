@@ -22,6 +22,7 @@ class YarnPrintDocumentTest {
             link = "Link",
             description = "Description",
             notes = "Notes",
+            washingInstructions = "Washing instructions",
             usedIn = "Used in",
         )
 

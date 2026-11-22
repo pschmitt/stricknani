@@ -19,6 +19,7 @@ data class PrintLabels(
     val description: String,
     val steps: String,
     val notes: String,
+    val washingInstructions: String,
 )
 
 /**
@@ -131,6 +132,16 @@ object ProjectPrintDocument {
         if (options.content == PrintContent.EVERYTHING && !project.notes.isNullOrBlank()) {
             body.append("<h2>").append(PrintHtml.escape(labels.notes)).append("</h2>")
             body.append(markdown(project.notes))
+        }
+        if (
+            options.content == PrintContent.EVERYTHING &&
+                !project.washingInstructions.isNullOrBlank()
+        ) {
+            body.append("<h2>").append(PrintHtml.escape(labels.washingInstructions)).append("</h2>")
+            body
+                .append("<p style=\"white-space: pre-wrap\">")
+                .append(PrintHtml.escape(project.washingInstructions))
+                .append("</p>")
         }
         return PrintHtml.document(project.name, body.toString())
     }

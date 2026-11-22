@@ -1,4 +1,5 @@
 <script lang="ts">
+  import WashingInstructions from "#lib/components/WashingInstructions.svelte";
   import LabelIcon from "#lib/components/LabelIcon.svelte";
   import MarkdownEditor from "#lib/components/MarkdownEditor.svelte";
   import StickyNoteField from "#lib/components/StickyNoteField.svelte";
@@ -86,6 +87,7 @@
     length_meters: string;
     description: string;
     notes: string;
+    washingInstructions: string;
     link: string;
   };
 
@@ -101,6 +103,7 @@
     length_meters: "",
     description: "",
     notes: "",
+    washingInstructions: "",
     link: "",
   });
 
@@ -326,6 +329,7 @@
         yarn.length_meters === null ? "" : String(yarn.length_meters),
       description: yarn.description ?? "",
       notes: yarn.notes ?? "",
+      washingInstructions: yarn.washing_instructions ?? "",
       link: yarn.link ?? "",
     };
   }
@@ -433,6 +437,7 @@
       weight_grams: weightGrams,
       length_meters: lengthMeters,
       notes: optionalText(draft.notes),
+      washing_instructions: draft.washingInstructions.trim(),
       link,
       is_ai_enhanced: loadedYarn?.is_ai_enhanced ?? importAi,
       ...(imageUrls.length ? { image_urls: imageUrls } : {}),
@@ -1283,6 +1288,13 @@
           </div>
         </div>
       </fieldset>
+
+      <WashingInstructions
+        {locale}
+        value={draft.washingInstructions}
+        onInput={(value) => setDraft("washingInstructions", value)}
+        disabled={saving || mediaBusy || deleting || createdYarn !== null}
+      />
 
       {#if loadedYarn && !canManagePhotos && !mediaBusy && isDirty}
         <p class="media-hint">

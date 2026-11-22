@@ -174,6 +174,7 @@ struct ProjectIn {
     stitch_sample: Option<String>,
     description: Option<String>,
     notes: Option<String>,
+    washing_instructions: Option<String>,
     other_materials: Option<String>,
     #[serde(default, deserialize_with = "null_default")]
     tags: Vec<String>,
@@ -211,6 +212,7 @@ struct YarnIn {
     weight_grams: Option<i64>,
     length_meters: Option<i64>,
     notes: Option<String>,
+    washing_instructions: Option<String>,
     link: Option<String>,
     link_archive: Option<String>,
     #[serde(default, deserialize_with = "null_default")]
@@ -989,8 +991,8 @@ async fn insert_all(
         let id = sqlx::query_scalar::<_, i64>(
             "INSERT INTO yarns (owner_id, name, description, brand, colorway, dye_lot, \
              fiber_content, weight_category, recommended_needles, weight_grams, length_meters, \
-             notes, link, link_archive, is_ai_enhanced, created_at, updated_at) \
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+             notes, washing_instructions, link, link_archive, is_ai_enhanced, created_at, updated_at) \
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
         )
         .bind(user_id)
         .bind(&name)
@@ -1004,6 +1006,7 @@ async fn insert_all(
         .bind(yarn.weight_grams)
         .bind(yarn.length_meters)
         .bind(clean(yarn.notes.as_deref()))
+        .bind(clean(yarn.washing_instructions.as_deref()))
         .bind(clean(yarn.link.as_deref()))
         .bind(clean(yarn.link_archive.as_deref()))
         .bind(yarn.is_ai_enhanced)
@@ -1056,9 +1059,9 @@ async fn insert_all(
         let tags = serde_json::to_string(&project.tags).unwrap_or_else(|_| "[]".to_owned());
         let id = sqlx::query_scalar::<_, i64>(
             "INSERT INTO projects (owner_id, category_id, name, needles, stitch_sample, \
-             description, notes, other_materials, tags, link, link_archive, is_ai_enhanced, \
+             description, notes, washing_instructions, other_materials, tags, link, link_archive, is_ai_enhanced, \
              status, created_at, updated_at) \
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
         )
         .bind(user_id)
         .bind(category)
@@ -1067,6 +1070,7 @@ async fn insert_all(
         .bind(clean(project.stitch_sample.as_deref()))
         .bind(clean(project.description.as_deref()))
         .bind(clean(project.notes.as_deref()))
+        .bind(clean(project.washing_instructions.as_deref()))
         .bind(clean(project.other_materials.as_deref()))
         .bind(tags)
         .bind(clean(project.link.as_deref()))

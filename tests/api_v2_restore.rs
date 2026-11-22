@@ -200,8 +200,8 @@ async fn seed_source(f: &Fx) -> Source {
         .unwrap();
     let own_project: i64 = sqlx::query_scalar(
         "INSERT INTO projects (owner_id, category_id, name, needles, stitch_sample, description, \
-         notes, other_materials, tags, link, link_archive, is_ai_enhanced, created_at, updated_at) \
-         VALUES (?, ?, 'Wool socks', '3 mm', '20 stitches', 'cosy', 'my notes', 'buttons', \
+         notes, washing_instructions, other_materials, tags, link, link_archive, is_ai_enhanced, created_at, updated_at) \
+         VALUES (?, ?, 'Wool socks', '3 mm', '20 stitches', 'cosy', 'my notes', 'Dry flat', 'buttons', \
          '[\"socks\",\"wool\"]', 'https://example.test/pattern', 'https://archive.example.test/p', 1, ?, ?) \
          RETURNING id",
     )
@@ -238,8 +238,8 @@ async fn seed_source(f: &Fx) -> Source {
         .unwrap();
     let own_yarn: i64 = sqlx::query_scalar(
         "INSERT INTO yarns (owner_id,name,brand,colorway,fiber_content,weight_grams,length_meters, \
-         notes,link,is_ai_enhanced,created_at,updated_at) \
-         VALUES (?, 'Merino', 'Acme', 'blue', '100% wool', 100, 400, 'soft', 'https://example.test/y', 0, ?, ?) \
+         notes,washing_instructions,link,is_ai_enhanced,created_at,updated_at) \
+         VALUES (?, 'Merino', 'Acme', 'blue', '100% wool', 100, 400, 'soft', 'Hand wash', 'https://example.test/y', 0, ?, ?) \
          RETURNING id",
     )
     .bind(f.anika)
@@ -758,6 +758,17 @@ async fn round_trip(archive_kind: &str) {
             ("heel".into(), None, 2)
         ]
     );
+
+    let care: (String, String) = sqlx::query_as(
+        "SELECT p.washing_instructions, y.washing_instructions FROM projects p \
+         JOIN project_yarns l ON l.project_id = p.id JOIN yarns y ON y.id = l.yarn_id \
+         WHERE p.id = ?",
+    )
+    .bind(new_project)
+    .fetch_one(&f.pool)
+    .await
+    .unwrap();
+    assert_eq!(care, ("Dry flat".into(), "Hand wash".into()));
 
     // Links and favourites.
     let links: Vec<(String, String)> = sqlx::query_as(

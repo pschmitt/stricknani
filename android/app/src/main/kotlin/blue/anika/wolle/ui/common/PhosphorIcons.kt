@@ -14,7 +14,11 @@ import androidx.compose.ui.unit.dp
  * inset) so it has the same optical size as the Material icons around it.
  */
 object PhosphorIcons {
-    private fun phosphor(name: String, vararg paths: String): ImageVector =
+    private fun phosphor(
+        name: String,
+        vararg paths: String,
+        fillType: PathFillType = PathFillType.NonZero,
+    ): ImageVector =
         ImageVector.Builder(
                 name = "Phosphor$name",
                 defaultWidth = 24.dp,
@@ -28,12 +32,23 @@ object PhosphorIcons {
                     addPath(
                         pathData = PathParser().parsePathString(path).toNodes(),
                         fill = SolidColor(Color.Black),
-                        pathFillType = PathFillType.NonZero,
+                        pathFillType = fillType,
                     )
                 }
                 clearGroup()
             }
             .build()
+
+    val Laundry: ImageVector by lazy {
+        phosphor(
+            "Laundry",
+            "M48 24h160a16 16 0 0 1 16 16v176a16 16 0 0 1-16 16H48a16 16 0 0 1-16-16V40a16 16 0 0 " +
+                "1 16-16Zm0 16v40h160V40Zm0 56v120h160V96Zm80 8a48 48 0 1 1 0 96 48 48 0 0 1 0-96Zm0 " +
+                "16a32 32 0 0 0-32 30c25-15 38 15 64 0a32 32 0 0 0-32-30Zm-29 46a32 32 0 0 0 59 1c-25 " +
+                "10-38-14-59-1ZM72 50a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm32 2h24v16h-24Z",
+            fillType = PathFillType.EvenOdd,
+        )
+    }
 
     val HouseLine: ImageVector by lazy {
         phosphor(

@@ -62,6 +62,7 @@ export function projectFromImport(
       stitchSample: editor.stitchSample,
       description: editor.description,
       notes: editor.notes,
+      washingInstructions: "",
       otherMaterials: editor.otherMaterials,
       tags: [],
       link: editor.link,

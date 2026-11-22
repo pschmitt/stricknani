@@ -69,6 +69,7 @@ data class YarnEditorFormState(
     val weightGrams: String = "",
     val lengthMeters: String = "",
     val notes: String = "",
+    val washingInstructions: String = "",
     val link: String = "",
     val isAiEnhanced: Boolean = false,
     val existingPhotos: List<YarnPhotoDto> = emptyList(),
@@ -280,6 +281,7 @@ constructor(
                             weightGrams = detail.weightGrams?.toString() ?: "",
                             lengthMeters = detail.lengthMeters?.toString() ?: "",
                             notes = detail.notes ?: "",
+                            washingInstructions = detail.washingInstructions.orEmpty(),
                             link = detail.link ?: "",
                             isAiEnhanced = detail.isAiEnhanced,
                             existingPhotos = detail.photos.photosSortedByPosition(),
@@ -398,6 +400,7 @@ constructor(
                         weightGrams = current.weightGrams.trim().toIntOrNull(),
                         lengthMeters = current.lengthMeters.trim().toIntOrNull(),
                         notes = current.notes.trim().ifBlank { null },
+                        washingInstructions = current.washingInstructions.trim(),
                         link = current.link.trim().ifBlank { null },
                         isAiEnhanced = current.isAiEnhanced,
                         imageUrls =

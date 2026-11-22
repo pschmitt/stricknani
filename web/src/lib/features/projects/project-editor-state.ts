@@ -14,6 +14,7 @@ export interface ProjectDraft {
   stitchSample: string;
   description: string;
   notes: string;
+  washingInstructions: string;
   otherMaterials: string;
   tags: string[];
   link: string;
@@ -36,6 +37,7 @@ export function blankProjectDraft(): ProjectDraft {
     stitchSample: "",
     description: "",
     notes: "",
+    washingInstructions: "",
     otherMaterials: "",
     tags: [],
     link: "",
@@ -58,6 +60,7 @@ export function projectDraftFromDetail(
     stitchSample: project.stitch_sample ?? "",
     description: project.description ?? "",
     notes: project.notes ?? "",
+    washingInstructions: project.washing_instructions ?? "",
     otherMaterials: project.other_materials ?? "",
     tags: [...project.tags],
     link: project.link ?? "",
@@ -85,6 +88,7 @@ export function projectWriteFromDraft(
     stitch_sample: optionalText(draft.stitchSample),
     description: optionalText(draft.description),
     notes: optionalText(draft.notes),
+    washing_instructions: draft.washingInstructions.trim(),
     other_materials: optionalText(draft.otherMaterials),
     tags: [...draft.tags],
     link: optionalText(draft.link),

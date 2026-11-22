@@ -86,6 +86,7 @@ data class ProjectEditorFormState(
     val stitchSample: String = "",
     val description: String = "",
     val notes: String = "",
+    val washingInstructions: String = "",
     val otherMaterials: String = "",
     /** The finished tags, shown as chips. */
     val tags: List<String> = emptyList(),
@@ -481,6 +482,7 @@ constructor(
                             stitchSample = detail.stitchSample ?: "",
                             description = detail.description ?: "",
                             notes = detail.notes ?: "",
+                            washingInstructions = detail.washingInstructions.orEmpty(),
                             otherMaterials = detail.otherMaterials ?: "",
                             tags = detail.tags,
                             link = detail.link ?: "",
@@ -786,6 +788,7 @@ constructor(
                         stitchSample = current.stitchSample.trim().ifBlank { null },
                         description = current.description.trim().ifBlank { null },
                         notes = current.notes.trim().ifBlank { null },
+                        washingInstructions = current.washingInstructions.trim(),
                         otherMaterials = current.otherMaterials.trim().ifBlank { null },
                         tags = current.committedTags(),
                         link = current.link.trim().ifBlank { null },

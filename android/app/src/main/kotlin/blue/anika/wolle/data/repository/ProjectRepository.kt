@@ -831,6 +831,7 @@ private fun ProjectWriteRequest.toPlaceholderEntity(tempId: Int, json: Json): Pr
             stitchSample = stitchSample,
             description = description,
             notes = notes,
+            washingInstructions = washingInstructions?.takeIf { it.isNotBlank() },
             otherMaterials = otherMaterials,
             tags = tags,
             link = link,
@@ -863,6 +864,8 @@ private fun ProjectWriteRequest.applyTo(existing: ProjectEntity, json: Json): Pr
             stitchSample = stitchSample,
             description = description,
             notes = notes,
+            washingInstructions =
+                (washingInstructions ?: current.washingInstructions)?.takeIf { it.isNotBlank() },
             otherMaterials = otherMaterials,
             tags = tags,
             link = link,
