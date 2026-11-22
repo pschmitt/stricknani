@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { onMount } from "svelte";
   import NavIcon from "./NavIcon.svelte";
   import type { NavIconName } from "./NavIcon.svelte";
@@ -10,12 +11,14 @@
     options,
     disabled = false,
     onselect,
+    renderIcon,
   }: {
     label: string;
     value: string;
     options: Option[];
     disabled?: boolean;
     onselect: (value: string) => void;
+    renderIcon?: Snippet<[string]>;
   } = $props();
 
   let root = $state<HTMLDivElement | null>(null);
@@ -116,8 +119,12 @@
       else showMenu();
     }}
   >
-    {#if options[selected]?.icon}<NavIcon name={options[selected].icon!} />{/if}
-    <span>{options[selected]?.label ?? value}</span>
+    {#if renderIcon && options[selected]}
+      {@render renderIcon(options[selected].value)}
+    {:else if options[selected]?.icon}<NavIcon
+        name={options[selected].icon!}
+      />{/if}
+    <span class="choice-label">{options[selected]?.label ?? value}</span>
     <NavIcon name="chevron-down" />
   </button>
   {#if open}
@@ -132,10 +139,12 @@
           onclick={() => choose(index)}
           onfocus={() => (active = index)}
         >
-          {#if option.icon}<NavIcon name={option.icon} />{:else}<span
+          {#if renderIcon}
+            {@render renderIcon(option.value)}
+          {:else if option.icon}<NavIcon name={option.icon} />{:else}<span
               class="icon-space"
             ></span>{/if}
-          <span>{option.label}</span>
+          <span class="choice-label">{option.label}</span>
           {#if option.value === value}<NavIcon name="check" />{/if}
         </button>
       {/each}
@@ -186,7 +195,7 @@
     cursor: not-allowed;
     opacity: 0.65;
   }
-  .trigger span {
+  .choice-label {
     flex: 1;
   }
   .trigger :global(svg),
@@ -230,9 +239,6 @@
   }
   .menu button[aria-selected="true"] {
     color: var(--accent-strong);
-  }
-  .menu button span:nth-child(2) {
-    flex: 1;
   }
   .menu button :global(svg:last-child) {
     width: 0.95rem;

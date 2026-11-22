@@ -7,6 +7,7 @@
     type WashTemperature,
     type WashingSymbols,
   } from "./washing-symbols";
+  import FancySelect from "./FancySelect.svelte";
   import SectionHeading from "./SectionHeading.svelte";
 
   let {
@@ -46,7 +47,7 @@
   }
 </script>
 
-{#snippet symbol(option: Drying | "wash")}
+{#snippet symbol(option: Drying | "wash" | "hand_wash" | "clear")}
   <svg
     viewBox="0 0 24 24"
     fill="none"
@@ -58,6 +59,12 @@
   >
     {#if option === "wash"}
       <path d="m3 6 3 13h12l3-13M4.1 10c3.4-4 5.2 4 8.4 0 3.1-4 4.5 4 7.4 0" />
+    {:else if option === "hand_wash"}
+      <path
+        d="m3 9 3 11h12l3-11M8 13V7a1 1 0 0 1 2 0v3-6a1 1 0 0 1 2 0v5-3a1 1 0 0 1 2 0v4-2a1 1 0 0 1 2 0v4l-2 4h-3"
+      />
+    {:else if option === "clear"}
+      <path d="M6 12h12" />
     {:else}
       <rect x="4" y="4" width="16" height="16" rx="1.5" />
       {#if option === "flat"}
@@ -79,49 +86,72 @@
     >
     {#if onSymbols}
       <div class="symbol-group">
-        <label class="symbol-label" for={`${headingId}-temperature`}>
-          {t("Washing temperature", locale)}
-        </label>
-        <select
-          id={`${headingId}-temperature`}
-          {disabled}
+        <span class="symbol-label">{t("Washing temperature", locale)}</span>
+        <FancySelect
+          label={t("Washing temperature", locale)}
           value={symbols?.temperature ?? ""}
-          onchange={(event) => {
-            const value = event.currentTarget.value;
-            const temperature =
-              washTemperatures.find((option) => option === value) ?? null;
-            onSymbols?.({ ...symbols, temperature });
-          }}
+          options={[
+            { value: "", label: t("No selection", locale) },
+            ...washTemperatures.map((option) => ({
+              value: option,
+              label: temperatureLabel(option),
+            })),
+          ]}
+          {disabled}
+          onselect={(value) =>
+            onSymbols?.({
+              ...symbols,
+              temperature:
+                washTemperatures.find((option) => option === value) ?? null,
+            })}
         >
-          <option value="">{t("No selection", locale)}</option>
-          {#each washTemperatures as option (option)}
-            <option value={option}>{temperatureLabel(option)}</option>
-          {/each}
-        </select>
+          {#snippet renderIcon(value)}
+            <span class="care-icon">
+              {@render symbol(
+                value === ""
+                  ? "clear"
+                  : value === "hand_wash"
+                    ? "hand_wash"
+                    : "wash",
+              )}
+            </span>
+          {/snippet}
+        </FancySelect>
       </div>
-      <div class="symbol-group" role="group" aria-label={t("Drying", locale)}>
+      <div class="symbol-group">
         <span class="symbol-label">{t("Drying", locale)}</span>
-        <div class="symbol-options">
-          {#each dryingOptions as option (option)}
-            <button
-              type="button"
-              {disabled}
-              aria-pressed={symbols?.drying === option}
-              onclick={() =>
-                onSymbols?.({
-                  ...symbols,
-                  drying: symbols?.drying === option ? null : option,
-                })}
-            >
-              {@render symbol(option)}{dryingLabel(option)}
-            </button>
-          {/each}
-        </div>
+        <FancySelect
+          label={t("Drying", locale)}
+          value={symbols?.drying ?? ""}
+          options={[
+            { value: "", label: t("No selection", locale) },
+            ...dryingOptions.map((option) => ({
+              value: option,
+              label: dryingLabel(option),
+            })),
+          ]}
+          {disabled}
+          onselect={(value) =>
+            onSymbols?.({
+              ...symbols,
+              drying: dryingOptions.find((option) => option === value) ?? null,
+            })}
+        >
+          {#snippet renderIcon(value)}
+            <span class="care-icon">
+              {@render symbol(
+                dryingOptions.find((option) => option === value) ?? "clear",
+              )}
+            </span>
+          {/snippet}
+        </FancySelect>
       </div>
     {:else if symbols?.temperature || symbols?.drying}
       <ul class="symbol-options read-symbols">
         {#if symbols.temperature}<li>
-            {@render symbol("wash")}{temperatureLabel(symbols.temperature)}
+            {@render symbol(
+              symbols.temperature === "hand_wash" ? "hand_wash" : "wash",
+            )}{temperatureLabel(symbols.temperature)}
           </li>{/if}
         {#if symbols.drying}<li>
             {@render symbol(symbols.drying)}{dryingLabel(symbols.drying)}
@@ -169,7 +199,6 @@
     gap: 0.4rem;
   }
 
-  .symbol-options button,
   .read-symbols li {
     display: inline-flex;
     align-items: center;
@@ -180,16 +209,21 @@
     color: var(--ink);
   }
 
-  .symbol-options button {
-    min-height: 44px;
-    background: var(--card-fill);
-  }
-
-  .symbol-options button[aria-pressed="true"],
   .read-symbols li {
     border-color: var(--tone-yarns);
     background: var(--tone-yarns-wash);
     color: var(--tone-yarns);
+  }
+
+  .care-icon {
+    display: grid;
+    flex: 0 0 1.75rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    place-items: center;
+    border-radius: 0.5rem;
+    color: var(--tone-yarns);
+    background: var(--tone-yarns-wash);
   }
 
   .symbol-options svg {
