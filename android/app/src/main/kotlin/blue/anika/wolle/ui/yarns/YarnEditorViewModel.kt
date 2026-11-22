@@ -84,7 +84,7 @@ data class YarnEditorFormState(
 
 /**
  * The form with what an import found; a field the import has nothing for keeps what the user typed.
- * [notes] are the imported notes (gauge, care, price) the yarn has no field for.
+ * [notes] are the imported notes (gauge and price) the yarn has no field for.
  */
 internal fun YarnEditorFormState.withImport(
     preview: ImportedYarnPreview,
@@ -104,6 +104,8 @@ internal fun YarnEditorFormState.withImport(
         lengthMeters = imported.lengthMeters?.toString() ?: lengthMeters,
         notes = listOf(this.notes, notes.orEmpty()).filter { it.isNotBlank() }.joinToString("\n"),
         link = pick(imported.link, link),
+        washingInstructions = pick(imported.washingInstructions, washingInstructions),
+        washingSymbols = imported.washingSymbols ?: washingSymbols,
         isAiEnhanced = imported.isAiEnhanced,
         importImageUrls = preview.imageUrls,
         selectedImportImages = imported.imageUrls.toSet(),
@@ -153,8 +155,8 @@ constructor(
     fun startImport(url: String) = importSession.start(url)
 
     /**
-     * Fills the form from a finished import [draft]; [notesFor] writes the notes (gauge, care,
-     * price) in the app's language.
+     * Fills the form from a finished import [draft]; [notesFor] writes the notes (gauge and price)
+     * in the app's language.
      */
     fun applyImport(draft: ImportJobDto, notesFor: (ImportedYarnPreview) -> String?) {
         val dto = draft.preview

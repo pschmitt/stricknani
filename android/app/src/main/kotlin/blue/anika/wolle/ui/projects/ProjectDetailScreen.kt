@@ -608,6 +608,16 @@ internal fun ProjectDetailContent(
 ) {
     // A viewer (or a derived yarn) reads only: no Edit action, no section menu entry.
     val edit: ((String) -> Unit)? = if (canEdit) onEditSection else null
+    val hasProjectCare =
+        !detail.washingInstructions.isNullOrBlank() || detail.washingSymbols?.isEmpty() == false
+    val yarnCare =
+        detail.yarnIds
+            .singleOrNull()
+            ?.takeUnless { hasProjectCare }
+            ?.let { id -> linkedYarns.firstOrNull { it.id == id } }
+    val careText =
+        if (yarnCare == null) detail.washingInstructions else yarnCare.washingInstructions
+    val careSymbols = if (yarnCare == null) detail.washingSymbols else yarnCare.washingSymbols
     var viewerIndex by remember { mutableStateOf<Int?>(null) }
     val historyState by (history?.state ?: NoHistory).collectAsStateWithLifecycle()
     val viewerImages =
@@ -889,13 +899,10 @@ internal fun ProjectDetailContent(
                                         icon = PhosphorIcons.Scissors,
                                     )
                                 }
-                                if (
-                                    !detail.washingInstructions.isNullOrBlank() ||
-                                        detail.washingSymbols?.isEmpty() == false
-                                ) {
+                                if (!careText.isNullOrBlank() || careSymbols?.isEmpty() == false) {
                                     WashingInstructionsCard(
-                                        value = detail.washingInstructions.orEmpty(),
-                                        symbols = detail.washingSymbols,
+                                        value = careText.orEmpty(),
+                                        symbols = careSymbols,
                                     )
                                 }
                             }

@@ -5,6 +5,7 @@ import blue.anika.wolle.data.api.dto.ProjectImportResponseDto
 import blue.anika.wolle.data.api.dto.ProjectImportStepDto
 import blue.anika.wolle.data.api.dto.ProjectImportYarnDto
 import blue.anika.wolle.data.api.dto.ProjectImportYarnMatchDto
+import blue.anika.wolle.data.api.dto.WashingSymbols
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
@@ -152,6 +153,7 @@ data class ImportDraftYarnDto(
     val recommendedNeedles: String? = null,
     val gauge: String? = null,
     val care: String? = null,
+    val washingSymbols: WashingSymbols? = null,
     val price: String? = null,
     val link: String? = null,
     val imageUrls: List<String> = emptyList(),
@@ -165,6 +167,8 @@ data class ImportDraftProjectDto(
     val category: String? = null,
     val needles: String? = null,
     val otherMaterials: String? = null,
+    val washingInstructions: String? = null,
+    val washingSymbols: WashingSymbols? = null,
     val stitchSample: String? = null,
     val steps: List<ImportDraftStepDto> = emptyList(),
     val imageUrls: List<String> = emptyList(),
@@ -197,6 +201,8 @@ fun ImportPreviewDto.toV1(): ProjectImportResponseDto =
         stitchSample = draft.project.stitchSample,
         description = draft.project.description,
         otherMaterials = draft.project.otherMaterials,
+        washingInstructions = draft.project.washingInstructions,
+        washingSymbols = draft.project.washingSymbols,
         link = draft.project.link ?: draft.sourceUrl,
         designer = draft.project.designer,
         sizes = draft.project.sizes,

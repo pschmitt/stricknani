@@ -58,7 +58,7 @@ pub(crate) mod sharing;
 pub mod sync;
 pub mod trash;
 pub mod url_import;
-mod washing_symbols;
+pub mod washing_symbols;
 pub mod wayback;
 mod web;
 pub mod yarn_import;

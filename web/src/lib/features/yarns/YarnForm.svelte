@@ -367,6 +367,8 @@
       length_meters: editor.lengthMeters,
       description: editor.description,
       notes: editor.notes,
+      washingInstructions: editor.washingInstructions,
+      washingSymbols: editor.washingSymbols,
       link: editor.link,
     };
     importImages = editor.images;

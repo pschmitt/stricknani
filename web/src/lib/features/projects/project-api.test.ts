@@ -239,6 +239,8 @@ describe("project URL state and API DTOs", () => {
       weight_category: "DK",
       recommended_needles: null,
       notes_html: null,
+      washing_instructions: "Dry flat",
+      washing_symbols: { drying: "flat" },
       link: null,
       weight_grams: null,
       length_meters: null,
@@ -277,6 +279,8 @@ describe("project URL state and API DTOs", () => {
       getYarn(7, new AbortController().signal),
     ).resolves.toMatchObject({
       preview_url: "/media/thumbnails/yarns/7/primary.jpg",
+      washing_instructions: "Dry flat",
+      washing_symbols: { drying: "flat" },
     });
     await expect(
       getYarn(7, new AbortController().signal),

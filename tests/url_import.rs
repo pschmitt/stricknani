@@ -462,6 +462,43 @@ async fn ai_fills_gaps_but_never_overrides_markup_or_invents_numbers() {
     );
 }
 
+#[test]
+fn ai_import_keeps_care_on_the_correct_resource() {
+    let mut draft = draft_from("yarn_shop_en.html", "https://shop.yarnhaven.example/p");
+    let answer = serde_json::json!({
+        "yarn": {
+            "care": "Hand wash only. Dry flat.",
+            "washingSymbols": {"temperature": "hand_wash", "drying": "flat"}
+        }
+    });
+    ai_merge::apply(
+        &mut draft,
+        &answer,
+        "Hand wash only. Dry flat.",
+        ImportTarget::Yarn,
+    );
+    let yarn = serde_json::to_value(draft.yarn.as_ref()).unwrap();
+    assert_eq!(yarn["washingSymbols"], answer["yarn"]["washingSymbols"]);
+    assert_eq!(draft.provenance["yarn.washingSymbols"], FieldSource::Ai);
+    assert!(draft.project.washing_symbols.is_none());
+
+    let answer = serde_json::json!({
+        "project": {
+            "washingInstructions": "Dry flat.",
+            "washingSymbols": {"temperature": "60", "drying": "flat"}
+        }
+    });
+    ai_merge::apply(&mut draft, &answer, "Dry flat.", ImportTarget::Project);
+    assert_eq!(
+        draft.project.washing_instructions.as_deref(),
+        Some("Dry flat.")
+    );
+    assert_eq!(
+        serde_json::to_value(&draft.project.washing_symbols).unwrap(),
+        serde_json::json!({"temperature": null, "drying": "flat"})
+    );
+}
+
 #[tokio::test]
 async fn ai_garbage_is_an_error_and_steps_must_be_supported_by_the_page() {
     let (client, _) = ai_client("sorry, I cannot do that");

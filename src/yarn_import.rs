@@ -698,6 +698,14 @@ pub fn merge_enrichment(yarn: &mut YarnImportDraft, details: &YarnDetails, produ
     if agrees && let Some(name) = page.name.take() {
         yarn.name = Some(name);
     }
+    if agrees {
+        if yarn.washing_instructions.is_none() {
+            yarn.washing_instructions.clone_from(&details.care);
+        }
+        if yarn.washing_symbols.is_none() {
+            yarn.washing_symbols.clone_from(&details.washing_symbols);
+        }
+    }
     if yarn.brand.is_none() {
         yarn.brand = page.brand.take();
     }
@@ -836,6 +844,8 @@ pub async fn enrich_project_yarns(
                 || details.length_meters.is_some()
                 || details.fiber_content.is_some()
                 || details.weight_category.is_some()
+                || details.care.is_some()
+                || details.washing_symbols.is_some()
                 || !details.image_urls.is_empty();
             useful.then_some(details)
         }

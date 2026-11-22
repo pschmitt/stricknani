@@ -1,5 +1,6 @@
 <script lang="ts">
   import { untrack } from "svelte";
+  import WashingInstructions from "#lib/components/WashingInstructions.svelte";
   import NavIcon from "#lib/components/NavIcon.svelte";
   import ResourceCard from "#lib/components/ResourceCard.svelte";
   import { msg, t, type Locale } from "#lib/i18n.svelte.ts";
@@ -235,6 +236,11 @@
           /></label
         >
       </div>
+      <WashingInstructions
+        {locale}
+        value={yarn.washingInstructions}
+        symbols={yarn.washingSymbols}
+      />
     {:else}
       <p class="supporting">
         {t("This yarn will not be added to the project.", locale)}

@@ -1,13 +1,13 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub(crate) struct WashingSymbols {
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct WashingSymbols {
     pub(crate) temperature: Option<WashTemperature>,
     pub(crate) drying: Option<Drying>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub(crate) enum WashTemperature {
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum WashTemperature {
     #[serde(rename = "hand_wash")]
     HandWash,
     #[serde(rename = "30")]
@@ -18,9 +18,9 @@ pub(crate) enum WashTemperature {
     Sixty,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub(crate) enum Drying {
+pub enum Drying {
     Flat,
     Line,
     NoTumble,

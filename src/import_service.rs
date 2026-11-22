@@ -1136,6 +1136,8 @@ async fn create_yarn(
         "length_meters": number_prefix(&form.yarn_length),
         "weight_category": optional(form.yarn_weight_category),
         "fiber_content": optional(form.yarn_fiber_content),
+        "washing_instructions": draft.yarn.as_ref().and_then(|yarn| yarn.care.as_deref()),
+        "washing_symbols": draft.yarn.as_ref().and_then(|yarn| yarn.washing_symbols.as_ref()),
         "link": optional(form.yarn_link),
         "is_ai_enhanced": form.is_ai_enhanced
     });
@@ -1173,6 +1175,8 @@ fn project_payload(project: &ProjectImportDraft, is_ai_enhanced: bool) -> Value 
         "stitch_sample": project.stitch_sample,
         "description": project.description,
         "notes": null,
+        "washing_instructions": project.washing_instructions,
+        "washing_symbols": project.washing_symbols,
         "other_materials": project.other_materials.as_deref().or(project.yarn.as_deref()),
         "tags": [],
         "link": project.link,

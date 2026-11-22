@@ -1,5 +1,9 @@
 import { ApiError, apiRequest } from "#lib/api.ts";
 import {
+  isWashingSymbols,
+  type WashingSymbols,
+} from "#lib/components/washing-symbols.ts";
+import {
   projectStatusField,
   type ProjectStatus,
 } from "#lib/features/projects/project-api.ts";
@@ -23,6 +27,8 @@ export interface AdminResourceProject {
   description_html: string | null;
   notes: string | null;
   notes_html: string | null;
+  washing_instructions?: string | null;
+  washing_symbols?: WashingSymbols | null;
   other_materials: string | null;
   other_materials_html: string | null;
   tags: string[];
@@ -82,6 +88,8 @@ export interface AdminResourceYarn {
   length_meters: number | null;
   notes: string | null;
   notes_html: string | null;
+  washing_instructions?: string | null;
+  washing_symbols?: WashingSymbols | null;
   link: string | null;
   link_archive: string | null;
   is_ai_enhanced: boolean;
@@ -306,6 +314,12 @@ function parseProject(value: unknown, id: number): AdminResourceProject {
     description_html: value.description_html,
     notes: value.notes,
     notes_html: value.notes_html,
+    ...(typeof value.washing_instructions === "string"
+      ? { washing_instructions: value.washing_instructions }
+      : {}),
+    ...(isWashingSymbols(value.washing_symbols)
+      ? { washing_symbols: value.washing_symbols }
+      : {}),
     other_materials: value.other_materials,
     other_materials_html: value.other_materials_html,
     tags: value.tags,
@@ -390,6 +404,12 @@ function parseYarn(value: unknown, id: number): AdminResourceYarn {
     length_meters: value.length_meters as number | null,
     notes: value.notes,
     notes_html: value.notes_html,
+    ...(typeof value.washing_instructions === "string"
+      ? { washing_instructions: value.washing_instructions }
+      : {}),
+    ...(isWashingSymbols(value.washing_symbols)
+      ? { washing_symbols: value.washing_symbols }
+      : {}),
     link: value.link,
     link_archive: value.link_archive,
     is_ai_enhanced: value.is_ai_enhanced,

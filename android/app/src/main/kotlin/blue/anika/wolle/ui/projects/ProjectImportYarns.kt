@@ -45,6 +45,7 @@ import blue.anika.wolle.R
 import blue.anika.wolle.data.db.entity.YarnEntity
 import blue.anika.wolle.data.repository.ImportedYarn
 import blue.anika.wolle.ui.common.MdiIcons
+import blue.anika.wolle.ui.common.WashingInstructionsCard
 
 /**
  * The yarn part of the import review. For each yarn the page names: use a stash yarn (the server's
@@ -273,6 +274,12 @@ private fun NewYarnFields(yarn: ImportedYarn, onChange: (ImportedYarn) -> Unit) 
                 it,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (!yarn.washingInstructions.isNullOrBlank() || yarn.washingSymbols?.isEmpty() == false) {
+            WashingInstructionsCard(
+                value = yarn.washingInstructions.orEmpty(),
+                symbols = yarn.washingSymbols,
             )
         }
     }

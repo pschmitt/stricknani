@@ -47,6 +47,8 @@ data class ProjectImportResponseDto(
     val description: String? = null,
     val notes: String? = null,
     @SerialName("other_materials") val otherMaterials: String? = null,
+    @SerialName("washing_instructions") val washingInstructions: String? = null,
+    @SerialName("washing_symbols") val washingSymbols: WashingSymbols? = null,
     val tags: List<String> = emptyList(),
     val link: String? = null,
     val designer: String? = null,
@@ -80,6 +82,8 @@ data class ProjectImportYarnDto(
     val link: String? = null,
     val imageUrl: String? = null,
     val amount: String? = null,
+    val washingInstructions: String? = null,
+    val washingSymbols: WashingSymbols? = null,
     val notes: String? = null,
 )
 

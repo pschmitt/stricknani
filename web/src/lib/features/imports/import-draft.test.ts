@@ -198,6 +198,7 @@ describe("yarn import review mapping", () => {
         recommendedNeedles: "5 mm",
         gauge: "17 sts = 10 cm",
         care: "Hand wash",
+        washingSymbols: { temperature: "hand_wash", drying: "flat" },
         price: "4.50 EUR",
         link: null,
         imageUrls: ["https://a.example/1.jpg", "https://a.example/2.jpg"],
@@ -205,12 +206,14 @@ describe("yarn import review mapping", () => {
     },
   };
 
-  it("maps yarn details to an editor and keeps gauge, care and price in notes", () => {
+  it("maps yarn details to an editor and keeps care separate from gauge and price", () => {
     const editor = yarnImportEditor(yarnPreview);
     expect(editor.weightGrams).toBe("50");
     expect(editor.lengthMeters).toBe("150");
     expect(editor.link).toBe("https://shop.example.test/air");
     expect(editor.notes).toContain("Price: 4.50 EUR");
+    expect(editor.notes).not.toContain("Hand wash");
+    expect(editor.washingInstructions).toBe("Hand wash");
     expect(editor.images.every((image) => image.selected)).toBe(true);
   });
 
@@ -223,6 +226,8 @@ describe("yarn import review mapping", () => {
       name: "DROPS Air",
       weight_grams: 50,
       recommended_needles: "5 mm",
+      washing_instructions: "Hand wash",
+      washing_symbols: { temperature: "hand_wash", drying: "flat" },
       is_ai_enhanced: true,
     });
     expect(

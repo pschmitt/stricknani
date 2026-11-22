@@ -35,7 +35,6 @@ internal fun ImportPreviewDto.toYarnPreview(sourceUrl: String): ImportedYarnPrev
     val notes =
         listOfNotNull(
             yarn.gauge.clean()?.let { YarnImportNote(YarnImportNoteKind.Gauge, it) },
-            yarn.care.clean()?.let { YarnImportNote(YarnImportNoteKind.Care, it) },
             yarn.price.clean()?.let { YarnImportNote(YarnImportNoteKind.Price, it) },
         )
     return ImportedYarnPreview(
@@ -51,6 +50,8 @@ internal fun ImportPreviewDto.toYarnPreview(sourceUrl: String): ImportedYarnPrev
                 recommendedNeedles = yarn.recommendedNeedles.clean(),
                 weightGrams = yarn.weightGrams,
                 lengthMeters = yarn.lengthMeters,
+                washingInstructions = yarn.care.clean(),
+                washingSymbols = yarn.washingSymbols,
                 link = yarn.link.clean() ?: draft.sourceUrl ?: sourceUrl,
                 isAiEnhanced = isAiEnhanced,
                 imageUrls = yarn.imageUrls.take(PRESELECTED_IMAGES),

@@ -79,6 +79,8 @@ export interface ProjectAttachment {
 }
 
 export interface ProjectYarn {
+  washing_instructions?: string | null;
+  washing_symbols?: WashingSymbols | null;
   id: number;
   name: string;
   brand: string | null;
@@ -503,6 +505,13 @@ export async function getYarn(
     weight_grams: yarn.weight_grams,
     length_meters: yarn.length_meters,
     notes_html: yarn.notes_html,
+    washing_instructions:
+      typeof yarn.washing_instructions === "string"
+        ? yarn.washing_instructions
+        : null,
+    washing_symbols: isWashingSymbols(yarn.washing_symbols)
+      ? yarn.washing_symbols
+      : null,
     link: yarn.link,
     preview_url:
       photos.find((photo) => photo.is_primary)?.thumbnail_url ??

@@ -145,6 +145,8 @@ internal fun ProjectEditorFormState.withImport(
         notes = listOf(this.notes, notes.orEmpty()).filter { it.isNotBlank() }.joinToString("\n"),
         tags = imported.tags.ifEmpty { tags },
         link = pick(imported.link, link),
+        washingInstructions = pick(imported.washingInstructions, washingInstructions),
+        washingSymbols = imported.washingSymbols ?: washingSymbols,
         isAiEnhanced = imported.isAiEnhanced,
         steps =
             if (imported.steps.isEmpty()) steps

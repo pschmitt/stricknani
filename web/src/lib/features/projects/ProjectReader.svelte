@@ -911,6 +911,14 @@
   {/snippet}
 
   {#snippet materialsSection()}
+    {@const hasProjectCare =
+      currentProject.washing_instructions?.trim() ||
+      currentProject.washing_symbols?.temperature ||
+      currentProject.washing_symbols?.drying}
+    {@const yarnCare =
+      !hasProjectCare && currentProject.yarn_ids.length === 1
+        ? yarns.find((yarn) => yarn.id === currentProject.yarn_ids[0])
+        : undefined}
     <Disclosure
       class="materials-card"
       icon="needle"
@@ -998,8 +1006,12 @@
       </dl>
       <WashingInstructions
         {locale}
-        value={currentProject.washing_instructions}
-        symbols={currentProject.washing_symbols}
+        value={yarnCare
+          ? yarnCare.washing_instructions
+          : currentProject.washing_instructions}
+        symbols={yarnCare
+          ? yarnCare.washing_symbols
+          : currentProject.washing_symbols}
         {textSizeClass}
       />
     </Disclosure>

@@ -53,6 +53,8 @@ pub struct ProjectImportDraft {
     pub yarns: Vec<YarnImportDraft>,
     pub needles: Option<String>,
     pub other_materials: Option<String>,
+    pub washing_instructions: Option<String>,
+    pub washing_symbols: Option<crate::washing_symbols::WashingSymbols>,
     pub stitch_sample: Option<String>,
     pub gauge_width: Option<i64>,
     pub gauge_height: Option<i64>,
@@ -141,6 +143,7 @@ pub struct YarnDetails {
     pub recommended_needles: Option<String>,
     pub gauge: Option<String>,
     pub care: Option<String>,
+    pub washing_symbols: Option<crate::washing_symbols::WashingSymbols>,
     /// Shop price as text, for example "7.95 EUR".
     pub price: Option<String>,
     pub link: Option<String>,
@@ -163,6 +166,8 @@ pub struct YarnImportDraft {
     /// Quantity the pattern asks for, per size when the page says so ("250-300-350 g").
     #[serde(default)]
     pub amount: Option<String>,
+    pub washing_instructions: Option<String>,
+    pub washing_symbols: Option<crate::washing_symbols::WashingSymbols>,
     /// Free text worth keeping, for example the DROPS yarn group.
     #[serde(default)]
     pub notes: Option<String>,

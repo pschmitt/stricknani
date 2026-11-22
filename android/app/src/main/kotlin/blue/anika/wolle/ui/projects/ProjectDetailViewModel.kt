@@ -9,6 +9,7 @@ import blue.anika.wolle.R
 import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.dto.ProjectDto
 import blue.anika.wolle.data.api.dto.ProjectStatus
+import blue.anika.wolle.data.api.dto.WashingSymbols
 import blue.anika.wolle.data.api.v2.ProjectTimerDto
 import blue.anika.wolle.data.api.v2.ProjectTimerRequest
 import blue.anika.wolle.data.api.v2.ProjectsV2Api
@@ -84,6 +85,8 @@ data class LinkedYarn(
     val link: String? = null,
     /** Brand and colourway, as on the web's yarn card ("Garnstudio · Farbe 22"). */
     val subtitle: String? = null,
+    val washingInstructions: String? = null,
+    val washingSymbols: WashingSymbols? = null,
 )
 
 sealed interface ProjectDetailUiState {
@@ -678,6 +681,8 @@ constructor(
                                     yarn.previewUrl,
                                     notes = yarnDetail?.notes?.takeIf { it.isNotBlank() },
                                     link = yarnDetail?.link,
+                                    washingInstructions = yarnDetail?.washingInstructions,
+                                    washingSymbols = yarnDetail?.washingSymbols,
                                     subtitle =
                                         listOfNotNull(yarn.brand, yarn.colorway)
                                             .filter { it.isNotBlank() }

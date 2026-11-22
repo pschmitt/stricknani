@@ -326,6 +326,14 @@ Use this file as the operational source of truth for working in Stricknani.
   loopback hostname, not just a new port: cookies are shared across ports.
   Create an owned tab and clear only that test origin during cleanup.
 
+### Importer parity
+
+Whenever you add, rename, remove, or change a project or yarn field, update the
+importer in the same change. Check the AI prompts and response schema, draft
+parsing and merge rules, and the web and Android review forms and save payloads.
+Verify that a value from the source reaches the saved resource and that missing
+source data leaves optional fields empty.
+
 ### Web Dependencies
 
 - The web app (`web/`) is a SvelteKit project and the only browser UI; the Rust server serves

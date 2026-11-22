@@ -1,3 +1,4 @@
+import type { WashingSymbols } from "#lib/components/washing-symbols.ts";
 import type { YarnWrite } from "../yarns/yarn-api.ts";
 import { msg, t } from "#lib/i18n.svelte.ts";
 import type {
@@ -38,6 +39,8 @@ export interface ImportStepEditor {
 export type YarnChoice = "stash" | "new" | "skip";
 
 export interface ImportYarnEditor {
+  washingInstructions?: string;
+  washingSymbols?: WashingSymbols;
   source: ImportedYarnDraft;
   /** Use a stash yarn, create a new one from these fields, or leave the yarn out. */
   choice: YarnChoice;
@@ -154,6 +157,8 @@ export function createYarnWrite(
     weight_grams: parseNonnegativeInteger(draft.weightGrams),
     length_meters: parseNonnegativeInteger(draft.lengthMeters),
     notes: optionalText(notes),
+    washing_instructions: optionalText(draft.washingInstructions ?? ""),
+    washing_symbols: draft.washingSymbols,
     link: optionalText(draft.link),
     is_ai_enhanced: isAiEnhanced,
     ...(allowExternalImages && isHttpUrl(imageUrl)
@@ -218,6 +223,8 @@ function importYarnEditor(
     weightGrams: parseMeasurement(source.weight, "g"),
     lengthMeters: parseMeasurement(source.length, "m"),
     notes: source.notes ?? "",
+    washingInstructions: source.washingInstructions ?? "",
+    washingSymbols: source.washingSymbols ?? {},
     imageUrl: source.imageUrl ?? "",
   };
 }
@@ -269,6 +276,8 @@ function optionalText(value: string): string | null {
 
 /** Review state for a yarn import (the "From a link" yarn flow). */
 export interface YarnImportEditor {
+  washingInstructions: string;
+  washingSymbols: WashingSymbols;
   name: string;
   brand: string;
   colorway: string;
@@ -305,7 +314,6 @@ export function yarnImportEditor(
   };
   const notes = [
     yarn.gauge ? `${t(GAUGE_LABEL)}: ${yarn.gauge}` : "",
-    yarn.care ? `${t("Care")}: ${yarn.care}` : "",
     yarn.price ? `${t("Price")}: ${yarn.price}` : "",
   ]
     .filter(Boolean)
@@ -320,6 +328,8 @@ export function yarnImportEditor(
     weightGrams: yarn.weightGrams === null ? "" : String(yarn.weightGrams),
     lengthMeters: yarn.lengthMeters === null ? "" : String(yarn.lengthMeters),
     recommendedNeedles: yarn.recommendedNeedles ?? "",
+    washingInstructions: yarn.care ?? "",
+    washingSymbols: yarn.washingSymbols ?? {},
     notes,
     link: yarn.link ?? preview.draft.sourceUrl ?? fallbackLink,
     images: yarn.imageUrls.map((url, index) => ({
@@ -349,6 +359,8 @@ export function createYarnImportWrite(
     fiber_content: optionalText(draft.fiberContent),
     weight_category: optionalText(draft.weightCategory),
     recommended_needles: optionalText(draft.recommendedNeedles),
+    washing_instructions: optionalText(draft.washingInstructions),
+    washing_symbols: draft.washingSymbols,
     weight_grams: parseNonnegativeInteger(draft.weightGrams),
     length_meters: parseNonnegativeInteger(draft.lengthMeters),
     notes: optionalText(draft.notes),

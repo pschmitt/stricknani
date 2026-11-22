@@ -137,6 +137,8 @@ constructor(
                         yarn.previewUrl,
                         notes = yarnDetail?.notes?.takeIf { it.isNotBlank() },
                         link = yarnDetail?.link,
+                        washingInstructions = yarnDetail?.washingInstructions,
+                        washingSymbols = yarnDetail?.washingSymbols,
                         subtitle =
                             listOfNotNull(yarn.brand, yarn.colorway)
                                 .filter { it.isNotBlank() }

@@ -79,6 +79,8 @@
           weight_grams: yarn.weight_grams,
           length_meters: yarn.length_meters,
           notes_html: yarn.notes_html,
+          washing_instructions: yarn.washing_instructions,
+          washing_symbols: yarn.washing_symbols,
           link: yarn.link,
           preview_url:
             yarn.photos.find((photo) => photo.is_primary)?.thumbnail_url ??

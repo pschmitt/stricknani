@@ -114,6 +114,8 @@ private fun ImportedYarn.toWriteRequest(amountLabel: String): YarnWriteRequest =
         weightCategory = weightCategory?.trim()?.ifBlank { null },
         weightGrams = weightGrams,
         lengthMeters = lengthMeters,
+        washingInstructions = washingInstructions?.trim()?.ifBlank { null },
+        washingSymbols = washingSymbols,
         notes =
             listOfNotNull(
                     notes?.trim()?.ifBlank { null },

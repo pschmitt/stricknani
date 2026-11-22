@@ -1,3 +1,7 @@
+import {
+  isWashingSymbols,
+  type WashingSymbols,
+} from "#lib/components/washing-symbols.ts";
 import { ApiError, apiRequest, type SessionData } from "#lib/api.ts";
 import { t } from "#lib/i18n.svelte.ts";
 
@@ -18,6 +22,8 @@ export interface ImportedYarnDraft {
   amount?: string | null;
   /** Remarks moved out of the name, such as the yarn group. */
   notes?: string | null;
+  washingInstructions?: string | null;
+  washingSymbols?: WashingSymbols | null;
 }
 
 export interface ImportedStepDraft {
@@ -43,6 +49,7 @@ export interface ImportedYarnDetails {
   recommendedNeedles: string | null;
   gauge: string | null;
   care: string | null;
+  washingSymbols?: WashingSymbols | null;
   price: string | null;
   link: string | null;
   imageUrls: string[];
@@ -56,6 +63,8 @@ export interface ImportedAsset {
 }
 
 export interface ImportedProjectDraft {
+  washingInstructions?: string | null;
+  washingSymbols?: WashingSymbols | null;
   designer: string | null;
   difficulty: string | null;
   sizes: string | null;
@@ -266,6 +275,9 @@ function parseYarnDetails(value: Record<string, unknown>): ImportedYarnDetails {
     recommendedNeedles: text("recommendedNeedles"),
     gauge: text("gauge"),
     care: text("care"),
+    washingSymbols: isWashingSymbols(value.washingSymbols)
+      ? value.washingSymbols
+      : null,
     price: text("price"),
     link: text("link"),
     imageUrls: isStringArray(value.imageUrls) ? value.imageUrls : [],
@@ -316,6 +328,13 @@ function parseProjectDraft(
   )
     throw invalidResponse();
   return {
+    washingInstructions:
+      typeof value.washingInstructions === "string"
+        ? value.washingInstructions
+        : null,
+    washingSymbols: isWashingSymbols(value.washingSymbols)
+      ? value.washingSymbols
+      : null,
     designer: typeof value.designer === "string" ? value.designer : null,
     difficulty: typeof value.difficulty === "string" ? value.difficulty : null,
     sizes: typeof value.sizes === "string" ? value.sizes : null,
@@ -390,6 +409,13 @@ function parseYarnDraft(value: unknown): ImportedYarnDraft {
     imageUrl: value.imageUrl,
     amount: typeof value.amount === "string" ? value.amount : null,
     notes: typeof value.notes === "string" ? value.notes : null,
+    washingInstructions:
+      typeof value.washingInstructions === "string"
+        ? value.washingInstructions
+        : null,
+    washingSymbols: isWashingSymbols(value.washingSymbols)
+      ? value.washingSymbols
+      : null,
   };
 }
 

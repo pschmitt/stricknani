@@ -421,7 +421,7 @@ impl AiClient {
         let mut content = vec![json!({
             "type": "text",
             "text": format!(
-                "Extract and improve knitting pattern fields from the supplied source. Return one JSON object only, using camelCase field names matching this draft. Preserve the source language. Do not invent image URLs. Keep the source link unchanged. Write description, otherMaterials and step descriptions as Markdown: keep the wording and numbers exactly, put each round or row instruction on its own line as a list item starting with its label in bold (for example '- **1. Runde:** ...'), and use paragraphs for separate ideas.\n\nSource text:\n{}\n\nExisting parsed draft JSON:\n{}",
+                "Extract and improve knitting pattern fields from the supplied source. Return one JSON object only, using camelCase field names matching this draft. Preserve the source language. Extract washingInstructions and washingSymbols only when stated for the finished item. For washingSymbols use temperature hand_wash, 30, 40 or 60 (Celsius), and drying flat, line or no_tumble. Use null for unsupported or unspecified choices. Do not invent image URLs. Keep the source link unchanged. Write description, otherMaterials and step descriptions as Markdown: keep the wording and numbers exactly, put each round or row instruction on its own line as a list item starting with its label in bold (for example '- **1. Runde:** ...'), and use paragraphs for separate ideas.\n\nSource text:\n{}\n\nExisting parsed draft JSON:\n{}",
                 input.source_text, draft_json
             )
         })];
@@ -568,6 +568,8 @@ struct AiDraftResponse {
     needles: Option<String>,
     #[serde(alias = "other_materials")]
     other_materials: Option<String>,
+    washing_instructions: Option<String>,
+    washing_symbols: Option<crate::washing_symbols::WashingSymbols>,
     #[serde(alias = "stitch_sample")]
     stitch_sample: Option<String>,
     #[serde(alias = "gauge_width")]
@@ -600,6 +602,10 @@ fn merge_response(mut draft: ProjectImportDraft, output: AiDraftResponse) -> Pro
     merge_string(&mut draft.yarn, output.yarn);
     merge_string(&mut draft.needles, output.needles);
     merge_string(&mut draft.other_materials, output.other_materials);
+    merge_string(&mut draft.washing_instructions, output.washing_instructions);
+    if draft.washing_symbols.is_none() {
+        draft.washing_symbols = output.washing_symbols;
+    }
     merge_string(&mut draft.stitch_sample, output.stitch_sample);
     merge_string(&mut draft.fiber_content, output.fiber_content);
     merge_string(&mut draft.colorway, output.colorway);

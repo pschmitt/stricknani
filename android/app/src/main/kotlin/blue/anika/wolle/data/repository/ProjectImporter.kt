@@ -4,6 +4,7 @@ import blue.anika.wolle.data.api.dto.ImportAssetDto
 import blue.anika.wolle.data.api.dto.ProjectImportResponseDto
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.api.dto.StepWriteRequest
+import blue.anika.wolle.data.api.dto.WashingSymbols
 import kotlinx.serialization.Serializable
 
 /** A fact from the pattern page that has no field of its own and is kept in the project notes. */
@@ -33,6 +34,8 @@ data class ImportedYarn(
     val imageUrl: String? = null,
     val notes: String? = null,
     val suggestedStashId: Int? = null,
+    val washingInstructions: String? = null,
+    val washingSymbols: WashingSymbols? = null,
 )
 
 /** Data that can be confirmed and then written through the normal offline project outbox. */
@@ -90,6 +93,8 @@ internal fun ProjectImportResponseDto.toPreview(sourceUrl: String): ImportedProj
                 description = description?.trim()?.ifBlank { null },
                 notes = notes?.trim()?.ifBlank { null },
                 otherMaterials = otherMaterials?.trim()?.ifBlank { null },
+                washingInstructions = washingInstructions.clean(),
+                washingSymbols = washingSymbols,
                 tags = tags.map { it.trim() }.filter { it.isNotEmpty() },
                 link = link.orEmpty().trim().ifBlank { sourceUrl },
                 isAiEnhanced = isAiEnhanced,
@@ -124,6 +129,8 @@ internal fun ProjectImportResponseDto.importedYarns(): List<ImportedYarn> {
             link = yarn.link.clean(),
             imageUrl = yarn.imageUrl.clean(),
             notes = yarn.notes.clean(),
+            washingInstructions = yarn.washingInstructions.clean(),
+            washingSymbols = yarn.washingSymbols,
             suggestedStashId = suggestions[index],
         )
     }

@@ -22,7 +22,7 @@ class YarnImporterTest {
         "yarn":{"name":" DROPS Air ","brand":"DROPS Design","colorway":null,"description":"Airy.",
           "fiberContent":"65% Alpaca, 28% Polyamide, 7% Wool","weightCategory":"Aran",
           "weightGrams":50,"lengthMeters":150,"recommendedNeedles":"5 mm",
-          "gauge":"17 sts = 10 cm","care":" ","price":"4.50 EUR","link":null,
+          "gauge":"17 sts = 10 cm","care":"Hand wash","washingSymbols":{"temperature":"hand_wash","drying":"flat"},"price":"4.50 EUR","link":null,
           "imageUrls":["https://e.com/1.jpg","https://e.com/2.jpg","https://e.com/3.jpg","https://e.com/4.jpg"]},
         "provenance":{"yarn.brand":"structured","yarn.care":"ai","yarn.gauge":"text"},
         "warnings":["looks_like_pattern_page"]},
@@ -41,6 +41,15 @@ class YarnImporterTest {
         assertEquals("5 mm", result.request.recommendedNeedles)
         assertEquals("https://shop.example/air", result.request.link)
         assertTrue(result.request.isAiEnhanced)
+        assertEquals("Hand wash", result.request.washingInstructions)
+        assertEquals(
+            blue.anika.wolle.data.api.dto.WashTemperature.HAND_WASH,
+            result.request.washingSymbols?.temperature,
+        )
+        assertEquals(
+            blue.anika.wolle.data.api.dto.Drying.FLAT,
+            result.request.washingSymbols?.drying,
+        )
         // All photos are offered; the first three start out selected.
         assertEquals(4, result.imageUrls.size)
         assertEquals(result.imageUrls.take(3), result.request.imageUrls)
