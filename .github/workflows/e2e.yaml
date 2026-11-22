@@ -10,30 +10,6 @@ run-name: ${{ github.event_name == 'workflow_dispatch' && inputs.circus_pr_numbe
 # - android-replay: Room replay against the server; on pushes to main and
 #   manual dispatches, not on pull requests.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - "web/**"
-      - "nix/web-package.nix"
-      - "nix/rust-package.nix"
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - "src/**"
-      - "tests/**"
-      - "migrations/**"
-      - "templates/**"
-      - "examples/**"
-      - "locales/**"
-      - "stricknani/locales/**"
-      - "docs/web-v2-contract.md"
-      - "flake.nix"
-      - "flake.lock"
-      - "android/**"
-      - "ci/run-*.sh"
-      - "ci/wait-for-nix-producer.mjs"
-      - "ci/wait-for-nix-producer.test.mjs"
-      - "docs/rust-replay-ci.md"
-      - ".github/workflows/e2e.yaml"
   status:
   workflow_dispatch:
     inputs:
@@ -56,10 +32,7 @@ on:
         required: false
 
 concurrency:
-  # A newer push to a pull request supersedes this run (the pull request's
-  # diff still covers every change). On main every run finishes: the next
-  # push may not match a job's paths, so a cancelled run would leave its
-  # commit unchecked. Manual dispatches keep their own group.
+  # Keep PR dispatches separate; main runs finish so path-filter baselines stay valid.
   group: E2E-${{ github.event_name }}-${{ inputs.circus_pr_number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
@@ -76,9 +49,9 @@ jobs:
       contents: read
       pull-requests: read
     outputs:
-      web: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'status' && steps.base.outputs.sha == '') || steps.filter.outputs.web == 'true' }}
-      android: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'status' && steps.base.outputs.sha == '') || steps.filter.outputs.android == 'true' }}
-      replay: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'status' && steps.base.outputs.sha == '') || steps.filter.outputs.replay == 'true' }}
+      web: ${{ (github.event_name == 'workflow_dispatch' && inputs.circus_pr_number == '') || (github.event_name == 'status' && steps.base.outputs.sha == '') || steps.filter.outputs.web == 'true' }}
+      android: ${{ (github.event_name == 'workflow_dispatch' && inputs.circus_pr_number == '') || (github.event_name == 'status' && steps.base.outputs.sha == '') || steps.filter.outputs.android == 'true' }}
+      replay: ${{ (github.event_name == 'workflow_dispatch' && inputs.circus_pr_number == '') || (github.event_name == 'status' && steps.base.outputs.sha == '') || steps.filter.outputs.replay == 'true' }}
     steps:
       - name: Verify trusted Circus PR artifacts
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.circus_pr_number != '' }}
@@ -116,10 +89,11 @@ jobs:
             "repos/${GITHUB_REPOSITORY}/actions/workflows/${workflow_file}/runs?branch=${GITHUB_REF_NAME}&event=status&status=success&per_page=100" \
             --jq '.workflow_runs[] | select(.display_title == "Circus artifacts ready") | .head_sha')
       - id: filter
-        if: ${{ github.event_name != 'workflow_dispatch' && (github.event_name != 'status' || steps.base.outputs.sha != '') }}
+        if: ${{ (github.event_name != 'workflow_dispatch' || inputs.circus_pr_number != '') && (github.event_name != 'status' || steps.base.outputs.sha != '') }}
         uses: dorny/paths-filter@v4
         with:
-          base: ${{ steps.base.outputs.sha }}
+          base: ${{ inputs.circus_pr_number != '' && github.sha || steps.base.outputs.sha }}
+          ref: ${{ inputs.circus_pr_number != '' && inputs.circus_pr_sha || '' }}
           filters: |
             web:
               - 'web/**'
