@@ -1,5 +1,5 @@
 name: E2E
-run-name: ${{ github.event_name == 'status' && github.event.context == 'circus/artifacts' && github.event.state == 'success' && github.event.sha == github.sha && 'Circus artifacts ready' || 'E2E' }}
+run-name: ${{ github.event_name == 'workflow_dispatch' && inputs.circus_pr_number != '' && format('Circus PR E2E {0}', inputs.circus_pr_sha) || (github.event_name == 'status' && github.event.context == 'circus/artifacts' && github.event.state == 'success' && github.event.sha == github.sha && 'Circus artifacts ready' || 'E2E') }}
 
 # The end-to-end suites in one workflow, in parallel; each job runs only when
 # its files change.
