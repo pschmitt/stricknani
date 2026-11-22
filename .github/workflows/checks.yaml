@@ -122,7 +122,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v31
+        uses: pschmitt/ci-workflows/.github/actions/nix-setup@main
 
       - name: Run web and catalog checks
         run: nix develop '.#tooling' --command just web-check web-test i18n-check

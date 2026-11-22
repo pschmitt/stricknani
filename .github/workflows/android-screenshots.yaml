@@ -87,7 +87,7 @@ jobs:
         run: npm ci --prefix web
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v31
+        uses: pschmitt/ci-workflows/.github/actions/nix-setup@main
 
       - uses: pschmitt/ci-workflows/.github/actions/setup-jdk-gradle@main
 
