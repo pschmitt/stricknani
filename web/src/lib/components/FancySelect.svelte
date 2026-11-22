@@ -21,6 +21,7 @@
     renderIcon?: Snippet<[string]>;
   } = $props();
 
+  const id = $props.id();
   let root = $state<HTMLDivElement | null>(null);
   let open = $state(false);
   let active = $state(0);
@@ -110,6 +111,8 @@
     type="button"
     class="trigger"
     aria-label={label}
+    aria-describedby={`${id}-value`}
+    aria-controls={open ? `${id}-options` : undefined}
     aria-haspopup="listbox"
     aria-expanded={open}
     {disabled}
@@ -124,11 +127,19 @@
     {:else if options[selected]?.icon}<NavIcon
         name={options[selected].icon!}
       />{/if}
-    <span class="choice-label">{options[selected]?.label ?? value}</span>
+    <span class="choice-label" id={`${id}-value`}>
+      {options[selected]?.label ?? value}
+    </span>
     <NavIcon name="chevron-down" />
   </button>
   {#if open}
-    <div class="menu" class:upward role="listbox" aria-label={label}>
+    <div
+      id={`${id}-options`}
+      class="menu"
+      class:upward
+      role="listbox"
+      aria-label={label}
+    >
       {#each options as option, index (option.value)}
         <button
           type="button"
