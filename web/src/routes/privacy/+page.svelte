@@ -55,9 +55,9 @@
         "If you use an instance operated by somebody else, contact that operator about access, deletion, retention, or other privacy requests. Questions about the Stricknani software can be reported through the",
         locale,
       )}
-      <a href={issuesUrl} target="_blank" rel="noopener noreferrer"
-        >{t("GitHub issue tracker", locale)}</a
-      >.
+      <a href={issuesUrl} target="_blank" rel="noopener noreferrer">
+        {t("GitHub issue tracker", locale)}
+      </a>.
     </p>
   </section>
 
@@ -246,9 +246,9 @@
         "You can manage your content and revoke personal access tokens through the available features. You can also delete your account yourself, in the web app or the Android app, under Account. You confirm it is you with your password or your login provider, and the server then permanently deletes your projects, yarns, photos, attachments, favourites, profile picture, sessions, connected apps, linked logins, and the edit history of your content, together with the account itself.",
         locale,
       )}
-      <a href={resolve("/delete-account")}
-        >{t("How to delete your account", locale)}</a
-      >.
+      <a href={resolve("/delete-account")}>
+        {t("How to delete your account", locale)}
+      </a>.
     </p>
     <p>
       {t(
@@ -287,9 +287,9 @@
         "For software questions or privacy concerns that relate to the project, use the",
         locale,
       )}
-      <a href={issuesUrl} target="_blank" rel="noopener noreferrer"
-        >{t("GitHub issue tracker", locale)}</a
-      >.
+      <a href={issuesUrl} target="_blank" rel="noopener noreferrer">
+        {t("GitHub issue tracker", locale)}
+      </a>.
     </p>
   </section>
 

@@ -637,9 +637,9 @@
             class="timer-digits"
             aria-label={`${parts[0]} ${t("Hours", locale)}, ${parts[1]} ${t("Minutes", locale)}, ${parts[2]} ${t("Seconds", locale)}`}
           >
-            <span>{parts[0].padStart(2, "0")}</span><b>:</b><span
-              >{parts[1].padStart(2, "0")}</span
-            ><b>:</b><span>{parts[2].padStart(2, "0")}</span>
+            <span>{parts[0].padStart(2, "0")}</span><b>:</b><span>
+              {parts[1].padStart(2, "0")}
+            </span><b>:</b><span>{parts[2].padStart(2, "0")}</span>
           </p>
           <p class="timer-caption">
             {running
@@ -667,13 +667,16 @@
                 variant="primary"
                 disabled={busy}
                 onclick={() => void changeTimer("stop")}
-                >{t("Stop timer", locale)}</Button
               >
+                {t("Stop timer", locale)}
+              </Button>
               <Button
                 class="save-time"
                 variant="secondary"
-                onclick={snoozeReminder}>{t("Keep timing", locale)}</Button
+                onclick={snoozeReminder}
               >
+                {t("Keep timing", locale)}
+              </Button>
             </div>
           </div>
         {/if}
@@ -696,14 +699,17 @@
                 variant="secondary"
                 disabled={busy}
                 onclick={() => (confirmReopen = false)}
-                >{t("Cancel", locale)}</Button
               >
+                {t("Cancel", locale)}
+              </Button>
               <Button
                 class="start-time"
                 variant="primary"
                 disabled={busy}
-                onclick={() => void confirmStart()}>{t("Start", locale)}</Button
+                onclick={() => void confirmStart()}
               >
+                {t("Start", locale)}
+              </Button>
             </div>
           </div>
         {:else if timer && canEdit && editing}
@@ -716,43 +722,45 @@
           >
             <fieldset disabled={busy}>
               <legend>{t("Adjust total time", locale)}</legend>
-              <label
-                >{t("Hours", locale)}<input
+              <label>
+                {t("Hours", locale)}<input
                   aria-label={t("Hours", locale)}
                   inputmode="numeric"
                   type="text"
                   maxlength="9"
                   bind:value={hours}
-                /></label
-              >
+                />
+              </label>
               <span aria-hidden="true">:</span>
-              <label
-                >{t("Minutes", locale)}<input
+              <label>
+                {t("Minutes", locale)}<input
                   aria-label={t("Minutes", locale)}
                   inputmode="numeric"
                   type="text"
                   maxlength="2"
                   bind:value={minutes}
-                /></label
-              >
+                />
+              </label>
               <span aria-hidden="true">:</span>
-              <label
-                >{t("Seconds", locale)}<input
+              <label>
+                {t("Seconds", locale)}<input
                   aria-label={t("Seconds", locale)}
                   inputmode="numeric"
                   type="text"
                   maxlength="2"
                   bind:value={seconds}
-                /></label
-              >
+                />
+              </label>
             </fieldset>
             <div class="timer-actions">
               <Button
                 class="save-time"
                 variant="secondary"
                 disabled={busy}
-                onclick={cancelEdit}>{t("Cancel", locale)}</Button
+                onclick={cancelEdit}
               >
+                {t("Cancel", locale)}
+              </Button>
               <Button
                 type="submit"
                 class="save-time"
@@ -760,8 +768,9 @@
                 disabled={busy ||
                   proposedTotal === null ||
                   proposedTotal === timer.total_seconds}
-                >{t("Save time", locale)}</Button
               >
+                {t("Save time", locale)}
+              </Button>
             </div>
           </form>
         {:else if timer && canEdit}
@@ -770,30 +779,35 @@
               class="save-time"
               variant="secondary"
               disabled={busy}
-              onclick={beginEdit}>{t("Edit time", locale)}</Button
+              onclick={beginEdit}
             >
+              {t("Edit time", locale)}
+            </Button>
             {#if running}
               <Button
                 class="stop-time"
                 variant="primary"
                 disabled={busy}
                 onclick={() => void changeTimer("stop")}
-                >{t("Stop", locale)}</Button
               >
+                {t("Stop", locale)}
+              </Button>
             {:else}
               <Button
                 class="start-time"
                 variant="primary"
                 disabled={busy}
-                onclick={() => void requestStart()}>{t("Start", locale)}</Button
+                onclick={() => void requestStart()}
               >
+                {t("Start", locale)}
+              </Button>
             {/if}
           </div>
         {/if}
 
         {#if canEdit && running && startedByMe}
-          <label class="reminder-setting"
-            >{t("Running reminder", locale)}
+          <label class="reminder-setting">
+            {t("Running reminder", locale)}
             <select
               aria-label={t("Running reminder", locale)}
               value={reminderMinutes}

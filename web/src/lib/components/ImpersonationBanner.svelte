@@ -58,23 +58,20 @@
 {#if impersonation && target}
   <div class="impersonation-banner" role="alert" data-impersonation-banner>
     <p class="impersonation-text">
-      <strong
-        ><UserSentence
+      <strong>
+        <UserSentence
           template={t("You are acting as {name}", locale)}
           users={{ name: target }}
           {locale}
           size="regular"
-        /></strong
-      >
-      <span
-        >{t(
-          "Everything you do is recorded as done by them and logged.",
-          locale,
-        )}</span
-      >
-      {#if failed}<span class="impersonation-failed"
-          >{t("Impersonation could not be stopped. Try again.", locale)}</span
-        >{/if}
+        />
+      </strong>
+      <span>
+        {t("Everything you do is recorded as done by them and logged.", locale)}
+      </span>
+      {#if failed}<span class="impersonation-failed">
+          {t("Impersonation could not be stopped. Try again.", locale)}
+        </span>{/if}
     </p>
     <SharedButton
       variant="secondary"

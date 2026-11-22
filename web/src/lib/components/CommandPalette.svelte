@@ -284,9 +284,9 @@
 <svelte:window onkeydown={onWindowKeydown} />
 
 {#snippet marked(text: string, ranges: Range[] | undefined)}
-  {#each highlightParts(text, ranges) as part}{#if part.match}<mark
-        >{part.text}</mark
-      >{:else}{part.text}{/if}{/each}
+  {#each highlightParts(text, ranges) as part}{#if part.match}<mark>
+        {part.text}
+      </mark>{:else}{part.text}{/if}{/each}
 {/snippet}
 
 {#if user}
@@ -341,7 +341,8 @@
                 class="palette__more"
                 tabindex="-1"
                 onclick={() => showMore(group.id)}
-                >{t("Show more", locale)} ({group.total - group.rows.length})
+              >
+                {t("Show more", locale)} ({group.total - group.rows.length})
               </button>
             {/if}
           </div>
@@ -366,13 +367,13 @@
                 {/if}
               </span>
               <span class="palette__text">
-                <span class="palette__title"
-                  >{@render marked(row.entry.title, rangesFor(row, 0))}</span
-                >
+                <span class="palette__title">
+                  {@render marked(row.entry.title, rangesFor(row, 0))}
+                </span>
                 {#if row.entry.sub}
-                  <span class="palette__sub"
-                    >{@render marked(row.entry.sub, rangesFor(row, 1))}</span
-                  >
+                  <span class="palette__sub">
+                    {@render marked(row.entry.sub, rangesFor(row, 1))}
+                  </span>
                 {/if}
               </span>
             </div>

@@ -113,9 +113,9 @@
             {disabled}
             onchange={() => setChoice(yarn, option.value)}
           />
-          <span class="choice-card__icon" aria-hidden="true"
-            ><NavIcon name={option.icon} /></span
-          >
+          <span class="choice-card__icon" aria-hidden="true">
+            <NavIcon name={option.icon} />
+          </span>
           <span class="choice-card__label">{t(option.label, locale)}</span>
         </label>
       {/each}
@@ -123,8 +123,8 @@
 
     {#if yarn.choice === "stash"}
       {#if picks.length > 1}
-        <label class="field"
-          ><span>{t("Which yarn from my stash?", locale)}</span><select
+        <label class="field">
+          <span>{t("Which yarn from my stash?", locale)}</span><select
             {disabled}
             value={yarn.stashId === null ? "" : String(yarn.stashId)}
             onchange={(event) => {
@@ -132,18 +132,18 @@
               yarn.stashId = value === "" ? null : Number(value);
             }}
           >
-            {#if yarn.stashId === null}<option value="" selected
-                >{t("Pick a yarn from your stash.", locale)}</option
-              >{/if}
+            {#if yarn.stashId === null}<option value="" selected>
+                {t("Pick a yarn from your stash.", locale)}
+              </option>{/if}
             {#each picks as id (id)}
-              <option value={String(id)}
-                >{stash[id].name}{summary(stash[id])
+              <option value={String(id)}>
+                {stash[id].name}{summary(stash[id])
                   ? ` · ${summary(stash[id])}`
-                  : ""}</option
-              >
+                  : ""}
+              </option>
             {/each}
-          </select></label
-        >
+          </select>
+        </label>
       {/if}
       {#if yarn.stashId !== null && stash[yarn.stashId]}
         <div class="picked">
@@ -186,55 +186,55 @@
           loading="lazy"
         />
       {/if}
-      <label class="field"
-        ><span>{t("Yarn name", locale)}</span><input
+      <label class="field">
+        <span>{t("Yarn name", locale)}</span><input
           bind:value={yarn.name}
           {disabled}
-        /></label
-      >
+        />
+      </label>
       <div class="form-grid">
-        <label class="field"
-          ><span>{t("Brand", locale)}</span><input
+        <label class="field">
+          <span>{t("Brand", locale)}</span><input
             bind:value={yarn.brand}
             {disabled}
-          /></label
-        >
-        <label class="field"
-          ><span>{t("Colorway", locale)}</span><input
+          />
+        </label>
+        <label class="field">
+          <span>{t("Colorway", locale)}</span><input
             bind:value={yarn.colorway}
             {disabled}
-          /></label
-        >
-        <label class="field"
-          ><span>{t("Fiber content", locale)}</span><input
+          />
+        </label>
+        <label class="field">
+          <span>{t("Fiber content", locale)}</span><input
             bind:value={yarn.fiberContent}
             {disabled}
-          /></label
-        >
-        <label class="field"
-          ><span>{t("Weight category", locale)}</span><input
+          />
+        </label>
+        <label class="field">
+          <span>{t("Weight category", locale)}</span><input
             bind:value={yarn.weightCategory}
             {disabled}
-          /></label
-        >
-        <label class="field"
-          ><span>{t("Weight in grams", locale)}</span><input
+          />
+        </label>
+        <label class="field">
+          <span>{t("Weight in grams", locale)}</span><input
             type="number"
             min="0"
             step="1"
             bind:value={yarn.weightGrams}
             {disabled}
-          /></label
-        >
-        <label class="field"
-          ><span>{t("Length in meters", locale)}</span><input
+          />
+        </label>
+        <label class="field">
+          <span>{t("Length in meters", locale)}</span><input
             type="number"
             min="0"
             step="1"
             bind:value={yarn.lengthMeters}
             {disabled}
-          /></label
-        >
+          />
+        </label>
       </div>
       <WashingInstructions
         {locale}

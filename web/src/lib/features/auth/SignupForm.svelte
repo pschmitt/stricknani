@@ -164,9 +164,9 @@
       <a
         class="ui-button ui-button--primary ui-button--md signup-link"
         href={resolve("/projects")}
-        ><ActionLabel icon="projects">{t("Open projects", locale)}</ActionLabel
-        ></a
       >
+        <ActionLabel icon="projects">{t("Open projects", locale)}</ActionLabel>
+      </a>
     {:else if !enabled}
       <h1>{t("Account registration is unavailable.", locale)}</h1>
       <p>
@@ -175,9 +175,9 @@
       <a
         class="ui-button ui-button--primary ui-button--md signup-link"
         href={resolve("/login")}
-        ><ActionLabel icon="sign-in">{t("Back to sign in", locale)}</ActionLabel
-        ></a
       >
+        <ActionLabel icon="sign-in">{t("Back to sign in", locale)}</ActionLabel>
+      </a>
     {:else}
       <p class="signup-intro">
         {t("A place for your projects and yarn.", locale)}
@@ -265,13 +265,13 @@
         >
           {#if submitting}
             <span class="signup-spinner" aria-hidden="true"></span>
-            <ActionLabel icon="user-add"
-              >{t("Creating account…", locale)}</ActionLabel
-            >
+            <ActionLabel icon="user-add">
+              {t("Creating account…", locale)}
+            </ActionLabel>
           {:else}
-            <ActionLabel icon="user-add"
-              >{t("Create account", locale)}</ActionLabel
-            >
+            <ActionLabel icon="user-add">
+              {t("Create account", locale)}
+            </ActionLabel>
           {/if}
         </SharedButton>
       </form>

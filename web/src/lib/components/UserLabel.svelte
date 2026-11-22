@@ -39,9 +39,9 @@
 
 <span class="user-label" data-size={size} data-kind={user.kind}>
   {#if icon}
-    <span class="user-label__glyph" aria-hidden="true"
-      ><NavIcon name={icon} /></span
-    >
+    <span class="user-label__glyph" aria-hidden="true">
+      <NavIcon name={icon} />
+    </span>
   {:else}
     <UserAvatar
       avatarUrl={user.kind === "unknown" ? null : user.avatarUrl}

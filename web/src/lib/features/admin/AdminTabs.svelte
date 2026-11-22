@@ -13,20 +13,23 @@
     class="admin-tab"
     href={resolve("/admin/users")}
     aria-current={active === "users" ? "page" : undefined}
-    >{t("Users", locale)}</a
   >
+    {t("Users", locale)}
+  </a>
   <a
     class="admin-tab"
     href={resolve("/admin/audit")}
     aria-current={active === "audit" ? "page" : undefined}
-    >{t("Audit log", locale)}</a
   >
+    {t("Audit log", locale)}
+  </a>
   <a
     class="admin-tab"
     href={resolve("/admin/backups")}
     aria-current={active === "backups" ? "page" : undefined}
-    >{t("Backups", locale)}</a
   >
+    {t("Backups", locale)}
+  </a>
 </nav>
 
 <style>

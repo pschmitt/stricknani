@@ -307,9 +307,9 @@
                 void saveEdit(category);
               }}
             >
-              <label class="sr-only" for={`category-${category.id}`}
-                >{t("Category name", locale)}</label
-              >
+              <label class="sr-only" for={`category-${category.id}`}>
+                {t("Category name", locale)}
+              </label>
               <input
                 id={`category-${category.id}`}
                 bind:value={editName}

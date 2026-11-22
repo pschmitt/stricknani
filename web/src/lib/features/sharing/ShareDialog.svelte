@@ -237,9 +237,9 @@
         locale,
       )}
       {#if linkedYarnCount > 0}
-        <span class="share-dialog__count"
-          >{linkedYarnsLabel(linkedYarnCount, locale)}</span
-        >
+        <span class="share-dialog__count">
+          {linkedYarnsLabel(linkedYarnCount, locale)}
+        </span>
       {/if}
     </p>
   {/if}
@@ -259,26 +259,24 @@
       aria-label={t("People with access", locale)}
     >
       <li class="share-person">
-        <span class="share-person__name"
-          ><UserLabel user={personUser(list.owner)} {locale} /></span
-        >
+        <span class="share-person__name">
+          <UserLabel user={personUser(list.owner)} {locale} />
+        </span>
         <span class="share-person__owner">{t("Owner", locale)}</span>
       </li>
       {#each list.shares as share (share.user.id)}
         {@const busy = busyIds.includes(share.user.id)}
         <li class="share-person">
-          <span class="share-person__name"
-            ><UserLabel user={personUser(share.user)} {locale} /></span
-          >
+          <span class="share-person__name">
+            <UserLabel user={personUser(share.user)} {locale} />
+          </span>
           <div class="share-person__role">
             <label
               class="visually-hidden"
               for={`${dialogId}-role-${share.user.id}`}
-              >{t("Role of {name}", locale).replace(
-                "{name}",
-                share.user.name,
-              )}</label
             >
+              {t("Role of {name}", locale).replace("{name}", share.user.name)}
+            </label>
             <select
               id={`${dialogId}-role-${share.user.id}`}
               value={share.role}

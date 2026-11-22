@@ -14,9 +14,9 @@
 <footer class="auth-footer {className}">
   <nav class="auth-links" aria-label={t("More", locale)}>
     <a href={resolve("/privacy")}>{t("Privacy Policy", locale)}</a>
-    <a href={androidAction().url} target="_blank" rel="noopener noreferrer"
-      >{t("Get the Android app", locale)}</a
-    >
+    <a href={androidAction().url} target="_blank" rel="noopener noreferrer">
+      {t("Get the Android app", locale)}
+    </a>
     <a href={resolve("/gauge")}>{t("Gauge calculator", locale)}</a>
   </nav>
   <div class="auth-footer-meta">

@@ -24,9 +24,9 @@
 
 <div class="empty-state">
   <EmptyArt {icon} {tone} />
-  <svelte:element this={headingTag} class="empty-state__title"
-    >{title}</svelte:element
-  >
+  <svelte:element this={headingTag} class="empty-state__title">
+    {title}
+  </svelte:element>
   {#if hint}<p class="empty-state__hint">{hint}</p>{/if}
   {#if children}<div class="empty-state__actions">
       {@render children()}

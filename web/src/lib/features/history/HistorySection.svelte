@@ -242,9 +242,9 @@
   data-history-section
 >
   <div class="history-heading">
-    <SectionHeading id={`${sectionId}-title`} icon="history" tone="audit"
-      >{t("Recent changes", locale)}</SectionHeading
-    >
+    <SectionHeading id={`${sectionId}-title`} icon="history" tone="audit">
+      {t("Recent changes", locale)}
+    </SectionHeading>
   </div>
 
   {#if loading || !started}
@@ -291,10 +291,11 @@
                 fill="none"
                 stroke="currentColor"
                 stroke-width="1.8"
-                ><path
-                  d="m12 3.5 1.9 5.6 5.6 1.9-5.6 1.9-1.9 5.6-1.9-5.6L4.5 11l5.6-1.9z"
-                /></svg
               >
+                <path
+                  d="m12 3.5 1.9 5.6 5.6 1.9-5.6 1.9-1.9 5.6-1.9-5.6L4.5 11l5.6-1.9z"
+                />
+              </svg>
             {:else}<NavIcon name={icon} />{/if}
           </span>
           {#snippet summary()}
@@ -310,26 +311,23 @@
               />
             {/if}
             <span class="entry-main">
-              <span class="entry-headline"
-                >{#if sharing(event)}<UserSentence
+              <span class="entry-headline">
+                {#if sharing(event)}<UserSentence
                     template={sharing(event)?.template ?? ""}
                     users={sharing(event)?.users ?? {}}
                     {locale}
-                  />{:else}{headline(event)}{/if}</span
-              >
+                  />{:else}{headline(event)}{/if}
+              </span>
               <span class="entry-meta">
-                <span class="entry-action"
-                  >{actionLabel(
-                    event.action,
-                    locale,
-                    event.system === true,
-                  )}</span
-                >
+                <span class="entry-action">
+                  {actionLabel(event.action, locale, event.system === true)}
+                </span>
                 <time
                   datetime={event.created_at}
                   title={fullDate(event.created_at, locale)}
-                  >{relativeTime(event.created_at, now, locale)}</time
                 >
+                  {relativeTime(event.created_at, now, locale)}
+                </time>
                 <span class="entry-actor">
                   {#if admin}
                     <UserSentence
@@ -361,9 +359,9 @@
             onclick={() => toggle(event)}
           >
             {@render summary()}
-            <span class="entry-chevron" class:entry-chevron--open={open}
-              ><NavIcon name="chevron-down" /></span
-            >
+            <span class="entry-chevron" class:entry-chevron--open={open}>
+              <NavIcon name="chevron-down" />
+            </span>
           </button>
           {#if open}
             <HistoryEventDetail

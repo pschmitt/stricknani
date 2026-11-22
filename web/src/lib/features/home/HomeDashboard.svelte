@@ -141,9 +141,9 @@
   aria-labelledby="home-title"
 >
   <header class="home-greeting">
-    <span class="home-greeting__mascot" bind:this={heroEl}
-      ><Mascot size={88} bob={true} /></span
-    >
+    <span class="home-greeting__mascot" bind:this={heroEl}>
+      <Mascot size={88} bob={true} />
+    </span>
     <div class="home-greeting__copy">
       <h1 id="home-title" class="home-greeting__title">{greeting}</h1>
       <p>{t("What are we knitting today?", locale)}</p>
@@ -204,12 +204,13 @@
               <span
                 class="heading-badge"
                 data-tone={group.kind === "project" ? "home" : "yarns"}
-                ><NavIcon name={group.icon} /></span
-              >{group.title}
+              >
+                <NavIcon name={group.icon} />
+              </span>{group.title}
             </h2>
-            <a class="see-all" href={group.href}
-              >{t("See all", locale)}<NavIcon name="next" /></a
-            >
+            <a class="see-all" href={group.href}>
+              {t("See all", locale)}<NavIcon name="next" />
+            </a>
           </div>
           {@render tiles(
             group.section.items,
@@ -226,13 +227,13 @@
       <section class="home-section" aria-labelledby="recent-projects-title">
         <div class="home-section__heading">
           <h2 id="recent-projects-title" class="home-heading">
-            <span class="heading-badge" data-tone="projects"
-              ><NavIcon name="projects" /></span
-            >{t("Recent projects", locale)}
+            <span class="heading-badge" data-tone="projects">
+              <NavIcon name="projects" />
+            </span>{t("Recent projects", locale)}
           </h2>
-          <a class="see-all" href={resolve("/projects")}
-            >{t("See all", locale)}<NavIcon name="next" /></a
-          >
+          <a class="see-all" href={resolve("/projects")}>
+            {t("See all", locale)}<NavIcon name="next" />
+          </a>
         </div>
         {@render tiles(
           recentProjects.items,
@@ -246,9 +247,9 @@
     <!-- 4. What changed lately, newest first. -->
     <ActivityFeed ownerId={userId} {locale}>
       {#snippet seeAll()}
-        <a class="see-all" href={resolve("/activity")}
-          >{t("See all", locale)}<NavIcon name="next" /></a
-        >
+        <a class="see-all" href={resolve("/activity")}>
+          {t("See all", locale)}<NavIcon name="next" />
+        </a>
       {/snippet}
     </ActivityFeed>
 
@@ -289,9 +290,9 @@
             {/if}
           </span>
           {#if foreign}
-            <span class="owner-corner"
-              ><OwnerBadge owner={foreign} {locale} compact /></span
-            >
+            <span class="owner-corner">
+              <OwnerBadge owner={foreign} {locale} compact />
+            </span>
           {/if}
           <span class="tile__name">{item.name}</span>
         </a>

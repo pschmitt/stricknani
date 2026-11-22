@@ -78,27 +78,27 @@
 <div class="access-notice" data-testid="access-notice">
   <p class="access-notice__text">
     {#if access.derived}
-      <span class="access-notice__main"
-        ><UserSentence
-          template={sharedBy}
-          users={ownerUsers}
-          {locale}
-          size="compact"
-        /></span
-      >
-      <span class="access-notice__sub"
-        >{t("Visible through a shared project", locale)}</span
-      >
-    {:else}
-      <span class="access-notice__main"
-        ><UserSentence
+      <span class="access-notice__main">
+        <UserSentence
           template={sharedBy}
           users={ownerUsers}
           {locale}
           size="compact"
         />
-        · {roleText}</span
-      >
+      </span>
+      <span class="access-notice__sub">
+        {t("Visible through a shared project", locale)}
+      </span>
+    {:else}
+      <span class="access-notice__main">
+        <UserSentence
+          template={sharedBy}
+          users={ownerUsers}
+          {locale}
+          size="compact"
+        />
+        · {roleText}
+      </span>
     {/if}
   </p>
   {#if mayLeave(access)}

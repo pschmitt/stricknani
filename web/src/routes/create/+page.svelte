@@ -64,16 +64,16 @@
         style:--card-tone={`var(--tone-${option.tone})`}
         style:--card-wash={`var(--tone-${option.tone}-wash)`}
       >
-        <span class="create-card__icon" aria-hidden="true"
-          ><NavIcon name={option.icon} /></span
-        >
+        <span class="create-card__icon" aria-hidden="true">
+          <NavIcon name={option.icon} />
+        </span>
         <span class="create-card__copy">
           <span class="create-card__title">{option.title}</span>
           <span class="create-card__description">{option.description}</span>
         </span>
-        <span class="create-card__go" aria-hidden="true"
-          ><NavIcon name="next" /></span
-        >
+        <span class="create-card__go" aria-hidden="true">
+          <NavIcon name="next" />
+        </span>
       </a>
     {/each}
   </div>

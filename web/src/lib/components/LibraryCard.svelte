@@ -84,9 +84,9 @@
         </span>
       {/if}
       {#if owner}
-        <span class="library-card__owner"
-          ><OwnerBadge {owner} {locale} compact /></span
-        >
+        <span class="library-card__owner">
+          <OwnerBadge {owner} {locale} compact />
+        </span>
       {/if}
     </span>
     <span class="library-card__copy">
@@ -98,14 +98,14 @@
         <span class="library-card__updated">{updated}</span>
       {/if}
       {#if trashDaysLeft !== null}
-        <span class="library-card__trash" data-testid="trash-badge"
-          >{trashLabel}</span
-        >
+        <span class="library-card__trash" data-testid="trash-badge">
+          {trashLabel}
+        </span>
       {/if}
       {#if status === "done"}
-        <span class="library-card__status"
-          ><StatusBadge status="done" {locale} /></span
-        >
+        <span class="library-card__status">
+          <StatusBadge status="done" {locale} />
+        </span>
       {/if}
       {#if shownChips.length}
         <span class="library-card__chips">

@@ -197,9 +197,9 @@
           onclick={() => void pick(suggestion.tag)}
         >
           <span class="tag-suggestion-name">{suggestion.tag}</span>
-          <span class="tag-suggestion-count" aria-hidden="true"
-            >{suggestion.count}</span
-          >
+          <span class="tag-suggestion-count" aria-hidden="true">
+            {suggestion.count}
+          </span>
         </li>
       {/each}
     </ul>

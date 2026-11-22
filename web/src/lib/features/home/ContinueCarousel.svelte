@@ -113,9 +113,9 @@
       )}
     </h2>
     {#if status === "ready" && many}
-      <span class="continue__count" aria-hidden="true"
-        >{active + 1} / {items.length}</span
-      >
+      <span class="continue__count" aria-hidden="true">
+        {active + 1} / {items.length}
+      </span>
       <span class="continue__arrows">
         <button
           type="button"
@@ -124,9 +124,9 @@
           disabled={active === 0}
           onclick={() => show(active - 1)}
         >
-          <span class="continue__arrow-icon continue__arrow-icon--back"
-            ><NavIcon name="next" /></span
-          >
+          <span class="continue__arrow-icon continue__arrow-icon--back">
+            <NavIcon name="next" />
+          </span>
         </button>
         <button
           type="button"
@@ -140,9 +140,9 @@
       </span>
     {/if}
     {#if status === "ready" && items.length > 0}
-      <a class="see-all" href={seeAllHref}
-        >{t("See all", locale)}<NavIcon name="next" /></a
-      >
+      <a class="see-all" href={seeAllHref}>
+        {t("See all", locale)}<NavIcon name="next" />
+      </a>
     {/if}
   </div>
 
@@ -193,11 +193,13 @@
             <span class="continue-card__copy">
               <span class="continue-card__name">{item.name}</span>
               <span class="continue-card__meta">
-                {#if item.category}<span class="pill">{item.category}</span
-                  >{/if}
-                <span class="pill"
-                  >{t("Updated", locale)} {updatedAgo(item.updated_at)}</span
-                >
+                {#if item.category}<span class="pill">
+                    {item.category}
+                  </span>{/if}
+                <span class="pill">
+                  {t("Updated", locale)}
+                  {updatedAgo(item.updated_at)}
+                </span>
               </span>
             </span>
             <span class="continue-card__go" aria-hidden="true">
@@ -225,8 +227,9 @@
         class="ui-button ui-button--secondary ui-button--md"
         href={resolve("/projects")}
       >
-        <ActionLabel icon="projects">{t("Browse projects", locale)}</ActionLabel
-        >
+        <ActionLabel icon="projects">
+          {t("Browse projects", locale)}
+        </ActionLabel>
       </a>
     </EmptyState>
   {/if}

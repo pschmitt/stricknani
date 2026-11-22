@@ -393,9 +393,10 @@
         <div class="resource-meta">
           <span class="resource-kind">{kindLabel(resource.kind)}</span>
           {#if updatedAt(resource)}
-            <span
-              >{t("Updated", locale)} {formatDate(updatedAt(resource)!)}</span
-            >
+            <span>
+              {t("Updated", locale)}
+              {formatDate(updatedAt(resource)!)}
+            </span>
           {/if}
         </div>
 
@@ -420,9 +421,9 @@
             class="ui-button ui-button--secondary ui-button--md history-link"
             href={eventHref() ?? undefined}
           >
-            <ActionLabel icon="audit"
-              >{t("Show recorded changes", locale)}</ActionLabel
-            >
+            <ActionLabel icon="audit">
+              {t("Show recorded changes", locale)}
+            </ActionLabel>
           </a>
         {/if}
 
@@ -509,8 +510,10 @@
                 <a
                   href={safeExternalUrl(project.link)}
                   target="_blank"
-                  rel="noopener noreferrer">{t("Original source", locale)}</a
+                  rel="noopener noreferrer"
                 >
+                  {t("Original source", locale)}
+                </a>
               </p>
             {/if}
             {#if safeExternalUrl(project.link_archive)}
@@ -518,8 +521,10 @@
                 <a
                   href={safeExternalUrl(project.link_archive)}
                   target="_blank"
-                  rel="noopener noreferrer">{t("Archived source", locale)}</a
+                  rel="noopener noreferrer"
                 >
+                  {t("Archived source", locale)}
+                </a>
               </p>
             {/if}
           </section>
@@ -587,15 +592,15 @@
                       href={attachment.url}
                       download={attachment.original_filename}
                     >
-                      <ActionLabel icon="download"
-                        >{attachment.original_filename}</ActionLabel
-                      >
+                      <ActionLabel icon="download">
+                        {attachment.original_filename}
+                      </ActionLabel>
                     </a>
-                    <span
-                      >{attachment.content_type} · {formatBytes(
+                    <span>
+                      {attachment.content_type} · {formatBytes(
                         attachment.size_bytes,
-                      )}</span
-                    >
+                      )}
+                    </span>
                   </li>
                 {/each}
               </ul>
@@ -698,8 +703,10 @@
                 <a
                   href={safeExternalUrl(yarn.link)}
                   target="_blank"
-                  rel="noopener noreferrer">{t("Original source", locale)}</a
+                  rel="noopener noreferrer"
                 >
+                  {t("Original source", locale)}
+                </a>
               </p>
             {/if}
             {#if safeExternalUrl(yarn.link_archive)}
@@ -707,8 +714,10 @@
                 <a
                   href={safeExternalUrl(yarn.link_archive)}
                   target="_blank"
-                  rel="noopener noreferrer">{t("Archived source", locale)}</a
+                  rel="noopener noreferrer"
                 >
+                  {t("Archived source", locale)}
+                </a>
               </p>
             {/if}
           </section>
@@ -729,9 +738,9 @@
                         loading="lazy"
                         decoding="async"
                       />
-                      <span
-                        >{photo.alt_text || t("Open full image", locale)}</span
-                      >
+                      <span>
+                        {photo.alt_text || t("Open full image", locale)}
+                      </span>
                     </a>
                   </li>
                 {/each}
