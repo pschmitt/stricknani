@@ -5,6 +5,7 @@ import blue.anika.wolle.data.api.dto.AttachmentDto
 import blue.anika.wolle.data.api.dto.ImageDto
 import blue.anika.wolle.data.api.dto.OwnerDto
 import blue.anika.wolle.data.api.dto.ProjectStatus
+import blue.anika.wolle.data.api.dto.WashingSymbols
 import blue.anika.wolle.data.api.dto.YarnPhotoDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -41,6 +42,7 @@ data class ProjectV2Dto(
     @SerialName("description_html") val descriptionHtml: String? = null,
     val notes: String? = null,
     @SerialName("washing_instructions") val washingInstructions: String? = null,
+    @SerialName("washing_symbols") val washingSymbols: WashingSymbols? = null,
     @SerialName("notes_html") val notesHtml: String? = null,
     @SerialName("other_materials") val otherMaterials: String? = null,
     @SerialName("other_materials_html") val otherMaterialsHtml: String? = null,
@@ -80,6 +82,7 @@ data class YarnV2Dto(
     @SerialName("length_meters") val lengthMeters: Int? = null,
     val notes: String? = null,
     @SerialName("washing_instructions") val washingInstructions: String? = null,
+    @SerialName("washing_symbols") val washingSymbols: WashingSymbols? = null,
     @SerialName("notes_html") val notesHtml: String? = null,
     val link: String? = null,
     @SerialName("link_archive") val linkArchive: String? = null,

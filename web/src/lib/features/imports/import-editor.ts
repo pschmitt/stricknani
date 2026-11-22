@@ -63,6 +63,7 @@ export function projectFromImport(
       description: editor.description,
       notes: editor.notes,
       washingInstructions: "",
+      washingSymbols: {},
       otherMaterials: editor.otherMaterials,
       tags: [],
       link: editor.link,

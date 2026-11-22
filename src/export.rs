@@ -437,6 +437,7 @@ fn project_value(
         "washing_instructions".into(),
         json!(project.washing_instructions),
     );
+    map.insert("washing_symbols".into(), json!(project.washing_symbols));
     // The canonical cover is the lowest-id image flagged as cover.
     let cover = rows
         .iter()
@@ -497,6 +498,7 @@ fn yarn_value(
         "washing_instructions".into(),
         json!(yarn.washing_instructions),
     );
+    map.insert("washing_symbols".into(), json!(yarn.washing_symbols));
     let primary = rows.iter().find(|row| row.8).map(|row| row.0);
     let photos = rows
         .iter()

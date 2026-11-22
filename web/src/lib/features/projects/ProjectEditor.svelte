@@ -2209,6 +2209,8 @@
                 <WashingInstructions
                   {locale}
                   value={draft.washingInstructions}
+                  symbols={draft.washingSymbols}
+                  onSymbols={(value) => (draft.washingSymbols = value)}
                   onInput={(value) => (draft.washingInstructions = value)}
                 />
               </section>

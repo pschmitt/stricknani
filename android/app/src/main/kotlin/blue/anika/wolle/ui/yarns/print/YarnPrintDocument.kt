@@ -1,7 +1,9 @@
 package blue.anika.wolle.ui.yarns.print
 
+import blue.anika.wolle.data.api.dto.Drying
 import blue.anika.wolle.data.api.dto.YarnDto
 import blue.anika.wolle.data.api.dto.primaryFirst
+import blue.anika.wolle.ui.common.washTemperatureLabel
 import blue.anika.wolle.ui.print.PrintHtml
 
 /** Localised headings and field names for a yarn printout, resolved by the caller. */
@@ -19,6 +21,7 @@ data class YarnPrintLabels(
     val notes: String,
     val usedIn: String,
     val washingInstructions: String,
+    val washingDryingLabels: Map<Drying, String> = emptyMap(),
 )
 
 /**
@@ -107,11 +110,18 @@ object YarnPrintDocument {
             body.append("<h2>").append(PrintHtml.escape(labels.notes)).append("</h2>")
             body.append(markdown(yarn.notes))
         }
-        if (!yarn.washingInstructions.isNullOrBlank()) {
+        val care =
+            listOfNotNull(
+                    yarn.washingSymbols?.temperature?.let(::washTemperatureLabel),
+                    yarn.washingSymbols?.drying?.let(labels.washingDryingLabels::get),
+                    yarn.washingInstructions?.takeIf { it.isNotBlank() },
+                )
+                .joinToString("\n")
+        if (care.isNotEmpty()) {
             body.append("<h2>").append(PrintHtml.escape(labels.washingInstructions)).append("</h2>")
             body
                 .append("<p style=\"white-space: pre-wrap\">")
-                .append(PrintHtml.escape(yarn.washingInstructions))
+                .append(PrintHtml.escape(care))
                 .append("</p>")
         }
         return PrintHtml.document(yarn.name, body.toString())

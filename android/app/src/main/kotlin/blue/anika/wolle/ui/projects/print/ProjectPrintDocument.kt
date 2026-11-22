@@ -1,7 +1,9 @@
 package blue.anika.wolle.ui.projects.print
 
+import blue.anika.wolle.data.api.dto.Drying
 import blue.anika.wolle.data.api.dto.ImageDto
 import blue.anika.wolle.data.api.dto.ProjectDto
+import blue.anika.wolle.ui.common.washTemperatureLabel
 import blue.anika.wolle.ui.print.PrintContent
 import blue.anika.wolle.ui.print.PrintHtml
 import blue.anika.wolle.ui.print.PrintOptions
@@ -20,6 +22,7 @@ data class PrintLabels(
     val steps: String,
     val notes: String,
     val washingInstructions: String,
+    val washingDryingLabels: Map<Drying, String> = emptyMap(),
 )
 
 /**
@@ -133,14 +136,18 @@ object ProjectPrintDocument {
             body.append("<h2>").append(PrintHtml.escape(labels.notes)).append("</h2>")
             body.append(markdown(project.notes))
         }
-        if (
-            options.content == PrintContent.EVERYTHING &&
-                !project.washingInstructions.isNullOrBlank()
-        ) {
+        val care =
+            listOfNotNull(
+                    project.washingSymbols?.temperature?.let(::washTemperatureLabel),
+                    project.washingSymbols?.drying?.let(labels.washingDryingLabels::get),
+                    project.washingInstructions?.takeIf { it.isNotBlank() },
+                )
+                .joinToString("\n")
+        if (options.content == PrintContent.EVERYTHING && care.isNotEmpty()) {
             body.append("<h2>").append(PrintHtml.escape(labels.washingInstructions)).append("</h2>")
             body
                 .append("<p style=\"white-space: pre-wrap\">")
-                .append(PrintHtml.escape(project.washingInstructions))
+                .append(PrintHtml.escape(care))
                 .append("</p>")
         }
         return PrintHtml.document(project.name, body.toString())

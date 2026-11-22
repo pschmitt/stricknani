@@ -9,6 +9,7 @@ import blue.anika.wolle.R
 import blue.anika.wolle.data.api.ApiCapabilities
 import blue.anika.wolle.data.api.ApiGeneration
 import blue.anika.wolle.data.api.ImportAvailability
+import blue.anika.wolle.data.api.dto.WashingSymbols
 import blue.anika.wolle.data.api.dto.YarnPhotoDto
 import blue.anika.wolle.data.api.dto.YarnWriteRequest
 import blue.anika.wolle.data.api.importAvailability
@@ -70,6 +71,7 @@ data class YarnEditorFormState(
     val lengthMeters: String = "",
     val notes: String = "",
     val washingInstructions: String = "",
+    val washingSymbols: WashingSymbols = WashingSymbols(),
     val link: String = "",
     val isAiEnhanced: Boolean = false,
     val existingPhotos: List<YarnPhotoDto> = emptyList(),
@@ -282,6 +284,7 @@ constructor(
                             lengthMeters = detail.lengthMeters?.toString() ?: "",
                             notes = detail.notes ?: "",
                             washingInstructions = detail.washingInstructions.orEmpty(),
+                            washingSymbols = detail.washingSymbols ?: WashingSymbols(),
                             link = detail.link ?: "",
                             isAiEnhanced = detail.isAiEnhanced,
                             existingPhotos = detail.photos.photosSortedByPosition(),
@@ -401,6 +404,7 @@ constructor(
                         lengthMeters = current.lengthMeters.trim().toIntOrNull(),
                         notes = current.notes.trim().ifBlank { null },
                         washingInstructions = current.washingInstructions.trim(),
+                        washingSymbols = current.washingSymbols,
                         link = current.link.trim().ifBlank { null },
                         isAiEnhanced = current.isAiEnhanced,
                         imageUrls =

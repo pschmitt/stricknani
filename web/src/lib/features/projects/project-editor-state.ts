@@ -1,3 +1,4 @@
+import type { WashingSymbols } from "#lib/components/washing-symbols.ts";
 import type { ProjectDetail, ProjectStatus, ProjectWrite } from "./project-api";
 
 export interface ProjectStepDraft {
@@ -15,6 +16,7 @@ export interface ProjectDraft {
   description: string;
   notes: string;
   washingInstructions: string;
+  washingSymbols: WashingSymbols;
   otherMaterials: string;
   tags: string[];
   link: string;
@@ -38,6 +40,7 @@ export function blankProjectDraft(): ProjectDraft {
     description: "",
     notes: "",
     washingInstructions: "",
+    washingSymbols: {},
     otherMaterials: "",
     tags: [],
     link: "",
@@ -61,6 +64,7 @@ export function projectDraftFromDetail(
     description: project.description ?? "",
     notes: project.notes ?? "",
     washingInstructions: project.washing_instructions ?? "",
+    washingSymbols: project.washing_symbols ?? {},
     otherMaterials: project.other_materials ?? "",
     tags: [...project.tags],
     link: project.link ?? "",
@@ -89,6 +93,7 @@ export function projectWriteFromDraft(
     description: optionalText(draft.description),
     notes: optionalText(draft.notes),
     washing_instructions: draft.washingInstructions.trim(),
+    washing_symbols: draft.washingSymbols,
     other_materials: optionalText(draft.otherMaterials),
     tags: [...draft.tags],
     link: optionalText(draft.link),

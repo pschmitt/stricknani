@@ -999,6 +999,7 @@
       <WashingInstructions
         {locale}
         value={currentProject.washing_instructions}
+        symbols={currentProject.washing_symbols}
         {textSizeClass}
       />
     </Disclosure>

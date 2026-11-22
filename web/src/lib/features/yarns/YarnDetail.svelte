@@ -477,6 +477,7 @@
       <WashingInstructions
         {locale}
         value={currentYarn.washing_instructions}
+        symbols={currentYarn.washing_symbols}
         {textSizeClass}
       />
     </aside>

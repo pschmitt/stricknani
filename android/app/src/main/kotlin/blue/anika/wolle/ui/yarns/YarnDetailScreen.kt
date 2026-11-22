@@ -94,6 +94,7 @@ import blue.anika.wolle.ui.common.TextSizeMenuSection
 import blue.anika.wolle.ui.common.WashingInstructionsCard
 import blue.anika.wolle.ui.common.YarnLoader
 import blue.anika.wolle.ui.common.copyLines
+import blue.anika.wolle.ui.common.dryingLabel
 import blue.anika.wolle.ui.common.extractMarkdownImageReferences
 import blue.anika.wolle.ui.common.itemBannerOf
 import blue.anika.wolle.ui.common.normalizeMarkdownContent
@@ -155,6 +156,10 @@ fun YarnDetailScreen(
             description = stringResource(R.string.project_detail_description_title),
             notes = stringResource(R.string.project_detail_notes_title),
             washingInstructions = stringResource(R.string.washing_instructions),
+            washingDryingLabels =
+                blue.anika.wolle.data.api.dto.Drying.entries.associateWith {
+                    stringResource(dryingLabel(it))
+                },
             usedIn = stringResource(R.string.yarn_detail_used_in_title),
         )
 
@@ -637,11 +642,15 @@ internal fun YarnDetailContent(
                             updatedDate(detail.updatedAt)?.let {
                                 DetailRow(stringResource(R.string.common_field_updated), it)
                             }
-                            detail.washingInstructions
-                                ?.takeIf { it.isNotBlank() }
-                                ?.let { instructions ->
-                                    WashingInstructionsCard(value = instructions)
-                                }
+                            if (
+                                !detail.washingInstructions.isNullOrBlank() ||
+                                    detail.washingSymbols?.isEmpty() == false
+                            ) {
+                                WashingInstructionsCard(
+                                    value = detail.washingInstructions.orEmpty(),
+                                    symbols = detail.washingSymbols,
+                                )
+                            }
                         }
                     YarnDetailCard.DESCRIPTION ->
                         ReorderableDetailCard(

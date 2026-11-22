@@ -1,3 +1,7 @@
+import {
+  isWashingSymbols,
+  type WashingSymbols,
+} from "#lib/components/washing-symbols.ts";
 import { ApiError, apiRequest, type SessionData } from "#lib/api.ts";
 import { t } from "#lib/i18n.svelte.ts";
 import { accessField, type ResourceAccess } from "#lib/access.ts";
@@ -106,6 +110,7 @@ export interface ProjectDetail extends ProjectSummary {
   description_html: string | null;
   notes: string | null;
   washing_instructions?: string | null;
+  washing_symbols?: WashingSymbols | null;
   notes_html: string | null;
   other_materials: string | null;
   other_materials_html: string | null;
@@ -136,6 +141,7 @@ export interface ProjectWrite {
   description: string | null;
   notes: string | null;
   washing_instructions?: string | null;
+  washing_symbols?: WashingSymbols | null;
   other_materials: string | null;
   tags: string[];
   link: string | null;
@@ -593,6 +599,8 @@ function parseProjectDetailValue(value: unknown): ProjectDetail {
     !nullableString(value.description) ||
     !nullableString(value.description_html) ||
     !nullableString(value.notes) ||
+    (value.washing_symbols != null &&
+      !isWashingSymbols(value.washing_symbols)) ||
     (value.washing_instructions !== undefined &&
       !nullableString(value.washing_instructions)) ||
     !nullableString(value.notes_html) ||
@@ -636,6 +644,9 @@ function parseProjectDetailValue(value: unknown): ProjectDetail {
     description: value.description,
     description_html: value.description_html,
     notes: value.notes,
+    ...(value.washing_symbols !== undefined
+      ? { washing_symbols: value.washing_symbols }
+      : {}),
     ...(value.washing_instructions !== undefined
       ? { washing_instructions: value.washing_instructions }
       : {}),

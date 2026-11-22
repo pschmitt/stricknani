@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { WashingSymbols } from "#lib/components/washing-symbols.ts";
   import WashingInstructions from "#lib/components/WashingInstructions.svelte";
   import LabelIcon from "#lib/components/LabelIcon.svelte";
   import MarkdownEditor from "#lib/components/MarkdownEditor.svelte";
@@ -88,6 +89,7 @@
     description: string;
     notes: string;
     washingInstructions: string;
+    washingSymbols: WashingSymbols;
     link: string;
   };
 
@@ -104,6 +106,7 @@
     description: "",
     notes: "",
     washingInstructions: "",
+    washingSymbols: {},
     link: "",
   });
 
@@ -330,6 +333,7 @@
       description: yarn.description ?? "",
       notes: yarn.notes ?? "",
       washingInstructions: yarn.washing_instructions ?? "",
+      washingSymbols: yarn.washing_symbols ?? {},
       link: yarn.link ?? "",
     };
   }
@@ -438,6 +442,7 @@
       length_meters: lengthMeters,
       notes: optionalText(draft.notes),
       washing_instructions: draft.washingInstructions.trim(),
+      washing_symbols: draft.washingSymbols,
       link,
       is_ai_enhanced: loadedYarn?.is_ai_enhanced ?? importAi,
       ...(imageUrls.length ? { image_urls: imageUrls } : {}),
@@ -797,7 +802,10 @@
     applyLoadedYarn(fresh);
   }
 
-  function setDraft(field: keyof Draft, value: string) {
+  function setDraft(
+    field: Exclude<keyof Draft, "washingSymbols">,
+    value: string,
+  ) {
     draft[field] = value;
     delete fieldErrors[field];
     statusMessage = "";
@@ -1237,6 +1245,8 @@
         <WashingInstructions
           {locale}
           value={draft.washingInstructions}
+          symbols={draft.washingSymbols}
+          onSymbols={(value) => (draft.washingSymbols = value)}
           onInput={(value) => setDraft("washingInstructions", value)}
         />
       </fieldset>

@@ -58,6 +58,8 @@ pub(crate) struct YarnWriteRequest {
     /// Omission preserves saved instructions on update. Empty text clears them.
     #[serde(default)]
     pub(crate) washing_instructions: Option<String>,
+    /// An empty object clears both symbols. Omission preserves saved symbols.
+    pub(crate) washing_symbols: Option<sqlx::types::Json<crate::washing_symbols::WashingSymbols>>,
     #[serde(default)]
     pub(crate) link: Option<String>,
     #[serde(default)]
@@ -104,6 +106,7 @@ struct YarnRow {
     length_meters: Option<i64>,
     notes: Option<String>,
     washing_instructions: Option<String>,
+    washing_symbols: Option<sqlx::types::Json<crate::washing_symbols::WashingSymbols>>,
     link: Option<String>,
     link_archive: Option<String>,
     is_ai_enhanced: bool,
@@ -136,6 +139,8 @@ pub(crate) struct YarnResponse {
     pub(crate) notes: Option<String>,
     #[serde(skip_serializing)]
     pub(crate) washing_instructions: Option<String>,
+    #[serde(skip_serializing)]
+    pub(crate) washing_symbols: Option<sqlx::types::Json<crate::washing_symbols::WashingSymbols>>,
     pub(crate) link: Option<String>,
     pub(crate) link_archive: Option<String>,
     pub(crate) is_ai_enhanced: bool,
@@ -494,8 +499,8 @@ pub(crate) async fn create_for_owner(
     let result = sqlx::query(
         "INSERT INTO yarns (owner_id, name, description, brand, colorway, dye_lot, \
          fiber_content, weight_category, recommended_needles, weight_grams, length_meters, \
-         notes, washing_instructions, link, is_ai_enhanced, created_at, updated_at) \
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+         notes, washing_instructions, washing_symbols, link, is_ai_enhanced, created_at, updated_at) \
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(user_id)
     .bind(&name)
@@ -510,6 +515,7 @@ pub(crate) async fn create_for_owner(
     .bind(payload.length_meters)
     .bind(clean_optional(payload.notes))
     .bind(clean_optional(payload.washing_instructions))
+    .bind(payload.washing_symbols)
     .bind(clean_optional(payload.link))
     .bind(payload.is_ai_enhanced)
     .bind(&now)
@@ -630,12 +636,14 @@ pub(crate) async fn update_for_owner(
     let query = if expected.is_some() {
         "UPDATE yarns SET name = ?, description = ?, brand = ?, colorway = ?, dye_lot = ?, \
          fiber_content = ?, weight_category = ?, recommended_needles = ?, weight_grams = ?, \
-         length_meters = ?, notes = ?, washing_instructions = NULLIF(COALESCE(?, washing_instructions), ''), link = ?, is_ai_enhanced = ?, updated_at = ? \
+         length_meters = ?, notes = ?, washing_instructions = NULLIF(COALESCE(?, washing_instructions), ''), \
+         washing_symbols = COALESCE(?, washing_symbols), link = ?, is_ai_enhanced = ?, updated_at = ? \
          WHERE id = ? AND owner_id = ? AND updated_at = ?"
     } else {
         "UPDATE yarns SET name = ?, description = ?, brand = ?, colorway = ?, dye_lot = ?, \
                  fiber_content = ?, weight_category = ?, recommended_needles = ?, weight_grams = ?, \
-                 length_meters = ?, notes = ?, washing_instructions = NULLIF(COALESCE(?, washing_instructions), ''), link = ?, is_ai_enhanced = ?, updated_at = ? \
+                 length_meters = ?, notes = ?, washing_instructions = NULLIF(COALESCE(?, washing_instructions), ''), \
+         washing_symbols = COALESCE(?, washing_symbols), link = ?, is_ai_enhanced = ?, updated_at = ? \
                  WHERE id = ? AND owner_id = ?"
     };
     let mut update = sqlx::query(query)
@@ -651,6 +659,7 @@ pub(crate) async fn update_for_owner(
         .bind(payload.length_meters)
         .bind(clean_optional(payload.notes))
         .bind(payload.washing_instructions.as_deref().map(str::trim))
+        .bind(payload.washing_symbols)
         .bind(clean_optional(payload.link))
         .bind(payload.is_ai_enhanced)
         .bind(&updated_at)
@@ -1170,6 +1179,7 @@ async fn yarn_response(
         length_meters: yarn.length_meters,
         notes: yarn.notes,
         washing_instructions: yarn.washing_instructions,
+        washing_symbols: yarn.washing_symbols,
         link: yarn.link,
         link_archive: yarn.link_archive,
         is_ai_enhanced: yarn.is_ai_enhanced,

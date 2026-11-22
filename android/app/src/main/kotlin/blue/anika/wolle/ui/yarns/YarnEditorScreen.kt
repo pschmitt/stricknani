@@ -575,6 +575,10 @@ fun YarnEditorScreen(
                             }
                             WashingInstructionsCard(
                                 value = form.washingInstructions,
+                                symbols = form.washingSymbols,
+                                onSymbolsChange = { value ->
+                                    viewModel.updateForm { it.copy(washingSymbols = value) }
+                                },
                                 onValueChange = { value ->
                                     viewModel.updateForm { it.copy(washingInstructions = value) }
                                 },

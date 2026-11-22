@@ -1802,4 +1802,9 @@
     <string name="error_passkey_generic">Die Passkey-Anfrage konnte nicht abgeschlossen werden. Versuche es erneut.</string>
     <string name="unlock_reason_remove_passkey">Passkey entfernen</string>
     <string name="washing_instructions">Waschanleitung</string>
+    <string name="washing_temperature">Waschtemperatur</string>
+    <string name="washing_drying">Trocknen</string>
+    <string name="washing_dry_flat">Liegend trocknen</string>
+    <string name="washing_dry_line">Auf der Leine trocknen</string>
+    <string name="washing_no_tumble">Nicht im Trockner trocknen</string>
 </resources>

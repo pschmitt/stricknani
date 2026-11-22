@@ -529,6 +529,7 @@ private fun YarnWriteRequest.toPlaceholderEntity(tempId: Int, json: Json): YarnE
             lengthMeters = lengthMeters,
             notes = notes,
             washingInstructions = washingInstructions?.takeIf { it.isNotBlank() },
+            washingSymbols = washingSymbols,
             link = link,
             linkArchive = null,
             isAiEnhanced = isAiEnhanced,
@@ -562,6 +563,7 @@ private fun YarnWriteRequest.applyTo(existing: YarnEntity, json: Json): YarnEnti
             notes = notes,
             washingInstructions =
                 (washingInstructions ?: current.washingInstructions)?.takeIf { it.isNotBlank() },
+            washingSymbols = washingSymbols ?: current.washingSymbols,
             link = link,
             isAiEnhanced = isAiEnhanced,
             updatedAt = nowIso(),

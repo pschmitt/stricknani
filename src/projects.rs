@@ -76,6 +76,8 @@ pub(crate) struct ProjectWriteRequest {
     /// Omission preserves saved instructions on update. Empty text clears them.
     #[serde(default)]
     pub(crate) washing_instructions: Option<String>,
+    /// An empty object clears both symbols. Omission preserves saved symbols.
+    pub(crate) washing_symbols: Option<sqlx::types::Json<crate::washing_symbols::WashingSymbols>>,
     #[serde(default)]
     pub(crate) other_materials: Option<String>,
     #[serde(default)]
@@ -160,6 +162,8 @@ pub(crate) struct ProjectResponse {
     pub(crate) notes: Option<String>,
     #[serde(skip_serializing)]
     pub(crate) washing_instructions: Option<String>,
+    #[serde(skip_serializing)]
+    pub(crate) washing_symbols: Option<sqlx::types::Json<crate::washing_symbols::WashingSymbols>>,
     pub(crate) other_materials: Option<String>,
     pub(crate) tags: Vec<String>,
     pub(crate) link: Option<String>,
@@ -283,6 +287,7 @@ struct ProjectRow {
     description: Option<String>,
     notes: Option<String>,
     washing_instructions: Option<String>,
+    washing_symbols: Option<sqlx::types::Json<crate::washing_symbols::WashingSymbols>>,
     other_materials: Option<String>,
     tags: String,
     link: Option<String>,
@@ -689,9 +694,9 @@ async fn create_project_with_yarn_ids(
     let requested_status = requested_status(&payload, tag_policy)?;
     let inserted = sqlx::query(
         "INSERT INTO projects (owner_id, category_id, name, needles, stitch_sample, \
-         description, notes, washing_instructions, other_materials, tags, link, is_ai_enhanced, status, \
+         description, notes, washing_instructions, washing_symbols, other_materials, tags, link, is_ai_enhanced, status, \
          created_at, updated_at) \
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(user_id)
     .bind(category_id)
@@ -701,6 +706,7 @@ async fn create_project_with_yarn_ids(
     .bind(cleaned_optional(payload.description))
     .bind(cleaned_optional(payload.notes))
     .bind(cleaned_optional(payload.washing_instructions))
+    .bind(payload.washing_symbols)
     .bind(cleaned_optional(payload.other_materials))
     .bind(tags)
     .bind(cleaned_optional(payload.link))
@@ -893,7 +899,8 @@ pub(crate) async fn update_for_owner_with_tag_policy(
     let requested_status = requested_status(&payload, tag_policy)?;
     let updated = sqlx::query(
         "UPDATE projects SET category_id = ?, name = ?, needles = ?, stitch_sample = ?, \
-         description = ?, notes = ?, washing_instructions = NULLIF(COALESCE(?, washing_instructions), ''), other_materials = ?, tags = ?, link = ?, \
+         description = ?, notes = ?, washing_instructions = NULLIF(COALESCE(?, washing_instructions), ''), \
+         washing_symbols = COALESCE(?, washing_symbols), other_materials = ?, tags = ?, link = ?, \
          is_ai_enhanced = ?, status = COALESCE(?, status), updated_at = ? \
          WHERE id = ? AND owner_id = ? AND updated_at = ?",
     )
@@ -904,6 +911,7 @@ pub(crate) async fn update_for_owner_with_tag_policy(
     .bind(cleaned_optional(payload.description))
     .bind(cleaned_optional(payload.notes))
     .bind(payload.washing_instructions.as_deref().map(str::trim))
+    .bind(payload.washing_symbols)
     .bind(cleaned_optional(payload.other_materials))
     .bind(tags)
     .bind(cleaned_optional(payload.link))
@@ -1412,7 +1420,7 @@ pub(crate) async fn load_project_with_tag_policy(
     let user_id = grant.owner_id;
     let row = sqlx::query_as::<_, ProjectRow>(
         "SELECT p.id, p.name, c.name AS category, p.needles, p.stitch_sample, \
-                p.description, p.notes, p.washing_instructions, p.other_materials, p.tags, p.link, \
+                p.description, p.notes, p.washing_instructions, p.washing_symbols, p.other_materials, p.tags, p.link, \
                 p.link_archive, p.is_ai_enhanced, p.status, p.created_at, p.updated_at, p.deleted_at \
          FROM projects p LEFT JOIN categories c ON c.id = p.category_id \
          WHERE p.id = ? AND p.owner_id = ?",
@@ -1466,6 +1474,7 @@ pub(crate) async fn load_project_with_tag_policy(
         description: row.description,
         notes: row.notes,
         washing_instructions: row.washing_instructions,
+        washing_symbols: row.washing_symbols,
         other_materials: row.other_materials,
         tags: decode_tags(&row.tags, tag_policy),
         link: row.link,

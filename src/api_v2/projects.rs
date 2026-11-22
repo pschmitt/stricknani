@@ -89,6 +89,7 @@ pub(super) struct ProjectDto {
     description_html: Option<String>,
     notes: Option<String>,
     washing_instructions: Option<String>,
+    washing_symbols: Option<sqlx::types::Json<crate::washing_symbols::WashingSymbols>>,
     notes_html: Option<String>,
     other_materials: Option<String>,
     other_materials_html: Option<String>,
@@ -140,6 +141,7 @@ impl From<ProjectResponse> for ProjectDto {
             notes_html: project.notes.as_deref().map(crate::web::rich_text),
             notes: project.notes,
             washing_instructions: project.washing_instructions,
+            washing_symbols: project.washing_symbols,
             other_materials_html: project
                 .other_materials
                 .as_deref()

@@ -14,6 +14,7 @@ import blue.anika.wolle.data.api.dto.ImportAssetDto
 import blue.anika.wolle.data.api.dto.ProjectStatus
 import blue.anika.wolle.data.api.dto.ProjectWriteRequest
 import blue.anika.wolle.data.api.dto.StepWriteRequest
+import blue.anika.wolle.data.api.dto.WashingSymbols
 import blue.anika.wolle.data.api.dto.YarnCandidateDto
 import blue.anika.wolle.data.api.importAvailability
 import blue.anika.wolle.data.api.v2.ImportJobDto
@@ -87,6 +88,7 @@ data class ProjectEditorFormState(
     val description: String = "",
     val notes: String = "",
     val washingInstructions: String = "",
+    val washingSymbols: WashingSymbols = WashingSymbols(),
     val otherMaterials: String = "",
     /** The finished tags, shown as chips. */
     val tags: List<String> = emptyList(),
@@ -483,6 +485,7 @@ constructor(
                             description = detail.description ?: "",
                             notes = detail.notes ?: "",
                             washingInstructions = detail.washingInstructions.orEmpty(),
+                            washingSymbols = detail.washingSymbols ?: WashingSymbols(),
                             otherMaterials = detail.otherMaterials ?: "",
                             tags = detail.tags,
                             link = detail.link ?: "",
@@ -789,6 +792,7 @@ constructor(
                         description = current.description.trim().ifBlank { null },
                         notes = current.notes.trim().ifBlank { null },
                         washingInstructions = current.washingInstructions.trim(),
+                        washingSymbols = current.washingSymbols,
                         otherMaterials = current.otherMaterials.trim().ifBlank { null },
                         tags = current.committedTags(),
                         link = current.link.trim().ifBlank { null },

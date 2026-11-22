@@ -1,3 +1,7 @@
+import {
+  isWashingSymbols,
+  type WashingSymbols,
+} from "#lib/components/washing-symbols.ts";
 import { ApiError, apiRequest, type SessionData } from "#lib/api.ts";
 import { t } from "#lib/i18n.svelte.ts";
 import { accessField, type ResourceAccess } from "#lib/access.ts";
@@ -44,6 +48,7 @@ export interface YarnDetail extends YarnSummary {
   length_meters: number | null;
   notes: string | null;
   washing_instructions?: string | null;
+  washing_symbols?: WashingSymbols | null;
   notes_html: string | null;
   link: string | null;
   link_archive: string | null;
@@ -66,6 +71,7 @@ export interface YarnWrite {
   length_meters: number | null;
   notes: string | null;
   washing_instructions?: string | null;
+  washing_symbols?: WashingSymbols | null;
   link: string | null;
   is_ai_enhanced: boolean;
   /** Pictures fetched by the server and attached when the yarn is created (imports). */
@@ -388,6 +394,8 @@ export function parseYarnDetail(value: unknown): YarnDetail {
     !nullableNonnegativeInteger(value.weight_grams) ||
     !nullableNonnegativeInteger(value.length_meters) ||
     !nullableString(value.notes) ||
+    (value.washing_symbols != null &&
+      !isWashingSymbols(value.washing_symbols)) ||
     (value.washing_instructions !== undefined &&
       !nullableString(value.washing_instructions)) ||
     !nullableString(value.notes_html) ||
@@ -424,6 +432,9 @@ export function parseYarnDetail(value: unknown): YarnDetail {
     weight_grams: value.weight_grams,
     length_meters: value.length_meters,
     notes: value.notes,
+    ...(value.washing_symbols !== undefined
+      ? { washing_symbols: value.washing_symbols }
+      : {}),
     ...(value.washing_instructions !== undefined
       ? { washing_instructions: value.washing_instructions }
       : {}),
