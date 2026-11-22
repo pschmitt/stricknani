@@ -637,6 +637,11 @@ internal fun YarnDetailContent(
                             updatedDate(detail.updatedAt)?.let {
                                 DetailRow(stringResource(R.string.common_field_updated), it)
                             }
+                            detail.washingInstructions
+                                ?.takeIf { it.isNotBlank() }
+                                ?.let { instructions ->
+                                    WashingInstructionsCard(value = instructions)
+                                }
                         }
                     YarnDetailCard.DESCRIPTION ->
                         ReorderableDetailCard(
@@ -717,13 +722,6 @@ internal fun YarnDetailContent(
                         }
                 }
             }
-            detail.washingInstructions
-                ?.takeIf { it.isNotBlank() }
-                ?.let { instructions ->
-                    item(key = "washing-instructions") {
-                        WashingInstructionsCard(value = instructions)
-                    }
-                }
             if (detail.notes == null && canEdit) {
                 item(key = "notes-empty") {
                     StickyNoteEmpty(

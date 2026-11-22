@@ -1234,6 +1234,11 @@
               >{/if}
           </label>
         </div>
+        <WashingInstructions
+          {locale}
+          value={draft.washingInstructions}
+          onInput={(value) => setDraft("washingInstructions", value)}
+        />
       </fieldset>
 
       <fieldset
@@ -1288,13 +1293,6 @@
           </div>
         </div>
       </fieldset>
-
-      <WashingInstructions
-        {locale}
-        value={draft.washingInstructions}
-        onInput={(value) => setDraft("washingInstructions", value)}
-        disabled={saving || mediaBusy || deleting || createdYarn !== null}
-      />
 
       {#if loadedYarn && !canManagePhotos && !mediaBusy && isDirty}
         <p class="media-hint">

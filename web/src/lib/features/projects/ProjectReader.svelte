@@ -996,6 +996,11 @@
           </div>
         {/if}
       </dl>
+      <WashingInstructions
+        {locale}
+        value={currentProject.washing_instructions}
+        {textSizeClass}
+      />
     </Disclosure>
   {/snippet}
 
@@ -1473,11 +1478,6 @@
           {@render stepsSection()}
         {/if}
       {/each}
-      <WashingInstructions
-        {locale}
-        value={currentProject.washing_instructions}
-        {textSizeClass}
-      />
     </div>
 
     {#if !adminData && !trashed}
@@ -1764,6 +1764,10 @@
 
   :global(.materials-card) .materials-body {
     padding: 0.25rem clamp(1rem, 3vw, 1.4rem) clamp(1rem, 3vw, 1.4rem);
+  }
+
+  :global(.materials-card > .washing-card) {
+    margin: 0 clamp(1rem, 3vw, 1.4rem) clamp(1rem, 3vw, 1.4rem);
   }
 
   .section-heading-row > span {

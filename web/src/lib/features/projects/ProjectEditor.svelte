@@ -2206,6 +2206,11 @@
                     rows={4}
                   />
                 </div>
+                <WashingInstructions
+                  {locale}
+                  value={draft.washingInstructions}
+                  onInput={(value) => (draft.washingInstructions = value)}
+                />
               </section>
 
               <section class="form-card" aria-labelledby="writing-heading">
@@ -2448,11 +2453,6 @@
               </section>
             </div>
           </details>
-          <WashingInstructions
-            {locale}
-            value={draft.washingInstructions}
-            onInput={(value) => (draft.washingInstructions = value)}
-          />
         </fieldset>
 
         {#if project && mayManage(project.access)}

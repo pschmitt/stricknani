@@ -474,6 +474,11 @@
           />
         {/if}
       </SourceRows>
+      <WashingInstructions
+        {locale}
+        value={currentYarn.washing_instructions}
+        {textSizeClass}
+      />
     </aside>
   {/snippet}
 
@@ -775,11 +780,6 @@
             {@render usedInSection()}
           {/if}
         {/each}
-        <WashingInstructions
-          {locale}
-          value={currentYarn.washing_instructions}
-          {textSizeClass}
-        />
       </div>
     </div>
 
@@ -892,7 +892,7 @@
   }
 
   .detail-section :global(.section-heading),
-  .spec-panel :global(.section-heading) {
+  .spec-panel > :global(.section-heading) {
     margin-bottom: 0.9rem;
   }
 

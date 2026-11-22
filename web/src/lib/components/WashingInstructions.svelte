@@ -42,6 +42,7 @@
     display: grid;
     gap: 0.75rem;
     min-width: 0;
+    margin-block-start: 0.75rem;
     padding: 1rem;
     border: 1px solid color-mix(in srgb, var(--tone-yarns) 22%, transparent);
     border-radius: 1rem;

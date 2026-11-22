@@ -725,6 +725,12 @@ fun ProjectEditorScreen(
                                 minLines = 2,
                                 keepLineBreaks = true,
                             )
+                            WashingInstructionsCard(
+                                value = form.washingInstructions,
+                                onValueChange = { value ->
+                                    viewModel.updateForm { it.copy(washingInstructions = value) }
+                                },
+                            )
                         }
                     }
                 }
@@ -890,14 +896,6 @@ fun ProjectEditorScreen(
                         )
                         Text(stringResource(R.string.project_editor_add_step))
                     }
-                }
-                item(key = "washing-instructions") {
-                    WashingInstructionsCard(
-                        value = form.washingInstructions,
-                        onValueChange = { value ->
-                            viewModel.updateForm { it.copy(washingInstructions = value) }
-                        },
-                    )
                 }
             }
         }

@@ -573,6 +573,12 @@ fun YarnEditorScreen(
                                         ),
                                 )
                             }
+                            WashingInstructionsCard(
+                                value = form.washingInstructions,
+                                onValueChange = { value ->
+                                    viewModel.updateForm { it.copy(washingInstructions = value) }
+                                },
+                            )
                         }
                     }
                 }
@@ -614,14 +620,6 @@ fun YarnEditorScreen(
                             )
                         }
                     }
-                }
-                item(key = "washing-instructions") {
-                    WashingInstructionsCard(
-                        value = form.washingInstructions,
-                        onValueChange = { value ->
-                            viewModel.updateForm { it.copy(washingInstructions = value) }
-                        },
-                    )
                 }
             }
         }
