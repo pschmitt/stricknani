@@ -11,9 +11,9 @@
 <!-- One external source link (original page or archived copy): round icon, label and "↗".
      The icon colour follows --source-tone of the surrounding source rows. -->
 <a class="source-link" {href} target="_blank" rel="noopener noreferrer">
-  <span class="source-link__icon" aria-hidden="true"
-    ><NavIcon name={icon} /></span
-  >
+  <span class="source-link__icon" aria-hidden="true">
+    <NavIcon name={icon} />
+  </span>
   {label} ↗
 </a>
 

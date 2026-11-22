@@ -393,17 +393,19 @@
       </Button>
       <a
         class="ui-button ui-button--primary ui-button--md primary-action"
-        href={resolve("/yarns")}>{t("Back to yarns", locale)}</a
+        href={resolve("/yarns")}
       >
+        {t("Back to yarns", locale)}
+      </a>
     </div>
   </section>
 {:else if yarn}
   {@const currentYarn = yarn}
   {#snippet detailsSection()}
     <aside class="spec-panel" aria-label={t("Yarn specifications", locale)}>
-      <SectionHeading icon="info" tone="yarns"
-        >{t("Yarn details", locale)}</SectionHeading
-      >
+      <SectionHeading icon="info" tone="yarns">
+        {t("Yarn details", locale)}
+      </SectionHeading>
       <dl class={textSizeClass}>
         {#if currentYarn.brand}<div>
             <dt><LabelIcon name="storefront" />{t("Brand", locale)}</dt>
@@ -442,9 +444,9 @@
         <div>
           <dt><LabelIcon name="history" />{t("Updated", locale)}</dt>
           <dd>
-            <time datetime={currentYarn.updated_at}
-              >{formatDate(currentYarn.updated_at)}</time
-            >
+            <time datetime={currentYarn.updated_at}>
+              {formatDate(currentYarn.updated_at)}
+            </time>
           </dd>
         </div>
       </dl>
@@ -486,9 +488,9 @@
   {#snippet descriptionSection()}
     {#if currentYarn.description_html}
       <section class="detail-section">
-        <SectionHeading icon="notebook" tone="yarns"
-          >{t("Description", locale)}</SectionHeading
-        >
+        <SectionHeading icon="notebook" tone="yarns">
+          {t("Description", locale)}
+        </SectionHeading>
         <div class="rich-text {textSizeClass}">
           {@html currentYarn.description_html}
         </div>
@@ -527,9 +529,9 @@
   {#snippet usedInSection()}
     {#if currentYarn.project_ids.length > 0}
       <section class="detail-section" aria-labelledby="used-in-title">
-        <SectionHeading id="used-in-title" icon="projects" tone="yarns"
-          >{t("Used in projects", locale)}</SectionHeading
-        >
+        <SectionHeading id="used-in-title" icon="projects" tone="yarns">
+          {t("Used in projects", locale)}
+        </SectionHeading>
         {#if linkedProjectsLoading}
           <p class="muted" aria-live="polite">
             {t("Loading linked projects…", locale)}
@@ -558,9 +560,9 @@
       </section>
     {:else}
       <section class="detail-section">
-        <SectionHeading icon="projects" tone="yarns"
-          >{t("Used in projects", locale)}</SectionHeading
-        >
+        <SectionHeading icon="projects" tone="yarns">
+          {t("Used in projects", locale)}
+        </SectionHeading>
         <p class="muted">{t("No projects use this yarn yet.", locale)}</p>
       </section>
     {/if}
@@ -590,10 +592,11 @@
               class="primary-action ui-button ui-button--primary ui-button--md"
               aria-label={t("Edit yarn", locale)}
               href={`${resolve("/yarns")}/${currentYarn.id}/edit`}
-              ><ActionLabel icon="action-update"
-                >{t("Edit", locale)}</ActionLabel
-              ></a
             >
+              <ActionLabel icon="action-update">
+                {t("Edit", locale)}
+              </ActionLabel>
+            </a>
           {/if}
           <ActionOverflow label={t("More actions", locale)}>
             {#snippet children(close)}
@@ -611,18 +614,22 @@
                     type="button"
                     aria-label={t("Decrease text size", locale)}
                     disabled={textSize.isMin}
-                    onclick={() => textSize.down()}>A−</button
+                    onclick={() => textSize.down()}
                   >
-                  <span class="action-overflow__segment action-overflow__value"
-                    >{textSize.label}</span
-                  >
+                    A−
+                  </button>
+                  <span class="action-overflow__segment action-overflow__value">
+                    {textSize.label}
+                  </span>
                   <button
                     class="action-overflow__segment"
                     type="button"
                     aria-label={t("Increase text size", locale)}
                     disabled={textSize.isMax}
-                    onclick={() => textSize.up()}>A+</button
+                    onclick={() => textSize.up()}
                   >
+                    A+
+                  </button>
                 </div>
                 {#if !textSize.isDefault}
                   <button
@@ -652,11 +659,11 @@
                     }}
                   >
                     <NavIcon name="heart" />
-                    <span
-                      >{currentYarn.is_favorite
+                    <span>
+                      {currentYarn.is_favorite
                         ? t("Remove from favorites", locale)
-                        : t("Add to favorites", locale)}</span
-                    >
+                        : t("Add to favorites", locale)}
+                    </span>
                   </button>
                 {/if}
                 <ShareMenuItem

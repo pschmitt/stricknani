@@ -141,8 +141,10 @@
     <small
       class="url-domain"
       class:url-domain--hidden={!showDomain}
-      id={domainId}>{domain}</small
+      id={domainId}
     >
+      {domain}
+    </small>
   {/if}
 </div>
 

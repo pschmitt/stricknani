@@ -44,9 +44,9 @@
   }
 </script>
 
-<svelte:head
-  ><title>Stricknani · {t("Import a link", locale)}</title></svelte:head
->
+<svelte:head>
+  <title>Stricknani · {t("Import a link", locale)}</title>
+</svelte:head>
 
 <section
   class="share-page page-container page-container--compact"

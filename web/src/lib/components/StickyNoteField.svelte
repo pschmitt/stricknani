@@ -35,9 +35,9 @@
 <div class="sticky-field" style:--rows={rows}>
   <span class="sticky-field__paper" aria-hidden="true"></span>
   <div class="sticky-field__body">
-    <label for={id} id={`${id}-label`}
-      >{#if icon}<LabelIcon name={icon} />{/if}{label}</label
-    >
+    <label for={id} id={`${id}-label`}>
+      {#if icon}<LabelIcon name={icon} />{/if}{label}
+    </label>
     <MarkdownEditor
       {id}
       labelledBy={`${id}-label`}

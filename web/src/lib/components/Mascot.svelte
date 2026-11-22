@@ -646,8 +646,10 @@
             font-size="19"
             font-weight="800"
             fill="#2f6fed"
-            text-anchor="middle">?</text
+            text-anchor="middle"
           >
+            ?
+          </text>
         {:else if mood === "dizzy"}
           <path
             class="mascot-thread"

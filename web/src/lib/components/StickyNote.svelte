@@ -617,9 +617,9 @@
   <a class="sticky sticky--empty" href={emptyHref}>
     <span class="sticky__paper" aria-hidden="true"></span>
     <span class="sticky__body">
-      <span class="sticky__pencil" aria-hidden="true"
-        ><NavIcon name="action-update" /></span
-      >
+      <span class="sticky__pencil" aria-hidden="true">
+        <NavIcon name="action-update" />
+      </span>
       {emptyLabel}
     </span>
   </a>
@@ -639,9 +639,9 @@
       <span data-probe="right"></span>
       <span data-probe="default"></span>
     </div>
-    <span class="notes__live" role="status" aria-live="polite"
-      >{announcement}</span
-    >
+    <span class="notes__live" role="status" aria-live="polite">
+      {announcement}
+    </span>
     <button
       bind:this={fab}
       type="button"
@@ -689,8 +689,10 @@
           <svelte:element
             this={`h${headingLevel}`}
             id={headingId}
-            class="sticky__title">{title}</svelte:element
+            class="sticky__title"
           >
+            {title}
+          </svelte:element>
           {@render children?.()}
         </div>
         <CloseButton

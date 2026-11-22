@@ -102,16 +102,16 @@
         {stateText}
         {#if showTrashLink}
           <span aria-hidden="true"> · </span>
-          <a href={trashHref} data-testid="audit-open-trash"
-            >{t("Open trash", locale)}</a
-          >
+          <a href={trashHref} data-testid="audit-open-trash">
+            {t("Open trash", locale)}
+          </a>
         {/if}
       </p>
     {:else if showTrashLink}
       <p class="audit-lifecycle__state">
-        <a href={trashHref} data-testid="audit-open-trash"
-          >{t("Open trash", locale)}</a
-        >
+        <a href={trashHref} data-testid="audit-open-trash">
+          {t("Open trash", locale)}
+        </a>
       </p>
     {/if}
     {#if canRestore}

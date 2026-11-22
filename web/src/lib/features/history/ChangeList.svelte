@@ -87,9 +87,9 @@
       : null}
     <li class="change" data-kind={kind}>
       <header class="change-head">
-        <svelte:element this={headingTag} class="change-title"
-          >{fieldLabel(item.field, locale)}</svelte:element
-        >
+        <svelte:element this={headingTag} class="change-title">
+          {fieldLabel(item.field, locale)}
+        </svelte:element>
         <span class="change-kind">{kindLabel(kind, locale)}</span>
         {#if change}
           <span class="change-delta">{change}</span>

@@ -21,14 +21,13 @@
   const parts = $derived(sentenceParts(template, users));
 </script>
 
-<span class="user-sentence"
-  >{#each parts as part, index (index)}{#if part.user}<UserLabel
+<span class="user-sentence">
+  {#each parts as part, index (index)}{#if part.user}<UserLabel
         user={part.user}
         {locale}
         {size}
-      />{:else}<span class="user-sentence__text">{part.text}</span
-      >{/if}{/each}</span
->
+      />{:else}<span class="user-sentence__text">{part.text}</span>{/if}{/each}
+</span>
 
 <style>
   .user-sentence {

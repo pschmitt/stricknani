@@ -867,8 +867,10 @@
       </Button>
       <a
         class="primary-action ui-button ui-button--primary ui-button--md"
-        href={resolve("/yarns")}>{t("Back to yarns", locale)}</a
+        href={resolve("/yarns")}
       >
+        {t("Back to yarns", locale)}
+      </a>
     </div>
   </section>
 {:else if loadedYarn && !mayEdit(loadedYarn.access)}
@@ -880,8 +882,9 @@
       <a
         class="primary-action ui-button ui-button--primary ui-button--md"
         href={`${resolve("/yarns")}/${loadedYarn.id}`}
-        >{t("Back to the yarn", locale)}</a
       >
+        {t("Back to the yarn", locale)}
+      </a>
     </div>
   </section>
 {:else}
@@ -894,9 +897,9 @@
       titleId="editor-title"
     >
       {#snippet actions()}
-        {#if isDirty}<span class="unsaved-pill" role="status"
-            >{t("Unsaved changes", locale)}</span
-          >{/if}
+        {#if isDirty}<span class="unsaved-pill" role="status">
+            {t("Unsaved changes", locale)}
+          </span>{/if}
       {/snippet}
     </PageHeader>
 
@@ -934,8 +937,9 @@
           {#if notice.code === "looks_like_pattern_page" && draft.link}
             <a
               href={`${resolve("/projects/new")}${importStartQuery(draft.link)}`}
-              >{t("New project", locale)}</a
             >
+              {t("New project", locale)}
+            </a>
           {/if}
         </p>{/each}
     {/if}
@@ -951,22 +955,22 @@
         </p>
         <div class="latest-summary">
           <strong>{conflictYarn.name}</strong>
-          <span
-            >{[
+          <span>
+            {[
               conflictYarn.brand,
               conflictYarn.colorway,
               conflictYarn.weight_category,
             ]
               .filter(Boolean)
-              .join(" · ")}</span
-          >
-          <time datetime={conflictYarn.updated_at}
-            >{t("Saved", locale)}
+              .join(" · ")}
+          </span>
+          <time datetime={conflictYarn.updated_at}>
+            {t("Saved", locale)}
             {new Intl.DateTimeFormat(locale, {
               dateStyle: "medium",
               timeStyle: "short",
-            }).format(new Date(conflictYarn.updated_at))}</time
-          >
+            }).format(new Date(conflictYarn.updated_at))}
+          </time>
         </div>
         <div class="conflict-actions">
           <Button
@@ -1011,10 +1015,10 @@
         <legend>{t("Yarn information", locale)}</legend>
         <div class="field-grid">
           <label class="field wide" for={fieldId("name")}>
-            <span
-              ><LabelIcon name="yarns" />{t("Yarn name", locale)}
-              <b aria-hidden="true">*</b></span
-            >
+            <span>
+              <LabelIcon name="yarns" />{t("Yarn name", locale)}
+              <b aria-hidden="true">*</b>
+            </span>
             <input
               id={fieldId("name")}
               value={draft.name}
@@ -1029,8 +1033,10 @@
             />
             {#if fieldErrors.name}<small
                 id={`${fieldId("name")}-error`}
-                class="field-error">{fieldErrors.name}</small
-              >{/if}
+                class="field-error"
+              >
+                {fieldErrors.name}
+              </small>{/if}
           </label>
           <label class="field wide" for={fieldId("brand")}>
             <span><LabelIcon name="storefront" />{t("Brand", locale)}</span>
@@ -1178,12 +1184,9 @@
             />
           </label>
           <label class="field" for={fieldId("recommended_needles")}>
-            <span
-              ><LabelIcon name="needle" />{t(
-                "Recommended needles",
-                locale,
-              )}</span
-            >
+            <span>
+              <LabelIcon name="needle" />{t("Recommended needles", locale)}
+            </span>
             <input
               id={fieldId("recommended_needles")}
               value={draft.recommended_needles}
@@ -1192,12 +1195,9 @@
             />
           </label>
           <label class="field" for={fieldId("weight_grams")}>
-            <span
-              ><LabelIcon name="scales" />{t(
-                "Skein weight in grams",
-                locale,
-              )}</span
-            >
+            <span>
+              <LabelIcon name="scales" />{t("Skein weight in grams", locale)}
+            </span>
             <input
               id={fieldId("weight_grams")}
               type="number"
@@ -1214,16 +1214,15 @@
             />
             {#if fieldErrors.weight_grams}<small
                 id={`${fieldId("weight_grams")}-error`}
-                class="field-error">{fieldErrors.weight_grams}</small
-              >{/if}
+                class="field-error"
+              >
+                {fieldErrors.weight_grams}
+              </small>{/if}
           </label>
           <label class="field" for={fieldId("length_meters")}>
-            <span
-              ><LabelIcon name="gauge" />{t(
-                "Skein length in meters",
-                locale,
-              )}</span
-            >
+            <span>
+              <LabelIcon name="gauge" />{t("Skein length in meters", locale)}
+            </span>
             <input
               id={fieldId("length_meters")}
               type="number"
@@ -1240,8 +1239,10 @@
             />
             {#if fieldErrors.length_meters}<small
                 id={`${fieldId("length_meters")}-error`}
-                class="field-error">{fieldErrors.length_meters}</small
-              >{/if}
+                class="field-error"
+              >
+                {fieldErrors.length_meters}
+              </small>{/if}
           </label>
         </div>
         <WashingInstructions
@@ -1259,9 +1260,9 @@
         <legend>{t("Description and notes", locale)}</legend>
         <div class="field-grid">
           <div class="field wide">
-            <span id={`${fieldId("description")}-label`}
-              ><LabelIcon name="text-align" />{t("Description", locale)}</span
-            >
+            <span id={`${fieldId("description")}-label`}>
+              <LabelIcon name="text-align" />{t("Description", locale)}
+            </span>
             <MarkdownEditor
               id={fieldId("description")}
               labelledBy={`${fieldId("description")}-label`}
@@ -1284,9 +1285,9 @@
             />
           </div>
           <div class="field wide">
-            <label for={fieldId("link")}
-              ><LabelIcon name="link" />{t("Yarn source URL", locale)}</label
-            >
+            <label for={fieldId("link")}>
+              <LabelIcon name="link" />{t("Yarn source URL", locale)}
+            </label>
             <UrlField
               id={fieldId("link")}
               value={draft.link}
@@ -1300,8 +1301,10 @@
             />
             {#if fieldErrors.link}<small
                 id={`${fieldId("link")}-error`}
-                class="field-error">{fieldErrors.link}</small
-              >{/if}
+                class="field-error"
+              >
+                {fieldErrors.link}
+              </small>{/if}
           </div>
         </div>
       </fieldset>
@@ -1333,17 +1336,19 @@
             href={yarnId === null
               ? resolve("/yarns")
               : `${resolve("/yarns")}/${yarnId}`}
-            ><ActionLabel icon="cancel">{t("Cancel", locale)}</ActionLabel></a
           >
+            <ActionLabel icon="cancel">{t("Cancel", locale)}</ActionLabel>
+          </a>
         {/snippet}
         {#snippet status()}
           {#if serverError}
-            <span aria-hidden="true" class="action-status action-status--error"
-              >{serverError}</span
-            >
+            <span aria-hidden="true" class="action-status action-status--error">
+              {serverError}
+            </span>
           {:else if statusMessage}
-            <span aria-hidden="true" class="action-status">{statusMessage}</span
-            >
+            <span aria-hidden="true" class="action-status">
+              {statusMessage}
+            </span>
           {:else if isDirty}
             <span class="draft-note">
               {stagedRemovalCount(staged) > 0

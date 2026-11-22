@@ -188,24 +188,26 @@
                   {/if}
                 </span>
                 <span class="tl__copy">
-                  <span class="tl__sentence"
-                    ><strong class="tl__name">{name}</strong></span
-                  >
+                  <span class="tl__sentence">
+                    <strong class="tl__name">{name}</strong>
+                  </span>
                   <span class="tl__meta">
-                    <span class="tl__action"
-                      >{#if item.action === "trashed" && item.state === "in_trash"}<a
+                    <span class="tl__action">
+                      {#if item.action === "trashed" && item.state === "in_trash"}<a
                           href={resolve("/trash")}
-                          data-testid="activity-open-trash">{headline}</a
-                        >{:else if sharing}<UserSentence
+                          data-testid="activity-open-trash"
+                        >
+                          {headline}
+                        </a>{:else if sharing}<UserSentence
                           template={sharing.template}
                           users={sharing.users}
                           {locale}
-                        />{:else}{headline}{/if}</span
-                    >
+                        />{:else}{headline}{/if}
+                    </span>
                     <UserLabel user={actor} {locale} size="inline" by />
-                    <time datetime={item.created_at}
-                      >{activityTime(item.created_at, locale)}</time
-                    >
+                    <time datetime={item.created_at}>
+                      {activityTime(item.created_at, locale)}
+                    </time>
                     {#if detail}<span>{detail}</span>{/if}
                     {#if note}<span>{note}</span>{/if}
                   </span>
@@ -235,8 +237,10 @@
                             id: String(item.entity_id),
                           })
                         : resolve("/yarns/[id]", { id: String(item.entity_id) })
-                    }?from=${full ? "activity" : "home"}`}>{@render row()}</a
+                    }?from=${full ? "activity" : "home"}`}
                   >
+                    {@render row()}
+                  </a>
                 {:else}
                   <div class="tl__row">{@render row()}</div>
                 {/if}

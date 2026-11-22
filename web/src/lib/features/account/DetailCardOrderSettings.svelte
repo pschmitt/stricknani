@@ -128,8 +128,9 @@
 
 <section class="card" aria-labelledby="detail-cards-title">
   <header class="card__header">
-    <span class="card__icon" aria-hidden="true"><NavIcon name="sliders" /></span
-    >
+    <span class="card__icon" aria-hidden="true">
+      <NavIcon name="sliders" />
+    </span>
     <h2 id="detail-cards-title">{t("Detail cards", locale)}</h2>
   </header>
   <p class="hint">

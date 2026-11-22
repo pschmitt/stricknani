@@ -819,9 +819,9 @@
 
 {#if loadState === "loading"}
   <section class="reader-loading" aria-busy="true" aria-live="polite">
-    <a class="back-link" href={resolve("/projects")}
-      >‹ {t("Back to projects", locale)}</a
-    >
+    <a class="back-link" href={resolve("/projects")}>
+      ‹ {t("Back to projects", locale)}
+    </a>
     <div class="loading-mark" aria-hidden="true"></div>
     <p>{t("Opening your pattern…", locale)}</p>
   </section>
@@ -836,9 +836,9 @@
   </div>
 {:else if loadState === "error"}
   <section class="reader-state" aria-labelledby="reader-state-title">
-    <a class="back-link" href={resolve("/projects")}
-      >‹ {t("Back to projects", locale)}</a
-    >
+    <a class="back-link" href={resolve("/projects")}>
+      ‹ {t("Back to projects", locale)}
+    </a>
     <div class="state-card" role="alert">
       <span class="state-mark" aria-hidden="true">!</span>
       <h1 id="reader-state-title">
@@ -860,9 +860,9 @@
   {@const currentProject = project}
   {#snippet detailsSection()}
     <section class="reader-facts-card" aria-labelledby="reader-facts-title">
-      <SectionHeading id="reader-facts-title" icon="info"
-        >{t("Project details", locale)}</SectionHeading
-      >
+      <SectionHeading id="reader-facts-title" icon="info">
+        {t("Project details", locale)}
+      </SectionHeading>
       <dl class="reader-keyfacts">
         <!-- The yarns are listed under Materials only. -->
         {#if needlesText}
@@ -1020,9 +1020,9 @@
   {#snippet descriptionSection()}
     <section class="pattern-section" aria-labelledby="pattern-heading">
       <div class="section-heading-row">
-        <SectionHeading id="pattern-heading" icon="notebook"
-          >{t("Pattern", locale)}</SectionHeading
-        >
+        <SectionHeading id="pattern-heading" icon="notebook">
+          {t("Pattern", locale)}
+        </SectionHeading>
         <span>{t("Your reference", locale)}</span>
       </div>
       <div class="reading-copy {textSizeClass}">
@@ -1069,9 +1069,9 @@
   {#snippet stepsSection()}
     <section class="steps-section" aria-labelledby="steps-heading">
       <div class="section-heading-row">
-        <SectionHeading id="steps-heading" icon="list-bullets"
-          >{t("Steps", locale)}</SectionHeading
-        >
+        <SectionHeading id="steps-heading" icon="list-bullets">
+          {t("Steps", locale)}
+        </SectionHeading>
         <span>{orderedSteps.length}</span>
       </div>
       {#if orderedSteps.length}
@@ -1082,9 +1082,9 @@
               class:current-step={step.id === currentStepId}
               aria-current={step.id === currentStepId ? "step" : undefined}
             >
-              <span class="step-number" aria-hidden="true"
-                >{step.step_number}</span
-              >
+              <span class="step-number" aria-hidden="true">
+                {step.step_number}
+              </span>
               <div class="step-content">
                 <h3>{step.title}</h3>
                 {#if step.description_html}
@@ -1155,12 +1155,13 @@
     <PageHeader title={currentProject.name} stackedActions headerActions>
       {#snippet context()}
         <div class="reader-subtitle">
-          <span>{currentProject.category ?? t("Knitting project", locale)}</span
-          >
-          <span
-            >{t("Updated", locale)}
-            {formatDate(currentProject.updated_at)}</span
-          >
+          <span>
+            {currentProject.category ?? t("Knitting project", locale)}
+          </span>
+          <span>
+            {t("Updated", locale)}
+            {formatDate(currentProject.updated_at)}
+          </span>
           <StatusBadge status={currentProject.status} {locale} />
           {#if currentProject.tags.length}
             <ul class="reader-tags" aria-label={t("Project tags", locale)}>
@@ -1211,8 +1212,9 @@
                 id: String(currentProject.id),
               })}
             >
-              <ActionLabel icon="action-update">{t("Edit", locale)}</ActionLabel
-              >
+              <ActionLabel icon="action-update">
+                {t("Edit", locale)}
+              </ActionLabel>
             </a>
           {/if}
           <ActionOverflow label={t("More actions", locale)}>
@@ -1231,18 +1233,22 @@
                     type="button"
                     aria-label={t("Decrease text size", locale)}
                     disabled={textSize.isMin}
-                    onclick={() => textSize.down()}>A−</button
+                    onclick={() => textSize.down()}
                   >
-                  <span class="action-overflow__segment action-overflow__value"
-                    >{textSize.label}</span
-                  >
+                    A−
+                  </button>
+                  <span class="action-overflow__segment action-overflow__value">
+                    {textSize.label}
+                  </span>
                   <button
                     class="action-overflow__segment"
                     type="button"
                     aria-label={t("Increase text size", locale)}
                     disabled={textSize.isMax}
-                    onclick={() => textSize.up()}>A+</button
+                    onclick={() => textSize.up()}
                   >
+                    A+
+                  </button>
                 </div>
                 {#if !textSize.isDefault}
                   <button
@@ -1272,11 +1278,11 @@
                     }}
                   >
                     <NavIcon name="heart" />
-                    <span
-                      >{currentProject.is_favorite
+                    <span>
+                      {currentProject.is_favorite
                         ? t("Remove from favorites", locale)
-                        : t("Add to favorites", locale)}</span
-                    >
+                        : t("Add to favorites", locale)}
+                    </span>
                   </button>
                 {/if}
                 {#if !adminData && canEdit}
@@ -1291,11 +1297,11 @@
                     }}
                   >
                     <NavIcon name="check" />
-                    <span
-                      >{currentProject.status === "done"
+                    <span>
+                      {currentProject.status === "done"
                         ? t("Mark as in progress", locale)
-                        : t("Mark as done", locale)}</span
-                    >
+                        : t("Mark as done", locale)}
+                    </span>
                   </button>
                 {/if}
                 {#if timerAvailable && !timerRunning}
@@ -1335,11 +1341,11 @@
                   }}
                 >
                   <NavIcon name="print" />
-                  <span
-                    >{printPreparing
+                  <span>
+                    {printPreparing
                       ? t("Preparing full-resolution photos…", locale)
-                      : t("Print pattern", locale)}</span
-                  >
+                      : t("Print pattern", locale)}
+                  </span>
                 </button>
                 {#if !adminData && canManage}
                   <hr class="action-overflow__divider" />
@@ -1440,9 +1446,9 @@
             class="details-card attachments-card"
             aria-labelledby="attachments-heading"
           >
-            <SectionHeading id="attachments-heading" icon="paperclip"
-              >{t("Attachments", locale)}</SectionHeading
-            >
+            <SectionHeading id="attachments-heading" icon="paperclip">
+              {t("Attachments", locale)}
+            </SectionHeading>
             <ul>
               {#each project.attachments as attachment (attachment.id)}
                 <li>
@@ -1453,15 +1459,14 @@
                   >
                     <span class="file-icon" aria-hidden="true">↗</span>
                     <span class="file-description">
-                      <strong
-                        >{attachment.original_filename ??
-                          attachment.filename}</strong
-                      >
-                      <small
-                        >{attachment.content_type} · {formatFileSize(
+                      <strong>
+                        {attachment.original_filename ?? attachment.filename}
+                      </strong>
+                      <small>
+                        {attachment.content_type} · {formatFileSize(
                           attachment.size_bytes,
-                        )}</small
-                      >
+                        )}
+                      </small>
                     </span>
                   </a>
                 </li>

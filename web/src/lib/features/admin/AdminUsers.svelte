@@ -709,21 +709,19 @@
         >
           <div class="user-identity">
             <span class="user-who">
-              <span class="user-name"
-                ><UserLabel user={accountUser(user)} {locale} /></span
-              >
+              <span class="user-name">
+                <UserLabel user={accountUser(user)} {locale} />
+              </span>
               <span class="user-email" title={user.email}>{user.email}</span>
             </span>
-            {#if user.id === userId}<span class="you-marker"
-                >{t("You", locale)}</span
-              >{/if}
+            {#if user.id === userId}<span class="you-marker">
+                {t("You", locale)}
+              </span>{/if}
           </div>
-          <span class="role-value" class:admin={user.is_admin}
-            ><span class="cell-label">{t("Role", locale)}:</span>
-            {user.is_admin
-              ? t("Administrator", locale)
-              : t("Member", locale)}</span
-          >
+          <span class="role-value" class:admin={user.is_admin}>
+            <span class="cell-label">{t("Role", locale)}:</span>
+            {user.is_admin ? t("Administrator", locale) : t("Member", locale)}
+          </span>
           <span class:inactive={!user.active} class="status-pill">
             <span class="cell-label">{t("Status", locale)}:</span>
             {user.active ? t("Active", locale) : t("Disabled", locale)}
@@ -757,9 +755,9 @@
                 >
                   {t("Disable", locale)}
                 </SharedButton>
-                <span class="visually-hidden" id={`self-disable-${user.id}`}
-                  >{t("You cannot disable your own account.", locale)}</span
-                >
+                <span class="visually-hidden" id={`self-disable-${user.id}`}>
+                  {t("You cannot disable your own account.", locale)}
+                </span>
               {/if}
             </span>
             <ActionOverflow
@@ -950,18 +948,20 @@
       >
         {createPasswordError}
       </p>{/if}
-    <label class="check-field"
-      ><input bind:checked={createIsAdmin} type="checkbox" />
-      <span>{t("Administrator access", locale)}</span></label
-    >
+    <label class="check-field">
+      <input bind:checked={createIsAdmin} type="checkbox" />
+      <span>{t("Administrator access", locale)}</span>
+    </label>
     <div class="dialog-actions">
       <SharedButton
         variant="secondary"
         type="button"
         disabled={operation !== null}
         onclick={() => closeDialog(createDialog, createPassword)}
-        icon="cancel">{t("Cancel", locale)}</SharedButton
+        icon="cancel"
       >
+        {t("Cancel", locale)}
+      </SharedButton>
       <SharedButton
         variant="primary"
         type="submit"
@@ -1017,8 +1017,10 @@
       type="button"
       disabled={operation !== null}
       onclick={() => impersonateDialog?.close()}
-      icon="cancel">{t("Cancel", locale)}</SharedButton
+      icon="cancel"
     >
+      {t("Cancel", locale)}
+    </SharedButton>
     <SharedButton
       variant="primary"
       type="button"
@@ -1075,8 +1077,10 @@
           activeTarget = null;
           activeDialog?.close();
         }}
-        icon="cancel">{t("Cancel", locale)}</SharedButton
+        icon="cancel"
       >
+        {t("Cancel", locale)}
+      </SharedButton>
       <SharedButton
         variant={activeNext ? "primary" : "danger"}
         type="button"
@@ -1122,9 +1126,9 @@
     {#if resetError}<p class="notice notice-error" role="alert">
         {resetError}
       </p>{/if}
-    <label for="admin-reset-password"
-      >{t("New temporary password", locale)}</label
-    >
+    <label for="admin-reset-password">
+      {t("New temporary password", locale)}
+    </label>
     <input
       id="admin-reset-password"
       bind:this={resetPasswordInput}
@@ -1149,8 +1153,10 @@
         type="button"
         disabled={operation !== null}
         onclick={() => closeDialog(resetDialog, resetPasswordValue)}
-        icon="cancel">{t("Cancel", locale)}</SharedButton
+        icon="cancel"
       >
+        {t("Cancel", locale)}
+      </SharedButton>
       <SharedButton
         variant="danger"
         type="submit"

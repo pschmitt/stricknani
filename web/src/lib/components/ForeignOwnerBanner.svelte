@@ -39,9 +39,9 @@
 
 <p class="foreign-banner" role="note" data-testid="foreign-owner-banner">
   <span class="foreign-banner__copy">
-    <strong
-      ><UserSentence template={title} {users} {locale} size="regular" /></strong
-    >
+    <strong>
+      <UserSentence template={title} {users} {locale} size="regular" />
+    </strong>
     <span>{detail}</span>
   </span>
 </p>

@@ -110,9 +110,9 @@
   }
 </script>
 
-<svelte:head
-  ><title>Stricknani · {t("Recorded changes", locale)}</title></svelte:head
->
+<svelte:head>
+  <title>Stricknani · {t("Recorded changes", locale)}</title>
+</svelte:head>
 
 <section
   class="diff-page page-container page-container--standard"
@@ -132,9 +132,10 @@
         type="button"
         onclick={() => (retry += 1)}
         icon="reset"
-        >{t("Try again", locale)}
-        ></SharedButton
       >
+        {t("Try again", locale)}
+        >
+      </SharedButton>
     </section>
   {:else if detail}
     {@const resourceKind = detail.event.resource.kind ?? "resource"}
@@ -153,9 +154,9 @@
         {:else}
           <UserLabel user={actor} {locale} size="regular" />
         {/if}
-        <time datetime={detail.event.created_at}
-          >{dateLabel(detail.event.created_at)}</time
-        >
+        <time datetime={detail.event.created_at}>
+          {dateLabel(detail.event.created_at)}
+        </time>
       </div>
       <AuditActionBadge
         action={detail.event.action}

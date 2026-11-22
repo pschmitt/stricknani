@@ -8,8 +8,9 @@
   const userId = $derived(session.data?.user?.id ?? null);
 </script>
 
-<svelte:head><title>Stricknani · {t("My activity", locale)}</title></svelte:head
->
+<svelte:head>
+  <title>Stricknani · {t("My activity", locale)}</title>
+</svelte:head>
 
 <section
   class="page-container page-container--compact"

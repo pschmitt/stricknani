@@ -156,8 +156,10 @@
     <span
       class="brand-mark-wrap"
       class:mark-hidden={!markShown}
-      bind:this={markEl}><BrandMark /></span
+      bind:this={markEl}
     >
+      <BrandMark />
+    </span>
     <span class="brand-copy">
       <span class="brand-title">Stricknani</span>
     </span>

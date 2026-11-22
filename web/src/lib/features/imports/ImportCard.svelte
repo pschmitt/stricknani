@@ -448,11 +448,11 @@
 
       {#if forYarn || sourceKind === "url"}
         <div class="field">
-          <label for={urlInputId}
-            >{forYarn
+          <label for={urlInputId}>
+            {forYarn
               ? t("Yarn page URL", locale)
-              : t("Pattern page URL", locale)}</label
-          >
+              : t("Pattern page URL", locale)}
+          </label>
           <div class="url-row">
             <input
               id={urlInputId}
@@ -482,16 +482,16 @@
               </Button>
             {/if}
           </div>
-          {#if pasteRefused}<small class="supporting"
-              >{t(
+          {#if pasteRefused}<small class="supporting">
+              {t(
                 "Your browser did not allow reading the clipboard. Paste with Ctrl+V or a long press.",
                 locale,
-              )}</small
-            >{/if}
+              )}
+            </small>{/if}
         </div>
       {:else if sourceKind === "text"}
-        <label class="field"
-          ><span>{t("Pattern text or instructions", locale)}</span><textarea
+        <label class="field">
+          <span>{t("Pattern text or instructions", locale)}</span><textarea
             bind:value={sourceText}
             disabled={locked}
             rows="5"
@@ -499,10 +499,10 @@
             placeholder={t(
               "Paste pattern instructions, notes, or a recipe…",
               locale,
-            )}></textarea><small
-            >{t("Text and files are limited to 5 MiB.", locale)}</small
-          ></label
-        >
+            )}></textarea><small>
+            {t("Text and files are limited to 5 MiB.", locale)}
+          </small>
+        </label>
       {:else}
         <label
           class="file-picker"
@@ -517,36 +517,35 @@
             onRejected: () =>
               (message = t("This file type is not supported.", locale)),
           }}
-          ><span class="file-icon" aria-hidden="true">↑</span><strong
-            >{selectedFile?.name ?? t("Choose a file", locale)}</strong
-          ><span
-            >{t(
-              "HTML, text, Markdown, PDF, or image · up to 5 MiB",
-              locale,
-            )}</span
-          ><input
+        >
+          <span class="file-icon" aria-hidden="true">↑</span><strong>
+            {selectedFile?.name ?? t("Choose a file", locale)}
+          </strong><span>
+            {t("HTML, text, Markdown, PDF, or image · up to 5 MiB", locale)}
+          </span><input
             type="file"
             disabled={locked}
             accept={fileAccept}
             onchange={fileChanged}
-          /></label
-        >
+          />
+        </label>
       {/if}
 
       <div class="import-card__actions">
-        <label class="ai-toggle" class:ai-toggle--off={!allowAi}
-          ><input
+        <label class="ai-toggle" class:ai-toggle--off={!allowAi}>
+          <input
             type="checkbox"
             checked={allowAi && useAi}
             onchange={(event) => (useAi = event.currentTarget.checked)}
             disabled={locked || !allowAi}
-          /><span class="ai-toggle__text"
-            >{t("Ask AI to improve extraction", locale)}{#if !allowAi}<small
+          /><span class="ai-toggle__text">
+            {t("Ask AI to improve extraction", locale)}{#if !allowAi}<small
                 class="ai-toggle__reason"
-                >{t("AI import is turned off on this server.", locale)}</small
-              >{/if}</span
-          ></label
-        >
+              >
+                {t("AI import is turned off on this server.", locale)}
+              </small>{/if}
+          </span>
+        </label>
         <Button
           variant="primary"
           icon="preview"

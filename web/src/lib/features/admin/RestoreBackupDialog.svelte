@@ -360,9 +360,9 @@
       {formatBytes(flow.backup.size_bytes)}
     </p>
     <table class="compare">
-      <caption class="visually-hidden"
-        >{t("Current data and this backup", locale)}</caption
-      >
+      <caption class="visually-hidden">
+        {t("Current data and this backup", locale)}
+      </caption>
       <thead>
         <tr>
           <th scope="col"></th>

@@ -29,9 +29,9 @@
 
 <aside class="selfhost" aria-labelledby="selfhost-title">
   <p class="selfhost__lead" id="selfhost-title">
-    <span class="selfhost__yarn" aria-hidden="true"
-      ><NavIcon name="home" /></span
-    >
+    <span class="selfhost__yarn" aria-hidden="true">
+      <NavIcon name="home" />
+    </span>
     <span>
       {t(
         "Registrations are closed here, but you can set up your own private Stricknani!",
@@ -43,8 +43,10 @@
     class="selfhost__link"
     href={REPOSITORY_URL}
     target="_blank"
-    rel="noopener noreferrer">{t("Stricknani on GitHub", locale)}</a
+    rel="noopener noreferrer"
   >
+    {t("Stricknani on GitHub", locale)}
+  </a>
   <details class="selfhost__agent">
     <summary>{t("Set it up with an AI coding agent", locale)}</summary>
     <p class="selfhost__hint">

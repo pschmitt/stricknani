@@ -11,7 +11,7 @@
   <p class="section-mark">Stricknani</p>
   <h1 id="signed-in-title">{t("You are already signed in.", locale)}</h1>
   <p>{t("Open your project library to continue.", locale)}</p>
-  <a class="inline-link" href={resolve("/projects")}
-    >{t("Open projects", locale)}</a
-  >
+  <a class="inline-link" href={resolve("/projects")}>
+    {t("Open projects", locale)}
+  </a>
 </section>

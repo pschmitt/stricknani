@@ -347,10 +347,9 @@
   }
 </script>
 
-<svelte:head
-  ><title>Stricknani · {t("Admin", locale)} · {t("Audit log", locale)}</title
-  ></svelte:head
->
+<svelte:head>
+  <title>Stricknani · {t("Admin", locale)} · {t("Audit log", locale)}</title>
+</svelte:head>
 
 <section
   class="audit-page page-container page-container--wide"
@@ -484,34 +483,32 @@
                     <p class="impersonation-event" data-audit-server>
                       <strong>{actionLabel(event.action, locale)}</strong>
                       <span>{event.server.backup}</span>
-                      <span
-                        >{t("Safety copy: {name}", locale).replace(
+                      <span>
+                        {t("Safety copy: {name}", locale).replace(
                           "{name}",
                           event.server.pre_restore,
                         )}
                         ·
                         {event.server.media === "add_missing"
                           ? t("Missing media files were added", locale)
-                          : t("Media files were kept", locale)}</span
-                      >
+                          : t("Media files were kept", locale)}
+                      </span>
                     </p>
                   {:else if event.entity_type === "user"}
                     <p class="impersonation-event">
-                      <strong
-                        >{#if impersonationTemplate(event.action, locale)}<UserSentence
+                      <strong>
+                        {#if impersonationTemplate(event.action, locale)}<UserSentence
                             template={impersonationTemplate(
                               event.action,
                               locale,
                             ) ?? ""}
                             users={{ admin: actor }}
                             {locale}
-                          />{:else}{actionLabel(
-                            event.action,
-                            locale,
-                          )}{/if}</strong
-                      >
-                      <span>{event.resource.name ?? `#${event.entity_id}`}</span
-                      >
+                          />{:else}{actionLabel(event.action, locale)}{/if}
+                      </strong>
+                      <span>
+                        {event.resource.name ?? `#${event.entity_id}`}
+                      </span>
                     </p>
                   {:else}
                     <ResourceCard
@@ -594,8 +591,9 @@
                   <time
                     datetime={event.created_at}
                     title={eventDate(event.created_at)}
-                    >{eventTime(event.created_at)}</time
                   >
+                    {eventTime(event.created_at)}
+                  </time>
                   <div class="event-diff-slot">
                     {#if event.media}
                       <AuditMediaPreview media={event.media} {locale} />

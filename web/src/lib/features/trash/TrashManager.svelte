@@ -336,13 +336,17 @@
                 {#if item.kind === "project"}
                   <a
                     href={resolve("/projects/[id]", { id: String(item.id) })}
-                    data-testid="trash-item-link">{item.name}</a
+                    data-testid="trash-item-link"
                   >
+                    {item.name}
+                  </a>
                 {:else if item.kind === "yarn"}
                   <a
                     href={resolve("/yarns/[id]", { id: String(item.id) })}
-                    data-testid="trash-item-link">{item.name}</a
+                    data-testid="trash-item-link"
                   >
+                    {item.name}
+                  </a>
                 {:else}
                   {item.name}
                 {/if}
@@ -362,8 +366,10 @@
                     : resolve("/yarns/[id]", {
                         id: String(item.parent.id),
                       })}
-                  data-testid="trash-parent-link">{parentLabel(item)}</a
+                  data-testid="trash-parent-link"
                 >
+                  {parentLabel(item)}
+                </a>
               </p>
             {/if}
             {#if showsOwner(scope, item, session.data?.user?.id) && item.owner}
@@ -376,15 +382,16 @@
               </p>
             {/if}
             <p class="trash__meta">
-              <span title={fullDate(item.deleted_at, locale)}
-                >{deletedLabel(item)}</span
-              >
+              <span title={fullDate(item.deleted_at, locale)}>
+                {deletedLabel(item)}
+              </span>
               <span aria-hidden="true"> · </span>
               <span
                 class="trash__days"
                 class:trash__days--due={item.days_remaining <= 0}
-                >{daysLeftLabel(item.days_remaining, locale)}</span
               >
+                {daysLeftLabel(item.days_remaining, locale)}
+              </span>
             </p>
           </div>
           <div class="trash__actions">

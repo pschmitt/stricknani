@@ -59,14 +59,16 @@
       <a
         class="ui-button ui-button--{backVariant} ui-button--md"
         href={backHref}
-        ><ActionLabel icon="previous">{t(backLabel, locale)}</ActionLabel></a
       >
+        <ActionLabel icon="previous">{t(backLabel, locale)}</ActionLabel>
+      </a>
     {/if}
     <a
       class="ui-button ui-button--{homeVariant} ui-button--md"
       href={resolve("/")}
-      ><ActionLabel icon="home">{t("Back to Home", locale)}</ActionLabel></a
     >
+      <ActionLabel icon="home">{t("Back to Home", locale)}</ActionLabel>
+    </a>
   </div>
   {#if detail}<p class="error-panel__detail">{detail}</p>{/if}
 </section>
