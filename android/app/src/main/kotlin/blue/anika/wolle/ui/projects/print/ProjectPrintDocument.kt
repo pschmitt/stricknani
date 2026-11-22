@@ -22,6 +22,7 @@ data class PrintLabels(
     val steps: String,
     val notes: String,
     val washingInstructions: String,
+    val handWashOnly: String = "Hand wash only",
     val washingDryingLabels: Map<Drying, String> = emptyMap(),
 )
 
@@ -138,7 +139,9 @@ object ProjectPrintDocument {
         }
         val care =
             listOfNotNull(
-                    project.washingSymbols?.temperature?.let(::washTemperatureLabel),
+                    project.washingSymbols?.temperature?.let {
+                        washTemperatureLabel(it, labels.handWashOnly)
+                    },
                     project.washingSymbols?.drying?.let(labels.washingDryingLabels::get),
                     project.washingInstructions?.takeIf { it.isNotBlank() },
                 )

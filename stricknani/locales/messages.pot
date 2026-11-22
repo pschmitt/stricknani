@@ -1717,7 +1717,7 @@ msgstr ""
 msgid "Dismiss message"
 msgstr ""
 
-#: web/src/lib/components/WashingInstructions.svelte:37
+#: web/src/lib/components/WashingInstructions.svelte:44
 msgid "Do not tumble dry"
 msgstr ""
 
@@ -1791,12 +1791,12 @@ msgstr ""
 msgid "Drop to use as profile picture"
 msgstr ""
 
-#: web/src/lib/components/WashingInstructions.svelte:33
+#: web/src/lib/components/WashingInstructions.svelte:40
 msgid "Dry flat"
 msgstr ""
 
-#: web/src/lib/components/WashingInstructions.svelte:97
-#: web/src/lib/components/WashingInstructions.svelte:98
+#: web/src/lib/components/WashingInstructions.svelte:102
+#: web/src/lib/components/WashingInstructions.svelte:103
 msgid "Drying"
 msgstr ""
 
@@ -2252,6 +2252,10 @@ msgstr ""
 
 #: web/src/lib/features/imports/ImportCard.svelte:523
 msgid "HTML, text, Markdown, PDF, or image · up to 5 MiB"
+msgstr ""
+
+#: web/src/lib/components/WashingInstructions.svelte:33
+msgid "Hand wash only"
 msgstr ""
 
 #: web/src/lib/error-copy.ts:65
@@ -2767,7 +2771,7 @@ msgstr ""
 msgid "Like Stricknani? Support its development."
 msgstr ""
 
-#: web/src/lib/components/WashingInstructions.svelte:35
+#: web/src/lib/components/WashingInstructions.svelte:42
 msgid "Line dry"
 msgstr ""
 
@@ -3340,6 +3344,10 @@ msgstr ""
 #: web/src/lib/features/yarns/YarnDetail.svelte:555
 #: web/src/lib/features/yarns/YarnDetail.svelte:564
 msgid "No projects use this yarn yet."
+msgstr ""
+
+#: web/src/lib/components/WashingInstructions.svelte:96
+msgid "No selection"
 msgstr ""
 
 #: web/src/routes/privacy/+page.svelte:270
@@ -6757,12 +6765,11 @@ msgstr ""
 msgid "Waiting for your passkey…"
 msgstr ""
 
-#: web/src/lib/components/WashingInstructions.svelte:71
+#: web/src/lib/components/WashingInstructions.svelte:78
 msgid "Washing instructions"
 msgstr ""
 
-#: web/src/lib/components/WashingInstructions.svelte:77
-#: web/src/lib/components/WashingInstructions.svelte:79
+#: web/src/lib/components/WashingInstructions.svelte:83
 msgid "Washing temperature"
 msgstr ""
 

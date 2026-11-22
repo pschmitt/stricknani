@@ -4,6 +4,7 @@
     dryingOptions,
     washTemperatures,
     type Drying,
+    type WashTemperature,
     type WashingSymbols,
   } from "./washing-symbols";
   import SectionHeading from "./SectionHeading.svelte";
@@ -27,6 +28,12 @@
   } = $props();
 
   const headingId = $props.id();
+  function temperatureLabel(option: WashTemperature): string {
+    return option === "hand_wash"
+      ? t("Hand wash only", locale)
+      : `${option} °C`;
+  }
+
   function dryingLabel(option: Drying): string {
     switch (option) {
       case "flat":
@@ -71,28 +78,26 @@
       >{t("Washing instructions", locale)}</SectionHeading
     >
     {#if onSymbols}
-      <div
-        class="symbol-group"
-        role="group"
-        aria-label={t("Washing temperature", locale)}
-      >
-        <span class="symbol-label">{t("Washing temperature", locale)}</span>
-        <div class="symbol-options">
+      <div class="symbol-group">
+        <label class="symbol-label" for={`${headingId}-temperature`}>
+          {t("Washing temperature", locale)}
+        </label>
+        <select
+          id={`${headingId}-temperature`}
+          {disabled}
+          value={symbols?.temperature ?? ""}
+          onchange={(event) => {
+            const value = event.currentTarget.value;
+            const temperature =
+              washTemperatures.find((option) => option === value) ?? null;
+            onSymbols?.({ ...symbols, temperature });
+          }}
+        >
+          <option value="">{t("No selection", locale)}</option>
           {#each washTemperatures as option (option)}
-            <button
-              type="button"
-              {disabled}
-              aria-pressed={symbols?.temperature === option}
-              onclick={() =>
-                onSymbols?.({
-                  ...symbols,
-                  temperature: symbols?.temperature === option ? null : option,
-                })}
-            >
-              {@render symbol("wash")}{option} °C
-            </button>
+            <option value={option}>{temperatureLabel(option)}</option>
           {/each}
-        </div>
+        </select>
       </div>
       <div class="symbol-group" role="group" aria-label={t("Drying", locale)}>
         <span class="symbol-label">{t("Drying", locale)}</span>
@@ -116,7 +121,7 @@
     {:else if symbols?.temperature || symbols?.drying}
       <ul class="symbol-options read-symbols">
         {#if symbols.temperature}<li>
-            {@render symbol("wash")}{symbols.temperature} °C
+            {@render symbol("wash")}{temperatureLabel(symbols.temperature)}
           </li>{/if}
         {#if symbols.drying}<li>
             {@render symbol(symbols.drying)}{dryingLabel(symbols.drying)}

@@ -1,4 +1,4 @@
-export const washTemperatures = ["30", "40", "60"] as const;
+export const washTemperatures = ["hand_wash", "30", "40", "60"] as const;
 export const dryingOptions = ["flat", "line", "no_tumble"] as const;
 
 export type WashTemperature = (typeof washTemperatures)[number];

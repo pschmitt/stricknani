@@ -12,7 +12,8 @@ data class WashingSymbols(
 }
 
 @Serializable
-enum class WashTemperature(val degrees: Int) {
+enum class WashTemperature(val degrees: Int?) {
+    @SerialName("hand_wash") HAND_WASH(null),
     @SerialName("30") THIRTY(30),
     @SerialName("40") FORTY(40),
     @SerialName("60") SIXTY(60),

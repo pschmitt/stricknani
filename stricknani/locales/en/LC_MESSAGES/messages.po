@@ -1766,7 +1766,7 @@ msgstr "Dismiss"
 msgid "Dismiss message"
 msgstr "Dismiss message"
 
-#: web/src/lib/components/WashingInstructions.svelte:37
+#: web/src/lib/components/WashingInstructions.svelte:44
 msgid "Do not tumble dry"
 msgstr "Do not tumble dry"
 
@@ -1840,12 +1840,12 @@ msgstr "Drop to restore from this file"
 msgid "Drop to use as profile picture"
 msgstr "Drop to use as profile picture"
 
-#: web/src/lib/components/WashingInstructions.svelte:33
+#: web/src/lib/components/WashingInstructions.svelte:40
 msgid "Dry flat"
 msgstr "Dry flat"
 
-#: web/src/lib/components/WashingInstructions.svelte:97
-#: web/src/lib/components/WashingInstructions.svelte:98
+#: web/src/lib/components/WashingInstructions.svelte:102
+#: web/src/lib/components/WashingInstructions.svelte:103
 msgid "Drying"
 msgstr "Drying"
 
@@ -2323,6 +2323,10 @@ msgstr "Gravatar is enabled, but the uploaded picture could not be removed."
 #: web/src/lib/features/imports/ImportCard.svelte:523
 msgid "HTML, text, Markdown, PDF, or image · up to 5 MiB"
 msgstr "HTML, text, Markdown, PDF, or image · up to 5 MiB"
+
+#: web/src/lib/components/WashingInstructions.svelte:33
+msgid "Hand wash only"
+msgstr "Hand wash only"
 
 #: web/src/lib/error-copy.ts:65
 msgid "Hands off the stash!"
@@ -2858,7 +2862,7 @@ msgstr "Light"
 msgid "Like Stricknani? Support its development."
 msgstr "Like Stricknani? Support its development."
 
-#: web/src/lib/components/WashingInstructions.svelte:35
+#: web/src/lib/components/WashingInstructions.svelte:42
 msgid "Line dry"
 msgstr "Line dry"
 
@@ -3443,6 +3447,10 @@ msgstr "No projects match those filters."
 #: web/src/lib/features/yarns/YarnDetail.svelte:564
 msgid "No projects use this yarn yet."
 msgstr "No projects use this yarn yet."
+
+#: web/src/lib/components/WashingInstructions.svelte:96
+msgid "No selection"
+msgstr "No selection"
 
 #: web/src/routes/privacy/+page.svelte:270
 msgid ""
@@ -7029,12 +7037,11 @@ msgstr "Waiting for review"
 msgid "Waiting for your passkey…"
 msgstr "Waiting for your passkey…"
 
-#: web/src/lib/components/WashingInstructions.svelte:71
+#: web/src/lib/components/WashingInstructions.svelte:78
 msgid "Washing instructions"
 msgstr "Washing instructions"
 
-#: web/src/lib/components/WashingInstructions.svelte:77
-#: web/src/lib/components/WashingInstructions.svelte:79
+#: web/src/lib/components/WashingInstructions.svelte:83
 msgid "Washing temperature"
 msgstr "Washing temperature"
 

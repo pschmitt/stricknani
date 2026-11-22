@@ -11,6 +11,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
@@ -19,7 +24,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -48,6 +56,7 @@ fun WashingInstructionsCard(
     onValueChange: ((String) -> Unit)? = null,
 ) {
     val label = stringResource(R.string.washing_instructions)
+    val handWash = stringResource(R.string.washing_hand_wash_only)
     val colors = MaterialTheme.colorScheme
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -83,29 +92,14 @@ fun WashingInstructionsCard(
             val selected = symbols ?: WashingSymbols()
             if (onSymbolsChange == null && !selected.isEmpty()) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    selected.temperature?.let { WashingSymbolLabel(null, washTemperatureLabel(it)) }
+                    selected.temperature?.let {
+                        WashingSymbolLabel(null, washTemperatureLabel(it, handWash))
+                    }
                     selected.drying?.let { WashingSymbolLabel(it, stringResource(dryingLabel(it))) }
                 }
             } else if (onSymbolsChange != null) {
-                Text(
-                    stringResource(R.string.washing_temperature),
-                    style = MaterialTheme.typography.labelLarge,
-                )
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    WashTemperature.entries.forEach { option ->
-                        FilterChip(
-                            selected = selected.temperature == option,
-                            onClick = {
-                                onSymbolsChange(
-                                    selected.copy(
-                                        temperature =
-                                            option.takeUnless { it == selected.temperature }
-                                    )
-                                )
-                            },
-                            label = { WashingSymbolLabel(null, washTemperatureLabel(option)) },
-                        )
-                    }
+                WashTemperatureSelect(selected.temperature) {
+                    onSymbolsChange(selected.copy(temperature = it))
                 }
                 Text(
                     stringResource(R.string.washing_drying),
@@ -143,7 +137,41 @@ fun WashingInstructionsCard(
     }
 }
 
-fun washTemperatureLabel(temperature: WashTemperature): String = "${temperature.degrees} °C"
+fun washTemperatureLabel(temperature: WashTemperature, handWash: String): String =
+    temperature.degrees?.let { "$it °C" } ?: handWash
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun WashTemperatureSelect(value: WashTemperature?, onChange: (WashTemperature?) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val blank = stringResource(R.string.washing_no_selection)
+    val handWash = stringResource(R.string.washing_hand_wash_only)
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+        OutlinedTextField(
+            value = value?.let { washTemperatureLabel(it, handWash) } ?: blank,
+            onValueChange = {},
+            readOnly = true,
+            singleLine = true,
+            label = { Text(stringResource(R.string.washing_temperature)) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier =
+                Modifier.fillMaxWidth()
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            (listOf(null) + WashTemperature.entries).forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option?.let { washTemperatureLabel(it, handWash) } ?: blank) },
+                    onClick = {
+                        onChange(option)
+                        expanded = false
+                    },
+                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+                )
+            }
+        }
+    }
+}
 
 fun dryingLabel(drying: Drying): Int =
     when (drying) {

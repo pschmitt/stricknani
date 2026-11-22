@@ -8,6 +8,8 @@ pub(crate) struct WashingSymbols {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) enum WashTemperature {
+    #[serde(rename = "hand_wash")]
+    HandWash,
     #[serde(rename = "30")]
     Thirty,
     #[serde(rename = "40")]

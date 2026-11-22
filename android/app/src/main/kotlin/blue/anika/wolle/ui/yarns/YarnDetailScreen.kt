@@ -156,6 +156,7 @@ fun YarnDetailScreen(
             description = stringResource(R.string.project_detail_description_title),
             notes = stringResource(R.string.project_detail_notes_title),
             washingInstructions = stringResource(R.string.washing_instructions),
+            handWashOnly = stringResource(R.string.washing_hand_wash_only),
             washingDryingLabels =
                 blue.anika.wolle.data.api.dto.Drying.entries.associateWith {
                     stringResource(dryingLabel(it))

@@ -21,6 +21,7 @@ data class YarnPrintLabels(
     val notes: String,
     val usedIn: String,
     val washingInstructions: String,
+    val handWashOnly: String = "Hand wash only",
     val washingDryingLabels: Map<Drying, String> = emptyMap(),
 )
 
@@ -112,7 +113,9 @@ object YarnPrintDocument {
         }
         val care =
             listOfNotNull(
-                    yarn.washingSymbols?.temperature?.let(::washTemperatureLabel),
+                    yarn.washingSymbols?.temperature?.let {
+                        washTemperatureLabel(it, labels.handWashOnly)
+                    },
                     yarn.washingSymbols?.drying?.let(labels.washingDryingLabels::get),
                     yarn.washingInstructions?.takeIf { it.isNotBlank() },
                 )
