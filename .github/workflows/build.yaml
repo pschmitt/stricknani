@@ -2,7 +2,7 @@ name: Build
 run-name: ${{ github.event_name == 'status' && github.event.context == 'circus/artifacts' && github.event.state == 'success' && github.event.sha == github.sha && 'Circus artifacts ready' || 'Build' }}
 
 # Main consumes the exact commit's Circus outputs once they reach the S3 cache.
-# Pull requests and manual dispatches retain native producers for now.
+# Pull requests retain the x86 producer for E2E; Circus builds both architectures.
 on:
   push:
     branches: [main]
@@ -52,7 +52,7 @@ jobs:
       s3_secret_key: ${{ secrets.NIKS3_S3_SECRET_KEY }}
 
   nix-aarch64:
-    if: ${{ github.event_name != 'push' && (github.event_name != 'status' || (github.event.context == 'circus/artifacts' && github.event.state == 'success' && github.event.sha == github.sha)) }}
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'status' && github.event.context == 'circus/artifacts' && github.event.state == 'success' && github.event.sha == github.sha) }}
     permissions:
       contents: read
       id-token: write
@@ -101,6 +101,21 @@ jobs:
       archive-file: stricknani-image.tar.gz
       test-script: ci/verify-container.sh
       publish: ${{ github.event_name != 'pull_request' }}
+
+  test-container-pr:
+    name: Test container
+    if: ${{ github.event_name == 'pull_request' }}
+    needs: [nix, nix-checks]
+    permissions:
+      contents: read
+    uses: pschmitt/ci-workflows/.github/workflows/nix-image.yaml@main
+    with:
+      image-name: ghcr.io/pschmitt/stricknani
+      platforms: linux/amd64
+      prebuilt-artifact: nix-container-amd64
+      archive-file: stricknani-image.tar.gz
+      test-script: ci/verify-container.sh
+      publish: false
 
   android:
     if: ${{ github.event_name != 'status' }}

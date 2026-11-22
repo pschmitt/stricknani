@@ -121,14 +121,23 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install Nix
-        uses: pschmitt/ci-workflows/.github/actions/nix-setup@main
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "26.x"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - run: npm ci --prefix web
 
       - name: Run web and catalog checks
-        run: nix develop '.#tooling' --command just web-check web-test i18n-check
+        run: |
+          npm --prefix web run check
+          npm --prefix web run format:check
+          npm --prefix web test
+          npm --prefix web run --silent i18n:check
 
       - name: Verify CI artifact handoff and retries
-        run: nix develop '.#tooling' --command node --test ci/wait-for-nix-producer.test.mjs
+        run: node --test ci/wait-for-nix-producer.test.mjs
 
   nix-lint:
     needs: changes

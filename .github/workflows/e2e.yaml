@@ -294,6 +294,9 @@ jobs:
       - name: Install candidate update build dependencies
         run: npm ci --prefix web
 
+      - name: Install the Playwright browser
+        run: npx --prefix web playwright install --with-deps chromium
+
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
 
@@ -327,7 +330,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           mkdir -p "$STRICKNANI_E2E_DIR"
-          nix develop '.#tooling' --command npm --prefix web run e2e
+          npm --prefix web run e2e
 
       - name: Stop remaining browser fixtures and remove private test data
         if: always()
@@ -343,7 +346,7 @@ jobs:
             state_file="$private_dir/fixture-state.json"
             if [[ -f "$state_file" ]]
             then
-              nix develop '.#tooling' --command npm --prefix web run fixture -- stop \
+              npm --prefix web run fixture -- stop \
                 --state-file "$state_file" || true
             fi
             rm -rf -- "$private_dir"
