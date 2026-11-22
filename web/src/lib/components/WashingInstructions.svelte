@@ -28,7 +28,7 @@
   } = $props();
 
   const headingId = $props.id();
-  function temperatureLabel(option: WashTemperature): string {
+  function temperatureLabel(option: WashTemperature | "hand_wash"): string {
     return option === "hand_wash"
       ? t("Hand wash only", locale)
       : `${option} °C`;
@@ -72,7 +72,7 @@
   </svg>
 {/snippet}
 
-{#if onInput || value || symbols?.temperature || symbols?.drying}
+{#if onInput || value || symbols?.hand_wash_only || symbols?.temperature || symbols?.drying}
   <section class="washing-card" aria-labelledby={headingId}>
     <SectionHeading icon="laundry" tone="yarns" id={headingId}
       >{t("Washing instructions", locale)}</SectionHeading
@@ -85,15 +85,22 @@
         <select
           id={`${headingId}-temperature`}
           {disabled}
-          value={symbols?.temperature ?? ""}
+          value={symbols?.hand_wash_only
+            ? "hand_wash"
+            : (symbols?.temperature ?? "")}
           onchange={(event) => {
             const value = event.currentTarget.value;
             const temperature =
               washTemperatures.find((option) => option === value) ?? null;
-            onSymbols?.({ ...symbols, temperature });
+            onSymbols?.({
+              ...symbols,
+              temperature,
+              hand_wash_only: value === "hand_wash",
+            });
           }}
         >
           <option value="">{t("No selection", locale)}</option>
+          <option value="hand_wash">{temperatureLabel("hand_wash")}</option>
           {#each washTemperatures as option (option)}
             <option value={option}>{temperatureLabel(option)}</option>
           {/each}
@@ -118,9 +125,12 @@
           {/each}
         </div>
       </div>
-    {:else if symbols?.temperature || symbols?.drying}
+    {:else if symbols?.hand_wash_only || symbols?.temperature || symbols?.drying}
       <ul class="symbol-options read-symbols">
-        {#if symbols.temperature}<li>
+        {#if symbols.hand_wash_only}<li>
+            {@render symbol("wash")}{temperatureLabel("hand_wash")}
+          </li>
+        {:else if symbols.temperature}<li>
             {@render symbol("wash")}{temperatureLabel(symbols.temperature)}
           </li>{/if}
         {#if symbols.drying}<li>

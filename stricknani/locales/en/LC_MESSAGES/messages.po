@@ -1844,8 +1844,8 @@ msgstr "Drop to use as profile picture"
 msgid "Dry flat"
 msgstr "Dry flat"
 
-#: web/src/lib/components/WashingInstructions.svelte:102
-#: web/src/lib/components/WashingInstructions.svelte:103
+#: web/src/lib/components/WashingInstructions.svelte:109
+#: web/src/lib/components/WashingInstructions.svelte:110
 msgid "Drying"
 msgstr "Drying"
 
@@ -3448,7 +3448,7 @@ msgstr "No projects match those filters."
 msgid "No projects use this yarn yet."
 msgstr "No projects use this yarn yet."
 
-#: web/src/lib/components/WashingInstructions.svelte:96
+#: web/src/lib/components/WashingInstructions.svelte:102
 msgid "No selection"
 msgstr "No selection"
 

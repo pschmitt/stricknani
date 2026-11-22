@@ -92,14 +92,18 @@ fun WashingInstructionsCard(
             val selected = symbols ?: WashingSymbols()
             if (onSymbolsChange == null && !selected.isEmpty()) {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    selected.temperature?.let {
-                        WashingSymbolLabel(null, washTemperatureLabel(it, handWash))
+                    if (selected.handWashOnly == true) {
+                        WashingSymbolLabel(null, handWash)
+                    } else {
+                        selected.temperature?.let {
+                            WashingSymbolLabel(null, washTemperatureLabel(it))
+                        }
                     }
                     selected.drying?.let { WashingSymbolLabel(it, stringResource(dryingLabel(it))) }
                 }
             } else if (onSymbolsChange != null) {
-                WashTemperatureSelect(selected.temperature) {
-                    onSymbolsChange(selected.copy(temperature = it))
+                WashTemperatureSelect(selected) { temperature, only ->
+                    onSymbolsChange(selected.copy(temperature = temperature, handWashOnly = only))
                 }
                 Text(
                     stringResource(R.string.washing_drying),
@@ -137,18 +141,22 @@ fun WashingInstructionsCard(
     }
 }
 
-fun washTemperatureLabel(temperature: WashTemperature, handWash: String): String =
-    temperature.degrees?.let { "$it °C" } ?: handWash
+fun washTemperatureLabel(temperature: WashTemperature): String = "${temperature.degrees} °C"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun WashTemperatureSelect(value: WashTemperature?, onChange: (WashTemperature?) -> Unit) {
+private fun WashTemperatureSelect(
+    value: WashingSymbols,
+    onChange: (WashTemperature?, Boolean) -> Unit,
+) {
     var expanded by remember { mutableStateOf(false) }
     val blank = stringResource(R.string.washing_no_selection)
     val handWash = stringResource(R.string.washing_hand_wash_only)
     ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
         OutlinedTextField(
-            value = value?.let { washTemperatureLabel(it, handWash) } ?: blank,
+            value =
+                if (value.handWashOnly == true) handWash
+                else value.temperature?.let(::washTemperatureLabel) ?: blank,
             onValueChange = {},
             readOnly = true,
             singleLine = true,
@@ -159,11 +167,25 @@ private fun WashTemperatureSelect(value: WashTemperature?, onChange: (WashTemper
                     .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            (listOf(null) + WashTemperature.entries).forEach { option ->
+            DropdownMenuItem(
+                text = { Text(blank) },
+                onClick = {
+                    onChange(null, false)
+                    expanded = false
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(handWash) },
+                onClick = {
+                    onChange(null, true)
+                    expanded = false
+                },
+            )
+            WashTemperature.entries.forEach { option ->
                 DropdownMenuItem(
-                    text = { Text(option?.let { washTemperatureLabel(it, handWash) } ?: blank) },
+                    text = { Text(washTemperatureLabel(option)) },
                     onClick = {
-                        onChange(option)
+                        onChange(option, false)
                         expanded = false
                     },
                     contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,

@@ -646,25 +646,30 @@ pub(crate) async fn update_for_owner(
          washing_symbols = COALESCE(?, washing_symbols), link = ?, is_ai_enhanced = ?, updated_at = ? \
                  WHERE id = ? AND owner_id = ?"
     };
-    let mut update = sqlx::query(query)
-        .bind(&name)
-        .bind(clean_optional(payload.description))
-        .bind(clean_optional(payload.brand))
-        .bind(clean_optional(payload.colorway))
-        .bind(clean_optional(payload.dye_lot))
-        .bind(clean_optional(payload.fiber_content))
-        .bind(clean_optional(payload.weight_category))
-        .bind(clean_optional(payload.recommended_needles))
-        .bind(payload.weight_grams)
-        .bind(payload.length_meters)
-        .bind(clean_optional(payload.notes))
-        .bind(payload.washing_instructions.as_deref().map(str::trim))
-        .bind(payload.washing_symbols)
-        .bind(clean_optional(payload.link))
-        .bind(payload.is_ai_enhanced)
-        .bind(&updated_at)
-        .bind(yarn_id)
-        .bind(user_id);
+    let mut update =
+        sqlx::query(query)
+            .bind(&name)
+            .bind(clean_optional(payload.description))
+            .bind(clean_optional(payload.brand))
+            .bind(clean_optional(payload.colorway))
+            .bind(clean_optional(payload.dye_lot))
+            .bind(clean_optional(payload.fiber_content))
+            .bind(clean_optional(payload.weight_category))
+            .bind(clean_optional(payload.recommended_needles))
+            .bind(payload.weight_grams)
+            .bind(payload.length_meters)
+            .bind(clean_optional(payload.notes))
+            .bind(payload.washing_instructions.as_deref().map(str::trim))
+            .bind(payload.washing_symbols.map(|symbols| {
+                sqlx::types::Json(symbols.0.preserve_legacy_hand_wash(
+                    current.washing_symbols.as_ref().map(|saved| &saved.0),
+                ))
+            }))
+            .bind(clean_optional(payload.link))
+            .bind(payload.is_ai_enhanced)
+            .bind(&updated_at)
+            .bind(yarn_id)
+            .bind(user_id);
     if expected.is_some() {
         update = update.bind(&current.updated_at);
     }

@@ -1795,8 +1795,8 @@ msgstr ""
 msgid "Dry flat"
 msgstr ""
 
-#: web/src/lib/components/WashingInstructions.svelte:102
-#: web/src/lib/components/WashingInstructions.svelte:103
+#: web/src/lib/components/WashingInstructions.svelte:109
+#: web/src/lib/components/WashingInstructions.svelte:110
 msgid "Drying"
 msgstr ""
 
@@ -3346,7 +3346,7 @@ msgstr ""
 msgid "No projects use this yarn yet."
 msgstr ""
 
-#: web/src/lib/components/WashingInstructions.svelte:96
+#: web/src/lib/components/WashingInstructions.svelte:102
 msgid "No selection"
 msgstr ""
 
