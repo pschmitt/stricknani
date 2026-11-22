@@ -1865,8 +1865,8 @@ msgstr "Als Profilbild ablegen"
 msgid "Dry flat"
 msgstr "Liegend trocknen"
 
-#: web/src/lib/components/WashingInstructions.svelte:109
-#: web/src/lib/components/WashingInstructions.svelte:110
+#: web/src/lib/components/WashingInstructions.svelte:102
+#: web/src/lib/components/WashingInstructions.svelte:103
 msgid "Drying"
 msgstr "Trocknen"
 
@@ -3508,7 +3508,7 @@ msgstr "Keine Projekte passen zu diesen Filtern."
 msgid "No projects use this yarn yet."
 msgstr "Noch keine Projekte verwenden dieses Garn."
 
-#: web/src/lib/components/WashingInstructions.svelte:102
+#: web/src/lib/components/WashingInstructions.svelte:96
 msgid "No selection"
 msgstr "Keine Auswahl"
 

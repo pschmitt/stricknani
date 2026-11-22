@@ -774,17 +774,17 @@ async fn washing_instructions_are_optional_and_can_be_updated_or_cleared() {
 
         for (body, expected, has_symbols) in [
             (
-                serde_json::json!({"name":"Wool","washing_instructions":"  Hand wash\nDry flat  ","washing_symbols":{"temperature":null,"hand_wash_only":true,"drying":"flat"}}),
+                serde_json::json!({"name":"Wool","washing_instructions":"  Hand wash\nDry flat  ","washing_symbols":{"temperature":"hand_wash","drying":"flat"}}),
                 Some("Hand wash\nDry flat"),
                 true,
             ),
             (
-                serde_json::json!({"name":"Renamed","washing_symbols":{"temperature":null,"drying":"flat"}}),
+                serde_json::json!({"name":"Renamed"}),
                 Some("Hand wash\nDry flat"),
                 true,
             ),
             (
-                serde_json::json!({"name":"Renamed","washing_instructions":"","washing_symbols":{"hand_wash_only":false}}),
+                serde_json::json!({"name":"Renamed","washing_instructions":"","washing_symbols":{}}),
                 None,
                 false,
             ),
@@ -815,9 +815,9 @@ async fn washing_instructions_are_optional_and_can_be_updated_or_cleared() {
             assert_eq!(
                 detail["data"]["washing_symbols"],
                 if has_symbols {
-                    serde_json::json!({"temperature":null,"hand_wash_only":true,"drying":"flat"})
+                    serde_json::json!({"temperature":"hand_wash","drying":"flat"})
                 } else {
-                    serde_json::json!({"temperature":null,"drying":null,"hand_wash_only":false})
+                    serde_json::json!({"temperature":null,"drying":null})
                 }
             );
         }

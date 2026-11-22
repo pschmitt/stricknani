@@ -113,8 +113,9 @@ object YarnPrintDocument {
         }
         val care =
             listOfNotNull(
-                    if (yarn.washingSymbols?.handWashOnly == true) labels.handWashOnly
-                    else yarn.washingSymbols?.temperature?.let(::washTemperatureLabel),
+                    yarn.washingSymbols?.temperature?.let {
+                        washTemperatureLabel(it, labels.handWashOnly)
+                    },
                     yarn.washingSymbols?.drying?.let(labels.washingDryingLabels::get),
                     yarn.washingInstructions?.takeIf { it.isNotBlank() },
                 )

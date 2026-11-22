@@ -139,8 +139,9 @@ object ProjectPrintDocument {
         }
         val care =
             listOfNotNull(
-                    if (project.washingSymbols?.handWashOnly == true) labels.handWashOnly
-                    else project.washingSymbols?.temperature?.let(::washTemperatureLabel),
+                    project.washingSymbols?.temperature?.let {
+                        washTemperatureLabel(it, labels.handWashOnly)
+                    },
                     project.washingSymbols?.drying?.let(labels.washingDryingLabels::get),
                     project.washingInstructions?.takeIf { it.isNotBlank() },
                 )

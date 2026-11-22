@@ -911,11 +911,7 @@ pub(crate) async fn update_for_owner_with_tag_policy(
     .bind(cleaned_optional(payload.description))
     .bind(cleaned_optional(payload.notes))
     .bind(payload.washing_instructions.as_deref().map(str::trim))
-    .bind(payload.washing_symbols.map(|symbols| {
-            sqlx::types::Json(symbols.0.preserve_legacy_hand_wash(
-                current.washing_symbols.as_ref().map(|saved| &saved.0),
-            ))
-        }))
+    .bind(payload.washing_symbols)
     .bind(cleaned_optional(payload.other_materials))
     .bind(tags)
     .bind(cleaned_optional(payload.link))
