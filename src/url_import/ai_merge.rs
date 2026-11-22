@@ -17,6 +17,7 @@ use crate::import_document::{
     AssetKind, FieldSource, ImportAsset, ImportDocumentDraft, PageKind, StepImportDraft,
     YarnDetails,
 };
+use crate::washing_symbols::WashingSymbols;
 
 pub const MAX_SOURCE_CHARS: usize = 14_000;
 
@@ -82,7 +83,7 @@ pub fn schema_example() -> Value {
             "needles": null, "stitchSample": null, "otherMaterials": null, "yarn": null,
             "sizes": null, "difficulty": null,
             "washingInstructions": null, "washingSymbols": {"temperature": null, "drying": null},
-            "yarns": [{"name": null, "brand": null, "colorway": null, "amount": null, "url": null, "imageUrl": null}],
+            "yarns": [{"name": null, "brand": null, "colorway": null, "amount": null, "url": null, "imageUrl": null, "washingInstructions": null, "washingSymbols": {"temperature": null, "drying": null}}],
             "steps": [{"title": null, "description": null}]
         }
     })
@@ -111,7 +112,7 @@ pub fn build_messages_with(
         }
         ImportTarget::Project => {
             "The user wants to add this page as a knitting or crochet pattern. Fill the project object; set yarn to null. \
-In project.yarns list every yarn the pattern needs, one entry each: name is the plain product name without publisher, yarn group or fiber remarks (for example 'DROPS Merino Extra Fine'), brand the maker, colorway the colour name or number, amount the quantity per size exactly as written, url the product page of that yarn and imageUrl its picture, both only if they are among the page links given below."
+In project.yarns list every yarn the pattern needs, one entry each: name is the plain product name without publisher, yarn group or fiber remarks (for example 'DROPS Merino Extra Fine'), brand the maker, colorway the colour name or number, amount the quantity per size exactly as written, url the product page of that yarn and imageUrl its picture, both only if they are among the page links given below. Fill the yarn entry’s washing fields only if the page explicitly gives care for that particular yarn."
         }
     };
     let extracted = json!({
@@ -258,6 +259,22 @@ pub fn text_supported(candidate: &str, source: &str) -> bool {
     found * 10 >= words.len() * 6
 }
 
+pub(crate) fn import_washing_symbols(
+    value: Option<&Value>,
+    evidence: Option<&str>,
+) -> Option<WashingSymbols> {
+    let mut symbols: WashingSymbols = serde_json::from_value(value?.clone()).ok()?;
+    if let Some(degrees) = symbols
+        .temperature
+        .as_ref()
+        .and_then(|value| value.degrees())
+        && evidence.is_some_and(|source| !text::numbers_grounded(degrees, source))
+    {
+        symbols.temperature = None;
+    }
+    (symbols.temperature.is_some() || symbols.drying.is_some()).then_some(symbols)
+}
+
 struct Merger<'a> {
     draft: &'a mut ImportDocumentDraft,
     source: String,
@@ -271,24 +288,13 @@ impl Merger<'_> {
         &mut self,
         key: &str,
         value: Option<&Value>,
-        write: impl FnOnce(&mut ImportDocumentDraft, crate::washing_symbols::WashingSymbols),
+        write: impl FnOnce(&mut ImportDocumentDraft, WashingSymbols),
     ) {
-        let Some(value) = value else { return };
-        let Ok(mut symbols) =
-            serde_json::from_value::<crate::washing_symbols::WashingSymbols>(value.clone())
-        else {
+        let evidence = self.grounded.then_some(self.source.as_str());
+        let Some(symbols) = import_washing_symbols(value, evidence) else {
             return;
         };
-        if let Some(temperature) = &symbols.temperature
-            && self.grounded
-            && let Ok(Value::String(value)) = serde_json::to_value(temperature)
-            && !text::numbers_grounded(&value, &self.source)
-        {
-            symbols.temperature = None;
-        }
-        if (symbols.temperature.is_none() && symbols.drying.is_none())
-            || !replaceable(self.draft, key)
-        {
+        if !replaceable(self.draft, key) {
             return;
         }
         write(self.draft, symbols);

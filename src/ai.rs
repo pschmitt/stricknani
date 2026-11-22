@@ -421,7 +421,7 @@ impl AiClient {
         let mut content = vec![json!({
             "type": "text",
             "text": format!(
-                "Extract and improve knitting pattern fields from the supplied source. Return one JSON object only, using camelCase field names matching this draft. Preserve the source language. Extract washingInstructions and washingSymbols only when stated for the finished item. For washingSymbols use temperature hand_wash, 30, 40 or 60 (Celsius), and drying flat, line or no_tumble. Use null for unsupported or unspecified choices. Do not invent image URLs. Keep the source link unchanged. Write description, otherMaterials and step descriptions as Markdown: keep the wording and numbers exactly, put each round or row instruction on its own line as a list item starting with its label in bold (for example '- **1. Runde:** ...'), and use paragraphs for separate ideas.\n\nSource text:\n{}\n\nExisting parsed draft JSON:\n{}",
+                "Extract and improve knitting pattern fields from the supplied source. Return one JSON object only, using camelCase field names matching this draft. Preserve the source language. Extract washingInstructions and washingSymbols only when stated for the finished item. Use the same fields inside yarns only when the source gives separate instructions for that yarn. For washingSymbols use temperature hand_wash, 30, 40 or 60 (Celsius), and drying flat, line or no_tumble. Use null for unsupported or unspecified choices. Do not invent image URLs. Keep the source link unchanged. Write description, otherMaterials and step descriptions as Markdown: keep the wording and numbers exactly, put each round or row instruction on its own line as a list item starting with its label in bold (for example '- **1. Runde:** ...'), and use paragraphs for separate ideas.\n\nSource text:\n{}\n\nExisting parsed draft JSON:\n{}",
                 input.source_text, draft_json
             )
         })];
@@ -569,7 +569,7 @@ struct AiDraftResponse {
     #[serde(alias = "other_materials")]
     other_materials: Option<String>,
     washing_instructions: Option<String>,
-    washing_symbols: Option<crate::washing_symbols::WashingSymbols>,
+    washing_symbols: Option<Value>,
     #[serde(alias = "stitch_sample")]
     stitch_sample: Option<String>,
     #[serde(alias = "gauge_width")]
@@ -604,7 +604,10 @@ fn merge_response(mut draft: ProjectImportDraft, output: AiDraftResponse) -> Pro
     merge_string(&mut draft.other_materials, output.other_materials);
     merge_string(&mut draft.washing_instructions, output.washing_instructions);
     if draft.washing_symbols.is_none() {
-        draft.washing_symbols = output.washing_symbols;
+        draft.washing_symbols = crate::url_import::ai_merge::import_washing_symbols(
+            output.washing_symbols.as_ref(),
+            None,
+        );
     }
     merge_string(&mut draft.stitch_sample, output.stitch_sample);
     merge_string(&mut draft.fiber_content, output.fiber_content);
@@ -745,8 +748,12 @@ fn fill_yarn_gaps(target: &mut YarnImportDraft, existing: YarnImportDraft) {
         link,
         image_url,
         amount,
-        notes
+        notes,
+        washing_instructions
     );
+    if target.washing_symbols.is_none() {
+        target.washing_symbols = existing.washing_symbols;
+    }
 }
 
 #[derive(Debug, Default, Deserialize)]
@@ -776,6 +783,8 @@ struct AiYarn {
     link: Option<String>,
     #[serde(alias = "image_url")]
     image_url: Option<String>,
+    washing_instructions: Option<String>,
+    washing_symbols: Option<Value>,
 }
 
 impl AiYarn {
@@ -790,8 +799,12 @@ impl AiYarn {
             fiber_content: self.fiber_content,
             link: self.link,
             image_url: self.image_url,
-            amount: None,
-            notes: None,
+            washing_instructions: self.washing_instructions,
+            washing_symbols: crate::url_import::ai_merge::import_washing_symbols(
+                self.washing_symbols.as_ref(),
+                None,
+            ),
+            ..YarnImportDraft::default()
         }
     }
 }

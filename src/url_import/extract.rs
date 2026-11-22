@@ -1009,7 +1009,7 @@ fn build_project(
                         .and_then(|url| resolve_url(source_url, &url)),
                     image_url: text("image").and_then(|url| resolve_url(source_url, &url)),
                     amount: text("amount").or_else(|| text("quantity")),
-                    notes: None,
+                    ..Default::default()
                 };
                 if yarn.name.is_some() || yarn.brand.is_some() {
                     project.yarns.push(yarn);

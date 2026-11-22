@@ -18,6 +18,17 @@ pub enum WashTemperature {
     Sixty,
 }
 
+impl WashTemperature {
+    pub(crate) fn degrees(&self) -> Option<&'static str> {
+        match self {
+            Self::HandWash => None,
+            Self::Thirty => Some("30"),
+            Self::Forty => Some("40"),
+            Self::Sixty => Some("60"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Drying {

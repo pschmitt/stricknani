@@ -535,8 +535,12 @@ fn fill_missing(target: &mut YarnImportDraft, other: YarnImportDraft) {
         link,
         image_url,
         amount,
-        notes
+        notes,
+        washing_instructions
     );
+    if target.washing_symbols.is_none() {
+        target.washing_symbols = other.washing_symbols;
+    }
 }
 
 /// One clean list of the yarns an import found: the yarns the sources named, the page's own
@@ -629,6 +633,12 @@ pub fn accept_ai_yarns(
             brand: clean_text(item.get("brand"), 120),
             colorway: clean_text(item.get("colorway"), 120)
                 .filter(|value| !grounded || ai_merge::text_supported(value, &evidence)),
+            washing_instructions: clean_text(item.get("washingInstructions"), 400)
+                .filter(|value| !grounded || text::numbers_grounded(value, &evidence)),
+            washing_symbols: ai_merge::import_washing_symbols(
+                item.get("washingSymbols"),
+                grounded.then_some(evidence.as_str()),
+            ),
             amount: clean_text(item.get("amount"), 200)
                 .filter(|value| !grounded || text::numbers_grounded(value, &evidence)),
             ..YarnImportDraft::default()
