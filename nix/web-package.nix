@@ -22,6 +22,8 @@ buildNpmPackage rec {
   doCheck = true;
   checkPhase = ''
     runHook preCheck
+    # npm scripts can invoke npm recursively (check runs check:e2e).
+    export PATH="${nodejs_26}/bin:$PATH"
     npm run format:check
     npm run check
     # The e2e/lib tests need the whole repository (sources, catalogs), which the
