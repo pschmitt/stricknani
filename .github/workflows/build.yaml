@@ -9,6 +9,15 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      circus_pr_number:
+        description: Trusted Circus PR number
+        type: string
+        required: false
+      circus_pr_sha:
+        description: Exact trusted Circus PR head
+        type: string
+        required: false
   status:
 
 concurrency:
@@ -26,7 +35,9 @@ jobs:
       id-token: write
     uses: pschmitt/ci-workflows/.github/workflows/nix-build.yaml@main
     with:
-      circus-cache-only: ${{ github.event_name == 'status' }}
+      circus-cache-only: ${{ github.event_name == 'status' || (github.event_name == 'workflow_dispatch' && inputs.circus_pr_number != '') }}
+      circus-pr-number: ${{ inputs.circus_pr_number || '' }}
+      circus-pr-sha: ${{ inputs.circus_pr_sha || '' }}
       pin-prefix: gh-stricknani-main
       image-package: stricknani-docker
       image-artifact: nix-container-amd64
@@ -44,7 +55,9 @@ jobs:
       id-token: write
     uses: pschmitt/ci-workflows/.github/workflows/nix-checks.yaml@main
     with:
-      circus-cache-only: ${{ github.event_name == 'status' }}
+      circus-cache-only: ${{ github.event_name == 'status' || (github.event_name == 'workflow_dispatch' && inputs.circus_pr_number != '') }}
+      circus-pr-number: ${{ inputs.circus_pr_number || '' }}
+      circus-pr-sha: ${{ inputs.circus_pr_sha || '' }}
       pin-prefix: gh-stricknani-main
     secrets:
       s3_store: ${{ secrets.NIKS3_S3_STORE }}
@@ -52,7 +65,7 @@ jobs:
       s3_secret_key: ${{ secrets.NIKS3_S3_SECRET_KEY }}
 
   nix-aarch64:
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'status' && github.event.context == 'circus/artifacts' && github.event.state == 'success' && github.event.sha == github.sha) }}
+    if: ${{ (github.event_name == 'workflow_dispatch' && inputs.circus_pr_number == '') || (github.event_name == 'status' && github.event.context == 'circus/artifacts' && github.event.state == 'success' && github.event.sha == github.sha) }}
     permissions:
       contents: read
       id-token: write
@@ -104,7 +117,7 @@ jobs:
 
   test-container-pr:
     name: Test container
-    if: ${{ github.event_name == 'pull_request' }}
+    if: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && inputs.circus_pr_number != '') }}
     needs: [nix, nix-checks]
     permissions:
       contents: read
@@ -118,7 +131,7 @@ jobs:
       publish: false
 
   android:
-    if: ${{ github.event_name != 'status' }}
+    if: ${{ github.event_name != 'status' && (github.event_name != 'workflow_dispatch' || inputs.circus_pr_number == '') }}
     uses: pschmitt/ci-workflows/.github/workflows/build.yaml@main
     with:
       project-directory: android

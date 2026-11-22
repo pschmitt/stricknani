@@ -46,6 +46,14 @@ on:
           - smoke
           - full
           - fgs-demo
+      circus_pr_number:
+        description: Trusted Circus PR number
+        type: string
+        required: false
+      circus_pr_sha:
+        description: Exact trusted Circus PR head
+        type: string
+        required: false
 
 concurrency:
   # A newer push to a pull request supersedes this run (the pull request's
@@ -72,6 +80,12 @@ jobs:
       android: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'status' && steps.base.outputs.sha == '') || steps.filter.outputs.android == 'true' }}
       replay: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'status' && steps.base.outputs.sha == '') || steps.filter.outputs.replay == 'true' }}
     steps:
+      - name: Verify trusted Circus PR artifacts
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.circus_pr_number != '' }}
+        uses: pschmitt/ci-workflows/.github/actions/verify-circus-artifacts@main
+        with:
+          pr-number: ${{ inputs.circus_pr_number }}
+          pr-sha: ${{ inputs.circus_pr_sha }}
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
@@ -214,7 +228,7 @@ jobs:
           PRODUCER_WORKFLOW: build.yaml
           PRODUCER_JOB: nix / build
           PRODUCER_JOBS: nix / build
-          ALLOW_STANDALONE: ${{ github.event_name == 'workflow_dispatch' }}
+          ALLOW_STANDALONE: ${{ github.event_name == 'workflow_dispatch' && inputs.circus_pr_number == '' }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: node ci/wait-for-nix-producer.mjs
@@ -241,7 +255,7 @@ jobs:
 
       - name: Build the canonical packaged web app
         working-directory: .
-        run: nix --option max-jobs '${{ github.event_name == 'status' && '0' || 'auto' }}' --option builders '' --option fallback false --option allow-import-from-derivation false build --print-build-logs --out-link result-web '.#stricknani-web'
+        run: nix --option max-jobs '${{ (github.event_name == 'status' || (github.event_name == 'workflow_dispatch' && inputs.circus_pr_number != '')) && '0' || 'auto' }}' --option builders '' --option fallback false --option allow-import-from-derivation false build --print-build-logs --out-link result-web '.#stricknani-web'
 
       - name: Copy packaged web app for browser acceptance
         working-directory: .
@@ -314,7 +328,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          server="$(nix --option max-jobs '${{ github.event_name == 'status' && '0' || 'auto' }}' --option builders '' --option fallback false --option allow-import-from-derivation false build --no-link --print-out-paths '.#stricknani')"
+          server="$(nix --option max-jobs '${{ (github.event_name == 'status' || (github.event_name == 'workflow_dispatch' && inputs.circus_pr_number != '')) && '0' || 'auto' }}' --option builders '' --option fallback false --option allow-import-from-derivation false build --no-link --print-out-paths '.#stricknani')"
           # Use the underlying executable so fixture WEB_ROOT overrides are respected.
           printf 'STRICKNANI_SERVER_BINARY=%s/bin/.stricknani-server-wrapped\n' "$server" >> "$GITHUB_ENV"
 
@@ -390,7 +404,7 @@ jobs:
           PRODUCER_WORKFLOW: build.yaml
           PRODUCER_JOB: nix / build
           PRODUCER_JOBS: nix / build
-          ALLOW_STANDALONE: ${{ github.event_name == 'workflow_dispatch' }}
+          ALLOW_STANDALONE: ${{ github.event_name == 'workflow_dispatch' && inputs.circus_pr_number == '' }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: node ci/wait-for-nix-producer.mjs
@@ -449,7 +463,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          nix --option max-jobs '${{ github.event_name == 'status' && '0' || 'auto' }}' --option builders '' --option fallback false --option allow-import-from-derivation false build --no-link --print-out-paths '.#stricknani' > "$RUNNER_TEMP/rust-out-path"
+          nix --option max-jobs '${{ (github.event_name == 'status' || (github.event_name == 'workflow_dispatch' && inputs.circus_pr_number != '')) && '0' || 'auto' }}' --option builders '' --option fallback false --option allow-import-from-derivation false build --no-link --print-out-paths '.#stricknani' > "$RUNNER_TEMP/rust-out-path"
           printf 'RUST_SERVER_BINARY=%s/bin/stricknani-server\n' "$(<"$RUNNER_TEMP/rust-out-path")" >> "$GITHUB_ENV"
 
       # The backups lane also covers the local-only mode (LocalModeBackupE2eTest), which needs the
@@ -613,7 +627,7 @@ jobs:
 
   android-replay:
     needs: [changes]
-    if: ${{ needs.changes.outputs.replay == 'true' && github.event_name != 'pull_request' }}
+    if: ${{ needs.changes.outputs.replay == 'true' && github.event_name != 'pull_request' && !(github.event_name == 'workflow_dispatch' && inputs.circus_pr_number != '') }}
     name: Android Room Replay
     runs-on: ubuntu-26.04
     timeout-minutes: 90
@@ -635,7 +649,7 @@ jobs:
           PRODUCER_WORKFLOW: build.yaml
           PRODUCER_JOB: nix / build
           PRODUCER_JOBS: nix / build
-          ALLOW_STANDALONE: ${{ github.event_name == 'workflow_dispatch' }}
+          ALLOW_STANDALONE: ${{ github.event_name == 'workflow_dispatch' && inputs.circus_pr_number == '' }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: node ci/wait-for-nix-producer.mjs
@@ -685,7 +699,7 @@ jobs:
         shell: bash
         run: |
           set -Eeuo pipefail
-          nix --option max-jobs '${{ github.event_name == 'status' && '0' || 'auto' }}' --option builders '' --option fallback false --option allow-import-from-derivation false build --no-link --print-out-paths '.#stricknani' > "$RUNNER_TEMP/rust-out-path"
+          nix --option max-jobs '${{ (github.event_name == 'status' || (github.event_name == 'workflow_dispatch' && inputs.circus_pr_number != '')) && '0' || 'auto' }}' --option builders '' --option fallback false --option allow-import-from-derivation false build --no-link --print-out-paths '.#stricknani' > "$RUNNER_TEMP/rust-out-path"
           printf 'binary=%s/bin/stricknani-server\n' "$(<"$RUNNER_TEMP/rust-out-path")" >> "$GITHUB_OUTPUT"
 
       # Keep Gradle away from the emulator's CPU and memory during boot and tests.
