@@ -23,7 +23,7 @@ fixture logs, a final emulator screenshot, and host diagnostics. For local Gradl
 the remote recipe from `android/`:
 
 ```sh
-just e2e-build rofl-13.brkn.lol
+just e2e-build $ANDROID_REMOTE_HOST
 ```
 
 The emulator lane is intentionally CI-owned; no local emulator or production endpoint is required.

@@ -88,7 +88,7 @@
         # No physical test devices or local AVD-based screenshot capture set up yet (SNA-12).
         screenshotsSystemImage = null;
         quickStart = ''
-          echo "  just build debug               # Build a debug APK on rofl-13/rofl-14"
+          echo "  just build debug               # Build a debug APK on the remote build host"
         '';
       };
     in

@@ -840,7 +840,7 @@ pinned ktfmt disagreed with every local ktfmt).
 **How to apply:** bump the `android-app-ci` flake input and submodule, reformat once.
 
 Status: **done**, 2026-10-31 - tree verified clean under the flake's ktfmt; Gradle plugin removed,
-build checked on rofl-13.
+build checked on $ANDROID_REMOTE_HOST.
 
 ## SNA-68: In-app update card for APK installs
 
@@ -855,7 +855,7 @@ build checked on rofl-13.
 **Why:** direct user request - APK/Obtainium users had no in-app signal that a new build exists.
 **How to apply:** nothing installs in-app (no install permission); the browser downloads the APK.
 
-Status: **done**, 2026-10-31 - unit tests pass on rofl-13; not yet seen on a device.
+Status: **done**, 2026-10-31 - unit tests pass on $ANDROID_REMOTE_HOST; not yet seen on a device.
 
 ## SNA-67: Edit existing project and yarn gallery images on web and Android
 
@@ -915,12 +915,12 @@ Biome warnings in untouched static JavaScript.
       been warned" behavior the ticket asked for.
 
 Status: **done** (2026-08-21) - verified two ways: (1) `ScheduledBackupPasswordGateDialogTest`'s 3
-new instrumentation tests run on the physical Zenfone 10 (serial `R6AIB700W850L7G`) via `adb shell
+new instrumentation tests run on the physical Zenfone 10 (serial `$ZENFONE_SERIAL`) via `adb shell
 am instrument -e class ...` - `OK (3 tests)`; (2) live manual repro on the same device against a
 real onboarded session - navigated to Settings -> Backup, tapped "Enable scheduled backups" with
 no password set, confirmed the gate dialog renders with the full warning text and both actions,
 confirmed "Set password and enable" is disabled while the password field is blank, and confirmed
-dismissing the dialog leaves the switch off (no silent-enable path). `just check rofl-13.brkn.lol`
+dismissing the dialog leaves the switch off (no silent-enable path). `just check $ANDROID_REMOTE_HOST`
 (ktfmt + unit tests + Android Lint) is green with this change in place.
 
 ## SNA-60: Home screen's "Sync issue" banner is completely non-interactive
@@ -986,12 +986,12 @@ dismissing the dialog leaves the switch off (no silent-enable path). `just check
       unrelated to this ticket's actual ask (making the card tappable) and not investigated
       further here.
 
-Status: **done** (2026-08-21) - verified on the physical Zenfone 10 (serial `R6AIB700W850L7G`):
+Status: **done** (2026-08-21) - verified on the physical Zenfone 10 (serial `$ZENFONE_SERIAL`):
 `FocusedComponentSemanticsTest`'s 12 tests (`am instrument -e class ...`) all pass, and a live
 repro confirms the fix - tapping the previously-dead "Sync issue" card now navigates straight to
 the Sync settings screen showing the exact queued change and why it failed ("Update project -
 Conflict resolved - the server kept the latest version; this change was not applied"), with a
-working Dismiss action. `just check rofl-13.brkn.lol` (ktfmt + unit tests + Android Lint) is green.
+working Dismiss action. `just check $ANDROID_REMOTE_HOST` (ktfmt + unit tests + Android Lint) is green.
 
 ## SNA-61: `stricknani://setup` QR intent-filter is dead - payload is silently dropped
 
@@ -1047,7 +1047,7 @@ working Dismiss action. `just check rofl-13.brkn.lol` (ktfmt + unit tests + Andr
         since it wasn't restored as part of this session (no credentials on hand to redo it).
 
 Status: **done** (2026-08-21) - verified via the live-device repro above (mirroring the ticket's
-own repro method) and `just check rofl-13.brkn.lol` (ktfmt + unit tests + Android Lint), green.
+own repro method) and `just check $ANDROID_REMOTE_HOST` (ktfmt + unit tests + Android Lint), green.
 
 ## SNA-62: Backup export dialog's "(optional)" encryption label contradicts its own behavior
 
@@ -1083,9 +1083,9 @@ own repro method) and `just check rofl-13.brkn.lol` (ktfmt + unit tests + Androi
 
 Status: **done** (2026-08-21) - verified via `BackupPasswordDialogTest`'s 2 new instrumentation
 tests on the physical Zenfone 10 (`adb shell am instrument`) - `OK (2 tests)` - and `just check
-rofl-13.brkn.lol` (ktfmt + unit tests + Android Lint), green. Also verified with a full live
+$ANDROID_REMOTE_HOST` (ktfmt + unit tests + Android Lint), green. Also verified with a full live
 click-through on-device: re-onboarded the Zenfone 10 (server URL + a fresh PAT minted for a new,
-isolated, non-admin test account, `ai@brkn.lol`, created via the admin panel specifically so
+isolated, non-admin test account, `ai@example.com`, created via the admin panel specifically so
 testing never touches any real user's account - credentials saved to Bitwarden as "Stricknani (AI
 Agent)" for reuse), then Settings -> Backup -> Export now -> left the password field blank ->
 confirmed via `uiautomator dump` that the Export button reports `enabled="true"` with a blank
@@ -1097,11 +1097,11 @@ credentials on hand) is closed.
 
 - [x] `cd android && nix develop -c just build-fetch` (the documented `AGENTS.md` workflow for
       getting a fresh debug APK) currently fails before Gradle ever runs: building the
-      `android-sdk-env` Nix derivation via the remote builder dispatch to `rofl-13.brkn.lol`/
-      `rofl-14.brkn.lol` fails with exit code 127 - `.../bin/android: ... cannot execute:
+      `android-sdk-env` Nix derivation via the remote builder dispatch to `$ANDROID_REMOTE_HOST`/
+      `$ANDROID_REMOTE_HOST` fails with exit code 127 - `.../bin/android: ... cannot execute:
       .android-wrapped: required file not found`.
 - [x] Root cause had **two independent layers**, both traced by bisecting `android-nixpkgs`
-      package versions directly on `rofl-13` rather than guessing from nixpkgs-drift alone (the
+      package versions directly on `$ANDROID_REMOTE_HOST` rather than guessing from nixpkgs-drift alone (the
       floating-`nixpkgs`/no-`flake.lock` theory from earlier in this session turned out to be a
       real but secondary issue - see below):
       1. `android-nixpkgs`'s `cmdline-tools-latest` currently resolves to cmdline-tools **23.0**,
@@ -1148,12 +1148,12 @@ credentials on hand) is closed.
       done this way specifically so the shared, cross-app `.just/android-app-ci` submodule
       (`nix/devshells.nix`, used by nyetbox/augh/jollyfin/syncwich too) didn't need to be forked
       or edited for a fix scoped to this one app's current channel-data bad luck.
-- [x] Verified end-to-end, remotely on `rofl-13.brkn.lol`, exactly via the documented workflow:
-      `just build-fetch debug rofl-13.brkn.lol` - `nix develop` now enters cleanly, Gradle runs,
+- [x] Verified end-to-end, remotely on `$ANDROID_REMOTE_HOST`, exactly via the documented workflow:
+      `just build-fetch debug $ANDROID_REMOTE_HOST` - `nix develop` now enters cleanly, Gradle runs,
       `BUILD SUCCESSFUL in 57s`, and a fresh `dist/app-arm64-v8a-debug.apk` (39.3 MB, timestamped
       to this session) was fetched back and installed on the Zenfone 10 (`just zenfone-install`,
       `adb install -r` -> `Success`). Also ran the full documented pre-push check, `just check
-      rofl-13.brkn.lol` (`ktfmtCheck :app:testDebugUnitTest lintDebug`) - green, `BUILD SUCCESSFUL
+      $ANDROID_REMOTE_HOST` (`ktfmtCheck :app:testDebugUnitTest lintDebug`) - green, `BUILD SUCCESSFUL
       in 1m 11s`, confirming the fix restores the *entire* documented local dev/CI-mirroring
       workflow, not just a bare APK assemble.
 - [ ] Not filed upstream against `tadfisher/android-nixpkgs` this session (would be the right
@@ -1163,8 +1163,8 @@ credentials on hand) is closed.
       follow-up so this doesn't quietly reappear once someone bumps this repo's own
       `android-nixpkgs` input past the pinned revision.
 
-Status: **done** (2026-08-21) - verified via `just build-fetch debug rofl-13.brkn.lol` (`BUILD
-SUCCESSFUL`, fresh APK fetched and installed on the Zenfone 10) and `just check rofl-13.brkn.lol`
+Status: **done** (2026-08-21) - verified via `just build-fetch debug $ANDROID_REMOTE_HOST` (`BUILD
+SUCCESSFUL`, fresh APK fetched and installed on the Zenfone 10) and `just check $ANDROID_REMOTE_HOST`
 (ktfmt + unit tests + Android Lint, all green). Root cause was cmdline-tools 23.0's new
 self-downloading native `android` CLI binary (an upstream `android-nixpkgs` regression, unrelated
 to this repo's own code), not solely the missing `flake.lock` originally suspected - see the
@@ -1304,7 +1304,7 @@ Status: **done** (2026-08-18) - verified via `nix develop -c uv run pytest -q` (
       wired into the build but unused until SNA-6/SNA-7 add real code against them
 - [x] Vendored the shared fleet conventions as a git submodule at `android/.just/android-app-ci`
       (same path convention as the sibling repos)
-- [x] `android/justfile`: remote-build recipes against rofl-13/rofl-14 (never build Gradle
+- [x] `android/justfile`: remote-build recipes against the remote build host (never build Gradle
       locally) via the vendored `common.just`/`single-module.just`. Zenfone/Mi Pad/Pixel 5 device
       recipes are pulled in by the import but have no real target yet - **no physical test
       devices are assigned to this app** (deferred to SNA-12, unlike the sibling apps)
@@ -1338,7 +1338,7 @@ Status: **done** (2026-08-18) - verified via `nix develop -c uv run pytest -q` (
 
 Status: **done** (2026-08-18) - fully verified: CI green (`android-lint.yaml` ktfmt + Android
 Lint, `android-build.yaml` unit tests + debug APK assembly) against `blue.anika.wolle.debug`, and
-`just build-fetch debug` on `rofl-13.brkn.lol` + `just {zenfone,mipad,px5}-install` confirmed the
+`just build-fetch debug` on `$ANDROID_REMOTE_HOST` + `just {zenfone,mipad,px5}-install` confirmed the
 app actually installs and runs on all three fleet devices (Zenfone 10, Mi Pad 4, Pixel 5) -
 `pm list packages`, `dumpsys activity activities` (`ResumedActivity`, no crash in logcat) on each,
 plus a live screenshot from the Zenfone showing the bottom nav and dynamic Material You dark theme
@@ -1348,7 +1348,7 @@ against a cwd-relative `--git-common-dir`, so it falsely treated every normal ch
 worktree whenever `just` runs from `android/` (a subdirectory) rather than the repo root, unlike
 the sibling apps whose Gradle project *is* the repo root; (2) a ktfmt formatting nit (KDoc comment
 line-wrapping) on two files, fixed via the `ktfmt-diff-patch` CI artifact after a manual
-`ktfmtCheck`/`ktfmtFormat` rerun on rofl-13 proved unreliable (reported `NO-SOURCE` for the main
+`ktfmtCheck`/`ktfmtFormat` rerun on $ANDROID_REMOTE_HOST proved unreliable (reported `NO-SOURCE` for the main
 sourceSet for reasons that didn't reproduce CI's environment - CI itself was used as the oracle
 instead of guessing). Package name corrected to `blue.anika.wolle` (was a placeholder
 `dev.pschmitt.stricknani`) per user correction; app is branded "Wolle" (German for "wool/yarn",
@@ -1398,7 +1398,7 @@ turned out to be a mistap (the Connect button's y-coordinate shifted once the ea
 was on-screen, so the tap landed above it and never re-triggered validation), not a real bug;
 retested from a clean, error-free state with correct coordinates and got the right result. Also
 hit, fixed, and documented in `android/AGENTS.md`: a local `ktfmtCheck` run via
-`nix develop --command ./gradlew` on `rofl-13` again (second time) falsely reported
+`nix develop --command ./gradlew` on `$ANDROID_REMOTE_HOST` again (second time) falsely reported
 `ktfmtCheckMain NO-SOURCE` while 11 files actually had real formatting violations that CI's
 `Android Lint` caught - fixed via CI's `ktfmt-diff-patch` artifact, not local re-attempts. **Not
 verified**: a full live connect against an actual running Stricknani server + a freshly generated
@@ -1454,7 +1454,7 @@ explicitly instead, which needed one fix during this task: the first remote buil
 Dagger `MissingBinding` on `WorkManager` (`SyncScheduler` needed it, nothing provided it) - added
 `WorkModule` (mirrors syncwich's) and the remote debug build went green on the retry.
 
-Verified: `just build debug rofl-13.brkn.lol` (remote, per this repo's build convention) compiles
+Verified: `just build debug $ANDROID_REMOTE_HOST` (remote, per this repo's build convention) compiles
 clean - `BUILD SUCCESSFUL`, Hilt/KSP/Room codegen all resolve, no unresolved references. **Not
 verified**: an actual live sync against a running Stricknani server (no reachable test server was
 set up this session, same gap noted in SNA-6), and there is no UI yet that displays synced data
@@ -1487,7 +1487,7 @@ follow-up push.
       queued sync issues and offer retry/dismiss actions rather than hiding a stuck local edit
 
 Status: **done** (2026-08-20) - verified with the conflict/sync-issue unit tests, remote `just
-check rofl-13.brkn.lol` (ktfmt, unit tests, and Android Lint), and a live replay against the
+check $ANDROID_REMOTE_HOST` (ktfmt, unit tests, and Android Lint), and a live replay against the
 disposable Stricknani fixture: `StricknaniLiveWriteE2eTest.queuedWritesAndUploadsReachTheDisposableFixture`
 creates a yarn (with a photo) and a project while offline, then polls the fixture's REST API
 directly (not just cached UI state) to confirm the queued create, the photo upload, a subsequent
@@ -1513,7 +1513,7 @@ edit, and a delete all actually reached the server once connectivity returned. C
 Status: **done** (2026-08-19) - tag filter chips are derived from the offline Room project cache,
 and category rename/delete are available in the Android Categories screen and authenticated JSON
 API. Focused Android and API tests cover filtering, rename propagation, deletion clearing project
-categories, and duplicate-name rejection; remote `just check rofl-13.brkn.lol` is green.
+categories, and duplicate-name rejection; remote `just check $ANDROID_REMOTE_HOST` is green.
 
 Favorite toggling (`ProjectsApi`/`YarnsApi` `favorite`/`unfavorite`, wired into
 `ProjectRepository`/`YarnRepository`) is a direct online call with local optimistic-update +
@@ -1532,7 +1532,7 @@ usages remain anywhere in the nav graph. Removed the now-unused `placeholder_hom
 `placeholder_projects_*`/`placeholder_yarns_*`/`placeholder_search_*` string resources
 (`placeholder_settings_*` stays - `SettingsScreen` is still sign-out-only pending SNA-18).
 
-Verified: `just build debug rofl-13.brkn.lol` - `BUILD SUCCESSFUL` (fixed one real compile error
+Verified: `just build debug $ANDROID_REMOTE_HOST` - `BUILD SUCCESSFUL` (fixed one real compile error
 along the way: a missing `androidx.compose.foundation.layout.height` import in
 `YarnsListScreen.kt`, caught by the remote build, not local static checks). Installed and launched
 on the Zenfone 10 (`just deploy-zenfone debug`) - app starts with no crash, `logcat` shows
@@ -1572,7 +1572,7 @@ build, and CI is green on the follow-up push.
       project"/"New yarn" `ExtendedFloatingActionButton` on the respective list screens, an edit
       icon in the respective detail screens' `TopAppBar`
 
-Status: **done** (2026-08-20) - verified via remote `just check rofl-13.brkn.lol` (ktfmt, unit
+Status: **done** (2026-08-20) - verified via remote `just check $ANDROID_REMOTE_HOST` (ktfmt, unit
 tests, and Android Lint), focused step-reordering and project-attachment mutation tests, API
 regression tests confirming step IDs and attached images survive an update reorder, and a live
 create/edit/delete/upload round-trip against the disposable Stricknani fixture
@@ -1598,7 +1598,7 @@ create/edit/delete/upload round-trip against the disposable Stricknani fixture
       finally isolable pure logic per the reasoning in SNA-6/7/8/10's notes): 4 cases ported
       verbatim from `tests/test_gauge.py`'s test vectors
 
-Status: **done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+Status: **done** (2026-08-18) - verified via `just gradle $ANDROID_REMOTE_HOST ":app:assembleDebug"
 ":app:testDebugUnitTest"` (all 4 new tests pass, `BUILD SUCCESSFUL`), then `just deploy-all debug`
 + relaunch on Zenfone 10, Mi Pad 4, and Pixel 5 (`ResumedActivity`, no crash in logcat on any of
 the three). One real correctness bug caught and fixed before landing: the initial port used
@@ -1707,7 +1707,7 @@ Play Console decision.
 
 Status: **done** (2026-08-19) - verified via `nix develop -c uv run pytest -q` (261 passed)
 + `ruff format`/`ruff check` clean + `just i18n-check` passing on the backend, and
-`just gradle rofl-13.brkn.lol ":app:assembleDebug" ":app:testDebugUnitTest" ":app:lintDebug"`
+`just gradle $ANDROID_REMOTE_HOST ":app:assembleDebug" ":app:testDebugUnitTest" ":app:lintDebug"`
 (`BUILD SUCCESSFUL`, lint clean) on Android. Confirmed for real on the Zenfone 10: signed out to
 reach the new onboarding screen, all three mode chips render and fit on screen (fixed a real bug
 here - the initial "Server URL + token"/"Scan QR code"/"Sign in" labels overflowed off the right
@@ -1716,9 +1716,9 @@ fallback), the QR scanner dialog correctly requests camera permission and binds 
 preview with the dimmed-viewfinder overlay (status bar's green camera indicator confirms real
 binding, not just a UI mock). The password sign-in flow is now **confirmed working end-to-end**:
 the initial live test correctly reached production and got a real HTTP 404 because the backend
-work hadn't been deployed yet (rofl-10 was still pinned to a pre-SNA-13 `stricknani` rev in
+work hadn't been deployed yet (the production host was still pinned to a pre-SNA-13 `stricknani` rev in
 `nixos-config.git`'s `flake.lock` - a stale pin, not a bad deploy attempt). Re-ran
-`nix flake lock --update-input stricknani` + `just deploy rofl-10` and confirmed via
+`nix flake lock --update-input stricknani` + `just deploy the production host` and confirmed via
 `curl https://wolle.anika.blue/openapi.json` that `/api/v1/auth/token` and
 `/user/api-tokens/qr-setup` are now live; then signed in on the Zenfone with the dedicated
 `ai@anika.blue` test account against production and landed on Home with a real synced project
@@ -1802,7 +1802,7 @@ startup syncs remain intentionally silent.
       `BackupSettingsViewModel` like syncwich's), matching this app's one-shared-ViewModel-per-hub
       convention from SNA-21.
 
-Status: **done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+Status: **done** (2026-08-18) - verified via `just gradle $ANDROID_REMOTE_HOST ":app:assembleDebug"
 ":app:testDebugUnitTest" ":app:lintDebug"` (`BUILD SUCCESSFUL`, lint clean, `BackupCryptoTest`
 green), then confirmed for real on the Zenfone 10: the Backup category card and screen render
 correctly; "Export now" launches the `CreateDocument` picker with a sensible suggested filename
@@ -1844,7 +1844,7 @@ Mi Pad 4 wireless adb dropped again this pass (same recurring gap); Pixel 5 stil
       5 cases covering the default-fallback, unknown-id-dropped, settings-forced-visible,
       missing-destination-appended, and visible-filtering behaviors
 
-Status: **done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+Status: **done** (2026-08-18) - verified via `just gradle $ANDROID_REMOTE_HOST ":app:assembleDebug"
 ":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`, all tests pass), then confirmed for real on the
 Zenfone 10 against the `ai@anika.blue` test account (SNA-25): the Navigation section renders all
 five destinations with correct checkboxes/icons/labels and working up/down reorder arrows. One
@@ -1859,7 +1859,7 @@ of SNA-21 (Settings screen overhaul).
       sibling repos, via a research pass) rather than assume the ticket's own premise held up:
       **neither app actually solves the "one APK, arbitrary self-hosted domain, verified/no-dialog
       App Links" problem.** syncwich only gets `autoVerify`+no-dialog behavior because it targets
-      one hardcoded domain (`nom.brkn.lol`) baked into its own manifest - its
+      one hardcoded domain (`nom.example.com`) baked into its own manifest - its
       `docs/deep-links.md` explicitly says supporting a different self-hosted domain needs a
       manifest edit and a new release build, which doesn't fit Stricknani's actually-multi-tenant,
       one-APK-many-servers model at all. nyetbox's `docs/app-links.md` is the real precedent: it
@@ -1889,7 +1889,7 @@ of SNA-21 (Settings screen overhaul).
       both detail screens' `TopAppBar` via a small `Context.shareUrl()` extension
       (`ui/common/ShareUrl.kt`, plain `ACTION_SEND` + `createChooser`).
 
-Status: **done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+Status: **done** (2026-08-18) - verified via `just gradle $ANDROID_REMOTE_HOST ":app:assembleDebug"
 ":app:testDebugUnitTest" ":app:lintDebug"` (`BUILD SUCCESSFUL`, lint clean, `DeepLinkParserTest`
 green), then confirmed for real on the Zenfone 10 against the `ai@anika.blue` account. Checked
 Android's actual platform behavior directly rather than assume: `adb shell dumpsys package
@@ -1936,7 +1936,7 @@ re-onboarding (unrelated, noted under SNA-22); Pixel 5 still unreachable over wi
       replaces them)
 
 Status: **done** (2026-08-18) - a reachable production Stricknani server
-(`https://wolle.anika.blue`, rofl-10) became available partway through this session (see SNA-25),
+(`https://wolle.anika.blue`, the production host) became available partway through this session (see SNA-25),
 closing the recurring "no test server" gap from every prior UI ticket. Verified for real on the
 Zenfone 10 against a dedicated non-admin test account (`ai@anika.blue`, SNA-25): the Account
 section shows the real connected server URL and a working sign-out (with confirmation dialog);
@@ -1979,7 +1979,7 @@ same "not enough isolable pure logic" reasoning as SNA-6/7/8/10.
       don't repeat the binary name after `--` or it's parsed as a second input file and fails with
       a confusing "Multiple SVG files" error).
 
-Status: **done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"`
+Status: **done** (2026-08-18) - verified via `just gradle $ANDROID_REMOTE_HOST ":app:assembleDebug"`
 (`BUILD SUCCESSFUL` - confirms the `aapt:attr`/gradient vector syntax is valid), then confirmed for
 real on the Zenfone 10: the app drawer now shows the blue-purple yarn-ball mark (searched
 "stricknani" to find it since it isn't pinned to the home screen), and the splash screen shows the
@@ -2019,7 +2019,7 @@ unreachable over wireless adb this session.
 - [x] Rebuilt, redeployed, and reverified on all three fleet devices after the rename (not just a
       docs change) - see Status below
 
-Status: **done** (2026-08-18) - CI green on the rename commit; rebuilt on `rofl-13.brkn.lol`
+Status: **done** (2026-08-18) - CI green on the rename commit; rebuilt on `$ANDROID_REMOTE_HOST`
 against the renamed `~/build/stricknani-android` remote path (fresh full sync, confirms the
 justfile's remote-path rename works, not just the code rename) and reinstalled on Zenfone 10 and
 Mi Pad 4, confirmed running (`ResumedActivity`, no crash). `aapt2 dump badging` on the built APK
@@ -2048,7 +2048,7 @@ functional gap, just a stale label on that one device until its next reconnect +
 - [x] `SettingsScreen` (the hub) no longer takes a `SettingsViewModel` itself - it only needs the
       list of categories to render as rows, no live data
 
-Status: **done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+Status: **done** (2026-08-18) - verified via `just gradle $ANDROID_REMOTE_HOST ":app:assembleDebug"
 ":app:testDebugUnitTest" ":app:lintDebug"` (`BUILD SUCCESSFUL`, lint clean), then confirmed for
 real on the Zenfone 10 and Mi Pad 4 against the live `ai@anika.blue` account: the hub renders all
 five category cards correctly, and both Appearance and Navigation sub-screens were opened and
@@ -2076,7 +2076,7 @@ reconnect within the Home Assistant/Tasker webhook's timeout (same recurring gap
       wiring - confirmed this is exactly why the `-coil3` artifact (not `-coil` for Coil2) was
       the right pick.
 
-Status: **done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+Status: **done** (2026-08-18) - verified via `just gradle $ANDROID_REMOTE_HOST ":app:assembleDebug"
 ":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`), then confirmed for real on the Zenfone 10: created
 a project (`stricknani-cli project add --owner-email ai@anika.blue ...`) whose notes field is a
 Markdown document with an H1 header, **bold**, _italic_, a link, a bullet list, and an inline
@@ -2109,7 +2109,7 @@ fixable without physical access to the phone).
       (not `mapNotNull`) so indices stay aligned with `viewerIndex` even if a URL somehow fails to
       resolve
 
-Status: **done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+Status: **done** (2026-08-18) - verified via `just gradle $ANDROID_REMOTE_HOST ":app:assembleDebug"
 ":app:testDebugUnitTest" ":app:lintDebug"` (`BUILD SUCCESSFUL` after a one-off corrupted remote
 KSP incremental cache needed `just clean` first - unrelated to this change, see `android/AGENTS.md`
 if it recurs), then confirmed for real on the Zenfone 10 and Mi Pad 4: created a real test project
@@ -2120,11 +2120,11 @@ distinguishable, but the gesture path is exercised).
 
 ## SNA-25: Production backend deploy + dedicated AI-testing account
 
-- [x] Production (`rofl-10`, `https://wolle.anika.blue`) was 71 commits behind `main` - missing
+- [x] Production (`the production host`, `https://wolle.anika.blue`) was 71 commits behind `main` - missing
       the entire versioned JSON API (SNA-1-4) plus ~60 commits of security hardening (rate
       limiting, password policy, CSRF/CSP tightening, revocable sessions, PWA offline mode,
       pagination). Updated the `stricknani` flake input pin in `nixos-config` and deployed via
-      `just deploy rofl-10` - this is what unblocked every "not verified: no reachable test
+      `just deploy the production host` - this is what unblocked every "not verified: no reachable test
       server" caveat above. One deploy hiccup: the first `nixos-rebuild switch` restarted
       `stricknani.service` per its log, but the running process was still on the pre-switch Nix
       store path (stale binary) until a manual `systemctl restart stricknani.service` - root cause
@@ -2153,7 +2153,7 @@ SNA-16/SNA-18 above for what it unblocked.
       `ProjectsListScreen`/`YarnsListScreen`/`SearchScreen`. The `AddCategoryDialog`'s text field
       (`ProjectsListScreen`) is untouched - it's a dialog input, not a search bar
 
-Status: **done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+Status: **done** (2026-08-18) - verified via `just gradle $ANDROID_REMOTE_HOST ":app:assembleDebug"
 ":app:testDebugUnitTest" ":app:lintDebug"` (`BUILD SUCCESSFUL`, lint clean), then `just
 deploy-zenfone debug` + `just mipad-install` and confirmed for real on both against the live
 `ai@anika.blue` account: the Projects search field renders as a fully rounded pill, no crash on
@@ -2250,7 +2250,7 @@ SNA-20's notes on the same gap) so it's still running the pre-fix build until it
       wasn't in the mapped-down DTO) and `resolveMediaUrl` (already available in
       `YarnDetailContent`, just not previously used for this list).
 
-Status: **done** (2026-08-18) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+Status: **done** (2026-08-18) - verified via `just gradle $ANDROID_REMOTE_HOST ":app:assembleDebug"
 ":app:testDebugUnitTest" ":app:lintDebug"` (`BUILD SUCCESSFUL`, lint clean, existing
 `NavbarCustomizationTest` still passes unchanged with 6 destinations since it iterates
 `TopLevelDestination.entries` rather than hardcoding a count), then confirmed for real on the
@@ -2280,7 +2280,7 @@ this session but not re-checked for this specific batch).
       `ProjectsListScreen`) - none of the others mix two differently-sourced id spaces inside one
       list scope, so this was the only spot with the bug.
 
-Status: **done** (2026-08-19) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+Status: **done** (2026-08-19) - verified via `just gradle $ANDROID_REMOTE_HOST ":app:assembleDebug"
 ":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`), then reproduced the exact pre-fix crash scenario
 against production (a real project with yarn ids 8/9/10 and step ids 8-17) and confirmed on the
 Zenfone 10 with the fixed build: the project detail screen renders both sections correctly and
@@ -2299,7 +2299,7 @@ logcat. Deployed to Zenfone 10, Mi Pad 4, and Pixel 5.
       their view models) has a delete action anywhere yet - a real gap, but a separate concern from
       "move existing actions into a menu".
 
-Status: **done** (2026-08-19) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+Status: **done** (2026-08-19) - verified via `just gradle $ANDROID_REMOTE_HOST ":app:assembleDebug"
 ":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`) and confirmed for real on the Zenfone 10: the
 project detail `TopAppBar` now shows just a back arrow and a 3-dot menu; tapping it opens
 Favorite/Edit/Share as expected. Deployed to Zenfone 10 and Mi Pad 4 (Pixel 5 skipped this pass -
@@ -2318,7 +2318,7 @@ foreground app).
       `YarnsListScreen` and `ProjectsListScreen` (it didn't exist there before; the `LazyColumn` was
       using an implicit unremembered state).
 
-Status: **done** (2026-08-19) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+Status: **done** (2026-08-19) - verified via `just gradle $ANDROID_REMOTE_HOST ":app:assembleDebug"
 ":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`). The `ai@anika.blue` test account only had a handful
 of yarns, not enough to scroll, so created 17 more via the API to get real scrollable content;
 confirmed live on the Zenfone 10 that the FAB shows "New yarn" (icon+label) at the top of the list
@@ -2343,7 +2343,7 @@ same account SNA-28 already accumulates test data on).
       `CrashReportTest.kt` covers both the formatter's redaction and the handler's
       save-then-delegate behavior, adapted from nyetbox's own test.
 
-Status: **done** (2026-08-19) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+Status: **done** (2026-08-19) - verified via `just gradle $ANDROID_REMOTE_HOST ":app:assembleDebug"
 ":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`, new unit tests pass), then confirmed for real on the
 Zenfone 10 by forcing an actual crash (`adb shell am crash blue.anika.wolle.debug "..."`) and
 relaunching: the dialog appeared with the full report (build/device/thread/stack trace, tokens
@@ -2365,7 +2365,7 @@ redacted), Copy worked, and Restart app cleanly relaunched straight to Home with
       destination reachable from a "Libraries" row added to the About screen's second card
       (above "License").
 
-Status: **done** (2026-08-19) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+Status: **done** (2026-08-19) - verified via `just gradle $ANDROID_REMOTE_HOST ":app:assembleDebug"
 ":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`), then confirmed for real on the Zenfone 10: tapping
 "Build" repeatedly showed the countdown toasts, then "Developer mode enabled", then (on a further
 tap) "You are already a developer" - confirming the DataStore flag persisted; tapping "Libraries"
@@ -2387,7 +2387,7 @@ rapid-fire `adb shell input tap` calls under ~150ms apart didn't all register as
       `previewUrl` to `ProjectDetailViewModel.LinkedYarn` (already present on `YarnEntity`, just
       wasn't threaded through).
 
-Status: **done** (2026-08-19) - verified via `just gradle rofl-13.brkn.lol ":app:assembleDebug"
+Status: **done** (2026-08-19) - verified via `just gradle $ANDROID_REMOTE_HOST ":app:assembleDebug"
 ":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`), then confirmed for real on the Zenfone 10 against
 the "Crash Repro Project" test project (3 linked yarns + 10 steps): each section now renders as its
 own rounded card, linked yarns show the clothes-hanger fallback icon (none of the test yarns have a
@@ -2423,7 +2423,7 @@ photo), and tapping through to a linked yarn still navigates correctly and its o
       `parseConflictDetail` function specifically so it doesn't need a mocked `HttpException`).
 
 Status: **done** (2026-08-19) - verified via `nix develop -c uv run pytest -q` (269 passed) and
-`just gradle rofl-13.brkn.lol ":app:assembleDebug" ":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`),
+`just gradle $ANDROID_REMOTE_HOST ":app:assembleDebug" ":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`),
 then confirmed for real end-to-end on the Zenfone 10 against production: created a test project,
 synced it to the device, disabled the device's Wi-Fi, edited the project locally (queuing a
 conflicting mutation), edited the *same* project via `curl` directly against the API while the
@@ -2431,7 +2431,7 @@ device was still offline, then re-enabled Wi-Fi. `WriteReplayWorker` logged `Res
 mutation 2 (project/update): This project was edited elsewhere...` within seconds of reconnecting;
 the device's copy switched to the server's edit ("Server Wins This Time"), and Home showed "Sync
 issue - 1 change couldn't reach the server yet" rather than silently overwriting the newer edit or
-retrying forever. Also hit and fixed a real deploy-tooling gap along the way: `just deploy rofl-10`
+retrying forever. Also hit and fixed a real deploy-tooling gap along the way: `just deploy the production host`
 had rebuilt the correct `stricknani` derivation (confirmed via a direct `nix build
 github:pschmitt/stricknani/<rev>#stricknani` on the host) but `switch-to-configuration` didn't
 restart the running `stricknani.service` process despite its unit file changing - had to
@@ -2474,7 +2474,7 @@ but out of scope for this ticket.
 
 Status: **done** (2026-08-19) - verified via the backend pagination regression tests and
 `uv run mypy .`; the earlier Android performance changes were also verified via `just gradle
-rofl-13.brkn.lol ":app:assembleDebug"
+$ANDROID_REMOTE_HOST ":app:assembleDebug"
 ":app:testDebugUnitTest"` (`BUILD SUCCESSFUL`, no warnings), then confirmed for real on the
 Zenfone 10: search still filters correctly (typed "Crash", got the 3 matching test yarns after the
 debounce settles), and a project detail screen with linked yarns + 10 steps still renders correctly
@@ -2559,7 +2559,7 @@ the test device is left in its default state.
 - [x] Preserve existing accessibility labels and `Icon` tint behavior so the sheep icon follows the
       current Material theme in light and dark modes.
 
-Status: **done** (2026-08-19; remotely verified with `just check` on `rofl-13.brkn.lol`: ktfmt,
+Status: **done** (2026-08-19; remotely verified with `just check` on `$ANDROID_REMOTE_HOST`: ktfmt,
 unit tests, and `lintDebug` all passed).
 ## SNA-38: Pull-to-refresh gestures with user feedback
 
@@ -2573,7 +2573,7 @@ unit tests, and `lintDebug` all passed).
 - [x] An atomic refresh guard prevents duplicate concurrent refreshes; unit tests cover duplicate
       calls and changed/no-change/offline/error outcomes.
 
-Status: **done** (2026-08-19) - verified with remote `just check` on `rofl-13.brkn.lol`:
+Status: **done** (2026-08-19) - verified with remote `just check` on `$ANDROID_REMOTE_HOST`:
 `ktfmtCheck`, `:app:testDebugUnitTest`, and `lintDebug` all passed after remote formatting.
 
 ## SNA-40: Add snackbar feedback for mutation actions
@@ -2586,10 +2586,10 @@ Status: **done** (2026-08-19) - verified with remote `just check` on `rofl-13.br
       on transient ViewModel state surviving navigation.
 - [x] Add focused UI or ViewModel tests covering success, queued, and failure outcomes for the
       mutation actions.
-- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the messages in English and German.
+- [x] Run `just check` remotely on `$ANDROID_REMOTE_HOST` and verify the messages in English and German.
 
 Status: **done** (2026-08-19; codex/android-sna40-sna41) - verified with remote `just check` and
-`just e2e-build` on `rofl-13.brkn.lol`; focused tests cover the shared event bus, queued/offline/error
+`just e2e-build` on `$ANDROID_REMOTE_HOST`; focused tests cover the shared event bus, queued/offline/error
 outcomes, confirmation callbacks, and English/German resources.
 
 ## SNA-41: Confirm destructive deletes and style trash actions
@@ -2602,10 +2602,10 @@ outcomes, confirmation callbacks, and English/German resources.
       while preserving its accessible label and touch target.
 - [x] Add focused tests covering cancel, confirm, and red destructive-icon semantics for project
       and yarn deletion flows.
-- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the behavior in English and German.
+- [x] Run `just check` remotely on `$ANDROID_REMOTE_HOST` and verify the behavior in English and German.
 
 Status: **done** (2026-08-19; codex/android-sna40-sna41) - verified with remote `just check` and
-`just e2e-build` on `rofl-13.brkn.lol`; focused journeys cover both project and yarn overflow menus,
+`just e2e-build` on `$ANDROID_REMOTE_HOST`; focused journeys cover both project and yarn overflow menus,
 cancel behavior, and item-preserving confirmation flows.
 
 ## SNA-42: Publish Android assets and releases to Google Play
@@ -2639,9 +2639,9 @@ manual Play Console decision).
 - [x] Apply the same behavior consistently to every visible navbar destination, not only Settings,
       while preserving saved state and deep-link behavior.
 - [x] Add focused navigation tests for root, nested, and repeated navbar taps across all destinations.
-- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the behavior in English and German.
+- [x] Run `just check` remotely on `$ANDROID_REMOTE_HOST` and verify the behavior in English and German.
 
-Status: **done** (2026-08-19; remotely verified with `just check rofl-13.brkn.lol`).
+Status: **done** (2026-08-19; remotely verified with `just check $ANDROID_REMOTE_HOST`).
 
 ## SNA-44: Render Markdown and embedded images in notes and stitch samples
 
@@ -2652,10 +2652,10 @@ Status: **done** (2026-08-19; remotely verified with `just check rofl-13.brkn.lo
 - [x] Handle missing/invalid images and plain text safely without blank sections or crashes.
 - [x] Add focused rendering/URL-resolution tests for notes and stitch samples, including embedded
       images, offline cache behavior, and English/German UI labels.
-- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the result on a real Android screen.
+- [x] Run `just check` remotely on `$ANDROID_REMOTE_HOST` and verify the result on a real Android screen.
 
 Status: **done** (2026-08-19; remotely verified with `ktfmtCheck`, 45 unit tests, and `lintDebug` on
-`rofl-13.brkn.lol`).
+`$ANDROID_REMOTE_HOST`).
 
 ## SNA-45: Scale down Markdown heading styles
 
@@ -2665,10 +2665,10 @@ Status: **done** (2026-08-19; remotely verified with `ktfmtCheck`, 45 unit tests
       steps, including light/dark themes and accessibility font scaling.
 - [x] Add focused rendering tests or screenshot coverage for heading sizes in the affected content
       surfaces.
-- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the result on a real Android screen.
+- [x] Run `just check` remotely on `$ANDROID_REMOTE_HOST` and verify the result on a real Android screen.
 
 Status: **done** (2026-08-19) - compact heading typography and focused tests landed; combined remote
-`just check rofl-13.brkn.lol` passed after integration.
+`just check $ANDROID_REMOTE_HOST` passed after integration.
 
 ## SNA-46: Use the shared android-app-ci actions
 
@@ -2680,7 +2680,7 @@ Status: **done** (2026-08-19) - compact heading typography and focused tests lan
       compatible upstream fixes and pin/document the consumed action interfaces.
 - [x] Keep local `just` targets as developer-facing wrappers, but make hosted CI exercise the shared
       action path and verify Android Lint, E2E, screenshots, signing, and release artifacts.
-- [x] Run the affected workflows and `just check` remotely on `rofl-13.brkn.lol` after migration.
+- [x] Run the affected workflows and `just check` remotely on `$ANDROID_REMOTE_HOST` after migration.
 
 Status: **done** (2026-08-19) - workflow migration landed with upstream nested-project/artifact
 support in `pschmitt/android-app-ci`; remote Android check passed.
@@ -2693,11 +2693,11 @@ support in `pschmitt/android-app-ci`; remote Android check passed.
       explicit user refresh or a completed sync with changed data.
 - [x] Add focused tests covering repeated navigation, explicit refresh, and changed/no-change sync
       feedback in English and German.
-- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the resulting notification volume
+- [x] Run `just check` remotely on `$ANDROID_REMOTE_HOST` and verify the resulting notification volume
       on a real Android device.
 
 Status: **done** (2026-08-19) - automatic no-change refreshes are silent while explicit refresh
-feedback remains; combined remote `just check rofl-13.brkn.lol` passed.
+feedback remains; combined remote `just check $ANDROID_REMOTE_HOST` passed.
 
 ## SNA-48: Add a warm yellow tone to the Notes card
 
@@ -2706,11 +2706,11 @@ feedback remains; combined remote `just check rofl-13.brkn.lol` passed.
 - [x] Keep text, icons, contrast, dark-theme behavior, and accessibility readable at all supported
       font scales.
 - [x] Add focused UI or screenshot coverage for the Notes card in light and dark themes.
-- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the result on a real Android
+- [x] Run `just check` remotely on `$ANDROID_REMOTE_HOST` and verify the result on a real Android
       device.
 
 Status: **done** (2026-08-19) - shared accessible NotesCard styling, theme coverage, and screenshot
-states landed; combined remote `just check rofl-13.brkn.lol` passed.
+states landed; combined remote `just check $ANDROID_REMOTE_HOST` passed.
 
 ## SNA-49: Fix Stitch sample image and HTML entity rendering
 
@@ -2721,11 +2721,11 @@ states landed; combined remote `just check rofl-13.brkn.lol` passed.
 - [x] Preserve safe handling for malformed content, missing images, and offline cached samples.
 - [x] Add focused rendering/URL-resolution tests and screenshot coverage for a populated Stitch
       sample in English and German.
-- [x] Run `just check` remotely on `rofl-13.brkn.lol` and verify the result on a real Android device.
+- [x] Run `just check` remotely on `$ANDROID_REMOTE_HOST` and verify the result on a real Android device.
 
 Status: **done** (2026-08-19) - HTML entity decoding, HTML-image normalization, authenticated
 media resolution, fixture data, and screenshot coverage landed; combined remote `just check
-rofl-13.brkn.lol` passed.
+$ANDROID_REMOTE_HOST` passed.
 
 ## SNA-50: Add an Android categories view
 
@@ -2736,7 +2736,7 @@ rofl-13.brkn.lol` passed.
 - [x] Add focused Compose/navigation coverage for the destination and its states.
 
 Status: **done** (2026-08-19) - offline-first categories destination and state/navigation tests
-landed; combined remote `just check rofl-13.brkn.lol` passed.
+landed; combined remote `just check $ANDROID_REMOTE_HOST` passed.
 
 ## SNA-51: Import projects from Android
 
@@ -2749,7 +2749,7 @@ landed; combined remote `just check rofl-13.brkn.lol` passed.
 
 Status: **done** (2026-08-19) - URL import UI/state machine, Bearer-authenticated backend
 boundary, offline outbox persistence, and project/step image persistence landed; remote
-`just check rofl-13.brkn.lol` passed.
+`just check $ANDROID_REMOTE_HOST` passed.
 
 ## SNA-52: Make Markdown images interactive and size-aware
 
@@ -2818,7 +2818,7 @@ fixed and covered by E2E geometry assertions.
 
 Status: **done** (2026-08-19; `2946e71`) - persistent per-domain ordering, long-press drag
 reordering, Settings review/reset controls, and focused unit/Compose coverage landed; remote
-`just check rofl-13.brkn.lol`, `just e2e-build rofl-13.brkn.lol`, and the PX5 focused
+`just check $ANDROID_REMOTE_HOST`, `just e2e-build $ANDROID_REMOTE_HOST`, and the PX5 focused
 instrumentation run passed.
 
 ## SNA-57: Suppress pull-to-refresh animation on automatic navigation refreshes

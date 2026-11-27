@@ -36,7 +36,7 @@ run remotely through the Android justfile, for example:
 
 ```sh
 cd android
-just e2e-build rofl-13.brkn.lol
+just e2e-build $ANDROID_REMOTE_HOST
 ```
 
 That remote recipe compiles the APKs only; the phone/tablet emulator matrix is GitHub Actions-owned.

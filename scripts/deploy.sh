@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-PROD_HOST="rofl-10.brkn.lol"
+# The production host comes from the environment, not from this public repository.
+PROD_HOST="${STRICKNANI_PROD_HOST:-}"
 
 usage() {
   cat <<EOF
@@ -13,6 +14,12 @@ EOF
 }
 
 deploy() {
+  if [[ -z "$PROD_HOST" ]]
+  then
+    echo "STRICKNANI_PROD_HOST is not set" >&2
+    return 1
+  fi
+
   # Change to nixos directory
   cd /etc/nixos || return 1
 

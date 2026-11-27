@@ -147,7 +147,7 @@ it at.
 
 ## Development
 
-Gradle builds intentionally run on `rofl-13` or `rofl-14`, not on the local workstation:
+Gradle builds intentionally run on `$ANDROID_REMOTE_HOST` or `$ANDROID_REMOTE_HOST`, not on the local workstation:
 
 ```sh
 cd android

@@ -31,7 +31,7 @@ result-*
 *.log
 
 # Android (android/) - Gradle/Android Studio local build state, never built locally anyway
-# (AGENTS.md: Gradle always runs on rofl-13/rofl-14), so this is purely IDE/remote-build noise.
+# (AGENTS.md: Gradle always runs on the remote build host), so this is purely IDE/remote-build noise.
 android/.gradle/
 android/.kotlin/
 android/local.properties

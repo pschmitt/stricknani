@@ -1160,7 +1160,7 @@ Execution-oriented backlog for Stricknani.
   - [x] Upload instrumentation reports, logcat, emulator screenshots, server logs, and host diagnostics on every run.
   - [x] Extend the manual full lane with an explicit network-offline cached browse and queued-edit assertion.
 - **Files**: `android/app/src/androidTest/`, `.github/workflows/android-e2e.yaml`, `ci/stricknani/`, `android/justfile`, and Android E2E documentation.
-- **Testing**: remote `just e2e-build rofl-13.brkn.lol` and `just check rofl-13.brkn.lol` pass; GitHub Actions must still run both lanes against the disposable fixture and confirm no production endpoint is contacted.
+- **Testing**: remote `just e2e-build $ANDROID_REMOTE_HOST` and `just check $ANDROID_REMOTE_HOST` pass; GitHub Actions must still run both lanes against the disposable fixture and confirm no production endpoint is contacted.
 - **Completed**: Full hosted lane `32252063146` passed on 2026-08-19, including both cached-browsing journeys against the disposable seeded fixture.
 
 ### T81: Add focused Android Compose/instrumentation coverage
@@ -1180,7 +1180,7 @@ Execution-oriented backlog for Stricknani.
   - Added focused route/accessibility, dialog, empty-state, sync-feedback, and offline-cache tests.
   - Added a manual `focused` Android E2E lane that runs the focused classes separately against the disposable fixture.
 - **Files**: `android/app/src/androidTest/kotlin/`, Android test fixtures/helpers, and `android/justfile`.
-- **Testing**: remote `just e2e-build rofl-13.brkn.lol` and `just check rofl-13.brkn.lol` pass; the API-34 emulator execution is owned by the manual GitHub Actions lane.
+- **Testing**: remote `just e2e-build $ANDROID_REMOTE_HOST` and `just check $ANDROID_REMOTE_HOST` pass; the API-34 emulator execution is owned by the manual GitHub Actions lane.
 
 ### T82: Add manual Android screenshot capture CI
 
@@ -1200,7 +1200,7 @@ Execution-oriented backlog for Stricknani.
   - Added the manual six-job phone/7-inch tablet/10-inch tablet × light/dark workflow with disposable fixture teardown and diagnostics.
   - Added named onboarding, home, list/detail, settings, and offline screenshot instrumentation plus review documentation.
 - **Files**: `.github/workflows/android-screenshots.yaml`, `android/app/src/androidTest/`, `fastlane/`, `android/justfile`, and screenshot documentation.
-- **Testing**: remote `just e2e-build rofl-13.brkn.lol` and `just check rofl-13.brkn.lol` pass; the hosted matrix still needs one manual dispatch to verify rendered tablet captures.
+- **Testing**: remote `just e2e-build $ANDROID_REMOTE_HOST` and `just check $ANDROID_REMOTE_HOST` pass; the hosted matrix still needs one manual dispatch to verify rendered tablet captures.
 
 ### T83: Split browser E2E into smoke and full suites
 
@@ -1583,7 +1583,7 @@ Execution-oriented backlog for Stricknani.
 - **Status**: done
 - **Category**: bug
 - **Description**:
-  - Twice after `just deploy rofl-10` (from the sibling `nixos-config` repo) reported successfully
+  - Twice after `just deploy the production host` (from the sibling `nixos-config` repo) reported successfully
     restarting `stricknani.service` with the new build, the live site kept serving the *previous*
     build: `systemctl show stricknani.service -p ExecStart` showed the new nix store path, but the
     actual running process (checked via `/proc/<MainPID>/cmdline`) was still executing the old one.
@@ -1591,7 +1591,7 @@ Execution-oriented backlog for Stricknani.
     stale" script to the `nixos-config` repo's deploy tooling — wrong layer: rejected by the user
     ("there's no reason to alter the nix config for this issue. it's all in stricknani! fix the
     stricknani nix module.") and reverted before committing/pushing anything to that repo.
-- **Root cause** (confirmed via `journalctl -u monit` on rofl-10 at the exact deploy timestamp):
+- **Root cause** (confirmed via `journalctl -u monit` on the production host at the exact deploy timestamp):
   `nix/module.nix`'s own `services.monit.config` check hits `https://<host>/healthz` and runs
   `systemctl restart stricknani` whenever it fails. Stricknani's startup takes ~15-25s (scikit-image
   /pymupdf/weasyprint imports), and monit polls every 60s (`set daemon 60`, host-level). During a
@@ -1607,7 +1607,7 @@ Execution-oriented backlog for Stricknani.
 - **Testing**: `nix develop -c nixfmt --check nix/module.nix` and `nix develop -c statix check
   nix/module.nix` both pass; `pytest tests/test_health.py` passes (no test references this file).
   Full end-to-end confirmation (a deploy that doesn't race) happens on the next `just deploy
-  rofl-10`.
+  the production host`.
 
 ### T108: Require authentication and cap payload size on the markdown-preview endpoint
 
