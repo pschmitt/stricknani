@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 
-# The production host comes from the environment, not from this public repository.
+# The production host comes from STRICKNANI_PROD_HOST in the environment or in
+# the private Android dev config, not from this public repository.
+ANDROID_DEV_CONFIG="${ANDROID_DEV_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/android-dev/env}"
+if [[ -z "${STRICKNANI_PROD_HOST:-}" && -r "$ANDROID_DEV_CONFIG" ]]
+then
+  # shellcheck source=/dev/null
+  source "$ANDROID_DEV_CONFIG"
+fi
 PROD_HOST="${STRICKNANI_PROD_HOST:-}"
 
 usage() {
