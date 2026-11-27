@@ -2,7 +2,7 @@
 
 # The production host comes from STRICKNANI_PROD_HOST in the environment or in
 # the private Android dev config, not from this public repository.
-ANDROID_DEV_CONFIG="${ANDROID_DEV_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/android-dev/env}"
+ANDROID_DEV_CONFIG="${ANDROID_DEV_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/android/devices.env}"
 if [[ -z "${STRICKNANI_PROD_HOST:-}" && -r "$ANDROID_DEV_CONFIG" ]]
 then
   # shellcheck source=/dev/null
